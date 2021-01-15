@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="&lt;Java高级软件工程师知识结构     Java多线程是Java基础的重要的一部分，支持多线程是Java的重要特性之一. 主要包括如下内容:  Java多线程1: 线程生命周期和多线程基础 Java多线程2: Lock、信号量、原子量与队列 Java多线程3: volatile Java多线程4: 同步锁与Java线程同步方法比较 Java多线程5: 线程池 Java多线程6: Java阻">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java多线程6: Java阻塞队列">
+<meta property="og:url" content="http://example.com/Java/multithread/06.BlockingQueue/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="&lt;Java高级软件工程师知识结构     Java多线程是Java基础的重要的一部分，支持多线程是Java的重要特性之一. 主要包括如下内容:  Java多线程1: 线程生命周期和多线程基础 Java多线程2: Lock、信号量、原子量与队列 Java多线程3: volatile Java多线程4: 同步锁与Java线程同步方法比较 Java多线程5: 线程池 Java多线程6: Java阻">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/Java/multithread/06.BlockingQueue/images/20191201214259668_108772893.png">
+<meta property="og:image" content="http://example.com/Java/multithread/06.BlockingQueue/images/20191201214440080_637429054.png">
+<meta property="article:published_time" content="2016-05-30T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.903Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Thread">
+<meta property="article:tag" content="Multi-thread">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/Java/multithread/06.BlockingQueue/images/20191201214259668_108772893.png">
+
+<link rel="canonical" href="http://example.com/Java/multithread/06.BlockingQueue/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>Java多线程6: Java阻塞队列 | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/06.BlockingQueue/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java多线程6: Java阻塞队列
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-05-31 00:00:00" itemprop="dateCreated datePublished" datetime="2016-05-31T00:00:00+08:00">2016-05-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><a href="/Java/advanced-engineer-outline/">&lt;Java高级软件工程师知识结构</a></p>
+<blockquote>
+<p>   Java多线程是Java基础的重要的一部分，支持多线程是Java的重要特性之一. 主要包括如下内容:</p>
+<ol>
+<li><a href="/Java/multithread/01.base/">Java多线程1: 线程生命周期和多线程基础</a></li>
+<li><a href="/Java/multithread/02.Lock-Semaphore-Atomic/">Java多线程2: Lock、信号量、原子量与队列</a></li>
+<li><a href="/Java/multithread/03.volatile/">Java多线程3: volatile</a></li>
+<li><a href="/Java/multithread/04.thread-synchronization/">Java多线程4: 同步锁与Java线程同步方法比较</a></li>
+<li><a href="/Java/multithread/05.ThreadPool/">Java多线程5: 线程池</a></li>
+<li><a href="/Java/multithread/06.BlockingQueue/">Java多线程6: Java阻塞队列与生产者消费者模式</a></li>
+</ol>
+</blockquote>
+<hr>
+<h1 id="阻塞队列与阻塞栈"><a href="#阻塞队列与阻塞栈" class="headerlink" title="阻塞队列与阻塞栈"></a>阻塞队列与阻塞栈</h1><p><img src="images/20191201214259668_108772893.png"></p>
+<p>Java定义了阻塞队列的接口<code>java.util.concurrent.BlockingQueue</code>,<br>阻塞队列的概念是, 一个指定长度的队列, 如果队列满了, 添加新元素的操作会被阻塞等待, 直到有空位为止. 同样, 当队列为空时候, 请求队列元素的操作同样会阻塞等待, 直到有可用元素为止.<br>阻塞队列还有更多实现类, 用来满足各种复杂的需求：<code>ArrayBlockingQueue</code>, <code>DelayQueue</code>, <code>LinkedBlockingQueue</code>, <code>PriorityBlockingQueue</code>, <code>SynchronousQueue</code> , 具体的API差别也很小.</p>
+<p>对于阻塞栈, 与阻塞队列相似. 不同点在于栈是<code>“后入先出”</code>的结构, 每次操作的是栈顶, 而队列是“先进先出”的结构, 每次操作的是队列头.<br>Java为阻塞栈定义了接口：<code>java.util.concurrent.BlockingDeque</code></p>
+<h1 id="1、核心方法"><a href="#1、核心方法" class="headerlink" title="1、核心方法"></a>1、核心方法</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">BlockingQueue</span>&lt;<span class="title">E</span>&gt; <span class="keyword">extends</span> <span class="title">Queue</span>&lt;<span class="title">E</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//将给定元素设置到队列中，如果设置成功返回true, 否则返回false。如果是往限定了长度的队列中设置值，推荐使用offer()方法。</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">add</span><span class="params">(E e)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//将给定的元素设置到队列中，如果设置成功返回true, 否则返回false. e的值不能为空，否则抛出空指针异常。</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">offer</span><span class="params">(E e)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//将元素设置到队列中，如果队列中没有多余的空间，该方法会一直阻塞，直到队列中有多余的空间。</span></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">put</span><span class="params">(E e)</span> <span class="keyword">throws</span> InterruptedException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//将给定元素在给定的时间内设置到队列中，如果设置成功返回true, 否则返回false.</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">offer</span><span class="params">(E e, <span class="keyword">long</span> timeout, TimeUnit unit)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> InterruptedException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//从队列中获取值，如果队列中没有值，线程会一直阻塞，直到队列中有值，并且该方法取得了该值。</span></span><br><span class="line">    <span class="function">E <span class="title">take</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//在给定的时间里，从队列中获取值，时间到了直接调用普通的poll方法，为null则直接返回null。</span></span><br><span class="line">    <span class="function">E <span class="title">poll</span><span class="params">(<span class="keyword">long</span> timeout, TimeUnit unit)</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> InterruptedException</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//获取队列中剩余的空间。</span></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">remainingCapacity</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//从队列中移除指定的值。</span></span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">remove</span><span class="params">(Object o)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//判断队列中是否拥有该值。</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">contains</span><span class="params">(Object o)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//将队列中值，全部移除，并发设置到给定的集合中。</span></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">drainTo</span><span class="params">(Collection&lt;? <span class="keyword">super</span> E&gt; c)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//指定最多数量限制将队列中值，全部移除，并发设置到给定的集合中。</span></span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">drainTo</span><span class="params">(Collection&lt;? <span class="keyword">super</span> E&gt; c, <span class="keyword">int</span> maxElements)</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="2、阻塞队列的成员"><a href="#2、阻塞队列的成员" class="headerlink" title="2、阻塞队列的成员"></a>2、阻塞队列的成员</h1><p>方法\处理方式 抛出异常 返回特殊值 一直阻塞 超时退出</p>
+<p>插入方法 add(e) offer(e) put(e) offer(e,time,unit)</p>
+<p>移除方法 remove() poll() take() poll(time,unit)</p>
+<p>检查方法 element() peek() 不可用 不可用</p>
+<p><img src="images/20191201214440080_637429054.png"></p>
+<h1 id="3、成员详解"><a href="#3、成员详解" class="headerlink" title="3、成员详解"></a>3、成员详解</h1><h2 id="ArrayBlockingQueue"><a href="#ArrayBlockingQueue" class="headerlink" title="ArrayBlockingQueue"></a>ArrayBlockingQueue</h2><pre><code>   基于数组的阻塞队列实现，在ArrayBlockingQueue内部，维护了一个定长数组，以便缓存队列中的数据对象，这是一个常用的阻塞队列，除了一个定长数组外，ArrayBlockingQueue内部还保存着两个整形变量，分别标识着队列的头部和尾部在数组中的位置。  </code></pre>
+<p>　　ArrayBlockingQueue在生产者放入数据和消费者获取数据，都是共用同一个锁对象，由此也意味着两者无法真正并行运行，这点尤其不同于LinkedBlockingQueue；按照实现原理来分析，ArrayBlockingQueue完全可以采用分离锁，从而实现生产者和消费者操作的完全并行运行。Doug Lea之所以没这样去做，也许是因为ArrayBlockingQueue的数据写入和获取操作已经足够轻巧，以至于引入独立的锁机制，除了给代码带来额外的复杂性外，其在性能上完全占不到任何便宜。 ArrayBlockingQueue和LinkedBlockingQueue间还有一个明显的不同之处在于，前者在插入或删除元素时不会产生或销毁任何额外的对象实例，而后者则会生成一个额外的Node对象。这在长时间内需要高效并发地处理大批量数据的系统中，其对于GC的影响还是存在一定的区别。而在创建ArrayBlockingQueue时，我们还可以控制对象的内部锁是否采用公平锁，默认采用非公平锁。</p>
+<h2 id="LinkedBlockingQueue"><a href="#LinkedBlockingQueue" class="headerlink" title="LinkedBlockingQueue"></a>LinkedBlockingQueue</h2><pre><code>   基于链表的阻塞队列，同ArrayListBlockingQueue类似，其内部也维持着一个数据缓冲队列（该队列由一个链表构成），当生产者往队列中放入一个数据时，队列会从生产者手中获取数据，并缓存在队列内部，而生产者立即返回；只有当队列缓冲区达到最大值缓存容量时（LinkedBlockingQueue可以通过构造函数指定该值），才会阻塞生产者队列，直到消费者从队列中消费掉一份数据，生产者线程会被唤醒，反之对于消费者这端的处理也基于同样的原理。而LinkedBlockingQueue之所以能够高效的处理并发数据，还因为其对于生产者端和消费者端分别采用了独立的锁来控制数据同步，这也意味着在高并发的情况下生产者和消费者可以并行地操作队列中的数据，以此来提高整个队列的并发性能。  </code></pre>
+<p>作为开发者，我们需要注意的是，如果构造一个LinkedBlockingQueue对象，而没有指定其容量大小，LinkedBlockingQueue会默认一个类似无限大小的容量（Integer.MAX_VALUE），这样的话，如果生产者的速度一旦大于消费者的速度，也许还没有等到队列满阻塞产生，系统内存就有可能已被消耗殆尽了。</p>
+<h2 id="DelayQueue"><a href="#DelayQueue" class="headerlink" title="DelayQueue"></a>DelayQueue</h2><pre><code>   DelayQueue中的元素只有当其指定的延迟时间到了，才能够从队列中获取到该元素。DelayQueue是一个没有大小限制的队列，因此往队列中插入数据的操作（生产者）永远不会被阻塞，而只有获取数据的操作（消费者）才会被阻塞。  </code></pre>
+<p>使用场景：<br>       DelayQueue使用场景较少，但都相当巧妙，常见的例子比如使用一个DelayQueue来管理一个超时未响应的连接队列。</p>
+<h2 id="PriorityBlockingQueue"><a href="#PriorityBlockingQueue" class="headerlink" title="PriorityBlockingQueue"></a>PriorityBlockingQueue</h2><pre><code>   基于优先级的阻塞队列（优先级的判断通过构造函数传入的Compator对象来决定），但需要注意的是PriorityBlockingQueue并不会阻塞数据生产者，而只会在没有可消费的数据时，阻塞数据的消费者。因此使用的时候要特别注意，生产者生产数据的速度绝对不能快于消费者消费数据的速度，否则时间一长，会最终耗尽所有的可用堆内存空间。在实现PriorityBlockingQueue时，内部控制线程同步的锁采用的是公平锁。</code></pre>
+<h2 id="SynchronousQueue"><a href="#SynchronousQueue" class="headerlink" title="SynchronousQueue"></a>SynchronousQueue</h2><pre><code>   一种无缓冲的等待队列，类似于无中介的直接交易，有点像原始社会中的生产者和消费者，生产者拿着产品去集市销售给产品的最终消费者，而消费者必须亲自去集市找到所要商品的直接生产者，如果一方没有找到合适的目标，那么对不起，大家都在集市等待。相对于有缓冲的BlockingQueue来说，少了一个中间经销商的环节（缓冲区），如果有经销商，生产者直接把产品批发给经销商，而无需在意经销商最终会将这些产品卖给那些消费者，由于经销商可以库存一部分商品，因此相对于直接交易模式，总体来说采用中间经销商的模式会吞吐量高一些（可以批量买卖）；但另一方面，又因为经销商的引入，使得产品从生产者到消费者中间增加了额外的交易环节，单个产品的及时响应性能可能会降低。  </code></pre>
+<p>　　声明一个SynchronousQueue有两种不同的方式，它们之间有着不太一样的行为。公平模式和非公平模式的区别:<br>　　如果采用公平模式：SynchronousQueue会采用公平锁，并配合一个FIFO队列来阻塞多余的生产者和消费者，从而体系整体的公平策略；<br>　　但如果是非公平模式（SynchronousQueue默认）：SynchronousQueue采用非公平锁，同时配合一个LIFO队列来管理多余的生产者和消费者，而后一种模式，如果生产者和消费者的处理速度有差距，则很容易出现饥渴的情况，即可能有某些生产者或者是消费者的数据永远都得不到处理。</p>
+<h1 id="4、秒杀demo"><a href="#4、秒杀demo" class="headerlink" title="4、秒杀demo"></a>4、秒杀demo</h1><h2 id="秒杀对列"><a href="#秒杀对列" class="headerlink" title="秒杀对列"></a>秒杀对列</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.hsshy.beam.queue.jvm;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.hsshy.beam.queue.entity.SuccessKilled;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.BlockingQueue;</span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.LinkedBlockingQueue;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 秒杀队列(固定长度为100)</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@author</span> 科帮网 By https://blog.52itstyle.com</span></span><br><span class="line"><span class="comment"> * 创建时间   2018年5月10日</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SeckillQueue</span> </span>&#123;</span><br><span class="line">     <span class="comment">//队列大小</span></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> QUEUE_MAX_SIZE   = <span class="number">100</span>;</span><br><span class="line">    <span class="comment">/** 用于多线程间下单的队列 */</span></span><br><span class="line">    <span class="keyword">static</span> BlockingQueue&lt;SuccessKilled&gt; blockingQueue = <span class="keyword">new</span> LinkedBlockingQueue&lt;SuccessKilled&gt;(QUEUE_MAX_SIZE);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 私有的默认构造子，保证外界无法直接实例化</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">SeckillQueue</span><span class="params">()</span></span>&#123;&#125;;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 类级的内部类，也就是静态的成员式内部类，该内部类的实例与外部类的实例</span></span><br><span class="line"><span class="comment">     * 没有绑定关系，而且只有被调用到才会装载，从而实现了延迟加载</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">SingletonHolder</span></span>&#123;</span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 静态初始化器，由JVM来保证线程安全</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">private</span>  <span class="keyword">static</span> SeckillQueue queue = <span class="keyword">new</span> SeckillQueue();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//单例队列</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> SeckillQueue <span class="title">getMailQueue</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">return</span> SingletonHolder.queue;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 生产入队</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> kill</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@throws</span> InterruptedException</span></span><br><span class="line"><span class="comment">     * add(e) 队列未满时，返回true；队列满则抛出IllegalStateException(“Queue full”)异常——AbstractQueue </span></span><br><span class="line"><span class="comment">     * put(e) 队列未满时，直接插入没有返回值；队列满时会阻塞等待，一直等到队列未满时再插入。</span></span><br><span class="line"><span class="comment">     * offer(e) 队列未满时，返回true；队列满时返回false。非阻塞立即返回。</span></span><br><span class="line"><span class="comment">     * offer(e, time, unit) 设定等待的时间，如果在指定时间内还不能往队列中插入数据则返回false，插入成功返回true。 </span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span>  Boolean  <span class="title">produce</span><span class="params">(SuccessKilled kill)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> blockingQueue.offer(kill);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 消费出队</span></span><br><span class="line"><span class="comment">     * poll() 获取并移除队首元素，在指定的时间内去轮询队列看有没有首元素有则返回，否者超时后返回null</span></span><br><span class="line"><span class="comment">     * take() 与带超时时间的poll类似不同在于take时候如果当前队列空了它会一直等待其他线程调用notEmpty.signal()才会被唤醒</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span>  SuccessKilled <span class="title">consume</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> blockingQueue.take();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 获取队列大小</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">size</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> blockingQueue.size();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="springboot启动时执行类"><a href="#springboot启动时执行类" class="headerlink" title="springboot启动时执行类"></a>springboot启动时执行类</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.hsshy.beam.queue.jvm;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> com.hsshy.beam.queue.entity.SuccessKilled;</span><br><span class="line"><span class="keyword">import</span> com.hsshy.beam.queue.service.ISeckillService;</span><br><span class="line"><span class="keyword">import</span> org.springframework.beans.factory.annotation.Autowired;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.ApplicationArguments;</span><br><span class="line"><span class="keyword">import</span> org.springframework.boot.ApplicationRunner;</span><br><span class="line"><span class="keyword">import</span> org.springframework.stereotype.Component;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 消费秒杀队列</span></span><br><span class="line"><span class="comment"> * 创建者 科帮网</span></span><br><span class="line"><span class="comment"> * 创建时间 2018年4月3日</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TaskRunner</span> <span class="keyword">implements</span> <span class="title">ApplicationRunner</span> </span>&#123;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Autowired</span></span><br><span class="line">    <span class="keyword">private</span> ISeckillService seckillService;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">(ApplicationArguments <span class="keyword">var</span>)</span> <span class="keyword">throws</span> Exception</span>&#123;</span><br><span class="line">        <span class="keyword">while</span>(<span class="keyword">true</span>)&#123;</span><br><span class="line">            <span class="comment">//进程内队列</span></span><br><span class="line">            SuccessKilled kill = SeckillQueue.getMailQueue().consume();</span><br><span class="line">            <span class="keyword">if</span>(kill!=<span class="keyword">null</span>)&#123;</span><br><span class="line">                seckillService.startSeckil(kill.getId(), kill.getUserId());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="controller层"><a href="#controller层" class="headerlink" title="controller层"></a>controller层</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@ApiOperation(value=&quot;秒杀柒(进程内队列)&quot;,nickname=&quot;科帮网&quot;)</span></span><br><span class="line">   <span class="meta">@PostMapping(&quot;/startQueue&quot;)</span></span><br><span class="line">   <span class="function"><span class="keyword">public</span> R <span class="title">startQueue</span><span class="params">(<span class="keyword">long</span> seckillId)</span></span>&#123;</span><br><span class="line">       seckillService.deleteSeckill(seckillId);</span><br><span class="line">       <span class="keyword">final</span> <span class="keyword">long</span> killId =  seckillId;</span><br><span class="line">       LOGGER.info(<span class="string">&quot;开始秒杀柒(正常)&quot;</span>);</span><br><span class="line">       <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;<span class="number">1000</span>;i++)&#123;</span><br><span class="line">           <span class="keyword">final</span> <span class="keyword">long</span> userId = i;</span><br><span class="line">           Runnable task = <span class="keyword">new</span> Runnable() &#123;</span><br><span class="line">               <span class="meta">@Override</span></span><br><span class="line">               <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                   SuccessKilled kill = <span class="keyword">new</span> SuccessKilled();</span><br><span class="line">                   kill.setId(killId);</span><br><span class="line">                   kill.setUserId(userId);</span><br><span class="line">                   <span class="keyword">try</span> &#123;</span><br><span class="line">                       Boolean flag = SeckillQueue.getMailQueue().produce(kill);</span><br><span class="line">                       <span class="keyword">if</span>(flag)&#123;</span><br><span class="line">                           LOGGER.info(<span class="string">&quot;用户:&#123;&#125;&#123;&#125;&quot;</span>,kill.getUserId(),<span class="string">&quot;秒杀成功&quot;</span>);</span><br><span class="line">                       &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">                           LOGGER.info(<span class="string">&quot;用户:&#123;&#125;&#123;&#125;&quot;</span>,userId,<span class="string">&quot;秒杀失败&quot;</span>);</span><br><span class="line">                       &#125;</span><br><span class="line">                   &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                       e.printStackTrace();</span><br><span class="line">                       LOGGER.info(<span class="string">&quot;用户:&#123;&#125;&#123;&#125;&quot;</span>,userId,<span class="string">&quot;秒杀失败&quot;</span>);</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;;</span><br><span class="line">           executor.execute(task);</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">try</span> &#123;</span><br><span class="line">           Thread.sleep(<span class="number">10000</span>);</span><br><span class="line">           Long  seckillCount = seckillService.getSeckillCount(seckillId);</span><br><span class="line">           LOGGER.info(<span class="string">&quot;一共秒杀出&#123;&#125;件商品&quot;</span>,seckillCount);</span><br><span class="line">       &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">           e.printStackTrace();</span><br><span class="line">       &#125;</span><br><span class="line">       <span class="keyword">return</span> R.ok();</span><br><span class="line">   &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h1 id="5、延时队列demo"><a href="#5、延时队列demo" class="headerlink" title="5、延时队列demo"></a>5、延时队列demo</h1><h2 id="消息体"><a href="#消息体" class="headerlink" title="消息体"></a>消息体</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.hsshy.beam.queue.delay;</span><br><span class="line">  </span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.Delayed;  </span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.TimeUnit;  </span><br><span class="line">  </span><br><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * 消息体定义 实现Delayed接口就是实现两个方法即compareTo 和 getDelay最重要的就是getDelay方法，这个方法用来判断是否到期…… </span></span><br><span class="line"><span class="comment"> *  </span></span><br><span class="line"><span class="comment"> */</span>  </span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Message</span> <span class="keyword">implements</span> <span class="title">Delayed</span> </span>&#123;  </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> id;  </span><br><span class="line">    <span class="keyword">private</span> String body; <span class="comment">// 消息内容  </span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> excuteTime;<span class="comment">// 延迟时长，这个是必须的属性因为要按照这个判断延时时长。  </span></span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getId</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">        <span class="keyword">return</span> id;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getBody</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">        <span class="keyword">return</span> body;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">getExcuteTime</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">        <span class="keyword">return</span> excuteTime;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Message</span><span class="params">(<span class="keyword">int</span> id, String body, <span class="keyword">long</span> delayTime)</span> </span>&#123;  </span><br><span class="line">        <span class="keyword">this</span>.id = id;  </span><br><span class="line">        <span class="keyword">this</span>.body = body;  </span><br><span class="line">        <span class="keyword">this</span>.excuteTime = TimeUnit.NANOSECONDS.convert(delayTime, TimeUnit.MILLISECONDS) + System.nanoTime();  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="comment">// 自定义实现比较方法返回 1 0 -1三个参数  </span></span><br><span class="line">    <span class="meta">@Override</span>  </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">compareTo</span><span class="params">(Delayed delayed)</span> </span>&#123;  </span><br><span class="line">        Message msg = (Message) delayed;  </span><br><span class="line">        <span class="keyword">return</span> Integer.valueOf(<span class="keyword">this</span>.id) &gt; Integer.valueOf(msg.id) ? <span class="number">1</span>  </span><br><span class="line">                : (Integer.valueOf(<span class="keyword">this</span>.id) &lt; Integer.valueOf(msg.id) ? -<span class="number">1</span> : <span class="number">0</span>);  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="comment">// 延迟任务是否到时就是按照这个方法判断如果返回的是负数则说明到期否则还没到期  </span></span><br><span class="line">    <span class="meta">@Override</span>  </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">getDelay</span><span class="params">(TimeUnit unit)</span> </span>&#123;  </span><br><span class="line">        <span class="keyword">return</span> unit.convert(<span class="keyword">this</span>.excuteTime - System.nanoTime(), TimeUnit.NANOSECONDS);  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="消费者"><a href="#消费者" class="headerlink" title="消费者"></a>消费者</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.hsshy.beam.queue.delay;</span><br><span class="line">  </span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.DelayQueue;  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Consumer</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;  </span><br><span class="line">    <span class="comment">// 延时队列 ,消费者从其中获取消息进行消费  </span></span><br><span class="line">    <span class="keyword">private</span> DelayQueue&lt;Message&gt; queue;  </span><br><span class="line">  </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Consumer</span><span class="params">(DelayQueue&lt;Message&gt; queue)</span> </span>&#123;  </span><br><span class="line">        <span class="keyword">this</span>.queue = queue;  </span><br><span class="line">    &#125;  </span><br><span class="line">  </span><br><span class="line">    <span class="meta">@Override</span>  </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;  </span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;  </span><br><span class="line">            <span class="keyword">try</span> &#123;  </span><br><span class="line">                Message take = queue.take();  </span><br><span class="line">                System.out.println(<span class="string">&quot;消费消息id：&quot;</span> + take.getId() + <span class="string">&quot; 消息体：&quot;</span> + take.getBody());  </span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;  </span><br><span class="line">                e.printStackTrace();  </span><br><span class="line">            &#125;  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="测试类"><a href="#测试类" class="headerlink" title="测试类"></a>测试类</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.hsshy.beam.queue.delay;</span><br><span class="line">  </span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.DelayQueue;  </span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.ExecutorService;  </span><br><span class="line"><span class="keyword">import</span> java.util.concurrent.Executors;  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DelayQueueTest</span> </span>&#123;  </span><br><span class="line">     <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;    </span><br><span class="line">            <span class="comment">// 创建延时队列    </span></span><br><span class="line">            DelayQueue&lt;Message&gt; queue = <span class="keyword">new</span> DelayQueue&lt;Message&gt;();    </span><br><span class="line">            <span class="comment">// 添加延时消息,m1 延时3s    </span></span><br><span class="line">            Message m1 = <span class="keyword">new</span> Message(<span class="number">1</span>, <span class="string">&quot;world&quot;</span>, <span class="number">3000</span>);    </span><br><span class="line">            <span class="comment">// 添加延时消息,m2 延时10s    </span></span><br><span class="line">            Message m2 = <span class="keyword">new</span> Message(<span class="number">2</span>, <span class="string">&quot;hello&quot;</span>, <span class="number">10000</span>);    </span><br><span class="line">            <span class="comment">//将延时消息放到延时队列中  </span></span><br><span class="line">            queue.offer(m2);    </span><br><span class="line">            queue.offer(m1);    </span><br><span class="line">            <span class="comment">// 启动消费线程 消费添加到延时队列中的消息，前提是任务到了延期时间   </span></span><br><span class="line">            ExecutorService exec = Executors.newFixedThreadPool(<span class="number">1</span>);  </span><br><span class="line">            exec.execute(<span class="keyword">new</span> Consumer(queue));  </span><br><span class="line">            exec.shutdown();  </span><br><span class="line">        &#125;    </span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<p>【参考文献】：</p>
+<p><a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://www.cnblogs.com/KingIceMou/p/8075343.html">https://www.cnblogs.com/KingIceMou/p/8075343.html</a><br><a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=http://www.cnblogs.com/WangHaiMing/p/8798709.html">http://www.cnblogs.com/WangHaiMing/p/8798709.html</a><br><a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://gitee.com/52itstyle/spring-boot-seckill">https://gitee.com/52itstyle/spring-boot-seckill</a></p>
+<p><a target="_blank" rel="noopener" href="http://wsmajunfeng.iteye.com/blog/1629354">BlockingQueue（阻塞队列）详解</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/ed2b56bcba3d">ArrayBlockingQueue源码解析</a></p>
+<p><a target="_blank" rel="noopener" href="http://ifeve.com/java-blocking-queue/">Java中的阻塞队列</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Thread/" rel="tag"># Thread</a>
+              <a href="/tags/Multi-thread/" rel="tag"># Multi-thread</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/database/Redis/base/" rel="prev" title="Redis">
+      <i class="fa fa-chevron-left"></i> Redis
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/array/" rel="next" title="Java数组">
+      Java数组 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97%E4%B8%8E%E9%98%BB%E5%A1%9E%E6%A0%88"><span class="nav-number">1.</span> <span class="nav-text">阻塞队列与阻塞栈</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1%E3%80%81%E6%A0%B8%E5%BF%83%E6%96%B9%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">1、核心方法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2%E3%80%81%E9%98%BB%E5%A1%9E%E9%98%9F%E5%88%97%E7%9A%84%E6%88%90%E5%91%98"><span class="nav-number">3.</span> <span class="nav-text">2、阻塞队列的成员</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3%E3%80%81%E6%88%90%E5%91%98%E8%AF%A6%E8%A7%A3"><span class="nav-number">4.</span> <span class="nav-text">3、成员详解</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ArrayBlockingQueue"><span class="nav-number">4.1.</span> <span class="nav-text">ArrayBlockingQueue</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#LinkedBlockingQueue"><span class="nav-number">4.2.</span> <span class="nav-text">LinkedBlockingQueue</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DelayQueue"><span class="nav-number">4.3.</span> <span class="nav-text">DelayQueue</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PriorityBlockingQueue"><span class="nav-number">4.4.</span> <span class="nav-text">PriorityBlockingQueue</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SynchronousQueue"><span class="nav-number">4.5.</span> <span class="nav-text">SynchronousQueue</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#4%E3%80%81%E7%A7%92%E6%9D%80demo"><span class="nav-number">5.</span> <span class="nav-text">4、秒杀demo</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A7%92%E6%9D%80%E5%AF%B9%E5%88%97"><span class="nav-number">5.1.</span> <span class="nav-text">秒杀对列</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#springboot%E5%90%AF%E5%8A%A8%E6%97%B6%E6%89%A7%E8%A1%8C%E7%B1%BB"><span class="nav-number">5.2.</span> <span class="nav-text">springboot启动时执行类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#controller%E5%B1%82"><span class="nav-number">5.3.</span> <span class="nav-text">controller层</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#5%E3%80%81%E5%BB%B6%E6%97%B6%E9%98%9F%E5%88%97demo"><span class="nav-number">6.</span> <span class="nav-text">5、延时队列demo</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%88%E6%81%AF%E4%BD%93"><span class="nav-number">6.1.</span> <span class="nav-text">消息体</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B6%88%E8%B4%B9%E8%80%85"><span class="nav-number">6.2.</span> <span class="nav-text">消费者</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E7%B1%BB"><span class="nav-number">6.3.</span> <span class="nav-text">测试类</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

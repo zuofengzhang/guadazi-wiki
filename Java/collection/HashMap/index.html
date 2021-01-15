@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="HashMap jdk8和jdk7不一样，jdk7中没有红黑树,数组中只挂载链表。而jdk8中在桶容量大于等于64且链表节点数大于等于8的时候转换为红黑树。当红黑树节点数量小于6时又会转换为链表。 1234567891011121314151617181920&#x2F;&#x2F; 初始化容量，必须要2的n次幂static final int DEFAULT_INITIAL_CAPACITY &#x3D; 1 &lt;&amp;lt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java HashMap">
+<meta property="og:url" content="http://example.com/Java/collection/HashMap/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="HashMap jdk8和jdk7不一样，jdk7中没有红黑树,数组中只挂载链表。而jdk8中在桶容量大于等于64且链表节点数大于等于8的时候转换为红黑树。当红黑树节点数量小于6时又会转换为链表。 1234567891011121314151617181920&#x2F;&#x2F; 初始化容量，必须要2的n次幂static final int DEFAULT_INITIAL_CAPACITY &#x3D; 1 &lt;&amp;lt">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/Java/collection/HashMap/_v_images/20200709141031567_1720882596.png">
+<meta property="og:image" content="http://example.com/Java/collection/HashMap/_v_images/20200709130208070_533098526.png">
+<meta property="og:image" content="http://example.com/Java/collection/HashMap/_v_images/20200709130233960_485151198.png">
+<meta property="og:image" content="http://example.com/Java/collection/HashMap/_v_images/20200709130402587_2088260774.png">
+<meta property="og:image" content="http://example.com/Java/collection/HashMap/_v_images/20200709130419110_1073585697.png">
+<meta property="og:image" content="http://example.com/Java/collection/HashMap/_v_images/20200709130508438_597207385.png">
+<meta property="og:image" content="http://example.com/Java/collection/HashMap/_v_images/20200709130528192_2073437264.png">
+<meta property="og:image" content="http://example.com/Java/collection/HashMap/_v_images/20200709130901169_1202973639.png">
+<meta property="article:published_time" content="2016-05-12T00:44:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.798Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Collection">
+<meta property="article:tag" content="List">
+<meta property="article:tag" content="Map">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/Java/collection/HashMap/_v_images/20200709141031567_1720882596.png">
+
+<link rel="canonical" href="http://example.com/Java/collection/HashMap/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>Java HashMap | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/collection/HashMap/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java HashMap
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-05-12 08:44:00" itemprop="dateCreated datePublished" datetime="2016-05-12T08:44:00+08:00">2016-05-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="HashMap"><a href="#HashMap" class="headerlink" title="HashMap"></a>HashMap</h1><p><img src="_v_images/20200709141031567_1720882596.png"></p>
+<p>jdk8和jdk7不一样，jdk7中没有红黑树,数组中只挂载链表。而jdk8中在桶容量大于等于64且链表节点数大于等于8的时候转换为红黑树。当红黑树节点数量小于6时又会转换为链表。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 初始化容量，必须要2的n次幂</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> DEFAULT_INITIAL_CAPACITY = <span class="number">1</span> &lt;&lt; <span class="number">4</span>; <span class="comment">// aka 16</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 负载因子默认值</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">float</span> DEFAULT_LOAD_FACTOR = <span class="number">0.75f</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 需要从链表转换为红黑树时,链表节点的最小长度</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> TREEIFY_THRESHOLD = <span class="number">8</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 转换为红黑树时数组的最小容量</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> MIN_TREEIFY_CAPACITY = <span class="number">64</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// resize操作时,红黑树节点个数小于6则转换为链表。</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> UNTREEIFY_THRESHOLD = <span class="number">6</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// HashMap阈值，用于判断是否需要扩容(threshold = 容量*loadFactor)</span></span><br><span class="line"><span class="keyword">int</span> threshold;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 负载因子</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">float</span> loadFactor;</span><br></pre></td></tr></table></figure>
+
+<h2 id="HashMap解决hash冲突的方法"><a href="#HashMap解决hash冲突的方法" class="headerlink" title="HashMap解决hash冲突的方法"></a>HashMap解决hash冲突的方法</h2><h2 id="Java7的死循环问题"><a href="#Java7的死循环问题" class="headerlink" title="Java7的死循环问题"></a>Java7的死循环问题</h2><h2 id="Java8-中的HashMap扩容"><a href="#Java8-中的HashMap扩容" class="headerlink" title="Java8 中的HashMap扩容"></a>Java8 中的HashMap扩容</h2><p>而newTab[j + oldCap] = hiHead;这一步，是一个非常巧妙的地方，也是本文分析的重点。</p>
+<p>解释<br>经过观测可以发现，我们使用的是2次幂的扩展(指长度扩为原来2倍)，所以，经过rehash之后，元素的位置要么是在原位置，要么是在原位置再移动2次幂的位置。对应的就是下方的resize的注释。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * Initializes or doubles table size.  If null, allocates in</span><br><span class="line"> * accord with initial capacity target held in field threshold.</span><br><span class="line"> * Otherwise, because we are using power-of-two expansion, the</span><br><span class="line"> * elements from each bin must either stay at same index, or move</span><br><span class="line"> * with a power of two offset in the new table.</span><br><span class="line"> * &#x2F;</span><br></pre></td></tr></table></figure>
+
+<p>看下图可以明白这句话的意思，n为table的长度，图（a）表示扩容前的key1和key2两种key确定索引位置的示例，图（b）表示扩容后key1和key2两种key确定索引位置的示例，其中hash1是key1对应的哈希值(也就是根据key1算出来的hashcode值)与高位与运算的结果。</p>
+<p><img src="_v_images/20200709130208070_533098526.png"></p>
+<p><img src="_v_images/20200709130233960_485151198.png"></p>
+<p>因此，我们在扩充HashMap的时候，不需要像JDK1.7的实现那样重新计算hash，只需要看看原来的hash值新增的那个bit是1还是0就好了，是0的话索引没变，是1的话索引变成“原索引+oldCap”。<br>这个设计确实非常的巧妙，既省去了重新计算hash值的时间，而且同时，由于新增的1bit是0还是1可以认为是随机的，因此resize的过程，均匀的把之前的冲突的节点分散到新的bucket了。这一块就是JDK1.8新增的优化点。有一点注意区别，JDK1.7中rehash的时候，旧链表迁移新链表的时候，如果在新表的数组索引位置相同，则链表元素会倒置，但是从上图可以看出，JDK1.8不会倒置。</p>
+<p>再解释：为什么刚好原位置+原数组长度就会等于新的数组中的位置呢？<br>要搞明白这个问题首先要清楚</p>
+<p>HashMap的数组长度恒定为2的n次方，也就是说只会为2 4 8 16 。。。。。这种数。源码中有限制，也就是说即使你创建HashMap的时候是写的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Map&lt;String,String&gt; hashMap = <span class="keyword">new</span> HashMap&lt;&gt;(<span class="number">13</span>);</span><br></pre></td></tr></table></figure>
+<p>最后数组长度也会变成16，而不是你的13. 会取与你传入的数最近的一个2的n次方的数。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">HashMap</span><span class="params">(<span class="keyword">int</span> initialCapacity, <span class="keyword">float</span> loadFactor)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (initialCapacity &lt; <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Illegal initial capacity: &quot;</span> +</span><br><span class="line">                                               initialCapacity);</span><br><span class="line">        <span class="keyword">if</span> (initialCapacity &gt; MAXIMUM_CAPACITY)</span><br><span class="line">            initialCapacity = MAXIMUM_CAPACITY;</span><br><span class="line">        <span class="keyword">if</span> (loadFactor &lt;= <span class="number">0</span> || Float.isNaN(loadFactor))</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;Illegal load factor: &quot;</span> +</span><br><span class="line">                                               loadFactor);</span><br><span class="line">        <span class="keyword">this</span>.loadFactor = loadFactor;</span><br><span class="line">        <span class="keyword">this</span>.threshold = tableSizeFor(initialCapacity);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">tableSizeFor</span><span class="params">(<span class="keyword">int</span> cap)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> n = cap - <span class="number">1</span>;</span><br><span class="line">        n |= n &gt;&gt;&gt; <span class="number">1</span>;</span><br><span class="line">        n |= n &gt;&gt;&gt; <span class="number">2</span>;</span><br><span class="line">        n |= n &gt;&gt;&gt; <span class="number">4</span>;</span><br><span class="line">        n |= n &gt;&gt;&gt; <span class="number">8</span>;</span><br><span class="line">        n |= n &gt;&gt;&gt; <span class="number">16</span>;</span><br><span class="line">        <span class="keyword">return</span> (n &lt; <span class="number">0</span>) ? <span class="number">1</span> : (n &gt;= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>那么明确这一点有什么用呢？我们知道2,4,8,16,32所对应的二进制分别为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">2：  0000 0000 0000 0000 0000 0000 0000 0010</span><br><span class="line">4：  0000 0000 0000 0000 0000 0000 0000 0100</span><br><span class="line">8：  0000 0000 0000 0000 0000 0000 0000 1000</span><br><span class="line">16： 0000 0000 0000 0000 0000 0000 0001 0000</span><br><span class="line">32:  0000 0000 0000 0000 0000 0000 0010 0000</span><br></pre></td></tr></table></figure>
+<p>而我们知道，0在做位与运算时与任何一个数运算结果都恒为0</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">0 &amp; 1 &#x3D; 0</span><br><span class="line">0 &amp; 0 &#x3D; 0</span><br></pre></td></tr></table></figure>
+<p>故看源码中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">if ((e.hash &amp; oldCap) &#x3D;&#x3D; 0) </span><br></pre></td></tr></table></figure>
+<p>这一步是否为0只需要看元素的二进制数对应数组长度的二进制数1那个位置是否为0.<br>假设某个元素的hashcode为52：<br><img src="_v_images/20200709130402587_2088260774.png"></p>
+<p>而假设某个元素的hashcode为100：<br><img src="_v_images/20200709130419110_1073585697.png"><br>而通过源码可以看出0就还是在原来的位置。不为0就需要变动位置了，新的位置为元素在原数组的位置+原数组的长度，那么为什么是这样呢？我们接着看<br>看之前我们先使用jdk1.7中的方式重新进行hash运算<br>HashMap在运算元素位置的时候使用为 数组长度-1。也就是15.31这种数15 31 对应的二进制为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">15：0000 0000 0000 0000 0000 0000 0000 1111</span><br><span class="line">31: 0000 0000 0000 0000 0000 0000 0001 1111</span><br></pre></td></tr></table></figure>
+<p>这里需要注意的是hashmap中，计算元素位置采用的是length-1，而leng是用来判断元素是否需要更换位置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">if ((e.hash &amp; oldCap) &#x3D;&#x3D; 0)  &#x2F;&#x2F;仅仅是判断元素是否需要换位置</span><br></pre></td></tr></table></figure>
+<p>这一步才是计算位置，使用的是length-1.</p>
+<p>16扩容后变成32.那么1.7中计算元素的位置方式为 31&amp;52, 31&amp;100.我们把他与扩容前的15&amp;52。15&amp;100做对比看看<br><img src="_v_images/20200709130508438_597207385.png"><br>可以看到，由于每次扩容会把原数组的长度*2，那么再二进制上的表现就是多出来一个1，比如元数组16-1二进制为1111，那么扩容后的32-1的二进制就变成了1 1111<br>而扩容前和扩容后的位置是否一样完全取决于多出来的那一位与key值的hash做按位与运算之后的值值是为0还是1。为0则新位置与原位置相同，不需要换位置，不为零则需要换位置。</p>
+<p>而为什么新的位置是原位置+原数组长度，是因为每次换的位置只是前面多了一个1而已。那么新位置的变化的高位进1位。而每一次高位进1都是在加上原数组长度的过程。<br><img src="_v_images/20200709130528192_2073437264.png"><br>正好1+2=3 3+4=7 7+8=15 。也就验证了新的位置为原位置+原数组长度。</p>
+<p><img src="_v_images/20200709130901169_1202973639.png"></p>
+<p>[参考文献]<br>————————————————</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq32933432/java/article/details/86668385">jdk8之HashMap resize方法详解（深入讲解为什么1.8中扩容后的元素新位置为原位置+原数组长度）</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/3797c6f83d4f">JAVA8对HashMap扩容机制的优化</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Collection/" rel="tag"># Collection</a>
+              <a href="/tags/List/" rel="tag"># List</a>
+              <a href="/tags/Map/" rel="tag"># Map</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java/collection/ConcurrentHashMap/" rel="prev" title="探索 ConcurrentHashMap 高并发性的实现机制">
+      <i class="fa fa-chevron-left"></i> 探索 ConcurrentHashMap 高并发性的实现机制
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/io/BIO/" rel="next" title="Java IO">
+      Java IO <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#HashMap"><span class="nav-number">1.</span> <span class="nav-text">HashMap</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#HashMap%E8%A7%A3%E5%86%B3hash%E5%86%B2%E7%AA%81%E7%9A%84%E6%96%B9%E6%B3%95"><span class="nav-number">1.1.</span> <span class="nav-text">HashMap解决hash冲突的方法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java7%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E9%97%AE%E9%A2%98"><span class="nav-number">1.2.</span> <span class="nav-text">Java7的死循环问题</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java8-%E4%B8%AD%E7%9A%84HashMap%E6%89%A9%E5%AE%B9"><span class="nav-number">1.3.</span> <span class="nav-text">Java8 中的HashMap扩容</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

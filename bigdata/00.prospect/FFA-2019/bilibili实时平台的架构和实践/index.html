@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="bilibili实时平台的架构和实践文章地址 Saber实时计算平台 实时计算的痛点难点 各个部门语言种类和体系不通，管理维护非常困难 用户增长、渠道投放的分析等 BI 分析任务 需要对实时数仓的实时数据进行清洗 AI 推荐场景下的实时计算需求也比较强烈  痛点共性 开发门槛高  环境配置、语言基础、编码可靠性、代码质量，引擎多 运维成本  统一的监控告警体系: 计算延时、断流、波动、故障切换 A">
+<meta property="og:type" content="article">
+<meta property="og:title" content="guadazi">
+<meta property="og:url" content="http://example.com/bigdata/00.prospect/FFA-2019/bilibili%E5%AE%9E%E6%97%B6%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E5%92%8C%E5%AE%9E%E8%B7%B5/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="bilibili实时平台的架构和实践文章地址 Saber实时计算平台 实时计算的痛点难点 各个部门语言种类和体系不通，管理维护非常困难 用户增长、渠道投放的分析等 BI 分析任务 需要对实时数仓的实时数据进行清洗 AI 推荐场景下的实时计算需求也比较强烈  痛点共性 开发门槛高  环境配置、语言基础、编码可靠性、代码质量，引擎多 运维成本  统一的监控告警体系: 计算延时、断流、波动、故障切换 A">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/FFA-2019/bilibili%E5%AE%9E%E6%97%B6%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E5%92%8C%E5%AE%9E%E8%B7%B5/vx_images/3126005169499.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/FFA-2019/bilibili%E5%AE%9E%E6%97%B6%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E5%92%8C%E5%AE%9E%E8%B7%B5/vx_images/4025499727022.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/FFA-2019/bilibili%E5%AE%9E%E6%97%B6%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E5%92%8C%E5%AE%9E%E8%B7%B5/vx_images/307515516114.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/FFA-2019/bilibili%E5%AE%9E%E6%97%B6%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E5%92%8C%E5%AE%9E%E8%B7%B5/vx_images/1638852841865.jpeg">
+<meta property="article:published_time" content="2021-01-15T08:51:32.394Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:32.394Z">
+<meta property="article:author" content="aaronzhang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/bigdata/00.prospect/FFA-2019/bilibili%E5%AE%9E%E6%97%B6%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E5%92%8C%E5%AE%9E%E8%B7%B5/vx_images/3126005169499.png">
+
+<link rel="canonical" href="http://example.com/bigdata/00.prospect/FFA-2019/bilibili%E5%AE%9E%E6%97%B6%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E5%92%8C%E5%AE%9E%E8%B7%B5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title> | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/00.prospect/FFA-2019/bilibili%E5%AE%9E%E6%97%B6%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E5%92%8C%E5%AE%9E%E8%B7%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 16:51:32" itemprop="dateCreated datePublished" datetime="2021-01-15T16:51:32+08:00">2021-01-15</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="bilibili实时平台的架构和实践"><a href="#bilibili实时平台的架构和实践" class="headerlink" title="bilibili实时平台的架构和实践"></a>bilibili实时平台的架构和实践</h1><p><a target="_blank" rel="noopener" href="https://developer.aliyun.com/article/745196">文章地址</a></p>
+<p>Saber实时计算平台</p>
+<h2 id="实时计算的痛点"><a href="#实时计算的痛点" class="headerlink" title="实时计算的痛点"></a>实时计算的痛点</h2><h3 id="难点"><a href="#难点" class="headerlink" title="难点"></a>难点</h3><ul>
+<li>各个部门语言种类和体系不通，管理维护非常困难</li>
+<li>用户增长、渠道投放的分析等 BI 分析任务 需要对实时数仓的实时数据进行清洗</li>
+<li>AI 推荐场景下的实时计算需求也比较强烈</li>
+</ul>
+<h3 id="痛点共性"><a href="#痛点共性" class="headerlink" title="痛点共性"></a>痛点共性</h3><ul>
+<li>开发门槛高<br>  环境配置、语言基础、编码可靠性、代码质量，引擎多</li>
+<li>运维成本<br>  统一的监控告警体系: 计算延时、断流、波动、故障切换</li>
+<li>AI实时工程<br>  AI团队承担更多工程的工作</li>
+</ul>
+<h3 id="Saber-基于Flink的流式计算平台"><a href="#Saber-基于Flink的流式计算平台" class="headerlink" title="Saber-基于Flink的流式计算平台"></a>Saber-基于Flink的流式计算平台</h3><p>目标:</p>
+<ul>
+<li>对 SQL 进行了扩展，称为 BSQL。BSQL 扩展了 Flink 底层 SQL 的上层，即 SQL 语法层。</li>
+<li>DAG 拖拽编程,一方面用户可以通过画板来构建自己的 Pipeline，另一方面用户也可以使用原生 Jar 方式进行编码。</li>
+<li>作业的一体化托管运维</li>
+</ul>
+<p>场景:</p>
+<ul>
+<li>流式Joiner和维表Joiner: AI工程方向，解决了广告、搜索、推荐</li>
+<li>实时计算的特征支持，支持 Player 以及 CDN 的质量监控。包括直播、PCU、卡顿率、CDN 质量等；</li>
+<li>用户增长，即如何借助实时计算进行渠道分析、调整渠道投放效果；</li>
+<li>实时 ETL，包括 Boss 实时播报、实时大屏、看板等。</li>
+</ul>
+<h2 id="Saber的平台演进"><a href="#Saber的平台演进" class="headerlink" title="Saber的平台演进"></a>Saber的平台演进</h2><h3 id="平台架构"><a href="#平台架构" class="headerlink" title="平台架构"></a>平台架构</h3><p>实时传输 + 实时计算<br>统一管理元数据、血缘、权限和作业运维<br>基于BSQL</p>
+<p><img src="vx_images/3126005169499.png"></p>
+<p>实时传输有 APP 日志、数据库 Binlog、服务端日志或系统日志。bilibili 内部的 Lancer 系统解决数据落地到 Kafka 或 HDFS。<br>计算体系主要围绕 Saber 构建一套 BSQL，底层基于 YARN 进行调度管理。</p>
+<p>多种维表-MySQL、Redis、HBase<br>Flink的状态在RocksDB基础上，扩展了MapDB、Redis</p>
+<p>Flink 需要 IO 密集是很麻烦的问题，因为 Flink 的资源调度体系内有内存和 CPU，但 IO 单位未做统一管理。当某一个作业对 IO 有强烈的需求时，需要分配很多以 CPU 或内存为单位的资源，且未必能够很好的满足 IO 的扩展。所以本质上 bilibili 现阶段是将 IO 密集的资源的 State 转移到 Redis 上做缓解。数据经过 BSQL 计算完成之后传输到实时数仓，如 Kafka、HBase、ES 或 MySQL、TiDB。最终到 AI 或 BI、报表以及日志中心。</p>
+<h3 id="开发架构"><a href="#开发架构" class="headerlink" title="开发架构"></a>开发架构</h3><h4 id="开发结构图"><a href="#开发结构图" class="headerlink" title="开发结构图"></a>开发结构图</h4><p><img src="vx_images/4025499727022.png"></p>
+<ul>
+<li>Saber-Streamer: 作业提交和API管理</li>
+<li>BSQL: SQL的扩展和解释，包括自定义算子和个性算子</li>
+<li>运行时: Spark Streaming –&gt; Flink</li>
+</ul>
+<h4 id="平台设计"><a href="#平台设计" class="headerlink" title="平台设计"></a>平台设计</h4><ul>
+<li>对streaming workflows进行抽象</li>
+<li>数据规范化，保证schema完整</li>
+<li>BSQL解析层</li>
+<li>工厂效率</li>
+</ul>
+<p><strong>Streaming workflows</strong></p>
+<p>大数据计算引擎的本质是数据输入经过一个 function 得到输出，所以 function 本质是一个能够做 DAG 转换的 Transform。Saber 平台期望的流计算抽象形态是提供相应的 Source，计算过程中是一个 Transform 的 DAG，最后有一个 Sink 的输出。</p>
+<p><img src="vx_images/307515516114.png"></p>
+<p><strong>让数据说话</strong></p>
+<p>数据抽象化。计算过程中的数据源于数据集成的上报。用户首先需要在平台上构建一个输入的数据源。用户选择了一个对应的数据源，平台可以将其分发到 Kafka、 HBase、 Hive 等，并且在分发过程中要求用户定义 Schema。所以在数据集成过程中，可以轻松地管理输入语言的 Schema。计算过程中，用户选择 Input Source，比如选择一个 HBase 的表或 Kafka 的表，此时 Schema 已是强约束的。用户通过平台提供的 BSQL 或者 DAG 的方式进行结果表或者指标的输出。</p>
+<p><strong>BSQL通用设计</strong></p>
+<p>BSQL 更多是在 Source 和 Sink 上进行分装，支持 DDL 的分装。此处 DDL 参照阿里云对外资料进行了扩展。另外，BSQL 针对计算过程进行了优化，如针对算子计算的数据倾斜问题采取分桶 + hash 策略进行打扫。针对 distinct 类 count，非精准计算采用 Redis 的 HyperLogLog。</p>
+<p><strong>BSQL解析模型</strong></p>
+<p>将 SQL 转化成树。之后可以获取 SqlNode 节点。SqlNode 节点中有很多元数据信息。在 SqlNode 树的情况下实现 Table 解析器，将不同的 SqlNode 节点转化成 Flink 相应的 Streamer 进行映射。</p>
+<p><img src="vx_images/1638852841865.jpeg" alt="640-11.jpeg"></p>
+<p><strong>BSQL 执行流程</strong></p>
+<ul>
+<li>进行验证并构建 SQL 树。验证与构建主要是提取表名、字段信息，从元数据库中提取 schema 验证 SQL 的规范性、完整性和合法性</li>
+<li>将输入表和结果表注册到 Flink 的运行时态，其中还包括 UDF 和 watermark 信息的完善。</li>
+</ul>
+<p>另外，平台对 SQL 有一些扩展。第三块是扩展的核心工作，将 SQL 树中扩展的子树转换为新的节点，然后将 SQL 的 DAG 提交到 Flink 上运<br>行。</p>
+<p><strong>作业测试</strong></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/00.prospect/rtc/%E5%AE%9E%E6%97%B6%E5%BC%80%E5%8F%91/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/00.prospect/FFA-2019/Flink%E5%9C%A8%E5%BF%AB%E6%89%8B%E5%AE%9E%E6%97%B6%E5%A4%9A%E7%BB%B4%E5%88%86%E6%9E%90%E5%9C%BA%E6%99%AF%E7%9A%84%E5%BA%94%E7%94%A8/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#bilibili%E5%AE%9E%E6%97%B6%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E5%92%8C%E5%AE%9E%E8%B7%B5"><span class="nav-number">1.</span> <span class="nav-text">bilibili实时平台的架构和实践</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E6%97%B6%E8%AE%A1%E7%AE%97%E7%9A%84%E7%97%9B%E7%82%B9"><span class="nav-number">1.1.</span> <span class="nav-text">实时计算的痛点</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9A%BE%E7%82%B9"><span class="nav-number">1.1.1.</span> <span class="nav-text">难点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%97%9B%E7%82%B9%E5%85%B1%E6%80%A7"><span class="nav-number">1.1.2.</span> <span class="nav-text">痛点共性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Saber-%E5%9F%BA%E4%BA%8EFlink%E7%9A%84%E6%B5%81%E5%BC%8F%E8%AE%A1%E7%AE%97%E5%B9%B3%E5%8F%B0"><span class="nav-number">1.1.3.</span> <span class="nav-text">Saber-基于Flink的流式计算平台</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Saber%E7%9A%84%E5%B9%B3%E5%8F%B0%E6%BC%94%E8%BF%9B"><span class="nav-number">1.2.</span> <span class="nav-text">Saber的平台演进</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%B3%E5%8F%B0%E6%9E%B6%E6%9E%84"><span class="nav-number">1.2.1.</span> <span class="nav-text">平台架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%8F%91%E6%9E%B6%E6%9E%84"><span class="nav-number">1.2.2.</span> <span class="nav-text">开发架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BC%80%E5%8F%91%E7%BB%93%E6%9E%84%E5%9B%BE"><span class="nav-number">1.2.2.1.</span> <span class="nav-text">开发结构图</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%B9%B3%E5%8F%B0%E8%AE%BE%E8%AE%A1"><span class="nav-number">1.2.2.2.</span> <span class="nav-text">平台设计</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

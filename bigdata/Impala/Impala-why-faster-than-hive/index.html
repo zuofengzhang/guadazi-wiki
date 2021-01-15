@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="[TOC] Impala How does impala provide faster query response compared to hive  Impala &#x3D; SQL on HDFSHive &#x3D; SQL on Hadoop impala darmon running on datanodecache some of the data that is in HDFS why fast w">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Impala: why faster than hive">
+<meta property="og:url" content="http://example.com/bigdata/Impala/Impala-why-faster-than-hive/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="[TOC] Impala How does impala provide faster query response compared to hive  Impala &#x3D; SQL on HDFSHive &#x3D; SQL on Hadoop impala darmon running on datanodecache some of the data that is in HDFS why fast w">
+<meta property="og:locale">
+<meta property="article:published_time" content="2016-08-10T06:58:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:32.661Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Impala">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/bigdata/Impala/Impala-why-faster-than-hive/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>Impala: why faster than hive | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Impala/Impala-why-faster-than-hive/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Impala: why faster than hive
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:32" itemprop="dateModified" datetime="2021-01-15T16:51:32+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>[TOC]</p>
+<h1 id="Impala"><a href="#Impala" class="headerlink" title="Impala"></a>Impala</h1><blockquote>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/16755599/how-does-impala-provide-faster-query-response-compared-to-hive">How does impala provide faster query response compared to hive</a></p>
+</blockquote>
+<p>Impala = SQL on HDFS<br>Hive = SQL on Hadoop</p>
+<p>impala darmon running on datanode<br>cache some of the data that is in HDFS</p>
+<h2 id="why-fast"><a href="#why-fast" class="headerlink" title="why fast"></a>why fast</h2><blockquote>
+<p>why Impala is faster than Hive in Query processing? Below are the some key points.</p>
+</blockquote>
+<ul>
+<li>While processing SQL-like queries, Impala does not write intermediate results on disk(like in Hive MapReduce); instead full SQL processing is done in memory, which makes it faster.</li>
+<li>With Impala, the query starts its execution instantly compared to MapReduce, which may take significant time to start processing larger SQL queries and this adds more time in processing.</li>
+<li>Impala Query Planner uses smart algorithms to execute queries in multiple stages in parallel nodes to provide results faster, avoiding sorting and shuffle steps, which may be unnecessary in most of the cases.</li>
+<li>Impala has information about each data block in HDFS, so when processing the query, it takes advantage of this knowledge to distribute queries more evenly in all DataNodes.</li>
+<li>There exists Impala daemon, which runs on each DataNode. These are responsible for processing queries.When query submitted, impalad(Impala daemon) reads and writes to data file and parallelizes the query by distributing the work to all other Impala nodes in the Impala cluster.</li>
+<li>Another key reason for fast performance is that Impala first generates assembly-level code for each query. The assembly code executes faster than any other code framework because while Impala queries are running natively in memory, having a framework will add additional delay in the execution due to the framework overhead.</li>
+</ul>
+<ol>
+<li>在处理类似sql的查询时，Impala不会在磁盘上写入中间结果(如Hive MapReduce);相反，SQL处理完全是在内存中完成的，这使它更快。</li>
+<li>不使用map/reduce, 将数据fork到jvm和流量穿透是非常昂贵的。Impala将查询任务分割成子任务，在数据所在的节点上，各个节点独立并行运行，最后再单个节点上汇总结果。</li>
+<li>与MapReduce相比，Impala查询立即开始执行，MapReduce可能会花费大量时间来开始处理较大的SQL查询，这会增加处理时间。</li>
+<li>Impala Query Planner使用智能算法在并行节点中的多个stage执行查询，以更快地提供结果，避免sortinh和shuffle步骤，这在大多数情况下可能是不必要的。</li>
+<li>Impala拥有关于HDFS每个数据块的信息，因此在处理查询时，它利用这些知识在所有数据节点中更均匀地分布查询。</li>
+<li>存在在每个DataNode上运行的Impala守护进程。它们负责处理查询。当提交查询时，impalad(Impala守护进程)对数据文件进行读写操作，并通过将工作分配给Impala集群中的所有其他Impala节点来并行化查询。</li>
+<li>快速性能的另一个关键原因是Impala首先为每个查询生成汇编级别的代码。汇编代码的执行速度比任何其他代码框架都快，因为Impala查询在本机的内存中运行时，拥有一个框架会由于框架开销而增加额外的执行延迟。</li>
+<li>它使用hdfs存储，对于大文件来说速度很快。它尽可能多地缓存查询、结果和数据。</li>
+<li>它支持新的文件格式，如parquet，即列式存储格式。使用这种格式，数据扫描量更少</li>
+</ol>
+<p>Impala在内存中的处理所有查询，因此节点上的内存限制肯定是一个因素。必须有足够的内存来支持生成的数据集，在复杂的连接操作期间，数据集可能会成倍增长。如果查询开始处理数据，结果数据集无法装入可用内存，则查询将失败。</p>
+<h3 id="disadvantage"><a href="#disadvantage" class="headerlink" title="disadvantage"></a>disadvantage</h3><ol>
+<li>不支持UDF和自定义序列化</li>
+<li>impala查询是HiveSQL的子集</li>
+<li>hive支持存储和查询，而impala只能查询</li>
+</ol>
+<h2 id="Impala-doesn’t-provide-fault-tolerance-compared-to-Hive"><a href="#Impala-doesn’t-provide-fault-tolerance-compared-to-Hive" class="headerlink" title="Impala doesn’t provide fault-tolerance compared to Hive"></a>Impala doesn’t provide fault-tolerance compared to Hive</h2><p>so if there is a problem during your query then it’s gone. </p>
+<blockquote>
+<p>Definitely for ETL type of jobs where failure of one job would be costly I would recommend Hive, but Impala can be awesome for small ad-hoc queries, for example for data scientists or business analysts who just want to take a look and analyze some data without building robust jobs. Also from my personal experience, Impala is still not very mature, and I’ve seen some crashes sometimes when the amount of data is larger than available memory.</p>
+</blockquote>
+<p>对于ETL类型的工作，如果一个工作的失败代价很高，我会推荐Hive，但是Impala对于小的特别查询来说可能是很棒的，例如对于那些只想查看和分析一些数据而不想构建健壮工作的数据科学家或业务分析师来说。从我个人的经验来看，Impala还不太成熟，有时当数据量超过可用内存时，我会看到一些崩溃。</p>
+<blockquote>
+<p>This means if your join, sort, or group by didn’t fit in memory, Impala would just kill the query. No warning. Just dead. Hive would never do that because it’s underlying processing architecture has no problem doing that.</p>
+</blockquote>
+<p>这就意味着，内存不能承载join sort或group运算，Impala会无告警的立即kill掉查询，直接失败。而hive离线处理架构可以轻松处理，不会死掉</p>
+<h2 id="MPP"><a href="#MPP" class="headerlink" title="MPP"></a>MPP</h2><blockquote>
+<p>Impala uses MPP(massively parallel processing) unlike Hive which uses MapReduce under the hood, which involves some initial overheads (as Charles sir has specified). Massively parallel processing is a type of computing that uses many separate CPUs running in parallel to execute a single program where each CPU has it’s own dedicated memory. The very fact that Impala, being MPP based, doesn’t involve the overheads of a MapReduce jobs viz. job setup and creation, slot assignment, split creation, map generation etc., makes it blazingly fast.</p>
+</blockquote>
+<p>Impala提供了更快的响应，因为它使用了MPP(大规模并行处理)，而Hive在底层使用了MapReduce，这涉及到一些初始开销(正如Charles sir所指定的)。大规模并行处理是一种计算类型，它使用许多单独的并行运行的CPU来执行单个程序，其中每个CPU都有自己的专用内存。Impala是基于MPP的，它不涉及MapReduce作业的开销，即作业设置和创建、插槽分配、分割创建、地图生成等，这使得它的运行速度非常快。</p>
+<blockquote>
+<p>But that doesn’t mean that Impala is the solution to all your problems. Being highly memory intensive (MPP), it is not a good fit for tasks that require heavy data operations like joins etc., as you just can’t fit everything into the memory. This is where Hive is a better fit.</p>
+</blockquote>
+<p>MPP 作为高度内存密集型的运算，因为无法将所有的数据放入内存，并不适合需要大数据量的操作(如join)；反而Hive更适合</p>
+<p>实时的对部分数据即时查询适合Impala，对大数据的批处理请求，适合Hive</p>
+<h2 id="Impala-not-always-faster-than-hive"><a href="#Impala-not-always-faster-than-hive" class="headerlink" title="Impala not always faster than hive"></a>Impala not always faster than hive</h2><blockquote>
+<p>In my current job we used to make all the querys with Impala, the biggest query (like 800 million rows after 8 joins) was taking from 2 to 20 mins (depending if the tables where already on memory or not) I migrate that Query to Hive, partitioned the tables and create buckets on them, now it takes 3–4 mins, It may be a few more seconds than the best 2 mins with Impala but it’s much more fast if we consider that most of the time Impala takes 12–18 mins.</p>
+</blockquote>
+<p>在我目前的工作中，使用Impala进行所有的查询，最大的查询(比如8个连接后的8亿行)需要2到20分钟(取决于表是否已经在内存中);我将该查询迁移到Hive，对表进行分区并在其上创建桶，现在需要3到4分钟，这可能比Impala最好的2分钟多几秒钟，但如果我们考虑Impala大部分时间需要12到18分钟，速度会快得多。 </p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Impala/" rel="tag"># Impala</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/clickhouse/ClickHouse/" rel="prev" title="ClickHouse： one of the fastest olap engine">
+      <i class="fa fa-chevron-left"></i> ClickHouse： one of the fastest olap engine
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/Hadoop/HDFS/" rel="next" title="HDFS基础">
+      HDFS基础 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Impala"><span class="nav-number">1.</span> <span class="nav-text">Impala</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#why-fast"><span class="nav-number">1.1.</span> <span class="nav-text">why fast</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#disadvantage"><span class="nav-number">1.1.1.</span> <span class="nav-text">disadvantage</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Impala-doesn%E2%80%99t-provide-fault-tolerance-compared-to-Hive"><span class="nav-number">1.2.</span> <span class="nav-text">Impala doesn’t provide fault-tolerance compared to Hive</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#MPP"><span class="nav-number">1.3.</span> <span class="nav-text">MPP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Impala-not-always-faster-than-hive"><span class="nav-number">1.4.</span> <span class="nav-text">Impala not always faster than hive</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

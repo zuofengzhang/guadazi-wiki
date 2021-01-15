@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Spark-Joinshuffle join VS map join在对大表与大表之间进行连接操作时，通常都会触发 Shuffle Join，两表的所有分区节点会进行 All-to-All 的通讯，这种查询通常比较昂贵，会对网络 IO 会造成比较大的负担。  而对于大表和小表的连接操作，Spark 会在一定程度上进行优化，如果小表的数据量小于 Worker Node 的内存空间，Spark 会考虑">
+<meta property="og:type" content="article">
+<meta property="og:title" content="guadazi">
+<meta property="og:url" content="http://example.com/bigdata/Spark/Spark-join/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="Spark-Joinshuffle join VS map join在对大表与大表之间进行连接操作时，通常都会触发 Shuffle Join，两表的所有分区节点会进行 All-to-All 的通讯，这种查询通常比较昂贵，会对网络 IO 会造成比较大的负担。  而对于大表和小表的连接操作，Spark 会在一定程度上进行优化，如果小表的数据量小于 Worker Node 的内存空间，Spark 会考虑">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/bigdata/Spark/Spark-join/_v_images/20201009194634406_1569670303.png">
+<meta property="og:image" content="http://example.com/bigdata/Spark/Spark-join/_v_images/20201009194633499_170639920">
+<meta property="article:published_time" content="2021-01-15T08:51:32.709Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:32.709Z">
+<meta property="article:author" content="aaronzhang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/bigdata/Spark/Spark-join/_v_images/20201009194634406_1569670303.png">
+
+<link rel="canonical" href="http://example.com/bigdata/Spark/Spark-join/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title> | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-join/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 16:51:32" itemprop="dateCreated datePublished" datetime="2021-01-15T16:51:32+08:00">2021-01-15</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Spark-Join"><a href="#Spark-Join" class="headerlink" title="Spark-Join"></a>Spark-Join</h1><h2 id="shuffle-join-VS-map-join"><a href="#shuffle-join-VS-map-join" class="headerlink" title="shuffle join VS map join"></a>shuffle join VS map join</h2><p>在对大表与大表之间进行连接操作时，通常都会触发 <code>Shuffle Join</code>，两表的所有分区节点会进行 <code>All-to-All</code> 的通讯，这种查询通常比较昂贵，会对网络 IO 会造成比较大的负担。</p>
+<p><img src="_v_images/20201009194634406_1569670303.png" alt="https://github.com/heibaiying"></p>
+<p>而对于大表和小表的连接操作，Spark 会在一定程度上进行优化，如果小表的数据量小于 Worker Node 的内存空间，Spark 会考虑将小表的数据广播到每一个 Worker Node，在每个工作节点内部执行连接计算，这可以降低网络的 IO，但会加大每个 Worker Node 的 CPU 负担。</p>
+<p><img src="_v_images/20201009194633499_170639920"></p>
+<p>是否采用广播方式进行 <code>Join</code> 取决于程序内部对小表的判断，如果想明确使用广播方式进行 <code>Join</code>，则可以在 DataFrame API 中使用 <code>broadcast</code> 方法指定需要广播的小表：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">empDF.join(broadcast(deptDF), joinExpression).show()</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<p>作者：heibaiying<br>链接：<a target="_blank" rel="noopener" href="https://juejin.im/post/6844903950349500430">https://juejin.im/post/6844903950349500430</a><br>来源：掘金<br>著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。</p>
+<h2 id="map-join小表误判"><a href="#map-join小表误判" class="headerlink" title="map-join小表误判"></a>map-join小表误判</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> a是一个几亿行的大表，b是一个只有几十行的小表。a和b都是由hive创建的表</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">where</span> id <span class="keyword">not</span> <span class="keyword">in</span> (<span class="keyword">select</span> id <span class="keyword">from</span> b)</span><br></pre></td></tr></table></figure>
+<p>在spark ui中看到了该sql的执行计划，该sql语句执行了Map-side Join操作，但是spark把a表当成了小表，准备把a表broadcast到其他的节点，然后就是一直卡在这步broadcast操作上。 造成上述问题的原因就是spark认为a表是一个小表，但是在spark ui上明显可以看到a表读了很多的行。但是为什么spark还会认为a表是一个小表呢？原因是spark判断一个hive表的大小会用hive的metastore数据来判断，因为我们的a表没有执行过ANALYZE TABLE，自然a表的metastore里面的数据就不准确了。</p>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><ol>
+<li><p>设置<code>spark.sql.statistics.fallBackToHdfs=True</code><br>该参数能让spark直接读取hdfs的文件大小来判断一个表达大小，从而代替从metastore里面的获取的关于表的信息。这样spark自然能正确的判断出表的大小，从而使用b表来进行broadcast。</p>
+</li>
+<li><p>使用hint<br>在使用sql语句执行的时候在sql语句里面加上mapjoin的注释，也能够达到相应的效果，比如把上述的sql语句改成:</p>
+</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="comment">/*+ BROADCAST (b) */</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">where</span> id <span class="keyword">not</span> <span class="keyword">in</span> (<span class="keyword">select</span> id <span class="keyword">from</span> b)</span><br></pre></td></tr></table></figure>
+<p>这样spark也会使用b表来进行broadcast。</p>
+<ol start="3">
+<li>使用spark代码的方式<br>使用broadcast函数就能达到此效果：</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pyspark.sql.functions import broadcast</span><br><span class="line">broadcast(spark.table(&quot;b&quot;)).<span class="keyword">join</span>(spark.table(&quot;a&quot;), &quot;id&quot;).<span class="keyword">show</span>()</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>备注</li>
+</ol>
+<ul>
+<li><p>只有当要进行join的表的大小小于spark.sql.autoBroadcastJoinThreshold（默认是10M）的时候，才会进行mapjoin。</p>
+</li>
+<li><p>Impala通过hint和执行表的位置调整也能够优化join操作，通过explain也可以查看sql的执行计划，然后再进行优化。</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/Spark/Spark%E8%B5%84%E6%BA%90%E8%AF%84%E4%BC%B0/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/Spark/Spark-task_split_block/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Spark-Join"><span class="nav-number">1.</span> <span class="nav-text">Spark-Join</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#shuffle-join-VS-map-join"><span class="nav-number">1.1.</span> <span class="nav-text">shuffle join VS map join</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#map-join%E5%B0%8F%E8%A1%A8%E8%AF%AF%E5%88%A4"><span class="nav-number">1.2.</span> <span class="nav-text">map-join小表误判</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.1.</span> <span class="nav-text">解决方法</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="SQLSQL(Structured Query Language, 结构化查询语言)可以分为DDL(data definition language,数据定义语言) TPL(事务处理语言)  DML(data manipulation language, 数据操作语言)和DCL(data control language, 数据控制语言)。 其主要的语句有:  DDL(data definitio">
+<meta property="og:type" content="article">
+<meta property="og:title" content="数据库设计">
+<meta property="og:url" content="http://example.com/database/concept/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="SQLSQL(Structured Query Language, 结构化查询语言)可以分为DDL(data definition language,数据定义语言) TPL(事务处理语言)  DML(data manipulation language, 数据操作语言)和DCL(data control language, 数据控制语言)。 其主要的语句有:  DDL(data definitio">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/images/j2ee/database/ER-Components.png">
+<meta property="og:image" content="http://example.com/images/j2ee/database/ER-sample01.png">
+<meta property="og:image" content="http://example.com/images/j2ee/database/1NF-sample01.png">
+<meta property="og:image" content="http://example.com/images/j2ee/database/2NF-sample01.png">
+<meta property="og:image" content="http://example.com/images/j2ee/database/BCNF-sample01.png">
+<meta property="article:published_time" content="2016-04-06T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.917Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="database">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/j2ee/database/ER-Components.png">
+
+<link rel="canonical" href="http://example.com/database/concept/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>数据库设计 | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/concept/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          数据库设计
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-04-07 00:00:00" itemprop="dateCreated datePublished" datetime="2016-04-07T00:00:00+08:00">2016-04-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="SQL"><a href="#SQL" class="headerlink" title="SQL"></a>SQL</h1><p>SQL(Structured Query Language, 结构化查询语言)可以分为DDL(data definition language,数据定义语言) TPL(事务处理语言)  DML(data manipulation language, 数据操作语言)和DCL(data control language, 数据控制语言)。</p>
+<p>其主要的语句有:</p>
+<ol>
+<li>DDL(data definition language,数据定义语言) 创建、删除和更改数据库对象<ol>
+<li>创建 删除 修改数据库<ol>
+<li> creat database</li>
+<li> drop database</li>
+<li> alter database</li>
+</ol>
+</li>
+<li>创建 删除 修改数据表<ol>
+<li> create table</li>
+<li> alter table</li>
+<li> drop table</li>
+</ol>
+</li>
+<li>创建 删除索引<ol>
+<li> create index</li>
+<li> drop index</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>DML(data manipulation language, 数据操作语言) 查询和更新指令都成了SQL的DML部分<ol>
+<li>select 从表或试图中检索数据</li>
+<li>update 更改表中的数据</li>
+<li>delete 从表中删除数据行</li>
+<li>insert into  添加数据行到表</li>
+</ol>
+</li>
+<li>DCL(data control language, 数据控制语言)<ol>
+<li>用于规定数据库用户的各种权限<ol>
+<li>grant 将权限或角色授予用户或其他角色</li>
+<li>revoke 从用户或数据库角色回收权限</li>
+</ol>
+</li>
+<li>数据库事务控制<ol>
+<li>commit 把当前事务所有的更改写入磁盘</li>
+<li>rollback 作废上次提交依赖的所有的更改</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<h1 id="数据库设计"><a href="#数据库设计" class="headerlink" title="数据库设计"></a>数据库设计</h1><p>数据库设计可以分为需求分析、逻辑分析、物理设计和维护优化四个阶段。</p>
+<p>数据库的基本名词：</p>
+<ul>
+<li>关系：一个关系对应通常所说的一张表</li>
+<li>元组：表中的一行即为一个元组</li>
+<li>属性：表中的一列即为一个属性；每一个属性都有一个名称，称为属性名。</li>
+<li>候选码：表中的某个属性组，它可以唯一确定一个元组。</li>
+<li>主码：一个关系有多个候选码，确定其中一个为主码</li>
+<li>域：属性的取值范围</li>
+<li>分量：元组中的一个属性值。</li>
+</ul>
+<h2 id="ER图"><a href="#ER图" class="headerlink" title="ER图"></a>ER图</h2><p>ER图中各符号的含义：</p>
+<p><img src="/images/j2ee/database/ER-Components.png"></p>
+<p>在这里以订单、用户、商品、供应商以及购物车的关系构建ER图</p>
+<p><img src="/images/j2ee/database/ER-sample01.png"></p>
+<p>矩形框表示实体, 即图中的订单、用户、商品、供应商以及购物车。<br>椭圆表示视图的属性， 如用户的用户ID、用户名、密码、昵称和身份证。椭圆中的文本表示属性的名称，文本带下划线表示为主键。<br>线段将属性与实体集相互连接，表示属性是实体的。将实体间相互连接，表示实体间的对应关系。<br>线段的两端标示1或M，表示是一对一、一对多或者多对多的关系。</p>
+<h2 id="数据操作异常与数据冗余"><a href="#数据操作异常与数据冗余" class="headerlink" title="数据操作异常与数据冗余"></a>数据操作异常与数据冗余</h2><p>数据操作异常是判断数据库设计是否合理的依据。</p>
+<ul>
+<li>插入异常： 如果某实体随着另一个实体的存在而存在， 即缺少某个实体时无法表示这个实体，那么这个表就存在插入异常。</li>
+<li>更新异常： 如果更改表所对应的某个实体实例的单独属性时，需要将多行更新，那么就说这个表存在更新异常。</li>
+<li>删除异常： 如果删除表的某一行来反应某实体实例。失效时导致另一个不同实体实例信息丢失，那么这个表存在删除异常。</li>
+</ul>
+<p>数据冗余：<br>是指相同的数据在多个地方存在， 或者说表中的某个列可以有其他列计算得到，这样就说表中存在着数据冗余。</p>
+<h2 id="三范式"><a href="#三范式" class="headerlink" title="三范式"></a>三范式</h2><h3 id="第一范式-1NF"><a href="#第一范式-1NF" class="headerlink" title="第一范式(1NF)"></a>第一范式(1NF)</h3><p>字段具有原子性,不可再分。所有关系型数据库系统都满足第一范式。<br>数据库表中的字段都是单一属性的，不可再分。例如，姓名字段，其中的姓和名必须作为一个整体，无法区分哪部分是姓，哪部分是名，如果要区分出姓和名，必须设计成两个独立的字段。</p>
+<p>这个单一属性是由基本的数据类型所构成的， 如整数，浮点数，字符串等；<br>换句话说： <strong>第一范式要求数据库中的表都是二维表</strong></p>
+<p>如下表中</p>
+<p><img src="/images/j2ee/database/1NF-sample01.png"></p>
+<p>第二个表格中， 用户信息列又包含<code>姓名</code> <code>电话</code>两个列。 不符合第一范式的要求</p>
+<h3 id="第二范式-2NF"><a href="#第二范式-2NF" class="headerlink" title="第二范式(2NF)"></a>第二范式(2NF)</h3><p>满足第二范式（2NF）必须先满足第一范式（1NF）。<br>要求数据库表中的每个实例或行必须可以被惟一地区分。通常需要为表加上一个列，以存储各个实例的惟一标识。这个惟一属性列被称为主关键字或主键。<br>第二范式（2NF）要求实体的属性完全依赖于主关键字。所谓完全依赖是指不能存在仅依赖主关键字一部分的属性，如果存在，那么这个属性和主关键字的这一部分应该分离出来形成一个新的实体，新实体与原实体之间是一对多的关系。为实现区分通常需要为表加上一个列，以存储各个实例的惟一标识。简而言之，第二范式就是非主属性非部分依赖于主关键字。</p>
+<p><img src="/images/j2ee/database/2NF-sample01.png"></p>
+<p>由于供应商和商品之间是多对多的关系<br>所以只有使用<code>商品名称</code>和<code>供应商名称</code>才可以唯一表示出一件商品。<br>也就是商品名称和供应商名称是一组组合关键字。<br>上表的依赖关系为:</p>
+<ul>
+<li>(商品名称)-&gt;(价格、描述、重量、商品有效期)</li>
+<li>(供应商名称)-&gt;(供应商电话)</li>
+</ul>
+<p>存在的问题：</p>
+<ol>
+<li>插入异常</li>
+<li>删除异常</li>
+<li>更新异常</li>
+<li>数据冗余</li>
+</ol>
+<h3 id="第三范式"><a href="#第三范式" class="headerlink" title="第三范式"></a>第三范式</h3><p>必须先满足第二范式（2NF）。简而言之，第三范式（3NF）要求一个数据库表中不包含已在其它表中已包含的非主关键字信息。<br>所以第三范式具有如下特征：<br>    1. 每一列只有一个值<br>    2. 每一行都能区分。<br>    3. 每一个表都不包含其他表已经包含的非主关键字信息。</p>
+<p>例如，帖子表中只能出现发帖人的id，而不能出现发帖人的id，还同时出现发帖人姓名，否则，只要出现同一发帖人id的所有记录，它们中的姓名部分都必须严格保持一致，这就是数据冗余。</p>
+<p>如果数据表中不存在非关键字段对任一候选字段的传递函数依赖则符合第三范式。</p>
+<h3 id="BC范式-Boyce-Codd范式"><a href="#BC范式-Boyce-Codd范式" class="headerlink" title="BC范式(Boyce.Codd范式)"></a>BC范式(Boyce.Codd范式)</h3><p>在第三范式的基础上，数据库表中如果不存在任何字段对任一候选关键字段的传递函数依赖则符合BC范式。<br>也就是说如果是符合关键字，则符合关键字之间也不能存在函数依赖关系。</p>
+<p><img src="/images/j2ee/database/BCNF-sample01.png"></p>
+<p>上表中存在的下列关系不符合BCNF:</p>
+<ul>
+<li>(供应商)-&gt;(供应商联系人)</li>
+<li>(供应商联系人)-&gt;(供应商)</li>
+<li>并且存在数据存在异常及数据冗余</li>
+</ul>
+<h2 id="数据库锁"><a href="#数据库锁" class="headerlink" title="数据库锁"></a>数据库锁</h2><p>锁的类型有三种：</p>
+<ul>
+<li>共享（S)锁：多个事务可封锁一个共享页；任何事务都不能修改该页； 通常是该页被读取完毕，S锁立即被释放。 </li>
+<li>排它（X)锁：仅允许一个事务封锁此页；其他任何事务必须等到X锁被释放才能对该页进行访问；X锁一直到事务结束才能被释放。 </li>
+<li>更新（U)锁：用来预定要对此页施加X锁，它允许其他事务读，但不允许再施加U锁或X锁；当被读取的页将要被更新时，则升级为X锁；U锁一直到事务结束时才能被释放。</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="http://www.cnblogs.com/zhouqianhua/archive/2011/04/15/2017049.html">SQLServer中的数据库锁</a></p>
+<p><a target="_blank" rel="noopener" href="http://www.cnblogs.com/ggjucheng/archive/2012/11/14/2770445.html">MySQL中的数据库锁</a></p>
+<p><a target="_blank" rel="noopener" href="http://tec.5lulu.com/detail/104d2n2wtryip85cd.html">数据库锁原理</a></p>
+<h2 id="TODOs"><a href="#TODOs" class="headerlink" title="TODOs"></a>TODOs</h2><ol>
+<li>事务 各个层次的操作</li>
+<li>键 唯一键 主键 外键</li>
+<li>MySQL集群</li>
+<li>事务隔离级别</li>
+</ol>
+<hr>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/database/" rel="tag"># database</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java/io/NIO/" rel="prev" title="Java NIO(占坑)">
+      <i class="fa fa-chevron-left"></i> Java NIO(占坑)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/io/java-XML-JSON/" rel="next" title="Java IO之XML与JSON解析">
+      Java IO之XML与JSON解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#SQL"><span class="nav-number">1.</span> <span class="nav-text">SQL</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BE%E8%AE%A1"><span class="nav-number">2.</span> <span class="nav-text">数据库设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ER%E5%9B%BE"><span class="nav-number">2.1.</span> <span class="nav-text">ER图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C%E5%BC%82%E5%B8%B8%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%86%97%E4%BD%99"><span class="nav-number">2.2.</span> <span class="nav-text">数据操作异常与数据冗余</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E8%8C%83%E5%BC%8F"><span class="nav-number">2.3.</span> <span class="nav-text">三范式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E8%8C%83%E5%BC%8F-1NF"><span class="nav-number">2.3.1.</span> <span class="nav-text">第一范式(1NF)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E8%8C%83%E5%BC%8F-2NF"><span class="nav-number">2.3.2.</span> <span class="nav-text">第二范式(2NF)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E8%8C%83%E5%BC%8F"><span class="nav-number">2.3.3.</span> <span class="nav-text">第三范式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BC%E8%8C%83%E5%BC%8F-Boyce-Codd%E8%8C%83%E5%BC%8F"><span class="nav-number">2.3.4.</span> <span class="nav-text">BC范式(Boyce.Codd范式)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E9%94%81"><span class="nav-number">2.4.</span> <span class="nav-text">数据库锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TODOs"><span class="nav-number">2.5.</span> <span class="nav-text">TODOs</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

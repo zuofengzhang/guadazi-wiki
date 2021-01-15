@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="正则表达式元字符 \w 匹配一个字符，可以是数字、下划线、字母或者汉字 \b 匹配的是位置，它的前一个字符和后一个字符不全是(一个是, 一个不是或不存在) \w   \bhi\b 匹配hi单词， 对于history和him都不匹配 \bhi\b.*\blucy\b hi单词后面若干字符之后是lucy   . 匹配除了换行符之外的任一字符\bhi.lucy\b在hi和lucy中存在一个除了换行符之外">
+<meta property="og:type" content="article">
+<meta property="og:title" content="正则表达式">
+<meta property="og:url" content="http://example.com/Java/regular-expression/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="正则表达式元字符 \w 匹配一个字符，可以是数字、下划线、字母或者汉字 \b 匹配的是位置，它的前一个字符和后一个字符不全是(一个是, 一个不是或不存在) \w   \bhi\b 匹配hi单词， 对于history和him都不匹配 \bhi\b.*\blucy\b hi单词后面若干字符之后是lucy   . 匹配除了换行符之外的任一字符\bhi.lucy\b在hi和lucy中存在一个除了换行符之外">
+<meta property="og:locale">
+<meta property="article:published_time" content="2016-04-21T03:28:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.795Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="RegularExpression">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/Java/regular-expression/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>正则表达式 | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/regular-expression/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          正则表达式
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-04-21 11:28:00" itemprop="dateCreated datePublished" datetime="2016-04-21T11:28:00+08:00">2016-04-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="正则表达式"><a href="#正则表达式" class="headerlink" title="正则表达式"></a>正则表达式</h1><h2 id="元字符"><a href="#元字符" class="headerlink" title="元字符"></a>元字符</h2><ol>
+<li><code>\w</code> 匹配一个字符，可以是数字、下划线、字母或者汉字</li>
+<li><code>\b</code> 匹配的是位置，它的前一个字符和后一个字符不全是(一个是, 一个不是或不存在) <code>\w</code></li>
+</ol>
+<ul>
+<li><code>\bhi\b</code> 匹配hi单词， 对于history和him都不匹配</li>
+<li><code>\bhi\b.*\blucy\b</code> hi单词后面若干字符之后是lucy</li>
+</ul>
+<ol>
+<li><code>.</code> 匹配除了换行符之外的任一字符<br><code>\bhi.lucy\b</code>在hi和lucy中存在一个除了换行符之外的任一字符</li>
+<li><code>*</code> 匹配的是数量 0~若干个<br><code>\bhi\b.*\blucy\b</code> hi单词后面若干个除换行符以外的字符之后是lucy</li>
+<li><code>\s</code> 匹配任意的空白符</li>
+<li><code>\d</code> 匹配数字<br><code>0\d&#123;2&#125;-\d&#123;8&#125;</code> 匹配以0开头，紧接着是2位数字，接着是-，最后是8位数字<br><code>\d+</code> 匹配多于一个数字</li>
+<li><code>[0123456789]</code>或者<code>[0-9]</code> 匹配数字与<code>\d</code>的意义完全相同</li>
+<li><code>^</code> 匹配字符串的开始</li>
+<li><code>$</code> 匹配字符串的结束<br><code>^\b&#123;5,12&#125;$</code> 匹配5到12位的数字</li>
+</ol>
+<h2 id="字符转义"><a href="#字符转义" class="headerlink" title="字符转义"></a>字符转义</h2><p>使用斜杠<code>\</code>对特殊字符转义，转换为普通字符</p>
+<h2 id="重复"><a href="#重复" class="headerlink" title="重复"></a>重复</h2><table>
+<thead>
+<tr>
+<th>代码/语法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>*</code></td>
+<td>重复零次或更多次</td>
+</tr>
+<tr>
+<td><code>+</code></td>
+<td>重复一次或者更多次</td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td>重复零次或一次</td>
+</tr>
+<tr>
+<td><code>&#123;n&#125;</code></td>
+<td>重复n次</td>
+</tr>
+<tr>
+<td><code>&#123;n,&#125;</code></td>
+<td>重复n次或更多次</td>
+</tr>
+<tr>
+<td><code>&#123;n,m&#125;</code></td>
+<td>重复n到m次</td>
+</tr>
+</tbody></table>
+<p><code>windows\d+</code> windows后面紧跟着多于一个数字<br><code>^\w+</code> 以多于一个字符开头</p>
+<h2 id="字符类"><a href="#字符类" class="headerlink" title="字符类"></a>字符类</h2><ol>
+<li><p><code>[aeiou]</code> aeiou中的一个字符</p>
+</li>
+<li><p><code>[0-9]</code> 从0到9</p>
+</li>
+<li><p><code>[0-9A-Za-z]</code> 完全等同于 <code>\w</code>(如果不考虑中文字符)</p>
+</li>
+<li><p><code>[) -]</code> 从右括号、空格和减号中选择一个</p>
+<p> <code>\(?0\d&#123;2&#125;[) -]?\d&#123;8&#125;</code> 首先是一个转义字符<code>\(</code>， 它可能出现0次或1次(?)， 然后是一个0， 后面跟着2个数字<code>\d&#123;2&#125;</code>，然后是)或-或空格中的一个，它出现1此或不出现(?), 最后是8个数字(\d{8}).</p>
+</li>
+</ol>
+<h2 id="分枝条件"><a href="#分枝条件" class="headerlink" title="分枝条件"></a>分枝条件</h2><p>分枝条件: 满足若干条件中的一个就能匹配. 要注意优先级和各条件顺序问题.</p>
+<p>** 例1 匹配电话号码<br>要匹配两种电话号码形式:  (0755)12345678 或者 0755-12345678 以及 0751-1234567</p>
+<p><code>\(\d&#123;3,4&#125;\)\d&#123;7,8&#125;|\d&#123;3,4&#125;-\d&#123;7,8&#125;</code></p>
+<p>** 例2: 注意分枝条件各条件的顺序<br>美国的邮编是有两种形式的: 5位数字 或者用连字号间隔的9位数字, 如12345和12345-1234两种形式.</p>
+<p>应该使用<code>\d&#123;5&#125;-\d&#123;4&#125;|\d&#123;5&#125;</code>, 而不能使用<code>\d&#123;5&#125;|\d&#123;5&#125;-\d&#123;4&#125;</code><br>也就是说, 如果<code>\d&#123;5&#125;</code>提前匹配了<code>12345</code>之后会返回而丢弃掉后面的四位.</p>
+<h2 id="分组"><a href="#分组" class="headerlink" title="分组"></a>分组</h2><p>分组可以实现子表达式重复出现.</p>
+<p><code>(\d&#123;1,3&#125;\.)&#123;3&#125;\d&#123;1,3&#125;</code> 匹配以点号分割的四组数字, 每组数字是1到3位,如 <code>999.999.999.999</code> 或<code>1.1.0.0</code></p>
+<p>** IP地址的匹配 **<br>IP地址分为4段, 每段的数字范围为: 0~255<br>正则表达式只能匹配字符串的格式, 不支持数值比较, 因此需要用尽可能精简的方式准确列出所有的可能性</p>
+<p><code>((2[0-4]\d|25[0-5]|[0-1]?\d\d?)\.)&#123;3&#125;(2[0-4]\d|25[0-5]|[0-1]?\d\d?)</code></p>
+<p>解释:</p>
+<ol>
+<li><code>2[0-4]\d</code> 首位是2,第二位可以为0到4,第三位是任意数字</li>
+<li><code>25[0-5]</code> 前两位是25,第三位必须是0到5, 因为最大是255</li>
+<li><code>[0-1]?\d\d?</code> 首位是0或1, 也可以首位不存在, 第二位为任何数字, 第三位是任意数字, 也可以不存在, 不存在这种情况下, 就只有前两位.<br> 为什么不是<code>[0-1]?\d?\d</code>?</li>
+</ol>
+<h2 id="反义"><a href="#反义" class="headerlink" title="反义"></a>反义</h2><p>对字符类进行反义, 只需要将上面<a href="">字符类</a>一节的所有的字符转为大写</p>
+<table>
+<thead>
+<tr>
+<th>代码/语法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>\W</code></td>
+<td>匹配任意不是字母，数字，下划线，汉字的字符</td>
+</tr>
+<tr>
+<td><code>\S</code></td>
+<td>匹配任意不是空白符的字符</td>
+</tr>
+<tr>
+<td><code>\D</code></td>
+<td>匹配任意非数字的字符</td>
+</tr>
+<tr>
+<td><code>\B</code></td>
+<td>匹配不是单词开头或结束的位置</td>
+</tr>
+<tr>
+<td><code>[^x]</code></td>
+<td>匹配除了x以外的任意字符</td>
+</tr>
+<tr>
+<td><code>[^aeiou]</code></td>
+<td>匹配除了aeiou这几个字母以外的任意字符</td>
+</tr>
+</tbody></table>
+<h2 id="后向引用"><a href="#后向引用" class="headerlink" title="后向引用"></a>后向引用</h2><p>用于引用上文中匹配到的字符- 给上文中出现的表达式添加组号, 在下文中引用这个组号</p>
+<table>
+<thead>
+<tr>
+<th>代码/语法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>(exp)</code></td>
+<td>匹配exp,并捕获文本到自动命名的组里</td>
+</tr>
+<tr>
+<td><code>(?&lt;name&gt;exp)</code></td>
+<td>匹配exp,并捕获文本到名称为name的组里，也可以写成(?’name’exp)</td>
+</tr>
+<tr>
+<td><code>(?:exp)</code></td>
+<td>匹配exp,不捕获匹配的文本，也不给此分组分配组号</td>
+</tr>
+</tbody></table>
+<p>分组命名规则为:</p>
+<ul>
+<li>  分组0对应整个正则表达式</li>
+<li>  实际上组号分配过程是要从左向右扫描两遍的：第一遍只给未命名组分配，第二遍只给命名组分配－－因此所有命名组的组号都大于未命名的组号</li>
+<li>  你可以使用(?:exp)这样的语法来剥夺一个分组对组号分配的参与权．</li>
+</ul>
+<p>例1 <strong>自动命名</strong><br><code>\b(\w+)\b\s+\1\b</code> 首先匹配一个单词(<code>\w+</code>)并放到分组1中, 在下文中通过<code>\1</code>引用上文中分组1匹配到的字符.<br>该表达式用于匹配重复单词. 如 <code>hello hello</code></p>
+<p>例2 <strong>手动命名</strong><br><code>\b(?&lt;name&gt;\w+)\b\s+\k&lt;name&gt;\b</code> 首先匹配一个单词(<code>\w+</code>) 并将这个单词放入name组中, 在下文中引用name分组, 看后面是否再出现<br>注意反向引用时的格式: <code>\k&lt;name&gt;</code></p>
+<p>例3 <strong>不捕获</strong><br>    <code>\b(?:\w+)\b\s+</code> 不捕获</p>
+<h2 id="零宽断言"><a href="#零宽断言" class="headerlink" title="零宽断言"></a>零宽断言</h2><p>零宽断言和负向零宽断言用于指示位置, 零宽断言分为两种, 分别指示匹配表达式的前面和后面.</p>
+<h3 id="零宽度正预测先行断言"><a href="#零宽度正预测先行断言" class="headerlink" title="零宽度正预测先行断言"></a>零宽度正预测先行断言</h3><p>用于指示匹配表达式的字符串的上一个字符位置</p>
+<p><code>\b\w+(?=ing\b)</code> 匹配以ing结尾的单词的前面部分(除了ing以外的部分).<br>如果查找 <code> I&#39;m singing while you&#39;re dancing.</code>时, 它会匹配sing和danc.</p>
+<h3 id="零宽度正回顾后发断言"><a href="#零宽度正回顾后发断言" class="headerlink" title="零宽度正回顾后发断言"></a>零宽度正回顾后发断言</h3><p>用于指示匹配表达式的字符串的下一个字符位置</p>
+<p><code>(?&lt;=\bre)\w+\b</code> 匹配以re开头的单词的后半部分</p>
+<p><code>((?&lt;=\d)\d&#123;3&#125;+\b)</code>匹配一个数字后面是若干的三个数字的后面部分.<br>对1234567890进行查找时结果是234567890</p>
+<h2 id="负向零宽断言"><a href="#负向零宽断言" class="headerlink" title="负向零宽断言"></a>负向零宽断言</h2><p>负向零宽断言, 与上一节中的正向零宽断言相对, 用于匹配不是某个字符或不在某些字符类里的方法</p>
+<p>确保某个字符没有出现, 但并不想去匹配它, 就可以使用<code>负向零宽断言</code></p>
+<h3 id="零宽度负预测先行断言-exp"><a href="#零宽度负预测先行断言-exp" class="headerlink" title="零宽度负预测先行断言(?!exp)"></a>零宽度负预测先行断言(?!exp)</h3><p>断言此位置的后面不能匹配表达式exp。<br>例如：\d{3}(?!\d)匹配三位数字，而且这三位数字的后面不能是数字；<br>\b((?!abc)\w)+\b匹配不包含连续字符串abc的单词。</p>
+<h3 id="零宽度负回顾后发断言"><a href="#零宽度负回顾后发断言" class="headerlink" title="零宽度负回顾后发断言"></a>零宽度负回顾后发断言</h3><p>同理，可以用(<code>?&lt;!exp</code>),零宽度负回顾后发断言来断言此位置的前面不能匹配表达式exp：<br><code>(?&lt;![a-z])\d&#123;7&#125;</code> 匹配前面不是小写字母的七位数字。</p>
+<p>请详细分析表达式<code>(?&lt;=&lt;(\w+)&gt;).*(?=&lt;\/\1&gt;)</code>，这个表达式最能表现零宽断言的真正用途。</p>
+<p>一个更复杂的例子：<br><code>(?&lt;=&lt;(\w+)&gt;).*(?=&lt;\/\1&gt;)</code>匹配不包含属性的简单HTML标签内里的内容。<br><code>(?&lt;=&lt;(\w+)&gt;)</code>指定了这样的前缀：被尖括号括起来的单词(比如可能是<b>)，<br>然后是.<code>*(任意的字符串)</code>,最后是一个后缀(?=&lt;/\1&gt;)。注意后缀里的/，<br>它用到了前面提过的字符转义；\1则是一个反向引用，引用的正是捕获的第一组，<br>前面的(\w+)匹配的内容，这样如果前缀实际上是<b>的话，后缀就是</b>了。<br>整个表达式匹配的是<b>和</b>之间的内容(再次提醒，不包括前缀和后缀本身)。</p>
+<h2 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h2><p>通过语法<code>(?#comment)</code>来包含注释</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">(?&lt;&#x3D;    # 断言要匹配的文本的前缀</span><br><span class="line"> &lt;(\w+)&gt; # 查找尖括号括起来的字母或数字(即HTML&#x2F;XML标签)</span><br><span class="line">)       # 前缀结束</span><br><span class="line">.*      # 匹配任意文本</span><br><span class="line">(?&#x3D;     # 断言要匹配的文本的后缀</span><br><span class="line"> &lt;\&#x2F;\1&gt;  # 查找尖括号括起来的内容：前面是一个&quot;&#x2F;&quot;，后面是先前捕获的标签</span><br><span class="line">)       # 后缀结束</span><br></pre></td></tr></table></figure>
+
+<h2 id="贪婪与懒惰"><a href="#贪婪与懒惰" class="headerlink" title="贪婪与懒惰"></a>贪婪与懒惰</h2><table>
+<thead>
+<tr>
+<th>代码/语法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>*?</code></td>
+<td>重复任意次，但尽可能少重复</td>
+</tr>
+<tr>
+<td><code>+?</code></td>
+<td>重复1次或更多次，但尽可能少重复</td>
+</tr>
+<tr>
+<td><code>??</code></td>
+<td>重复0次或1次，但尽可能少重复</td>
+</tr>
+<tr>
+<td><code>&#123;n,m&#125;?</code></td>
+<td>重复n到m次，但尽可能少重复</td>
+</tr>
+<tr>
+<td><code>&#123;n,&#125;?</code></td>
+<td>重复n次以上，但尽可能少重复</td>
+</tr>
+</tbody></table>
+<h2 id="处理选项"><a href="#处理选项" class="headerlink" title="处理选项"></a>处理选项</h2><table>
+<thead>
+<tr>
+<th>名称</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>IgnoreCase</code>(忽略大小写)</td>
+<td>匹配时不区分大小写。</td>
+</tr>
+<tr>
+<td><code>Multiline</code>(多行模式)</td>
+<td>更改^和$的含义，使它们分别在任意一行的行首和行尾匹配，而不仅仅在整个字符串的开头和结尾匹配。(在此模式下,$的精确含意是:匹配\n之前的位置以及字符串结束前的位置.)</td>
+</tr>
+<tr>
+<td><code>Singleline</code>(单行模式)</td>
+<td>更改.的含义，使它与每一个字符匹配（包括换行符\n）。</td>
+</tr>
+<tr>
+<td><code>IgnorePatternWhitespace</code>(忽略空白)</td>
+<td>忽略表达式中的非转义空白并启用由#标记的注释。</td>
+</tr>
+<tr>
+<td><code>ExplicitCapture</code>(显式捕获)</td>
+<td>仅捕获已被显式命名的组。</td>
+</tr>
+</tbody></table>
+<h2 id="平衡组-递归匹配"><a href="#平衡组-递归匹配" class="headerlink" title="平衡组/递归匹配"></a>平衡组/递归匹配</h2><p>用于在嵌套的层次结构中, 判断是否嵌套.</p>
+<ul>
+<li>   <code>(?&#39;group&#39;)</code> 把捕获的内容命名为group,并压入堆栈(Stack)</li>
+<li>   <code>(?&#39;-group&#39;)</code> 从堆栈上弹出最后压入堆栈的名为group的捕获内容，如果堆栈本来为空，则本分组的匹配失败</li>
+<li>   <code>(?(group)yes|no)</code> 如果堆栈上存在以名为group的捕获内容的话，继续匹配yes部分的表达式，否则继续匹配no部分</li>
+<li>   <code>(?!)</code> 零宽负向先行断言，由于没有后缀表达式，试图匹配总是失败</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&lt;                         #最外层的左括号</span><br><span class="line">[^&lt;&gt;]*                #最外层的左括号后面的不是括号的内容</span><br><span class="line">(</span><br><span class="line"> (</span><br><span class="line">  (?&#39;Open&#39;&lt;)    #碰到了左括号，在黑板上写一个&quot;Open&quot;</span><br><span class="line">  [^&lt;&gt;]*       #匹配左括号后面的不是括号的内容</span><br><span class="line"> )+</span><br><span class="line"> (</span><br><span class="line">  (?&#39;-Open&#39;&gt;)   #碰到了右括号，擦掉一个&quot;Open&quot;</span><br><span class="line">  [^&lt;&gt;]*        #匹配右括号后面不是括号的内容</span><br><span class="line"> )+</span><br><span class="line">)*</span><br><span class="line">(?(Open)(?!))         #在遇到最外层的右括号前面，判断黑板上还有没有没擦掉的&quot;Open&quot;；如果还有，则匹配失败</span><br><span class="line"></span><br><span class="line">&gt;                         #最外层的右括号</span><br></pre></td></tr></table></figure>
+<p>我们需要做的是每碰到了左括号，就在压入一个”Open”,每碰到一个右括号，就弹出一个，到了最后就看看堆栈是否为空－－如果不为空那就证明左括号比右括号多，那匹配就应该失败。正则表达式引擎会进行回溯(放弃最前面或最后面的一些字符)，尽量使整个表达式得到匹配。</p>
+<h2 id="其他语法"><a href="#其他语法" class="headerlink" title="其他语法"></a>其他语法</h2><table>
+<thead>
+<tr>
+<th>代码/语法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>\a</td>
+<td>报警字符(打印它的效果是电脑嘀一声)</td>
+</tr>
+<tr>
+<td>\b</td>
+<td>通常是单词分界位置，但如果在字符类里使用代表退格</td>
+</tr>
+<tr>
+<td>\t</td>
+<td>制表符，Tab</td>
+</tr>
+<tr>
+<td>\r</td>
+<td>回车</td>
+</tr>
+<tr>
+<td>\v</td>
+<td>竖向制表符</td>
+</tr>
+<tr>
+<td>\f</td>
+<td>换页符</td>
+</tr>
+<tr>
+<td>\n</td>
+<td>换行符</td>
+</tr>
+<tr>
+<td>\e</td>
+<td>Escape</td>
+</tr>
+<tr>
+<td>\0nn</td>
+<td>ASCII代码中八进制代码为nn的字符</td>
+</tr>
+<tr>
+<td>\xnn</td>
+<td>ASCII代码中十六进制代码为nn的字符</td>
+</tr>
+<tr>
+<td>\unnnn</td>
+<td>Unicode代码中十六进制代码为nnnn的字符</td>
+</tr>
+<tr>
+<td>\cN</td>
+<td>ASCII控制字符。比如\cC代表Ctrl+C</td>
+</tr>
+<tr>
+<td>\A</td>
+<td>字符串开头(类似^，但不受处理多行选项的影响)</td>
+</tr>
+<tr>
+<td>\Z</td>
+<td>字符串结尾或行尾(不受处理多行选项的影响)</td>
+</tr>
+<tr>
+<td>\z</td>
+<td>字符串结尾(类似$，但不受处理多行选项的影响)</td>
+</tr>
+<tr>
+<td>\G</td>
+<td>当前搜索的开头</td>
+</tr>
+<tr>
+<td>\p{name}</td>
+<td>Unicode中命名为name的字符类，例如\p{IsGreek}</td>
+</tr>
+<tr>
+<td>(?&gt;exp)</td>
+<td>贪婪子表达式</td>
+</tr>
+<tr>
+<td>(?<x>-<y>exp)</td>
+<td>平衡组</td>
+</tr>
+<tr>
+<td>(?im-nsx:exp)</td>
+<td>在子表达式exp中改变处理选项</td>
+</tr>
+<tr>
+<td>(?im-nsx)</td>
+<td>为表达式后面的部分改变处理选项</td>
+</tr>
+<tr>
+<td>(?(exp)yes</td>
+<td>no)</td>
+</tr>
+<tr>
+<td>(?(exp)yes)</td>
+<td>同上，只是使用空表达式作为no</td>
+</tr>
+<tr>
+<td>(?(name)yes</td>
+<td>no)</td>
+</tr>
+<tr>
+<td>(?(name)yes)</td>
+<td>同上，只是使用空表达式作为no</td>
+</tr>
+</tbody></table>
+<h1 id="常用的正则表达式"><a href="#常用的正则表达式" class="headerlink" title="常用的正则表达式"></a>常用的正则表达式</h1><h2 id="电子邮箱Email"><a href="#电子邮箱Email" class="headerlink" title="电子邮箱Email"></a>电子邮箱Email</h2><p><code>\w+([-+.]\w+)*@\w+([-.]\w)*\.\w+([-.]\w+)*</code><br>Email地址是以@分割, <code>@</code>前面的部分为用户名, 后面为域名.<br>用户名部分可以包含字母/数字/下划线/-/+/., 但是只能字母/数字/下划线开头.<br>不能出现+-.连续<br>而域名部分可以包含字母/数字/下划线/-以及. 也是只能字母/数字/下划线开头.</p>
+<p>用户名部分<code>\w+([-+.]\w+)*</code> , 必须是至少一个<code>\w</code>开头,</p>
+<h2 id="手机号码"><a href="#手机号码" class="headerlink" title="手机号码"></a>手机号码</h2><p><code>[1-9][3,4,5,7,8]/d&#123;9&#125;</code></p>
+<h2 id="汉字"><a href="#汉字" class="headerlink" title="汉字"></a>汉字</h2><p><code>[\u4e00-\u9fa5]</code></p>
+<h2 id="QQ号码"><a href="#QQ号码" class="headerlink" title="QQ号码"></a>QQ号码</h2><p><code>[1-9]\d&#123;4,&#125;</code></p>
+<h2 id="邮编"><a href="#邮编" class="headerlink" title="邮编"></a>邮编</h2><p><code>[1-9]\d&#123;5&#125;</code></p>
+<h2 id="不含abc的单词"><a href="#不含abc的单词" class="headerlink" title="不含abc的单词"></a>不含abc的单词</h2><p><code>\b((?!abc)\w)+\b</code></p>
+<h2 id="时间-小时-分钟-24小时制"><a href="#时间-小时-分钟-24小时制" class="headerlink" title="时间(小时:分钟, 24小时制)"></a>时间(小时:分钟, 24小时制)</h2><p>((1|0?)[0-9]|2[0-3]):([0-5][0-9])</p>
+<h2 id="姓名"><a href="#姓名" class="headerlink" title="姓名"></a>姓名</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">String regex=<span class="string">&quot;^([(?&lt;cc&gt;a-zA-Z\\u4e00-\\u9fa5)]+)|([a-zA-Z\\u4e00-\\u9fa5]+[a-zA-Z\\u4e00-\\u9fa5. _·]*)$&quot;</span>;</span><br><span class="line">String [] tem=&#123;</span><br><span class="line">  <span class="string">&quot;张大千&quot;</span>,</span><br><span class="line">    <span class="string">&quot;张.大千&quot;</span>,</span><br><span class="line">    <span class="string">&quot;zhangdaqian&quot;</span>,</span><br><span class="line">    <span class="string">&quot;zhang.daqian&quot;</span>,</span><br><span class="line">    <span class="string">&quot;张大千Quene&quot;</span>,</span><br><span class="line">    <span class="string">&quot;zhang daqian&quot;</span>,</span><br><span class="line">    <span class="string">&quot;zhang_daqian&quot;</span>,</span><br><span class="line">    <span class="string">&quot; 张大千&quot;</span>,</span><br><span class="line">    <span class="string">&quot;.张大千&quot;</span>,</span><br><span class="line">    <span class="string">&quot;_张大千&quot;</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">for</span> (String s : tem) &#123;</span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">boolean</span> matches = Pattern.matches(regex, s);</span><br><span class="line">  System.out.println(s+<span class="string">&quot;:\t&quot;</span>+(matches?<span class="string">&quot;√&quot;</span>:<span class="string">&quot;×&quot;</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">张大千:	√</span><br><span class="line">张.大千:	√</span><br><span class="line">zhangdaqian:	√</span><br><span class="line">zhang.daqian:	√</span><br><span class="line">张大千Quene:	√</span><br><span class="line">zhang daqian:	√</span><br><span class="line">zhang_daqian:	√</span><br><span class="line"> 张大千:	×</span><br><span class="line">.张大千:	×</span><br><span class="line">_张大千:	×</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="Java中运用"><a href="#Java中运用" class="headerlink" title="Java中运用"></a>Java中运用</h1><p>java.util.regex 包主要由三个类所组成：Pattern、Matcher 和 PatternSyntaxException。</p>
+<ul>
+<li>Pattern 对象表示一个已编译的正则表达式。Pattern 类没有提供公共的构造方法。要构建一个模式，首先必须调用公共的静态 <code>compile</code> 方法，它将返回一个 Pattern 对象。这个方法接受正则表达式作为第一个参数。</li>
+<li>Matcher 是一个靠着输入的字符串来解析这个模式和完成匹配操作的对象。与 Pattern 相似，Matcher 也没有定义公共的构造方法，需要通过调用 Pattern 对象的 matcher 方法来获得一个 Matcher 对象。</li>
+<li>PatternSyntaxException 对象是一个未检查异常，指示了正则表达式中的一个语法错误。</li>
+</ul>
+<h2 id="Pattern"><a href="#Pattern" class="headerlink" title="Pattern"></a>Pattern</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">String message=<span class="string">&quot;&quot;</span>;</span><br><span class="line"><span class="comment">// 大小写不敏感</span></span><br><span class="line">Pattern pattern = Pattern.compile(message, Pattern.CASE_INSENSITIVE );</span><br><span class="line"><span class="comment">// 大小写不敏感且使用Unix的行结束符</span></span><br><span class="line">pattern = Pattern.compile(<span class="string">&quot;[az]$&quot;</span>, Pattern.MULTILINE | Pattern.UNIX_LINES);</span><br><span class="line"><span class="comment">// 使用int变量， 启用Unicode折叠感知和大小写不敏感</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">int</span> flags = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;</span><br><span class="line">Pattern pattern = Pattern.compile(<span class="string">&quot;aa&quot;</span>, flags);</span><br></pre></td></tr></table></figure>
+<p>** matches(String, CharSequence) 方法 **</p>
+<p>Pattern 类定义了一个方便的 matches 方法，用于快速地检查模式是否表示给定的输入字符串。与使用所有的公共静态方法一样，应该通过它的类名来调用 matches 方法，诸如 Pattern.matches(“\d”,”1”);。这个例子中，方法返回 true，这是由于数字“1”匹配了正则表达式\d。</p>
+<p>** split(String) 方法 **</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">String REGEX = <span class="string">&quot;:&quot;</span>;</span><br><span class="line">String INPUT = <span class="string">&quot;one:two:three:four:five&quot;</span>;</span><br><span class="line">Pattern p = Pattern.compile(REGEX);</span><br><span class="line">String[] items = p.split(INPUT);</span><br><span class="line"><span class="keyword">for</span>(String s : items) &#123;</span><br><span class="line">    System.out.println(s);</span><br><span class="line">&#125;</span><br><span class="line">REGEX=<span class="string">&quot;//d&quot;</span>;</span><br><span class="line">INPUT=<span class="string">&quot;one9two4three7four1five&quot;</span>;</span><br><span class="line">Pattern p = Pattern.compile(REGEX);</span><br><span class="line">String[] items = p.split(INPUT);</span><br><span class="line"><span class="keyword">for</span>(String s : items) &#123;</span><br><span class="line">  System.out.println(s);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 输出结果 one two three four five</span></span><br></pre></td></tr></table></figure>
+<p>** public static String quote(String s)** ：返回指定字符串字面模式的字符串。此方法会产生一个字符串，能被用于构建一个与字符串 s 匹配的 Pattern，好像它是一个字面上的模式。输入序列中的元字符和转义序列将没有特殊的意义了。<br>**　　public String toString() ** ：返回这个模式的字符串表现形式。这是一个编译过的模式中的正则表达式。</p>
+<p>** java.lang.String中等价的方法 **</p>
+<p><code>java.lang.String</code> 通过模拟 <code>java.util.regex.Pattern</code> 行为的几个方法，也可以支持正则表达式。方便起见，下面主要摘录了出现在 API 关键的方法。</p>
+<ul>
+<li><code>public boolean matches(String regex)</code>：告知字符串是否匹配给定的正则表达式。调用 <code>str.matches(regex)</code>方法所产生的结果与作为表达式的 <code>Pattern.matches(regex, str)</code>的结果是完全一致。</li>
+<li><code>public String[] split(String regex, int limit)</code>：依照匹配给定的正则表达式来拆分字符串。调用 <code>str.split(regex, n)</code>方法所产生的结果与作为表达式的 <code>Pattern.compile(regex).split(str, n)</code> 的结果完全一致。</li>
+<li><code>public String[] split(String regex)</code>：依照匹配给定的正则表达式来拆分字符串。这个方法与调用两个参数的 split 方法是相同的，第一个参数使用给定的表达式，第二个参数限制为 0。在结果数组中不包括尾部的空字符串。</li>
+<li>还有一个替换方法，把一个 <code>CharSequence</code> 替换成另外一个：<br><code>public String replace(CharSequence target,CharSequence replacement)</code>：将字符串中每一个匹配替换匹配字面目标序列的子字符串，替换成指定的字面替换序列。这个替换从字符串的开始处理直至结束，例如，把字符串“aaa”中的“aa”替换成“b”，结果是“ba”，而不是“ab”。</li>
+</ul>
+<h2 id="Matcher"><a href="#Matcher" class="headerlink" title="Matcher"></a>Matcher</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">索引方法</span><br><span class="line"></span><br><span class="line">　　索引方法（index methods）提供了一些正好在输入字符串中发现匹配的索引值：</span><br><span class="line">　　<span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">start</span><span class="params">()</span>：返回之前匹配的开始索引。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> <span class="keyword">int</span> <span class="title">start</span><span class="params">(<span class="keyword">int</span> group)</span>：返回之前匹配操作中通过给定组所捕获序列的开始索引。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> <span class="keyword">int</span> <span class="title">end</span><span class="params">()</span>: 返回最后匹配字符后的偏移量。</span></span><br><span class="line"><span class="function">   <span class="keyword">public</span> <span class="keyword">int</span> <span class="title">end</span><span class="params">(<span class="keyword">int</span> group)</span>: 返回之前匹配操作中通过给定组所捕获序列的最后字符之后的偏移量。</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">研究方法</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">　　研究方法（study methods）回顾输入的字符串，并且返回一个用于指示是否找到模式的布尔值。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">lookingAt</span><span class="params">()</span>: 尝试从区域开头处开始，输入序列与该模式匹配。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">find</span><span class="params">()</span>: 尝试地寻找输入序列中，匹配模式的下一个子序列。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">find</span><span class="params">(<span class="keyword">int</span> start)</span>: 重置匹配器，然后从指定的索引处开始，尝试地寻找输入序列中，匹配模式的下一个子序列。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">matches</span><span class="params">()</span>: 尝试将整个区域与模式进行匹配</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">替换方法</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">　　替换方法（replacement methods）用于在输入的字符串中替换文本有用处的方法。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> Matcher <span class="title">appendReplacement</span><span class="params">(StringBuffer sb, String replacement)</span>：实现非结尾处的增加和替换操作。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> StringBuffer <span class="title">appendTail</span><span class="params">(StringBuffer sb)</span>：实现结尾处的增加和替换操作。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> String <span class="title">replaceAll</span><span class="params">(String replacement)</span>：使用给定的替换字符串来替换输入序列中匹配模式的每一个子序列。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> String <span class="title">replaceFirst</span><span class="params">(String replacement)</span>：使用给定的替换字符串来替换输入序列中匹配模式的第一个子序列。</span></span><br><span class="line"><span class="function">　　<span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">quoteReplacement</span><span class="params">(String s)</span>：返回指定字符串的字面值来替换字符串。这个方法会生成一个字符串，用作 Matcher 的 appendReplacement 方法中的字面值替换 s。所产生的字符串将与作为字面值序列的 s 中的字符序列匹配。斜线（\）和美元符号（$）将不再有特殊意义了。</span></span><br></pre></td></tr></table></figure>
+<p>** 使用 start 和 end 方法 **</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">String REGEX = <span class="string">&quot;\\bdog\\b&quot;</span>;</span><br><span class="line">String INPUT = <span class="string">&quot;dog dog dog doggie dogg&quot;</span>;</span><br><span class="line">Pattern p = Pattern.compile(REGEX);</span><br><span class="line">Matcher m = p.matcher(INPUT);        <span class="comment">// 获得匹配器对象</span></span><br><span class="line"><span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">while</span> (m.find()) &#123;</span><br><span class="line"> count++;</span><br><span class="line"> System.out.println(<span class="string">&quot;Match number &quot;</span> + count);</span><br><span class="line"> System.out.println(<span class="string">&quot;start(): &quot;</span> + m.start());</span><br><span class="line"> System.out.println(<span class="string">&quot;end(): &quot;</span> + m.end());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>** 使用 matches 和 lookingAt 方法 **</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">String REGEX = <span class="string">&quot;foo&quot;</span>;</span><br><span class="line">String INPUT = <span class="string">&quot;fooooooooooooooooo&quot;</span>;</span><br><span class="line">Pattern pattern;</span><br><span class="line">Matcher matcher;</span><br><span class="line"><span class="comment">// 初始化</span></span><br><span class="line">pattern = Pattern.compile(REGEX);</span><br><span class="line">matcher = pattern.matcher(INPUT);</span><br><span class="line">System.out.println(<span class="string">&quot;Current REGEX is: &quot;</span> + REGEX);</span><br><span class="line">System.out.println(<span class="string">&quot;Current INPUT is: &quot;</span> + INPUT);</span><br><span class="line">System.out.println(<span class="string">&quot;lookingAt(): &quot;</span> + matcher.lookingAt());</span><br><span class="line">System.out.println(<span class="string">&quot;matches(): &quot;</span> + matcher.matches());</span><br></pre></td></tr></table></figure>
+<p>** 使用 replaceFirst(String) 和 replaceAll(String) 方法 **</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">String REGEX = <span class="string">&quot;dog&quot;</span>;</span><br><span class="line">String INPUT = <span class="string">&quot;The dog says meow. All dogs say meow.&quot;</span>;</span><br><span class="line">String REPLACE = <span class="string">&quot;cat&quot;</span>;</span><br><span class="line"></span><br><span class="line">Pattern p = Pattern.compile(REGEX);</span><br><span class="line">Matcher m = p.matcher(INPUT);       <span class="comment">// 获得匹配器对象</span></span><br><span class="line">INPUT = m.replaceAll(REPLACE);</span><br><span class="line">System.out.println(INPUT);</span><br></pre></td></tr></table></figure>
+<p>** 使用 appendReplacement(StringBuffer, String) 和<br>　     appendTail(StringBuffer) 方法 **</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">String REGEX = <span class="string">&quot;a*b&quot;</span>;</span><br><span class="line"><span class="keyword">static</span> String INPUT = <span class="string">&quot;aabfooaabfooabfoob&quot;</span>;</span><br><span class="line"><span class="keyword">static</span> String REPLACE = <span class="string">&quot;-&quot;</span>;</span><br><span class="line">Pattern p = Pattern.compile(REGEX);</span><br><span class="line">Matcher m = p.matcher(INPUT);       <span class="comment">// 获得匹配器对象</span></span><br><span class="line">StringBuffer sb = <span class="keyword">new</span> StringBuffer();</span><br><span class="line"><span class="keyword">while</span> (m.find()) &#123;</span><br><span class="line">    m.appendReplacement(sb, REPLACE);</span><br><span class="line">&#125;</span><br><span class="line">m.appendTail(sb);</span><br><span class="line">System.out.println(sb.toString());</span><br></pre></td></tr></table></figure>
+
+<p>** 在 java.lang.String 中等价的 Matcher 方法 **</p>
+<p>为了使用方便，String 类看上去还不错地模仿了 Matcher 的两个方法：</p>
+<p><code>public String replaceFirst(String regex, String replacement)</code>：使用给定的替换字符串替换该字符串中匹配了给定正则表达式的第一个子字符串。调用 str.replaceFirst(regex, repl)方法与使用 Pattern.compile(regex).matcher(str).replaceFirst(repl)产生的结果是完全相同的。</p>
+<p><code>public String replaceAll(String regex, String replacement)</code>：使用给定的替换字符串替换该字符串中匹配了给定正则表达式的每一个子字符串。调用 str.replaceAll(regex, repl)方法与使用 Pattern.compile(regex).matcher(str).replaceAll(repl)产生的结果是完全相同的。</p>
+<h2 id="PatternSyntaxException"><a href="#PatternSyntaxException" class="headerlink" title="PatternSyntaxException"></a>PatternSyntaxException</h2><p>PatternSyntaxException 是未检查异常，指示正则表达式模式中的语法错误。PatternSyntaxException 类提供了下面的一些方法，用于确定在什么地方发生了错误：</p>
+<ul>
+<li>public String getDescription()：获得错误描述。</li>
+<li>public int getIndex()：获得错误索引。</li>
+<li>public String getPattern()：获得字符串形式的错误正则表达式。</li>
+<li>public String getMessage()：获得一个多行的字符串，包括语法错误和错误的索引、错误的正则表达式模式，以及模式内可视化的索引指示。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">Pattern pattern = <span class="keyword">null</span>;</span><br><span class="line">Matcher matcher = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">Console console = System.console();</span><br><span class="line"><span class="keyword">if</span> (console == <span class="keyword">null</span>) &#123;</span><br><span class="line">    System.err.println(<span class="string">&quot;No console.&quot;</span>);</span><br><span class="line">    System.exit(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        pattern = Pattern.compile(console.readLine(<span class="string">&quot;%nEnter your regex: &quot;</span>));</span><br><span class="line">        matcher = pattern.matcher(console.readLine(<span class="string">&quot;Enter input string to search: &quot;</span>));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (PatternSyntaxException pse)&#123;</span><br><span class="line">        console.format(<span class="string">&quot;There is a problem with the regular expression!%n&quot;</span>);</span><br><span class="line">        console.format(<span class="string">&quot;The pattern in question is: %s%n&quot;</span>, pse.getPattern());</span><br><span class="line">        console.format(<span class="string">&quot;The description is: %s%n&quot;</span>, pse.getDescription());</span><br><span class="line">        console.format(<span class="string">&quot;The message is: %s%n&quot;</span>, pse.getMessage());</span><br><span class="line">        console.format(<span class="string">&quot;The index is: %s%n&quot;</span>, pse.getIndex());</span><br><span class="line">        System.exit(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">boolean</span> found = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">while</span> (matcher.find()) &#123;</span><br><span class="line">        console.format(<span class="string">&quot;I found the text \&quot;%s\&quot; starting at &quot;</span> +</span><br><span class="line">                <span class="string">&quot;index %d and ending at index %d.%n&quot;</span>,</span><br><span class="line">                matcher.group(), matcher.start(), matcher.end()</span><br><span class="line">                );</span><br><span class="line">        found = <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!found)&#123;</span><br><span class="line">        console.format(<span class="string">&quot;No match found.%n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Enter your regex: ?i)</span><br><span class="line">There is a problem with the regular expression!</span><br><span class="line">The pattern in question is: ?i)</span><br><span class="line">The description is: Dangling meta character &#39;?&#39;</span><br><span class="line">The message is: Dangling meta character &#39;?&#39; near index 0</span><br><span class="line">?i)</span><br><span class="line">^</span><br><span class="line">The index is: 0</span><br></pre></td></tr></table></figure>
+<h2 id="问题与练习"><a href="#问题与练习" class="headerlink" title="问题与练习"></a>问题与练习</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">〖问题〗</span><br><span class="line"></span><br><span class="line">1. 在 java.util.regex 包中有哪三个公共的类？描述一下它们的作用。</span><br><span class="line">2. 考虑一下字符串“foo”，它的开始索引是多少？结束索引是多少？解释一下这些编号的意思。</span><br><span class="line">3. 普通字符和元字符有什么不同？各给出它们的一个例子。</span><br><span class="line">4. 如何把元字符表现成像普通字符那样？</span><br><span class="line">5. 附有方括号的字符集称为什么？它有什么作用？</span><br><span class="line">6. 这里是三个预定义的字符类：\d、\s和\w。描述一下它们各表示什么？并使用方括号的形式将它们重写。</span><br><span class="line">7. 对于\d、\s和\w，写出两个简单的表达式，匹配它们相反的字符集。</span><br><span class="line">8. 思考正则表达式(dog)&#123;3&#125;，识别一下其中的两个子表达式。这个表达式会匹配什么字符串？</span><br><span class="line"></span><br><span class="line">〖练习〗</span><br><span class="line"></span><br><span class="line">1. 使用反向引用写一个表达式，用于匹配一个人的名字，假设这个人的 first 名字与 last 名字是相同的。</span><br><span class="line"></span><br><span class="line">【问题答案】</span><br><span class="line"></span><br><span class="line">1. 问：在 java.util.regex 包中有哪三个公共的类？描述一下它们的作用。</span><br><span class="line">答：</span><br><span class="line"></span><br><span class="line">编译后的 Pattern 实例表示正则表达式。</span><br><span class="line">Matcher 实例是解析模式和靠着输入的字符串完成匹配操作的引擎。</span><br><span class="line">PatternSyntaxException 定义一个未检查异常，指示正则表达式中的语法错误。</span><br><span class="line"></span><br><span class="line">2. 问：考虑一下字符串“foo”，它的开始索引是多少？结束索引是多少？解释一下这些编号的意思。</span><br><span class="line"></span><br><span class="line">答：字符串中的每一个字符位于其自身的单元格中。索引位置在两个单元格之间。字符串“foo”开始于索引 0，结束于索引 3，即便是这些字符仅占用了 0、1 和 2 号单元格。</span><br><span class="line"></span><br><span class="line">3. 问：普通字符和元字符有什么不同？各给出它们的一个例子。</span><br><span class="line"></span><br><span class="line">答：正则表达式中的普通字符匹配其本身。元字符是一个特殊的字符，会影响被匹配模式的方式。字母A是一个普通字符。标点符号.是一个元字符，其匹配任意的单字符。</span><br><span class="line"></span><br><span class="line">4. 问：如何把元字符表现成像普通字符那样？答：有两种方法：</span><br><span class="line"></span><br><span class="line">在元字符前加上反斜线（\）；</span><br><span class="line">把元字符置于\Q（开始）\E（结束）的引用表达式中。</span><br><span class="line"></span><br><span class="line">5. 问：附有方括号的字符集称为什么？它有什么作用？</span><br><span class="line"></span><br><span class="line">答：是一个字符类。通过方括号间的表达式，匹配指定字符类中的任意一个字符。</span><br><span class="line"></span><br><span class="line">6. 问：这里是三个预定义的字符类：\d、\s和\w。描述一下它们各表示什么？并使用方括号的形式将它们重写。</span><br><span class="line"></span><br><span class="line">答：\d 匹配任意数字[0-9]</span><br><span class="line">　　\s 匹配任意空白字符[ \t\n-x0B\f\r ]</span><br><span class="line">　　\w 匹配任意单词字符[a-zA-Z_0-9]</span><br><span class="line"></span><br><span class="line">7. 问：对于\d、\s和\w，写出两个简单的表达式，匹配它们相反的字符集。</span><br><span class="line"></span><br><span class="line">答：\d \D [^\d]</span><br><span class="line">　　\s \S [^\s]</span><br><span class="line">　　\w \W [^\w]</span><br><span class="line"></span><br><span class="line">8. 问：思考正则表达式(dog)&#123;3&#125;，识别一下其中的两个子表达式。这个表达式会匹配什么字符串？</span><br><span class="line"></span><br><span class="line">答：表达式由捕获组(dog)和接着的贪婪量词&#123;3&#125;所组成。它匹配字符串“dogdogdog”。</span><br><span class="line"></span><br><span class="line">【练习答案】</span><br><span class="line"></span><br><span class="line">1. 练习：使用反向引用写一个表达式，用于匹配一个人的名字，假设这个人的 first 名字与 last 名字是相同的。</span><br><span class="line"></span><br><span class="line">解答：([A-Z][a-zA-Z]*)\s\1</span><br></pre></td></tr></table></figure>
+<h1 id="使用"><a href="#使用" class="headerlink" title="使用"></a>使用</h1><p>替换字符串中的字符串</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">String regularExpressionString=...;</span><br><span class="line">Matcher m = Pattern.compile(regularExpressionString, Pattern.CASE_INSENSITIVE).matcher(source); </span><br><span class="line">String result=m.replaceAll(newstring); </span><br><span class="line">System.out.println(<span class="string">&quot;使用正则表达式不区分大小写的替换结果&quot;</span>+result);</span><br><span class="line"></span><br><span class="line">Matcher m1 = Pattern.compile(regularExpressionString, Pattern.CANON_EQ).matcher(source); </span><br><span class="line">String result1=m1.replaceAll(newstring); </span><br><span class="line">System.out.println(<span class="string">&quot;使用正则表达式区分大小写的替换结果&quot;</span>+result1); </span><br></pre></td></tr></table></figure>
+<hr>
+<p>参考文献:</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://www.jb51.net/tools/zhengze.html">正则表达式30分钟入门教程</a></li>
+<li><a href="www.zuidaima.com/share/1835085544524800.htm">java正则表达式语法详解及其使用代码实例</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/RegularExpression/" rel="tag"># RegularExpression</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java/Throwable/" rel="prev" title="Java异常">
+      <i class="fa fa-chevron-left"></i> Java异常
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/jvm/JVM/" rel="next" title="深入理解JVM(Java虚拟机)">
+      深入理解JVM(Java虚拟机) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="nav-number">1.</span> <span class="nav-text">正则表达式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%83%E5%AD%97%E7%AC%A6"><span class="nav-number">1.1.</span> <span class="nav-text">元字符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E8%BD%AC%E4%B9%89"><span class="nav-number">1.2.</span> <span class="nav-text">字符转义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E5%A4%8D"><span class="nav-number">1.3.</span> <span class="nav-text">重复</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E7%B1%BB"><span class="nav-number">1.4.</span> <span class="nav-text">字符类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E6%9E%9D%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.5.</span> <span class="nav-text">分枝条件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E7%BB%84"><span class="nav-number">1.6.</span> <span class="nav-text">分组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8D%E4%B9%89"><span class="nav-number">1.7.</span> <span class="nav-text">反义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E5%90%91%E5%BC%95%E7%94%A8"><span class="nav-number">1.8.</span> <span class="nav-text">后向引用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9B%B6%E5%AE%BD%E6%96%AD%E8%A8%80"><span class="nav-number">1.9.</span> <span class="nav-text">零宽断言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9B%B6%E5%AE%BD%E5%BA%A6%E6%AD%A3%E9%A2%84%E6%B5%8B%E5%85%88%E8%A1%8C%E6%96%AD%E8%A8%80"><span class="nav-number">1.9.1.</span> <span class="nav-text">零宽度正预测先行断言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9B%B6%E5%AE%BD%E5%BA%A6%E6%AD%A3%E5%9B%9E%E9%A1%BE%E5%90%8E%E5%8F%91%E6%96%AD%E8%A8%80"><span class="nav-number">1.9.2.</span> <span class="nav-text">零宽度正回顾后发断言</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B4%9F%E5%90%91%E9%9B%B6%E5%AE%BD%E6%96%AD%E8%A8%80"><span class="nav-number">1.10.</span> <span class="nav-text">负向零宽断言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9B%B6%E5%AE%BD%E5%BA%A6%E8%B4%9F%E9%A2%84%E6%B5%8B%E5%85%88%E8%A1%8C%E6%96%AD%E8%A8%80-exp"><span class="nav-number">1.10.1.</span> <span class="nav-text">零宽度负预测先行断言(?!exp)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9B%B6%E5%AE%BD%E5%BA%A6%E8%B4%9F%E5%9B%9E%E9%A1%BE%E5%90%8E%E5%8F%91%E6%96%AD%E8%A8%80"><span class="nav-number">1.10.2.</span> <span class="nav-text">零宽度负回顾后发断言</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B3%A8%E9%87%8A"><span class="nav-number">1.11.</span> <span class="nav-text">注释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B4%AA%E5%A9%AA%E4%B8%8E%E6%87%92%E6%83%B0"><span class="nav-number">1.12.</span> <span class="nav-text">贪婪与懒惰</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E9%80%89%E9%A1%B9"><span class="nav-number">1.13.</span> <span class="nav-text">处理选项</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B9%B3%E8%A1%A1%E7%BB%84-%E9%80%92%E5%BD%92%E5%8C%B9%E9%85%8D"><span class="nav-number">1.14.</span> <span class="nav-text">平衡组&#x2F;递归匹配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E8%AF%AD%E6%B3%95"><span class="nav-number">1.15.</span> <span class="nav-text">其他语法</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%B8%B8%E7%94%A8%E7%9A%84%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">常用的正则表达式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%B5%E5%AD%90%E9%82%AE%E7%AE%B1Email"><span class="nav-number">2.1.</span> <span class="nav-text">电子邮箱Email</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%8B%E6%9C%BA%E5%8F%B7%E7%A0%81"><span class="nav-number">2.2.</span> <span class="nav-text">手机号码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B1%89%E5%AD%97"><span class="nav-number">2.3.</span> <span class="nav-text">汉字</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#QQ%E5%8F%B7%E7%A0%81"><span class="nav-number">2.4.</span> <span class="nav-text">QQ号码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%82%AE%E7%BC%96"><span class="nav-number">2.5.</span> <span class="nav-text">邮编</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8D%E5%90%ABabc%E7%9A%84%E5%8D%95%E8%AF%8D"><span class="nav-number">2.6.</span> <span class="nav-text">不含abc的单词</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%97%B6%E9%97%B4-%E5%B0%8F%E6%97%B6-%E5%88%86%E9%92%9F-24%E5%B0%8F%E6%97%B6%E5%88%B6"><span class="nav-number">2.7.</span> <span class="nav-text">时间(小时:分钟, 24小时制)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A7%93%E5%90%8D"><span class="nav-number">2.8.</span> <span class="nav-text">姓名</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Java%E4%B8%AD%E8%BF%90%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">Java中运用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Pattern"><span class="nav-number">3.1.</span> <span class="nav-text">Pattern</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Matcher"><span class="nav-number">3.2.</span> <span class="nav-text">Matcher</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#PatternSyntaxException"><span class="nav-number">3.3.</span> <span class="nav-text">PatternSyntaxException</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%97%AE%E9%A2%98%E4%B8%8E%E7%BB%83%E4%B9%A0"><span class="nav-number">3.4.</span> <span class="nav-text">问题与练习</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8"><span class="nav-number">4.</span> <span class="nav-text">使用</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

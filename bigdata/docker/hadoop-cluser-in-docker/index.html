@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="为了学习Hadoop，尝试使用Vbox搭建环境，不是很方便。后面转向Docker。本文将使用Docker搭建Hadoop集群记录下来，以备后用  基础环境  MacOS 10.12 Docker 17.03.1-ce  网易镜像 https:&#x2F;&#x2F;c.163yun.com&#x2F;hub#&#x2F;m&#x2F;home&#x2F; 安装Docker在MacOS 上安装Docker即为简单，从官网上下载dmg包，拖到应用目录启动即可">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在Docker上搭建Hadoop集群container">
+<meta property="og:url" content="http://example.com/bigdata/docker/hadoop-cluser-in-docker/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="为了学习Hadoop，尝试使用Vbox搭建环境，不是很方便。后面转向Docker。本文将使用Docker搭建Hadoop集群记录下来，以备后用  基础环境  MacOS 10.12 Docker 17.03.1-ce  网易镜像 https:&#x2F;&#x2F;c.163yun.com&#x2F;hub#&#x2F;m&#x2F;home&#x2F; 安装Docker在MacOS 上安装Docker即为简单，从官网上下载dmg包，拖到应用目录启动即可">
+<meta property="og:locale">
+<meta property="article:published_time" content="2017-02-22T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.943Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Distributed">
+<meta property="article:tag" content="Hadoop">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/bigdata/docker/hadoop-cluser-in-docker/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>在Docker上搭建Hadoop集群container | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/hadoop-cluser-in-docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          在Docker上搭建Hadoop集群container
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>为了学习Hadoop，尝试使用Vbox搭建环境，不是很方便。后面转向Docker。本文将使用Docker搭建Hadoop集群记录下来，以备后用</p>
+</blockquote>
+<p>基础环境</p>
+<ul>
+<li>MacOS 10.12</li>
+<li>Docker 17.03.1-ce</li>
+</ul>
+<p>网易镜像 <a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/home/">https://c.163yun.com/hub#/m/home/</a></p>
+<h1 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h1><p>在MacOS 上安装Docker即为简单，从官网上下载dmg包，拖到应用目录启动即可。</p>
+<p>安装完成后 查看docker 版本:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker version</span></span><br><span class="line"></span><br><span class="line">Client:</span><br><span class="line"> Version:      17.03.1-ce</span><br><span class="line"> API version:  1.27</span><br><span class="line"> Go version:   go1.7.5</span><br><span class="line"> Git commit:   c6d412e</span><br><span class="line"> Built:        Tue Mar 28 00:40:02 2017</span><br><span class="line"> OS/Arch:      darwin/amd64</span><br><span class="line"></span><br><span class="line">Server:</span><br><span class="line"> Version:      17.03.1-ce</span><br><span class="line"> API version:  1.27 (minimum version 1.12)</span><br><span class="line"> Go version:   go1.7.5</span><br><span class="line"> Git commit:   c6d412e</span><br><span class="line"> Built:        Fri Mar 24 00:00:50 2017</span><br><span class="line"> OS/Arch:      linux/amd64</span><br><span class="line"> Experimental: true</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="docker-建立镜像"><a href="#docker-建立镜像" class="headerlink" title="docker 建立镜像"></a>docker 建立镜像</h1><p>建立三个镜像，存储目录如下:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> tree</span></span><br><span class="line">.</span><br><span class="line">├── centos-ssh-root</span><br><span class="line">│   └── Dockerfile</span><br><span class="line">├── centos-ssh-root-jdk</span><br><span class="line">│   ├── Dockerfile</span><br><span class="line">│   └── jdk-7u79.tar.gz</span><br><span class="line">└── centos-ssh-root-jdk-hadoop</span><br><span class="line">    ├── Dockerfile</span><br><span class="line">    └── hadoop-2.7.3.tar.gz</span><br></pre></td></tr></table></figure>
+<h2 id="建立CentOS-SSH-root基础镜像"><a href="#建立CentOS-SSH-root基础镜像" class="headerlink" title="建立CentOS-SSH-root基础镜像"></a>建立CentOS-SSH-root基础镜像</h2><p>建立一个带有ssh和root账户的CentOS镜像</p>
+<ol>
+<li>新建Dockerfile文件<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir  centos-ssh-root</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 新建 Dockerfile 文件</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> vi  Dockerfile</span></span><br></pre></td></tr></table></figure>
+Dockerfile的内容为:</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 选择一个已有的os镜像作为基础  国内首选仓库 c.163.com</span></span><br><span class="line">FROM hub.c.163.com/public/centos:7.2.1511 </span><br><span class="line">RUN yum clean all</span><br><span class="line">RUN yum install -y yum-plugin-ovl || true</span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装基础的工具包</span></span><br><span class="line">RUN yum install -y vim tar wget curl rsync bzip2 iptables tcpdump less telnet net-tools lsof sysstat cronie python-setuptools</span><br><span class="line">RUN yum clean all</span><br><span class="line">RUN easy_install supervisor</span><br><span class="line">RUN cp -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span><br><span class="line">EXPOSE 22</span><br><span class="line">RUN mkdir -p /etc/supervisor/conf.d/</span><br><span class="line">RUN /usr/bin/echo_supervisord_conf &gt; /etc/supervisord.conf</span><br><span class="line">RUN echo [include] &gt;&gt; /etc/supervisord.conf</span><br><span class="line">RUN echo &#x27;files = /etc/supervisor/conf.d/*.conf&#x27; &gt;&gt; /etc/supervisord.conf</span><br><span class="line"><span class="meta">#</span><span class="bash">COPY sshd.conf /etc/supervisor/conf.d/sshd.conf</span></span><br><span class="line">CMD [&quot;/usr/bin/supervisord&quot;]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 镜像的作者</span>  </span><br><span class="line">MAINTAINER avery </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装openssh-server和sudo软件包，并且将sshd的UsePAM参数设置成no</span>  </span><br><span class="line">RUN yum install -y openssh-server sudo  </span><br><span class="line">RUN sed -i &#x27;s/UsePAM yes/UsePAM no/g&#x27; /etc/ssh/sshd_config  </span><br><span class="line"><span class="meta">#</span><span class="bash">安装openssh-clients</span></span><br><span class="line">RUN yum  install -y openssh-clients</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加测试用户root，密码abc.123，并且将此用户添加到sudoers里</span>  </span><br><span class="line">RUN echo &quot;root:abc.123&quot; | chpasswd  </span><br><span class="line">RUN echo &quot;root   ALL=(ALL)       ALL&quot; &gt;&gt; /etc/sudoers  </span><br><span class="line"><span class="meta">#</span><span class="bash"> 下面这两句比较特殊，</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 在centos6上必须要有，否则创建出来的容器sshd不能登录</span>  </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为了避免文件已存在报错，首先删掉私钥文件</span></span><br><span class="line">RUN rm -rf /etc/ssh/ssh_host_rsa_key</span><br><span class="line">RUN rm -rf /etc/ssh/ssh_host_dsa_key</span><br><span class="line"></span><br><span class="line">RUN ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key  </span><br><span class="line">RUN ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key  </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动sshd服务并且暴露22端口</span>  </span><br><span class="line"><span class="meta">#</span><span class="bash"> RUN mkdir /var/run/sshd</span>  </span><br><span class="line">EXPOSE 22  </span><br><span class="line">CMD [&quot;/usr/sbin/sshd&quot;, &quot;-D&quot;]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>创建镜像</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 在Dockerfile同级目录下执行下面的命令，最后的.必须有</span></span><br><span class="line">docker build -t=&quot;avery/centos-ssh-root&quot; .</span><br></pre></td></tr></table></figure>
+<p>查看刚刚创建成功的镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        35 hours ago        776 MB</span><br></pre></td></tr></table></figure>
+<h1 id="创建带有JDK的镜像"><a href="#创建带有JDK的镜像" class="headerlink" title="创建带有JDK的镜像"></a>创建带有JDK的镜像</h1><ol>
+<li>准备 下载JDK<br>此处使用JDK7u79<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir centos-ssh-root-jdk</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root-jdk</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> cp ~/Download/jdk-7u79.tar.gz .</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> vi Dockerfile</span></span><br></pre></td></tr></table></figure></li>
+<li>Dockerfile文件</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FROM avery/centos-ssh-root</span><br><span class="line">ADD jdk-7u79.tar.gz /usr/local/</span><br><span class="line">RUN mv /usr/local/jdk1.7.0_79 /usr/local/jdk1.7</span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加环境变量</span></span><br><span class="line">ENV JAVA_HOME /usr/local/jdk1.7</span><br><span class="line">ENV PATH $JAVA_HOME/bin:$PATH</span><br><span class="line"><span class="meta">#</span><span class="bash"> 可能上面的设置不会生效</span></span><br><span class="line">RUN echo &#x27;JAVA_HOME=/usr/local/jdk1.7/&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;PATH=$JAVA_HOME/bin:$PATH&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;export JAVA_HOME&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;export PATH&#x27; &gt;&gt; .bash_profile</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>创建镜像</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t=&quot;avery/centos-ssh-root&quot; .</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>查看镜像</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root-jdk          latest              e773519d0452        34 hours ago        1.39 GB</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        35 hours ago        776 MB</span><br></pre></td></tr></table></figure>
+<h2 id="构建hadoop镜像"><a href="#构建hadoop镜像" class="headerlink" title="构建hadoop镜像"></a>构建hadoop镜像</h2><ol>
+<li>准备</li>
+</ol>
+<p>官网下载 hadoop-2.7.3.tar.gz</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir centos-ssh-root-jdk-hadoop</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root-jdk-hadoop</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> cp ../hadoop-2.7.3.tar.gz .</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> vi Dockerfile</span></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>Dockerfile</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FROM avery/centos-ssh-root-jdk</span><br><span class="line">ADD hadoop-2.7.3.tar.gz /usr/local</span><br><span class="line">RUN mv /usr/local/hadoop-2.7.3 usr/local/hadoop</span><br><span class="line">ENV HADOOP_HOME /usr/local/hadoop</span><br><span class="line">ENV PATH $HADOOP_HOME/bin:$PATH</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为了防止环境变量失效</span></span><br><span class="line">RUN  echo &#x27;HADOOP_HOME=/usr/local/hadoop/&#x27; &gt;&gt;.bash_profile</span><br><span class="line">RUN  echo &#x27;PATH=$HADOOP_HOME/bin:$PATH&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN  echo &#x27;export HADOOP_HOME&#x27; &gt;&gt; .bash_profile</span><br><span class="line">RUN  echo &#x27;export PATH&#x27; &gt;&gt; .bash_profile</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>创建镜像<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t=&quot;avery/centos-ssh-root-jdk-hadoop&quot; .</span><br></pre></td></tr></table></figure></li>
+<li>查看</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root-jdk-hadoop   latest              c93aadf2b6c5        1 hours ago        2.05 GB</span><br><span class="line">avery/centos-ssh-root-jdk          latest              e773519d0452        1 hours ago        1.39 GB</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        1 hours ago        776 MB</span><br></pre></td></tr></table></figure>
+<h1 id="docker-搭建-Hadoop集群"><a href="#docker-搭建-Hadoop集群" class="headerlink" title="docker 搭建 Hadoop集群"></a>docker 搭建 Hadoop集群</h1><p>此处搭建的集群只在本机使用，各个Docker container没有独立的ip，如需要通过IP访问可以参考<a target="_blank" rel="noopener" href="http://blog.csdn.net/xu470438000/article/details/50512442">使用docker搭建hadoop分布式集群</a></p>
+<p>在MacOS上修改系统文件，需要关闭Rootless:</p>
+<p>重启按住 Command+R，进入恢复模式，打开Terminal。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil disable</span><br></pre></td></tr></table></figure>
+<p>重启即可。如果要恢复默认，那么</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil enable</span><br></pre></td></tr></table></figure>
+
+<h2 id="创建3台container"><a href="#创建3台container" class="headerlink" title="创建3台container"></a>创建3台container</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker run --name hadoop0 --hostname hadoop0 -d -P -p 50070:50070 -p 8088:8088 avery/centos-ssh-root-jdk-hadoop</span><br><span class="line"></span><br><span class="line">docker run --name hadoop1 --hostname hadoop1 -d -P avery/centos-ssh-root-jdk-hadoop</span><br><span class="line"></span><br><span class="line">docker run --name hadoop2 --hostname hadoop2 -d -P avery/centos-ssh-root-jdk-hadoop</span><br></pre></td></tr></table></figure>
+<p>查看三个container的信息</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker container ls</span><br><span class="line">CONTAINER ID        IMAGE                              COMMAND               CREATED             STATUS              PORTS                                                                     NAMES</span><br><span class="line">78e5e35adfa4        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:32776-&gt;22/tcp                                                     hadoop2</span><br><span class="line">5f27fd91c7ba        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:32775-&gt;22/tcp                                                     hadoop1</span><br><span class="line">1d7fd37371cc        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:8088-&gt;8088/tcp, 0.0.0.0:50070-&gt;50070/tcp, 0.0.0.0:32774-&gt;22/tcp   hadoop0</span><br></pre></td></tr></table></figure>
+<p>查看三个container的ip:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop0</span></span><br><span class="line">172.17.0.2</span><br><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop1</span></span><br><span class="line">172.17.0.3</span><br><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop2</span></span><br><span class="line">172.17.0.4</span><br></pre></td></tr></table></figure>
+
+<h2 id="集群规划"><a href="#集群规划" class="headerlink" title="集群规划"></a>集群规划</h2><p>准备搭建一个具有三个节点的集群，一主两从 </p>
+<ul>
+<li>主节点：hadoop0 ip：172.17.0.2</li>
+<li>从节点1：hadoop1 ip：172.17.0.3</li>
+<li>从节点2：hadoop2 ip：172.17.0.4</li>
+</ul>
+<h2 id="连接container"><a href="#连接container" class="headerlink" title="连接container"></a>连接container</h2><p>验证ssh连接</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32774</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32775</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32776</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br></pre></td></tr></table></figure>
+<p>使用exec</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker exec -it hadoop0 /bin/bash</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改container的主机名"><a href="#修改container的主机名" class="headerlink" title="修改container的主机名"></a>修改container的主机名</h2><p>分别修改三个container的hosts</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/hosts </span><br></pre></td></tr></table></figure>
+<p>添加下面配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">172.17.0.2    hadoop0</span><br><span class="line">172.17.0.3    hadoop1</span><br><span class="line">172.17.0.4    hadoop2</span><br></pre></td></tr></table></figure>
+<h2 id="ssh-免密"><a href="#ssh-免密" class="headerlink" title="ssh 免密"></a>ssh 免密</h2><p>设置ssh免密码登录<br>在hadoop0上执行下面操作</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">mkdir .ssh</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop0</span><br><span class="line">ssh-copy-id -i hadoop1</span><br><span class="line">ssh-copy-id -i hadoop2</span><br></pre></td></tr></table></figure>
+<p>在hadoop1上执行下面操作</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop1</span><br></pre></td></tr></table></figure>
+<p>在hadoop2上执行下面操作</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop2</span><br></pre></td></tr></table></figure>
+<p>至此，Docker搭建Hadoop集群的准备工作</p>
+<hr>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://blog.csdn.net/xu470438000/article/details/50512442">使用docker搭建hadoop分布式集群</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Distributed/" rel="tag"># Distributed</a>
+              <a href="/tags/Hadoop/" rel="tag"># Hadoop</a>
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/dubbo/base/" rel="prev" title="Dubbo基础">
+      <i class="fa fa-chevron-left"></i> Dubbo基础
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/docker/Jenkins_Docker/" rel="next" title="在Docker上搭建Jenkins环境">
+      在Docker上搭建Jenkins环境 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%89%E8%A3%85Docker"><span class="nav-number">1.</span> <span class="nav-text">安装Docker</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#docker-%E5%BB%BA%E7%AB%8B%E9%95%9C%E5%83%8F"><span class="nav-number">2.</span> <span class="nav-text">docker 建立镜像</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8BCentOS-SSH-root%E5%9F%BA%E7%A1%80%E9%95%9C%E5%83%8F"><span class="nav-number">2.1.</span> <span class="nav-text">建立CentOS-SSH-root基础镜像</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%B8%A6%E6%9C%89JDK%E7%9A%84%E9%95%9C%E5%83%8F"><span class="nav-number">3.</span> <span class="nav-text">创建带有JDK的镜像</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%84%E5%BB%BAhadoop%E9%95%9C%E5%83%8F"><span class="nav-number">3.1.</span> <span class="nav-text">构建hadoop镜像</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#docker-%E6%90%AD%E5%BB%BA-Hadoop%E9%9B%86%E7%BE%A4"><span class="nav-number">4.</span> <span class="nav-text">docker 搭建 Hadoop集群</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA3%E5%8F%B0container"><span class="nav-number">4.1.</span> <span class="nav-text">创建3台container</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9B%86%E7%BE%A4%E8%A7%84%E5%88%92"><span class="nav-number">4.2.</span> <span class="nav-text">集群规划</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5container"><span class="nav-number">4.3.</span> <span class="nav-text">连接container</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9container%E7%9A%84%E4%B8%BB%E6%9C%BA%E5%90%8D"><span class="nav-number">4.4.</span> <span class="nav-text">修改container的主机名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ssh-%E5%85%8D%E5%AF%86"><span class="nav-number">4.5.</span> <span class="nav-text">ssh 免密</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

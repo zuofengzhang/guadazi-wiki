@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="00.Flink-outline参考文献 Flink官方文档翻译  todocheckpoint与savepoint区别flink reportstorm trident微批 barrier对齐  算子Reduce在流计算的应用org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor$Loggin">
+<meta property="og:type" content="article">
+<meta property="og:title" content="guadazi">
+<meta property="og:url" content="http://example.com/bigdata/Flink/00.Flink-outline/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="00.Flink-outline参考文献 Flink官方文档翻译  todocheckpoint与savepoint区别flink reportstorm trident微批 barrier对齐  算子Reduce在流计算的应用org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor$Loggin">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/bigdata/Flink/00.Flink-outline/_v_images/20190826164001201_1759200368.png">
+<meta property="article:published_time" content="2021-01-15T08:51:32.556Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:32.556Z">
+<meta property="article:author" content="aaronzhang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/bigdata/Flink/00.Flink-outline/_v_images/20190826164001201_1759200368.png">
+
+<link rel="canonical" href="http://example.com/bigdata/Flink/00.Flink-outline/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title> | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/00.Flink-outline/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 16:51:32" itemprop="dateCreated datePublished" datetime="2021-01-15T16:51:32+08:00">2021-01-15</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="00-Flink-outline"><a href="#00-Flink-outline" class="headerlink" title="00.Flink-outline"></a>00.Flink-outline</h1><h1 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/crestofwave1/oneFlink">Flink官方文档翻译</a></li>
+</ul>
+<h1 id="todo"><a href="#todo" class="headerlink" title="todo"></a>todo</h1><h2 id="checkpoint与savepoint区别"><a href="#checkpoint与savepoint区别" class="headerlink" title="checkpoint与savepoint区别"></a>checkpoint与savepoint区别</h2><h2 id="flink-report"><a href="#flink-report" class="headerlink" title="flink report"></a>flink report</h2><h2 id="storm-trident"><a href="#storm-trident" class="headerlink" title="storm trident"></a>storm trident</h2><p>微批</p>
+<p>barrier对齐</p>
+<p><img src="_v_images/20190826164001201_1759200368.png" alt="flink-rm"></p>
+<h2 id="算子"><a href="#算子" class="headerlink" title="算子"></a>算子</h2><h3 id="Reduce在流计算的应用"><a href="#Reduce在流计算的应用" class="headerlink" title="Reduce在流计算的应用"></a>Reduce在流计算的应用</h3><p>org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor$LoggingHandler:140 -<br>Timestamp monotony violated: 1568772496000 &lt; 1568772500000</p>
+<p>ToDo list</p>
+<h1 id="avro-与-kryo-序列化的区别"><a href="#avro-与-kryo-序列化的区别" class="headerlink" title="avro 与 kryo 序列化的区别"></a>avro 与 kryo 序列化的区别</h1><p>使用场景</p>
+<h2 id="storm-allGrouping-元素广播"><a href="#storm-allGrouping-元素广播" class="headerlink" title="storm allGrouping 元素广播"></a>storm allGrouping 元素广播</h2><p>flink broadcast how to use </p>
+<p>broadcast vaiable value can not be modified</p>
+<p>用法<br>1：初始化数据<br>DataSet<Integer> toBroadcast = env.fromElements(1, 2, 3)<br>2：广播数据<br>.withBroadcastSet(toBroadcast, “broadcastSetName”);<br>3：获取数据<br>Collection<Integer> broadcastSet = getRuntimeContext().getBroadcastVariable(“broadcastSetName”);</p>
+<ul>
+<li>广播变量不能太大</li>
+<li>不能修改，保证数据一致性</li>
+</ul>
+<h1 id="Accumulators-amp-Counters"><a href="#Accumulators-amp-Counters" class="headerlink" title="Accumulators &amp; Counters"></a>Accumulators &amp; Counters</h1><p>累加器与计数器</p>
+<h2 id="spark-accumulate"><a href="#spark-accumulate" class="headerlink" title="spark accumulate"></a>spark accumulate</h2><p>用法<br>1：创建累加器<br>private IntCounter numLines = new IntCounter();<br>2：注册累加器<br>getRuntimeContext().addAccumulator(“num-lines”, this.numLines);<br>3：使用累加器<br>this.numLines.add(1);<br>4：获取累加器的结果<br>myJobExecutionResult.getAccumulatorResult(“num-lines”)</p>
+<h1 id="Distributed-Cache"><a href="#Distributed-Cache" class="headerlink" title="Distributed Cache"></a>Distributed Cache</h1><blockquote>
+<p>Spark 分布式缓存如何使用</p>
+</blockquote>
+<p>Flink提供了一个分布式缓存，类似于hadoop，可以使用户在并行函数中很方便的读取本地文件<br>此缓存的工作机制如下：程序注册一个文件或者目录(本地或者远程文件系统，例如hdfs或者s3)，通过ExecutionEnvironment注册缓存文件并为它起一个名称。当程序执行，Flink自动将文件或者目录复制到所有taskmanager节点的本地文件系统，用户可以通过这个指定的名称查找文件或者目录，然后从taskmanager节点的本地文件系统访问它<br>用法<br>1：注册一个文件<br>env.registerCachedFile(“hdfs:///path/to/your/file”, “hdfsFile”)<br>2：访问数据<br>File myFile = getRuntimeContext().getDistributedCache().getFile(“hdfsFile”);</p>
+<h1 id="at-least-once-amp-exactly-once"><a href="#at-least-once-amp-exactly-once" class="headerlink" title="at least once &amp; exactly once"></a>at least once &amp; exactly once</h1><p>从容错和消息处理的语义上(at least once, exactly once)，Flink引入了state和checkpoint。</p>
+<h1 id="state"><a href="#state" class="headerlink" title="state"></a>state</h1><p>默认保存在java堆中<br>checkpoint: 把state持久化存储，全局快照<br>blink做的优化</p>
+<p>失败恢复机制 </p>
+<p>状态分为原始状态和托管状态</p>
+<p>托管状态是由Flink框架管理的状态<br>而原始状态，由用户自行管理状态具体的数据结构，框架在做checkpoint的时候，使用byte[]来读写状态内容，对其内部数据结构一无所知。<br>通常在DataStream上的状态推荐使用托管的状态，当实现一个用户自定义的operator时，会使用到原始状态。</p>
+<blockquote>
+<p>ReducingState 如何使用</p>
+</blockquote>
+<h1 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h1><p>Flink的checkpoint机制可以与(stream和state)的持久化存储交互的前提：<br>持久化的source，它需要支持在一定时间内重放事件。这种sources的典型例子是持久化的消息队列（比如Apache Kafka，RabbitMQ等）或文件系统（比如HDFS，S3，GFS等）<br>用于state的持久化存储，例如分布式文件系统（比如HDFS，S3，GFS等）</p>
+<p>Checkpoint是Flink实现容错机制最核心的功能，它能够根据配置周期性地基于Stream中各个Operator/task的状态来生成快照，从而将这些状态数据定期持久化存储下来，当Flink程序一旦意外崩溃时，重新运行程序时可以有选择地从这些快照进行恢复，从而修正因为故障带来的程序数据异常</p>
+<p>checkpoint开启之后，默认的checkPointMode是Exactly-once<br>checkpoint的checkPointMode有两种，Exactly-once和At-least-once<br>Exactly-once对于大多数应用来说是最合适的。At-least-once可能用在某些延迟超低的应用程序（始终延迟为几毫秒）</p>
+<p>ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION:表示一旦Flink处理程序被cancel后，会保留Checkpoint数据，以便根据实际需要恢复到指定的Checkpoint<br>ExternalizedCheckpointCleanup.DELETE_ON_CANCELLATION: 表示一旦Flink处理程序被cancel后，会删除Checkpoint数据，只有job执行失败的时候才会保存checkpoint</p>
+<h1 id="state-backend"><a href="#state-backend" class="headerlink" title="state backend"></a>state backend</h1><p>默认情况下，state会保存在taskmanager的内存中，checkpoint会存储在JobManager的内存中。<br>state 的store和checkpoint的位置取决于State Backend的配置<br>env.setStateBackend(…)<br>一共有三种State Backend<br>MemoryStateBackend<br>FsStateBackend<br>RocksDBStateBackend</p>
+<p>MemoryStateBackend<br>state数据保存在java堆内存中，执行checkpoint的时候，会把state的快照数据保存到jobmanager的内存中<br>基于内存的state backend在生产环境下不建议使用<br>FsStateBackend<br>state数据保存在taskmanager的内存中，执行checkpoint的时候，会把state的快照数据保存到配置的文件系统中<br>可以使用hdfs等分布式文件系统<br>RocksDBStateBackend<br>RocksDB跟上面的都略有不同，它会在本地文件系统中维护状态，state会直接写入本地rocksdb中。同时它需要配置一个远端的filesystem uri（一般是HDFS），在做checkpoint的时候，会把本地的数据直接复制到filesystem中。fail over的时候从filesystem中恢复到本地<br>RocksDB克服了state受内存限制的缺点，同时又能够持久化到远端文件系统中，比较适合在生产中使用</p>
+<p>修改State Backend的两种方式<br>第一种：单任务调整<br>修改当前任务代码<br>env.setStateBackend(new FsStateBackend(“hdfs://namenode:9000/flink/checkpoints”));<br>或者new MemoryStateBackend()<br>或者new RocksDBStateBackend(filebackend, true);【需要添加第三方依赖】<br>第二种：全局调整<br>修改flink-conf.yaml<br>state.backend: filesystem<br>state.checkpoints.dir: hdfs://namenode:9000/flink/checkpoints<br>注意：state.backend的值可以是下面几种：jobmanager(MemoryStateBackend), filesystem(FsStateBackend), rocksdb(RocksDBStateBackend)</p>
+<h1 id="Restart-Strategies-重启策略"><a href="#Restart-Strategies-重启策略" class="headerlink" title="Restart Strategies(重启策略)"></a>Restart Strategies(重启策略)</h1><p>默认重启策略通过 flink-conf.yaml 指定</p>
+<p>常用的重启策略<br>固定间隔 (Fixed delay)<br>失败率 (Failure rate)<br>无重启 (No restart)<br>如果没有启用 checkpointing，则使用无重启 (no restart) 策略。<br>如果启用了 checkpointing，但没有配置重启策略，则使用固定间隔 (fixed-delay) 策略，其中 Integer.MAX_VALUE 参数是尝试重启次数<br>重启策略可以在flink-conf.yaml中配置，表示全局的配置。也可以在应用代码中动态指定，会覆盖全局配置</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">第一种：全局配置 flink-conf.yaml</span><br><span class="line">restart-strategy: fixed-delay</span><br><span class="line">restart-strategy.fixed-delay.attempts: <span class="number">3</span></span><br><span class="line">restart-strategy.fixed-delay.delay: <span class="number">10</span> s</span><br><span class="line">第二种：应用代码设置</span><br><span class="line">env.setRestartStrategy(RestartStrategies.fixedDelayRestart(</span><br><span class="line">  <span class="number">3</span>, <span class="comment">// 尝试重启的次数</span></span><br><span class="line">  Time.of(<span class="number">10</span>, TimeUnit.SECONDS) <span class="comment">// 间隔</span></span><br><span class="line">));</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+<h2 id="Flink-table"><a href="#Flink-table" class="headerlink" title="Flink table"></a>Flink table</h2><h3 id="over-window"><a href="#over-window" class="headerlink" title="over window"></a>over window</h3><h1 id="TODO"><a href="#TODO" class="headerlink" title="TODO"></a>TODO</h1><ul>
+<li><input disabled="" type="checkbox"> Flink Table API office</li>
+<li><input disabled="" type="checkbox"> 自定义窗口</li>
+<li><input disabled="" type="checkbox"> cogroup、connect与 join</li>
+<li><input disabled="" type="checkbox"> CDC</li>
+<li><input disabled="" type="checkbox"> flink流测试工具</li>
+</ul>
+<p>#【亿级流量 秒级统计】</p>
+<p>AI、ML、DL、ANN、CNN 蛰伏数十年，就为这个大数据时代。</p>
+<p>AI正以前所未有的速度改变世界，影响着我们生活的方方面面，AI走进人们的生活将成为未来的新常态。 而大数据和计算能力像水和氧气一样支撑着AI，我们的数据从手机端、服务器日志</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/Flink/Flink-checkpoint%E8%AF%8A%E6%96%AD/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/Flink/02.%E7%AE%A1%E6%8E%A7%E7%B3%BB%E7%BB%9F/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#00-Flink-outline"><span class="nav-number">1.</span> <span class="nav-text">00.Flink-outline</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">2.</span> <span class="nav-text">参考文献</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#todo"><span class="nav-number">3.</span> <span class="nav-text">todo</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#checkpoint%E4%B8%8Esavepoint%E5%8C%BA%E5%88%AB"><span class="nav-number">3.1.</span> <span class="nav-text">checkpoint与savepoint区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flink-report"><span class="nav-number">3.2.</span> <span class="nav-text">flink report</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#storm-trident"><span class="nav-number">3.3.</span> <span class="nav-text">storm trident</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AE%97%E5%AD%90"><span class="nav-number">3.4.</span> <span class="nav-text">算子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Reduce%E5%9C%A8%E6%B5%81%E8%AE%A1%E7%AE%97%E7%9A%84%E5%BA%94%E7%94%A8"><span class="nav-number">3.4.1.</span> <span class="nav-text">Reduce在流计算的应用</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#avro-%E4%B8%8E-kryo-%E5%BA%8F%E5%88%97%E5%8C%96%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">4.</span> <span class="nav-text">avro 与 kryo 序列化的区别</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#storm-allGrouping-%E5%85%83%E7%B4%A0%E5%B9%BF%E6%92%AD"><span class="nav-number">4.1.</span> <span class="nav-text">storm allGrouping 元素广播</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Accumulators-amp-Counters"><span class="nav-number">5.</span> <span class="nav-text">Accumulators &amp; Counters</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#spark-accumulate"><span class="nav-number">5.1.</span> <span class="nav-text">spark accumulate</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Distributed-Cache"><span class="nav-number">6.</span> <span class="nav-text">Distributed Cache</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#at-least-once-amp-exactly-once"><span class="nav-number">7.</span> <span class="nav-text">at least once &amp; exactly once</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#state"><span class="nav-number">8.</span> <span class="nav-text">state</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#checkpoint"><span class="nav-number">9.</span> <span class="nav-text">checkpoint</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#state-backend"><span class="nav-number">10.</span> <span class="nav-text">state backend</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Restart-Strategies-%E9%87%8D%E5%90%AF%E7%AD%96%E7%95%A5"><span class="nav-number">11.</span> <span class="nav-text">Restart Strategies(重启策略)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Flink-table"><span class="nav-number">11.1.</span> <span class="nav-text">Flink table</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#over-window"><span class="nav-number">11.1.1.</span> <span class="nav-text">over window</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#TODO"><span class="nav-number">12.</span> <span class="nav-text">TODO</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

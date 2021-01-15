@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="单核CPU就是”一根筋”，只是简单的一条一条的串行执行机器指令，且每个时钟周期内只执行一条指令，如果一个进程不间断的运行，那么就只能运行一个任务； 将CPU的运行时间划分成一个个的时间段，这就是时间片(time slice)，进程通过抢占时间片，以达到交替执行的效果，宏观上，多个任务同时运行，JVM正是采用抢占式调度的方式根据优先级来”有限”的控制线程的运行。 为了提高代码的执行效率，编译器会在编">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java多线程等待的N种打开方式(第一篇)">
+<meta property="og:url" content="http://example.com/Java/multithread/31.multithreadWaitedSample01/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="单核CPU就是”一根筋”，只是简单的一条一条的串行执行机器指令，且每个时钟周期内只执行一条指令，如果一个进程不间断的运行，那么就只能运行一个任务； 将CPU的运行时间划分成一个个的时间段，这就是时间片(time slice)，进程通过抢占时间片，以达到交替执行的效果，宏观上，多个任务同时运行，JVM正是采用抢占式调度的方式根据优先级来”有限”的控制线程的运行。 为了提高代码的执行效率，编译器会在编">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/Users/averyzhang/yun_sync/wiki-own/images/java/multithread/monitor/monitor_lock_diy.png">
+<meta property="article:published_time" content="2015-08-11T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.891Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Thread">
+<meta property="article:tag" content="Multi-thread">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/Users/averyzhang/yun_sync/wiki-own/images/java/multithread/monitor/monitor_lock_diy.png">
+
+<link rel="canonical" href="http://example.com/Java/multithread/31.multithreadWaitedSample01/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>Java多线程等待的N种打开方式(第一篇) | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/31.multithreadWaitedSample01/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java多线程等待的N种打开方式(第一篇)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2015-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2015-08-12T00:00:00+08:00">2015-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>单核CPU就是”一根筋”，只是简单的一条一条的串行执行机器指令，且每个时钟周期内只执行一条指令，如果一个进程不间断的运行，那么就只能运行一个任务；</p>
+<p>将CPU的运行时间划分成一个个的时间段，这就是时间片(time slice)，进程通过抢占时间片，以达到交替执行的效果，宏观上，多个任务同时运行，JVM正是采用抢占式调度的方式根据优先级来”有限”的控制线程的运行。</p>
+<p>为了提高代码的执行效率，编译器会在编译时做指令重排等优化，这就造成了在多线程运行时，出现与单线程运行不一致的情况。再加上，为了优化多核执行效率，造成各个线程访问的变量值与内存主存的值不一致的情况，就出现<strong>内存可见性</strong>问题。</p>
+<p>JMM通过内存屏障、CAS和mutex lock指令等手段，实现各种各样的锁，究竟Java提供了哪些方法可以实现线程的等待呢，接下来以一个样例场景打开”Java多线程等待的N中方式”。</p>
+<h2 id="题目与约定"><a href="#题目与约定" class="headerlink" title="题目与约定"></a>题目与约定</h2><blockquote>
+<p> 假设有A、B、C三个线程，C必须等待A和B都结束时才能运行，</p>
+<p> 约定每个线程的耗时操作为方法<code>doWork(String threadName)</code></p>
+</blockquote>
+<p>接下来将以此样例分析实现方法和Java实现的原理：</p>
+<ol>
+<li>第一篇: monitor</li>
+</ol>
+<ul>
+<li>Thread.join等待线程完成</li>
+<li>Object.wait-notify等待唤醒</li>
+<li>LockSupport</li>
+</ul>
+<ol start="2">
+<li>第二篇: AQS</li>
+</ol>
+<ul>
+<li>CountDownLatch</li>
+<li>ReentrantLock</li>
+<li>Semaphore</li>
+<li>CyclicBarrier循环屏障</li>
+</ul>
+<ol start="3">
+<li>第三篇: 队列</li>
+</ol>
+<ul>
+<li>Future</li>
+<li>BlockingDeque</li>
+<li>ListenableFuture</li>
+</ul>
+<h2 id="Thread-Join等待线程完成"><a href="#Thread-Join等待线程完成" class="headerlink" title="Thread.Join等待线程完成"></a>Thread.Join等待线程完成</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">join</span><span class="params">(<span class="keyword">long</span> millis,<span class="keyword">int</span> nanos)</span> <span class="keyword">throws</span> InterruptedException</span></span><br></pre></td></tr></table></figure>
+<p>等待最多<code>millis</code>毫秒+<code>nanos</code>纳秒等待完成完成，通过循环调用<code>this.wait</code>等待<code>this.isAlive</code>条件完成，当调用<code>this.notifyAll</code>方法时，此线程终止。建议应用程序不要在线程实例上使用<code>wait</code>、<code>notify</code>或<code>notifyAll</code>。</p>
+<h3 id="解题"><a href="#解题" class="headerlink" title="解题"></a>解题</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> Thread threadA = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">  doWork(<span class="string">&quot;A&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="keyword">final</span> Thread threadB = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">  doWork(<span class="string">&quot;B&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="keyword">final</span> Thread threadC = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    threadA.join(); <span class="comment">// 等待A结束</span></span><br><span class="line">    threadB.join(); <span class="comment">// 等待B结束</span></span><br><span class="line">  &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">  &#125;</span><br><span class="line">  doWork(<span class="string">&quot;C&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line"><span class="comment">// 启动A、B两个线程</span></span><br><span class="line">threadA.start();</span><br><span class="line">threadB.start();</span><br><span class="line"><span class="comment">// 启动C线程</span></span><br><span class="line">threadC.start();</span><br></pre></td></tr></table></figure>
+<p>运行结果</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Thread A starting </span><br><span class="line">Thread B starting </span><br><span class="line">Thread B finished</span><br><span class="line">Thread A finished</span><br><span class="line">Thread C starting </span><br><span class="line">Thread C finished</span><br></pre></td></tr></table></figure>
+<h3 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Thread</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title">join</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        join(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    ...</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">join</span><span class="params">(<span class="keyword">long</span> millis)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        <span class="keyword">long</span> base = System.currentTimeMillis();</span><br><span class="line">        <span class="keyword">long</span> now = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">if</span> (millis &lt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;timeout value is negative&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (millis == <span class="number">0</span>) &#123; <span class="comment">// 0表示没有设置超时时间</span></span><br><span class="line">            <span class="keyword">while</span> (isAlive()) &#123;<span class="comment">//isAlive获取线程状态，无限等待直到previousThread线程结束</span></span><br><span class="line">                wait(<span class="number">0</span>); <span class="comment">//调用Object中的wait方法实现线程的阻塞</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123; <span class="comment">//阻塞直到超时</span></span><br><span class="line">            <span class="keyword">while</span> (isAlive()) &#123; </span><br><span class="line">                <span class="keyword">long</span> delay = millis - now;</span><br><span class="line">                <span class="keyword">if</span> (delay &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                wait(delay);</span><br><span class="line">                now = System.currentTimeMillis() - base;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 测试此线程是否存活，如果此线程started并且还没有死亡，则存活</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span>  &lt;code&gt;true&lt;/code&gt; 如果此线程存活;</span></span><br><span class="line"><span class="comment">     *          &lt;code&gt;false&lt;/code&gt; 否则.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">native</span> <span class="keyword">boolean</span> <span class="title">isAlive</span><span class="params">()</span></span>;</span><br><span class="line">    ...</span><br><span class="line">&#125;      </span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Object</span> </span>&#123;</span><br><span class="line">  <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 导致当前线程等待，直到另一个线程调用此对象的notify()方法或notifyAll()方法</span></span><br><span class="line"><span class="comment">     * 当前线程必须拥有此对象的监视器。当前线程释放此监视器的所有权，并等待，直到另一个线程通过调用notify方法或notifyAll方法唤通知等待此对象的监视器的线程唤醒。然后，线程等待，直到它可以重新获得监视器的所有权并继续执行</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title">wait</span><span class="params">(<span class="keyword">long</span> timeout)</span> <span class="keyword">throws</span> InterruptedException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">JavaThread::exit</span><span class="params">(<span class="keyword">bool</span> destroy_vm, ExitType exit_type)</span> </span>&#123;</span><br><span class="line">  assert(<span class="keyword">this</span> == JavaThread::current(),  <span class="string">&quot;thread consistency check&quot;</span>);</span><br><span class="line">  ...</span><br><span class="line">  <span class="comment">// 在线程对象上通知等待者。必须在线程上调用exit()之后执行此操作（如果该线程是守护线程组中的最后一个线程，则通知等待对象之前，线程组应设置已破坏的位）。</span></span><br><span class="line">  ensure_join(<span class="keyword">this</span>); </span><br><span class="line">  assert(!<span class="keyword">this</span>-&gt;has_pending_exception(), <span class="string">&quot;ensure_join should have cleared&quot;</span>);</span><br><span class="line">  ...</span><br></pre></td></tr></table></figure>
+
+
+<p><code>join</code>方法本质是调用的<code>Object</code>中的<code>wait</code>方法实现线程的阻塞，调用wait方法必须要获取锁，所以<code>join</code>方法是被<code>synchronized</code>修饰的，<code>synchronized</code>修饰在方法层面相当于<code>synchronized(this)</code>,<code>this</code>就是<code>previousThread</code>本身的实例，两次调用join的<code>previousThread</code>分别是A和B两个线程，此时<code>previousThread</code>线程对象的监视器也就只有一个C线程在等待，因此当<code>previousThread</code>执行完的时候，通过<code>notify</code>和<code>notifyAll</code>会立即唤醒(只有一个线程嘛)。</p>
+<p>此例子中，有两把锁存在，分别等待<code>threadA</code>和<code>threadB</code>:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">threadA.join(); <span class="comment">// 调用threadA.wait(),threadA运行完后,默认会唤醒threadA对象上等待的threadC</span></span><br><span class="line">threadB.join(); <span class="comment">// 调用threadB.wait(),threadB运行完后,默认会唤醒threadB对象上等待的threadC</span></span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>注意：建议调用<code>Thread.join</code>的时候，不要在线程实例上同时调用<code>wait</code>、<code>nofity</code>和<code>notifyAll</code>方法</p>
+</blockquote>
+<h2 id="Object-wait-notify等待唤醒"><a href="#Object-wait-notify等待唤醒" class="headerlink" title="Object.wait-notify等待唤醒"></a>Object.wait-notify等待唤醒</h2><p><code>wait-nofity</code>是Object中的等待唤醒组合，实现等待两个线程完成，可以使用一把锁，也可以使用两把锁。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 一把锁的解法</span></span><br><span class="line"><span class="comment">// finishedCount是一个数组对象，可以通过这个对象实现C等待A和B完成，C循环扫描完成个数</span></span><br><span class="line"><span class="keyword">int</span>[] finishedCount = &#123;<span class="number">0</span>&#125;;</span><br><span class="line">Thread aThread = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">  doWork(<span class="string">&quot;A&quot;</span>);</span><br><span class="line">  <span class="keyword">synchronized</span> (finishedCount) &#123;</span><br><span class="line">    <span class="comment">// 完成一个，加一</span></span><br><span class="line">    finishedCount[<span class="number">0</span>]++;</span><br><span class="line">    <span class="comment">// 唤醒C</span></span><br><span class="line">    finishedCount.notify();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br><span class="line">Thread bThread = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">  doWork(<span class="string">&quot;B&quot;</span>);</span><br><span class="line">  <span class="keyword">synchronized</span> (finishedCount) &#123;</span><br><span class="line">    <span class="comment">// 完成一个，加一</span></span><br><span class="line">    finishedCount[<span class="number">0</span>]++;</span><br><span class="line">    <span class="comment">// 唤醒C</span></span><br><span class="line">    finishedCount.notify();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br><span class="line">Thread cThread = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">  <span class="comment">// 循环扫描完成个数，只到两个都完成</span></span><br><span class="line">  <span class="keyword">while</span> (finishedCount[<span class="number">0</span>] &lt; <span class="number">2</span>) &#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (finishedCount) &#123;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        finishedCount.wait();</span><br><span class="line">      &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  doWork(<span class="string">&quot;C&quot;</span>);</span><br><span class="line">&#125;);</span><br><span class="line">aThread.start();</span><br><span class="line">bThread.start();</span><br><span class="line">cThread.start();</span><br></pre></td></tr></table></figure>
+<p>C在对象<code>finishedCount</code>上等待，A和B完成时，首先把<code>finishedCount</code>加一，然后唤醒C</p>
+<p>C被唤醒时，判断A和B已经完成（<code>finishedCount</code>是否为2），完成则开始执行C的任务</p>
+<h3 id="Object-wait-notify实现原理"><a href="#Object-wait-notify实现原理" class="headerlink" title="Object.wait-notify实现原理"></a>Object.wait-notify实现原理</h3><p><img src="/Users/averyzhang/yun_sync/wiki-own/images/java/multithread/monitor/monitor_lock_diy.png"></p>
+<p>在HotSpot虚拟机中，<code>monitor</code>采用<code>ObjectMonitor</code>实现。</p>
+<p><code>ObjectMonitor</code>对象中有两个队列，都用来保存<code>ObjectWaiter</code>对象，分别是<code>WaitSet</code> 和 <code>EntrySet</code>。<code>_owner</code>用来指向获得ObjectMonitor对象的线程</p>
+<p><code>ObjectWaiter</code>对象是双向链表结构，保存了<code>_thread</code>（当前线程）以及当前的状态<code>TState</code>等数据， 每个等待锁的线程都会被封装成<code>ObjectWaiter</code>对象。<br><code>_WaitSet</code> ：处于wait状态的线程，会被加入到wait set；</p>
+<p><code>_EntrySet</code>：处于等待锁block状态的线程，会被加入到entry set；</p>
+<h4 id="wait方法实现"><a href="#wait方法实现" class="headerlink" title="wait方法实现"></a>wait方法实现</h4><p><code>lock.wait()</code>方法最终通过<code>ObjectMonitor</code>的 <code>wait(jlong millis, bool interruptable, TRAPS)</code>实现</p>
+<ol>
+<li><p>将当前线程封装成<code>ObjectWaiter</code>对象node</p>
+</li>
+<li><p>通过<code>ObjectMonitor::AddWaiter</code>方法将node添加到<code>_WaitSet</code>列表中</p>
+</li>
+<li><p>通过<code>ObjectMonitor::exit</code>方法释放当前的<code>ObjectMonitor</code>对象，这样其它竞争线程就可以获取该<code>ObjectMonitor</code>对象</p>
+</li>
+<li><p>最终底层的<code>park</code>方法会挂起线程</p>
+</li>
+</ol>
+<p><code>ObjectSynchorizer::wait</code>方法通过<code>Object</code>对象找到<code>ObjectMonitor</code>对象来调用方法 <code>ObjectMonitor::wait()</code>，通过调用<code>ObjectMonitor::AddWaiter()</code>可以把新建的<code>ObjectWaiter</code>对象，放入到<code>_WaitSet</code>队列的末尾，然后在<code>ObjectMonitor::exit</code>释放锁，接着通过执行<code>thread_ParkEvent-&gt;park</code>来挂起线程，也就是进行<code>wait</code>。</p>
+<h4 id="notify方法实现"><a href="#notify方法实现" class="headerlink" title="notify方法实现"></a>notify方法实现</h4><p><code>lock.notify()</code>方法最终通过ObjectMonitor的<code>void notify(TRAPS)</code>实现：<br>1、如果当前<em>WaitSet为空，即没有正在等待的线程，则直接返回；<br>2、通过<code>ObjectMonitor::DequeueWaiter</code>方法，获取</em><code>WaitSet</code>列表中的第一个<code>ObjectWaiter</code>节点，实现也很简单。</p>
+<blockquote>
+<p>这里需要注意的是，在jdk的notify方法注释是随机唤醒一个线程，其实是第一个ObjectWaiter节点</p>
+</blockquote>
+<p>3、根据不同的策略，将取出来的<code>ObjectWaiter</code>节点，加入到<code>_EntryList</code>或则通过<code>Atomic::cmpxchg_ptr</code>指令进行自旋操作cxq，具体代码实现有点长，这里就不贴了，有兴趣的同学可以看objectMonitor::notify方法；</p>
+<h4 id="notifyAll方法实现"><a href="#notifyAll方法实现" class="headerlink" title="notifyAll方法实现"></a>notifyAll方法实现</h4><p><code>lock.notifyAll()</code>方法最终通过<code>ObjectMonitor</code>的<code>void notifyAll(TRAPS)</code>实现：<br>通过<code>for</code>循环取出<code>_WaitSet</code>的<code>ObjectWaiter</code>节点，并根据不同策略，加入到<code>_EntryList</code>或则进行自旋操作。</p>
+<p>从JVM的方法实现中，可以发现：<code>notify</code>和<code>notifyAll</code>并不会释放所占有的<code>ObjectMonitor</code>对象，其实真正释放<code>ObjectMonitor</code>对象的时间点是在执行<code>monitorexit</code>指令，一旦释放<code>ObjectMonitor</code>对象了，entry set中<code>ObjectWaiter</code>节点所保存的线程就可以开始竞争ObjectMonitor对象进行加锁操作了。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ol>
+<li><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/">https://docs.oracle.com/javase/8/docs/</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Thread/" rel="tag"># Thread</a>
+              <a href="/tags/Multi-thread/" rel="tag"># Multi-thread</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java/multithread/32.multithreadWaitedSample02/" rel="prev" title="Java多线程等待的N种打开方式(2)">
+      <i class="fa fa-chevron-left"></i> Java多线程等待的N种打开方式(2)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/hive/base/" rel="next" title="Hive base">
+      Hive base <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A2%98%E7%9B%AE%E4%B8%8E%E7%BA%A6%E5%AE%9A"><span class="nav-number">1.</span> <span class="nav-text">题目与约定</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Thread-Join%E7%AD%89%E5%BE%85%E7%BA%BF%E7%A8%8B%E5%AE%8C%E6%88%90"><span class="nav-number">2.</span> <span class="nav-text">Thread.Join等待线程完成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E9%A2%98"><span class="nav-number">2.1.</span> <span class="nav-text">解题</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">2.2.</span> <span class="nav-text">实现原理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Object-wait-notify%E7%AD%89%E5%BE%85%E5%94%A4%E9%86%92"><span class="nav-number">3.</span> <span class="nav-text">Object.wait-notify等待唤醒</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Object-wait-notify%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">3.1.</span> <span class="nav-text">Object.wait-notify实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#wait%E6%96%B9%E6%B3%95%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.1.1.</span> <span class="nav-text">wait方法实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#notify%E6%96%B9%E6%B3%95%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.1.2.</span> <span class="nav-text">notify方法实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#notifyAll%E6%96%B9%E6%B3%95%E5%AE%9E%E7%8E%B0"><span class="nav-number">3.1.3.</span> <span class="nav-text">notifyAll方法实现</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">4.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

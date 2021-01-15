@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Java内存管理原理在Java运行体系结构中，存在Java程序、虚拟机和操作系统三个层次，Java程序与虚拟机交互(即JNI)，虚拟机与操作系统间交互！这就保证了Java程序的平台无关性。 程序运行前，JVM向操作系统申请一定的内存空间，称为初始内存空间。 程序运行过程中，Java程序一直向Java虚拟机申请内存，当超过初始内存空间时，Java虚拟机再次向操作系统申请。当虚拟机已申请的内存超过规定">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java内存管理">
+<meta property="og:url" content="http://example.com/Java/memory/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="Java内存管理原理在Java运行体系结构中，存在Java程序、虚拟机和操作系统三个层次，Java程序与虚拟机交互(即JNI)，虚拟机与操作系统间交互！这就保证了Java程序的平台无关性。 程序运行前，JVM向操作系统申请一定的内存空间，称为初始内存空间。 程序运行过程中，Java程序一直向Java虚拟机申请内存，当超过初始内存空间时，Java虚拟机再次向操作系统申请。当虚拟机已申请的内存超过规定">
+<meta property="og:locale">
+<meta property="article:published_time" content="2016-03-03T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.825Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="memory">
+<meta property="article:tag" content="heap">
+<meta property="article:tag" content="stack">
+<meta property="article:tag" content="String">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/Java/memory/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>Java内存管理 | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/memory/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java内存管理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-03-04 00:00:00" itemprop="dateCreated datePublished" datetime="2016-03-04T00:00:00+08:00">2016-03-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Java内存管理原理"><a href="#Java内存管理原理" class="headerlink" title="Java内存管理原理"></a>Java内存管理原理</h1><p>在Java运行体系结构中，存在Java程序、虚拟机和操作系统三个层次，Java程序与虚拟机交互(即<a href="/java-jni/" title="JNI：Java native interface ">JNI</a>)，虚拟机与操作系统间交互！这就保证了Java程序的平台无关性。</p>
+<p>程序运行前，JVM向操作系统申请一定的内存空间，称为初始内存空间。</p>
+<p>程序运行过程中，Java程序一直向Java虚拟机申请内存，当超过初始内存空间时，Java虚拟机再次向操作系统申请。当虚拟机已申请的内存超过规定的最大内存空间再申请时，将会出现内存溢出错误。</p>
+<h1 id="内存的分配"><a href="#内存的分配" class="headerlink" title="内存的分配"></a>内存的分配</h1><p>Java内存可以分为方法区、heap(堆)和stack(栈)。</p>
+<ul>
+<li>方法区，默认64M，Java虚拟机会将加载的类存入，保存类的结构，静态成员等。</li>
+<li>heap(堆)，默认64M，存放对象持有的数据，<strong>保持对原类的引用</strong> 。对象的属性值保存在堆中，对象调用的方法保存在方法区。通过<code>new</code>创建的对象都在堆中。方法中的局部变量使用final修饰后，放在堆中。</li>
+<li>stack(栈), 默认为1M。</li>
+<li>基础类型保存在栈中</li>
+<li>局部变量保存在栈中<br>程序进入一个方法时，会为这个方法单独分配一块私属存储空间，用于存储这个方法内部的局部变量，当这个方法结束时，分配给这个方法的栈会释放，这个栈中的变量也将随之释放。</li>
+</ul>
+<h2 id="在堆上分配内存与赋值异步性"><a href="#在堆上分配内存与赋值异步性" class="headerlink" title="在堆上分配内存与赋值异步性"></a>在堆上分配内存与赋值异步性</h2><p>在Java的指令中，创建对象和赋值操作是分开进行的，如<code>instance=new Singleton();</code>语句是分为两步进行的，但是JVM并不保证这两个操作的先后顺序，也就是有可能JVM会为Singleton实例分配空间， 然后直接赋值给 <code>instance</code>成员，然后再去初始化这个Singleton实例。这样就可能出错了，我们以A、B两个线程为例：</p>
+<ol>
+<li>A、B线程同时进入了第一个if判断</li>
+<li>A首先进入synchronized块，由于instance为null，所以它执行instance = new Singleton();</li>
+<li>由于JVM内部的优化机制，JVM先画出了一些分配给Singleton实例的空白内存，并赋值给instance成员（注意此时JVM没有开始初始化这个实例），然后A离开了synchronized块。</li>
+<li>B进入synchronized块，由于instance此时不是null，因此它马上离开了synchronized块并将结果返回给调用该方法的程序。</li>
+<li>此时B线程打算使用Singleton实例，却发现它没有被初始化，于是错误发生了。</li>
+</ol>
+<h2 id="基础类型"><a href="#基础类型" class="headerlink" title="基础类型"></a>基础类型</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> a=<span class="number">3</span>;</span><br><span class="line"><span class="keyword">int</span> b=<span class="number">3</span>;</span><br><span class="line">a=<span class="number">4</span>;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>编译器先处理<code>int a=3;</code>:<br>首先，在栈中创建一个变量为a的引用，然后查找有没有字面量为3的地址。没有，则开辟一个存放3这个字面量的地址，然后将a指向这个地址。</p>
+</li>
+<li><p>再处理<code>int b=3;</code>:<br>首先创建一个变量为b的引用，然后查找发现已经存在字面量为3的地址，将b指向这个地址。</p>
+</li>
+<li><p>如果此时，再<code>a=4;</code>:<br>那么，虚拟机存在是否存在4这个字面量，如果存在，直接将a指向这个地址；否则，创建4这个字面量，将a指向这个字面量的地址。</p>
+</li>
+</ul>
+<p>因此改变了a的值，只是a重新指向别的地方，不会影响b的值。</p>
+<h2 id="对象存储"><a href="#对象存储" class="headerlink" title="对象存储"></a>对象存储</h2><blockquote>
+<p>方法的存储</p>
+</blockquote>
+<p>定义如下类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">BoxSet</span></span>&#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">int</span> width=<span class="number">100</span>;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">int</span> hight=<span class="number">200</span>;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">BoxSet</span><span class="params">(<span class="keyword">int</span> x,<span class="keyword">int</span> y)</span></span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.width=x;</span><br><span class="line">    <span class="keyword">this</span>.hight=y;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">BoxSet boxSet; <span class="comment">// (1)</span></span><br><span class="line">boxSet=<span class="keyword">new</span> BoxSet(<span class="number">50</span>,<span class="number">50</span>); <span class="comment">// (2)</span></span><br></pre></td></tr></table></figure>
+<p>两条语句:</p>
+<ol>
+<li>声明变量boxSet：</li>
+</ol>
+<ul>
+<li>在栈内存中，为对象的引用变量<code>boxSet</code>分配内存空间。但是<code>boxSet</code>的值为空，称<code>boxSet</code>为一个空对象。空对象不能使用，因为它没有引用任何“实体”。</li>
+</ul>
+<ol start="2">
+<li>会做两件事：</li>
+</ol>
+<ul>
+<li>在堆内存中，为类的成员变量<code>width</code>和<code>hight</code>分配内存，并赋值为各数据类型的默认值。</li>
+<li>显式初始化: 类定义时的初始化值，即<code>width</code>赋值为100，<code>hight</code>赋值为200</li>
+<li>调用构造方法: 为<code>width</code>和<code>hight</code>分别赋值为50和50</li>
+<li>返回堆内存中对象的引用给引用变量<code>boxSet</code></li>
+</ul>
+<h2 id="方法存储"><a href="#方法存储" class="headerlink" title="方法存储"></a>方法存储</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Dog</span> </span>&#123;</span><br><span class="line">  Collar c;</span><br><span class="line">  String name;</span><br><span class="line"><span class="comment">//1. main()方法位于栈上</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"><span class="comment">//2. 在栈上创建引用变量d,但Dog对象尚未存在</span></span><br><span class="line">    Dog d;</span><br><span class="line"><span class="comment">//3. 在堆上创建新的Dog对象，并将其赋予d引用变量</span></span><br><span class="line">    d = <span class="keyword">new</span> Dog();</span><br><span class="line"><span class="comment">//4. 将引用变量的一个副本传递给go()方法</span></span><br><span class="line">    d.go(d);</span><br><span class="line">  &#125;</span><br><span class="line"><span class="comment">//5. 将go()方法置于栈上，并将dog参数作为局部变量(局部变量位于栈上)</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">go</span><span class="params">(Dog dog)</span></span>&#123;</span><br><span class="line"><span class="comment">//6. 在堆上创建新的Collar对象，并将其赋予Dog的实例变量</span></span><br><span class="line">    c =<span class="keyword">new</span> Collar();</span><br><span class="line">  &#125;</span><br><span class="line"><span class="comment">//7.将setName()添加到栈上，并将dogName参数作为其局部变量</span></span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">setName</span><span class="params">(String dogName)</span></span>&#123;</span><br><span class="line"><span class="comment">//8. name的实例对象也引用String对象</span></span><br><span class="line">    name=dogName;</span><br><span class="line">  &#125;</span><br><span class="line"><span class="comment">//9. 程序执行完成后，setName()将会完成并从栈中清除，</span></span><br><span class="line"><span class="comment">//此时，局部变量dogName也会消失，尽管它所引用的String仍在堆上</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="包装类"><a href="#包装类" class="headerlink" title="包装类"></a>包装类</h2><blockquote>
+<p>2.String StringBuffered 与 StringBuilder 区别</p>
+</blockquote>
+<p>Java中的基本变量都存在包装类，如下表：</p>
+<table>
+<thead>
+<tr>
+<th>0</th>
+<th>基本变量</th>
+<th>包装类</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>int</td>
+<td>Integer</td>
+</tr>
+<tr>
+<td>2</td>
+<td>long</td>
+<td>Long</td>
+</tr>
+<tr>
+<td>3</td>
+<td>short</td>
+<td>Short</td>
+</tr>
+<tr>
+<td>4</td>
+<td>float</td>
+<td>Float</td>
+</tr>
+<tr>
+<td>5</td>
+<td>double</td>
+<td>Double</td>
+</tr>
+<tr>
+<td>6</td>
+<td>boolean</td>
+<td>Boolean</td>
+</tr>
+<tr>
+<td>7</td>
+<td>byte</td>
+<td>Byte</td>
+</tr>
+<tr>
+<td>8</td>
+<td>char</td>
+<td>Character</td>
+</tr>
+</tbody></table>
+<h3 id="String"><a href="#String" class="headerlink" title="String"></a>String</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String s=<span class="string">&quot;abc&quot;</span>;</span><br></pre></td></tr></table></figure>
+<ol>
+<li>在栈内存中为对象的引用变量<code>s</code>分配内存</li>
+<li>查找字面量<code>&quot;abc&quot;</code>，如果存在则将该地址赋值给s; 否则，新建字面量<code>&quot;abc&quot;</code>并将赋值给s。</li>
+</ol>
+<p>继续看下面的例子:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String s=<span class="keyword">new</span> String(<span class="string">&quot;abc&quot;</span>); <span class="comment">//(2)</span></span><br></pre></td></tr></table></figure>
+<p>方式2:</p>
+<ol>
+<li>在栈内存中为对象的引用变量<code>s</code>分配内存</li>
+<li>在堆中新建String对象，并将地址赋值给栈中的s</li>
+<li>在栈内存中，查找字面量”abc”, 如果存在则将字面量地址作为参数传递给赋值给栈中s指向的String对象；否则，新建字面量”abc”.<br>因此，在这个过程中共产生了两个对象。</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">String str1 = <span class="string">&quot;abc&quot;</span>;</span><br><span class="line">String str2 = <span class="string">&quot;abc&quot;</span>;</span><br><span class="line">System.out.println(str1==str2);   <span class="comment">//true</span></span><br></pre></td></tr></table></figure>
+<p>　　注意，我们这里并不用<code>str1.equals(str2)；</code>的方式，因为这将比较两个字符串的值是否相等。<code>==</code>号，根据JDK的说明，只有在两个引用都指向了同一个对象时才返回真值。而我们在这里要看的是，str1与str2是否都指向了同一个对象。<br>结果说明，JVM创建了两个引用str1和str2，但只创建了一个对象，而且两个引用都指向了这个对象。</p>
+<p>String可以用<code>String str = new String(&quot;abc&quot;);</code>的形式来创建，也可以用<code>String str = &quot;abc&quot;；</code>的形式来创建，这种表达式是可以的！前者是规范的类的创建过程，即在Java中，一切都是对象，而对象是类的实例，全部通过new()的形式来创建。那为什么在<code>String str = &quot;abc&quot;；</code>中，并没有通过<code>new()</code>来创建实例，是不是违反了上述原则？其实没有。</p>
+<p>我们再来更进一步，将以上代码改成：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">String str1 = <span class="string">&quot;abc&quot;</span>;</span><br><span class="line">String str2 = <span class="string">&quot;abc&quot;</span>;</span><br><span class="line">str1 = <span class="string">&quot;bcd&quot;</span>;</span><br><span class="line">System.out.println(str1==str2);   <span class="comment">//false</span></span><br><span class="line">System.out.println(str1 + <span class="string">&quot;,&quot;</span> + str2);   <span class="comment">//bcd, abc</span></span><br></pre></td></tr></table></figure>
+<p>　　这就是说，赋值的变化导致了类对象引用的变化，str1指向了另外一个新对象！而str2仍旧指向原来的对象。上例中，当我们将str1的值改为”bcd”时，JVM发现在栈中没有存放该值的地址，便开辟了这个地址，并创建了一个新的对象，其字符串的值指向这个地址。<br>　　事实上，String类被设计成为不可改变(immutable)的类。如果你要改变其值，可以，但JVM在运行时根据新值悄悄创建了一个新对象，然后将这个对象的地址返回给原来类的引用。这个创建过程虽说是完全自动进行的，但它毕竟占用了更多的时间。在对时间要求比较敏感的环境中，会带有一定的不良影响。</p>
+<p>　　再修改原来代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">　　String str1 = <span class="string">&quot;abc&quot;</span>;</span><br><span class="line">　　String str2 = <span class="string">&quot;abc&quot;</span>;</span><br><span class="line"></span><br><span class="line">　　str1 = <span class="string">&quot;bcd&quot;</span>;</span><br><span class="line"></span><br><span class="line">　　String str3 = str1;</span><br><span class="line">　　System.out.println(str3);   <span class="comment">//bcd</span></span><br><span class="line"></span><br><span class="line">　　String str4 = <span class="string">&quot;bcd&quot;</span>;</span><br><span class="line">　　System.out.println(str1 == str4);   <span class="comment">//true</span></span><br></pre></td></tr></table></figure>
+<p>　　str3 这个对象的引用直接指向str1所指向的对象(注意，str3并没有创建新对象)。当str1改完其值后，再创建一个String的引用str4，并指向因str1修改值而创建的新的对象。可以发现，这回str4也没有创建新的对象，从而再次实现栈中数据的共享。</p>
+<p>　　我们再接着看以下的代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">　　String str1 = <span class="keyword">new</span> String(<span class="string">&quot;abc&quot;</span>);</span><br><span class="line">　　String str2 = <span class="string">&quot;abc&quot;</span>;</span><br><span class="line">　　System.out.println(str1==str2);   <span class="comment">//false</span></span><br></pre></td></tr></table></figure>
+<p>　　创建了两个引用。创建了两个对象。两个引用分别指向不同的两个对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">　　String str1 = <span class="string">&quot;abc&quot;</span>;</span><br><span class="line">　　String str2 = <span class="keyword">new</span> String(<span class="string">&quot;abc&quot;</span>);</span><br><span class="line">　　System.out.println(str1==str2);   <span class="comment">//false</span></span><br></pre></td></tr></table></figure>
+<p>　　创建了两个引用。创建了两个对象。两个引用分别指向不同的两个对象。</p>
+<p>　　以上两段代码说明，<strong>只要是用new()来新建对象的，都会在堆中创建，而且其字符串是单独存值的，即使与栈中的数据相同，也不会与栈中的数据共享。</strong></p>
+<p>　　6). <strong>数据类型包装类的值不可修改</strong>。不仅仅是String类的值不可修改，所有的数据类型包装类都不能更改其内部的值。</p>
+<h2 id="volatile关键字"><a href="#volatile关键字" class="headerlink" title="volatile关键字"></a>volatile关键字</h2><p>Volatile修饰的成员变量在每次被线程访问时，都强迫从共享内存中重读该成员变量的值。而且，当成员变量发生变化时，强迫线程将变化值回写到共享内存。这样在任何时刻，两个不同的线程总是看到某个成员变量的同一个值。</p>
+<p>首先, 应该明白计算机内部都做什么了。比如做了一个i++操作，计算机内部做了三次处理：读取－修改－写入。<br>同样，对于一个long型数据，做了个赋值操作，在32系统下需要经过两步才能完成，先修改低32位，然后修改高32位。<br>假想一下，当将以上的操作放到一个多线程环境下操作时候，有可能出现的问题，是这些步骤执行了一部分，而另外一个线程就已经引用了变量值，这样就导致了读取脏数据的问题。<br>通过这个设想，就不难理解volatile关键字了。</p>
+<p>volatile可以用在任何变量前面，但不能用于final变量前面，因为final型的变量是禁止修改的。也不存在线程安全的问题。</p>
+<h1 id="内存释放"><a href="#内存释放" class="headerlink" title="内存释放"></a>内存释放</h1><h2 id="垃圾回收"><a href="#垃圾回收" class="headerlink" title="垃圾回收"></a>垃圾回收</h2><p>垃圾回收是一种动态存储管理技术，它自动地释放不再被程序引用的对象，按照特定的垃圾收集算法来实现资源自动回收的功能。当一个对象不再被引用的时候，内存回收它占领的空间，以便空间被后来的新对象使用，以免造成内存泄露。</p>
+<p>一般是在CPU空闲或空间不足时自动进行垃圾回收，而程序员无法精确控制垃圾回收的时机和顺序等。<br>当没有任何获得线程能访问一个对象时，该对象就符合垃圾回收条件。<br> 垃圾回收器如发现一个对象不能被任何活线程访问时，他将认为该对象符合删除条件，就将其加入回收队列，但不是立即销毁对象，何时销毁并释放内存是无法预知的。垃圾回收不能强制执行，然而Java提供了一些方法（如：System.gc()方法），允许你请求JVM执行垃圾回收，而不是要求，虚拟机会尽其所能满足请求，但是不能保证JVM从内存中删除所有不用的对象。</p>
+<h3 id="符合垃圾回收的条件"><a href="#符合垃圾回收的条件" class="headerlink" title="符合垃圾回收的条件"></a>符合垃圾回收的条件</h3><ol>
+<li>空引用</li>
+<li>重新为引用变量赋值：可以通过设置引用变量引用另一个对象来解除该引用变量与一个对象间的引用关系。</li>
+<li>方法内创建的对象：所创建的局部变量仅在该方法的作用期间内存在。一旦该方法返回，在这个方法内创建的对象就符合垃圾收集条件。有一种明显的例外情况，就是方法的返回对象。</li>
+<li>隔离引用：这种情况中，被回收的对象仍具有引用，这种情况称作隔离岛。若存在这两个实例，他们互相引用，并且这两个对象的所有其他引用都删除，其他任何线程无法访问这两个对象中的任意一个。也可以符合垃圾回收条件。</li>
+</ol>
+<h3 id="强制垃圾回收"><a href="#强制垃圾回收" class="headerlink" title="强制垃圾回收"></a>强制垃圾回收</h3><h3 id="finalize"><a href="#finalize" class="headerlink" title="finalize()"></a>finalize()</h3><p>java提供了一种机制，使你能够在对象刚要被垃圾回收之前运行一些代码。这段代码位于名为finalize()的方法内，所有类从Object类继承这个方法。由于不能保证垃圾回收器会删除某个对象。因此放在finalize()中的代码无法保证运行。因此建议不要重写finalize();</p>
+<h2 id="内存泄露"><a href="#内存泄露" class="headerlink" title="内存泄露"></a>内存泄露</h2><p>内存泄漏就是存在一些被分配的对象，这些对象有下面两个特点:<br>首先，这些对象是有被引用的，即在有向树形图中，存在树枝通路可以与其相连；<br>其次，这些对象是无用的，即程序以后不会再使用这些对象。<br>如果对象满足这两个条件，这些对象就可以判定为Java中的内存泄漏，这些对象不会被GC所回收，然而它却占用内存。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Vector v = <span class="keyword">new</span> Vector(<span class="number">10</span>);</span><br><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; <span class="number">100</span>; i++)</span><br><span class="line">&#123;</span><br><span class="line">Object o = <span class="keyword">new</span> Object();  </span><br><span class="line">v.add(o);  </span><br><span class="line">o = <span class="keyword">null</span>;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>//此时，所有的Object对象都没有被释放，因为变量v引用这些对象。   实际上无用，而还被引用的对象，GC就无能为力了(事实上GC认为它还有用)，这一点是导致内存泄漏最重要的原因。</p>
+<h1 id="优化编程"><a href="#优化编程" class="headerlink" title="优化编程"></a>优化编程</h1><h2 id="1-不要显式调用System-gc"><a href="#1-不要显式调用System-gc" class="headerlink" title="(1)不要显式调用System.gc()"></a>(1)不要显式调用System.gc()</h2><p>　　此函数建议JVM进行主GC,虽然只是建议而非一定,但很多情况下它会触发主GC,从而增加主GC的频率,也即增加了间歇性停顿的次数。</p>
+<h2 id="2-尽量减少临时对象的使用"><a href="#2-尽量减少临时对象的使用" class="headerlink" title="(2)尽量减少临时对象的使用"></a>(2)尽量减少临时对象的使用</h2><p>　　临时对象在跳出函数调用后,会成为垃圾,少用临时变量就相当于减少了垃圾的产生,从而延长了出现上述第二个触发条件出现的时间,减少了主GC的机会。</p>
+<h2 id="3-对象不用时最好显式置为Null"><a href="#3-对象不用时最好显式置为Null" class="headerlink" title="(3)对象不用时最好显式置为Null"></a>(3)对象不用时最好显式置为Null</h2><p>　　一般而言,为Null的对象都会被作为垃圾处理,所以将不用的对象显式地设为Null,有利于GC收集器判定垃圾,从而提高了GC的效率。</p>
+<h2 id="4-尽量使用StringBuffer-而不用String来累加字符串"><a href="#4-尽量使用StringBuffer-而不用String来累加字符串" class="headerlink" title="(4)尽量使用StringBuffer,而不用String来累加字符串"></a>(4)尽量使用StringBuffer,而不用String来累加字符串</h2><p>   由于String是固定长的字符串对象,累加String对象时,并非在一个String对象中扩增,而是重新创建新的String对象,如Str5=Str1+Str2+Str3+Str4,这条语句执行过程中会产生多个垃圾对象,因为对次作“+”操作时都必须创建新的String对象,但这些过渡对象对系统来说是没有实际意义的,只会增加更多的垃圾。避免这种情况可以改用StringBuffer来累加字符串,因StringBuffer是可变长的,它在原有基础上进行扩增,不会产生中间对象。</p>
+<h2 id="5-能用基本类型如Int-Long-就不用Integer-Long对象"><a href="#5-能用基本类型如Int-Long-就不用Integer-Long对象" class="headerlink" title="(5)能用基本类型如Int,Long,就不用Integer,Long对象"></a>(5)能用基本类型如Int,Long,就不用Integer,Long对象</h2><p>　　基本类型变量占用的内存资源比相应对象占用的少得多,如果没有必要,最好使用基本变量。</p>
+<h2 id="6-尽量少用静态对象变量"><a href="#6-尽量少用静态对象变量" class="headerlink" title="(6)尽量少用静态对象变量"></a>(6)尽量少用静态对象变量</h2><p>　　静态变量属于全局变量,不会被GC回收,它们会一直占用内存。</p>
+<h2 id="7-分散对象创建或删除的时间"><a href="#7-分散对象创建或删除的时间" class="headerlink" title="(7)分散对象创建或删除的时间"></a>(7)分散对象创建或删除的时间</h2><p>　集中在短时间内大量创建新对象,特别是大对象,会导致突然需要大量内存,JVM在面临这种情况时,只能进行主GC,以回收内存或整合内存碎片,从而增加主GC的频率。集中删除对象,道理也是一样的。它使得突然出现了大量的垃圾对象,空闲空间必然减少,从而大大增加了下一次创建新对象时强制主GC的机会。</p>
+<hr>
+<p>参考文献</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://www.codeceo.com/article/java-memory-model-volatile.html" title="Java内存模型与volatile关键字">Java内存模型与volatile关键字</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/memory/" rel="tag"># memory</a>
+              <a href="/tags/heap/" rel="tag"># heap</a>
+              <a href="/tags/stack/" rel="tag"># stack</a>
+              <a href="/tags/String/" rel="tag"># String</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java/generic/" rel="prev" title="Java基础之泛型">
+      <i class="fa fa-chevron-left"></i> Java基础之泛型
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/innerClass/" rel="next" title="Java内部类">
+      Java内部类 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Java%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">Java内存管理原理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E7%9A%84%E5%88%86%E9%85%8D"><span class="nav-number">2.</span> <span class="nav-text">内存的分配</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8%E5%A0%86%E4%B8%8A%E5%88%86%E9%85%8D%E5%86%85%E5%AD%98%E4%B8%8E%E8%B5%8B%E5%80%BC%E5%BC%82%E6%AD%A5%E6%80%A7"><span class="nav-number">2.1.</span> <span class="nav-text">在堆上分配内存与赋值异步性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E7%A1%80%E7%B1%BB%E5%9E%8B"><span class="nav-number">2.2.</span> <span class="nav-text">基础类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8"><span class="nav-number">2.3.</span> <span class="nav-text">对象存储</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E5%AD%98%E5%82%A8"><span class="nav-number">2.4.</span> <span class="nav-text">方法存储</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8C%85%E8%A3%85%E7%B1%BB"><span class="nav-number">2.5.</span> <span class="nav-text">包装类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#String"><span class="nav-number">2.5.1.</span> <span class="nav-text">String</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#volatile%E5%85%B3%E9%94%AE%E5%AD%97"><span class="nav-number">2.6.</span> <span class="nav-text">volatile关键字</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E9%87%8A%E6%94%BE"><span class="nav-number">3.</span> <span class="nav-text">内存释放</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6"><span class="nav-number">3.1.</span> <span class="nav-text">垃圾回收</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%A6%E5%90%88%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9A%84%E6%9D%A1%E4%BB%B6"><span class="nav-number">3.1.1.</span> <span class="nav-text">符合垃圾回收的条件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%BA%E5%88%B6%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6"><span class="nav-number">3.1.2.</span> <span class="nav-text">强制垃圾回收</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#finalize"><span class="nav-number">3.1.3.</span> <span class="nav-text">finalize()</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2"><span class="nav-number">3.2.</span> <span class="nav-text">内存泄露</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BC%98%E5%8C%96%E7%BC%96%E7%A8%8B"><span class="nav-number">4.</span> <span class="nav-text">优化编程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E4%B8%8D%E8%A6%81%E6%98%BE%E5%BC%8F%E8%B0%83%E7%94%A8System-gc"><span class="nav-number">4.1.</span> <span class="nav-text">(1)不要显式调用System.gc()</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%B0%BD%E9%87%8F%E5%87%8F%E5%B0%91%E4%B8%B4%E6%97%B6%E5%AF%B9%E8%B1%A1%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="nav-number">4.2.</span> <span class="nav-text">(2)尽量减少临时对象的使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E5%AF%B9%E8%B1%A1%E4%B8%8D%E7%94%A8%E6%97%B6%E6%9C%80%E5%A5%BD%E6%98%BE%E5%BC%8F%E7%BD%AE%E4%B8%BANull"><span class="nav-number">4.3.</span> <span class="nav-text">(3)对象不用时最好显式置为Null</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E5%B0%BD%E9%87%8F%E4%BD%BF%E7%94%A8StringBuffer-%E8%80%8C%E4%B8%8D%E7%94%A8String%E6%9D%A5%E7%B4%AF%E5%8A%A0%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="nav-number">4.4.</span> <span class="nav-text">(4)尽量使用StringBuffer,而不用String来累加字符串</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-%E8%83%BD%E7%94%A8%E5%9F%BA%E6%9C%AC%E7%B1%BB%E5%9E%8B%E5%A6%82Int-Long-%E5%B0%B1%E4%B8%8D%E7%94%A8Integer-Long%E5%AF%B9%E8%B1%A1"><span class="nav-number">4.5.</span> <span class="nav-text">(5)能用基本类型如Int,Long,就不用Integer,Long对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-%E5%B0%BD%E9%87%8F%E5%B0%91%E7%94%A8%E9%9D%99%E6%80%81%E5%AF%B9%E8%B1%A1%E5%8F%98%E9%87%8F"><span class="nav-number">4.6.</span> <span class="nav-text">(6)尽量少用静态对象变量</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-%E5%88%86%E6%95%A3%E5%AF%B9%E8%B1%A1%E5%88%9B%E5%BB%BA%E6%88%96%E5%88%A0%E9%99%A4%E7%9A%84%E6%97%B6%E9%97%B4"><span class="nav-number">4.7.</span> <span class="nav-text">(7)分散对象创建或删除的时间</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="本文属于安全专题: 旨在介绍加密和解密相关内容。主要包括：加密解密算法的分类、常见的加密和解密算法以及Java API  摘要这是一种与消息认证码结合使用以确保消息完整性的技术。主要使用单向散列函数算法，可用于检验消息的完整性，和通过散列密码直接以文本形式保存等，目前广泛使用的算法有 MD4、MD5、SHA-1，jdk1.5对上面都提供了支持，在java中进行消息摘要很简单， java.secu">
+<meta property="og:type" content="article">
+<meta property="og:title" content="加密&#x2F;解密&#x2F;签名&#x2F;证书及在Java中的使用">
+<meta property="og:url" content="http://example.com/network/security/encrypt-decrypt-signature-certificate/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="本文属于安全专题: 旨在介绍加密和解密相关内容。主要包括：加密解密算法的分类、常见的加密和解密算法以及Java API  摘要这是一种与消息认证码结合使用以确保消息完整性的技术。主要使用单向散列函数算法，可用于检验消息的完整性，和通过散列密码直接以文本形式保存等，目前广泛使用的算法有 MD4、MD5、SHA-1，jdk1.5对上面都提供了支持，在java中进行消息摘要很简单， java.secu">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/images/network/security/validateSign.png">
+<meta property="og:image" content="http://img.blog.csdn.net/20141109225903192?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvdGVuZnlndW8=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center">
+<meta property="article:published_time" content="2016-10-21T04:26:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.913Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Job">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/network/security/validateSign.png">
+
+<link rel="canonical" href="http://example.com/network/security/encrypt-decrypt-signature-certificate/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>加密/解密/签名/证书及在Java中的使用 | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/network/security/encrypt-decrypt-signature-certificate/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          加密/解密/签名/证书及在Java中的使用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-10-21 12:26:00" itemprop="dateCreated datePublished" datetime="2016-10-21T12:26:00+08:00">2016-10-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>本文属于安全专题: 旨在介绍加密和解密相关内容。<br>主要包括：加密解密算法的分类、常见的加密和解密算法以及Java API</p>
+</blockquote>
+<h1 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h1><p>这是一种与消息认证码结合使用以确保消息完整性的技术。主要使用单向散列函数算法，可用于检验消息的完整性，<br>和通过散列密码直接以文本形式保存等，目前广泛使用的算法有 MD4、MD5、SHA-1，jdk1.5对上面都提供了支持，<br>在java中进行消息摘要很简单， <code>java.security.MessageDigest</code> 提供了一个简易的操作方法：</p>
+<h2 id="MD5"><a href="#MD5" class="headerlink" title="MD5"></a>MD5</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 获取md5摘要</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> info 要加密的信息</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> String 获取md5摘要</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">digestWithMD5</span><span class="params">(String info)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">byte</span>[] digesta = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 得到一个md5的消息摘要</span></span><br><span class="line">        MessageDigest messageDigest = MessageDigest.getInstance(<span class="string">&quot;MD5&quot;</span>);</span><br><span class="line">        <span class="comment">// 添加要进行计算摘要的信息</span></span><br><span class="line">        messageDigest.update(info.getBytes());</span><br><span class="line">        <span class="comment">// 得到该摘要</span></span><br><span class="line">        digesta = messageDigest.digest();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 将摘要转为字符串</span></span><br><span class="line">    <span class="keyword">return</span> EncodingUtils.byte2hex(digesta);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="SHA"><a href="#SHA" class="headerlink" title="SHA"></a>SHA</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 进行SHA加密</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> info 要加密的信息</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> String 加密后的字符串</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">digestWithSHA</span><span class="params">(String info)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">byte</span>[] digesta = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 得到一个SHA-1的消息摘要</span></span><br><span class="line">        MessageDigest messageDigest = MessageDigest.getInstance(<span class="string">&quot;SHA-1&quot;</span>);</span><br><span class="line">        <span class="comment">// 添加要进行计算摘要的信息</span></span><br><span class="line">        messageDigest.update(info.getBytes());</span><br><span class="line">        <span class="comment">// 得到该摘要</span></span><br><span class="line">        digesta = messageDigest.digest();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 将摘要转为字符串</span></span><br><span class="line">    <span class="keyword">return</span> EncodingUtils.byte2hex(digesta);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="加密"><a href="#加密" class="headerlink" title="加密"></a>加密</h1><p><a href="/Java/io/object-serialization/">之前的文章</a> 介绍Java对象序列化的时候，曾经提到了对序列化后的对象加密来提高安全性。本文重点介绍<strong>Java的加解密API及其运用</strong>。</p>
+<p>消息摘要只能检查消息的完整性，但是单向的，对明文消息并不能加密，要加密明文的消息的话，就要使用其他的算法，要确保机密性，我们需要使用私钥密码术来交换私有消息。　</p>
+<p>加密，是对原文进行编码生成难以获取原文的乱码的过程。而解密则是对加密后的文本还原成原文的过程。</p>
+<h1 id="对称加密"><a href="#对称加密" class="headerlink" title="对称加密"></a>对称加密</h1><p>A用一个密钥对一个文件加密，而B读取这个文件的话，则需要和A一样的密钥，双方共享一个私钥（而在web环境下，私钥在传递时容易被侦听）：　　</p>
+<p>对称加密, 就是在编码时使用的密钥<code>e</code>和解码时一样<code>d</code>(<code>e=d</code>), 统称为密钥<code>k</code> .</p>
+<p> <strong>加解密的过程</strong></p>
+<p>发送端用共享密钥<code>k</code>对明文<code>p</code>进行加密, 得到密文<code>c</code>, 并将得到的密文发送给接收端, 接收端收到密文后, 并用其相同的共享密钥k对密文进行解密, 得出明文<code>p</code>.</p>
+<p><strong>不足</strong></p>
+<ol>
+<li>共享密钥：发送方和接收方需要首先共享相同的密钥, 即存在密钥<code>k</code>的分发问题, 如何安全的把共享密钥在双方进行分享, 这本身也是一个如何安全通信的问题:</li>
+</ol>
+<ul>
+<li>一种方法是提前双方约定好, 不通过具体的通信进行协商, 避免被监听和截获.</li>
+<li>另一种方式是通过非对称加密信道进行对称密码的分发和共享, 即<strong>混合加密系统</strong>.</li>
+</ul>
+<ol>
+<li>每方一个秘钥：密钥管理的复杂度问题. 由于对称加密的密钥是一对一的使用方式, 若一方要跟n方通信, 则需要维护n对密钥.</li>
+</ol>
+<p><strong>优点</strong></p>
+<p>加密和解密的速度要比非对称加密快很多, 因此常用非对称加密建立的安全信道进行共享密钥的分享, 完成后, 具体的加解密则使用对称加密. 即<code>混合加密系统</code>.</p>
+<p>密钥<code>k</code>的长度对解密破解的难度有很重大的影响, <code>k</code>的长度越长, 对应的密码空间就越大, 遭到暴力破解或者词典破解的难度就更大, 就更加安全.</p>
+<p>使用私钥加密的话，</p>
+<ul>
+<li>首先需要一个密钥，可用 <code>javax.crypto.KeyGenerator</code> 产生一个密钥 (<code>java.security.Key</code>),</li>
+<li>然后传递给一个加密工具(<code>javax.crypto.Cipher</code>), 该工具再使用相应的算法来进行加密，主要 对称算法有 ES（实际密钥只用到56位），AES（支持三种密钥长度：128、192、256位），通常首先128位，其他的还有DESede等，jdk1.5种也 提供了对对称算法的支持，</li>
+</ul>
+<p><strong>常见的对称加密算法</strong></p>
+<p>一般加密和解密的算法是公开的, 需要保持隐秘的是密钥<code>k</code>, 流行的<code>对称加密</code>算法有：<code>DES</code>, <code>Triple-DES</code>, <code>RC2</code>和<code>RC4</code></p>
+<h2 id="创建加密密钥"><a href="#创建加密密钥" class="headerlink" title="创建加密密钥"></a>创建加密密钥</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建对称加密的密匙</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> algorithm 加密算法,可用 DES,DESede,Blowfish</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> SecretKey 秘密（对称）密钥</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> SecretKey <span class="title">createSecretKey</span><span class="params">(String algorithm)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 声明KeyGenerator对象</span></span><br><span class="line">    KeyGenerator keygen;</span><br><span class="line">    <span class="comment">// 声明 密钥对象</span></span><br><span class="line">    SecretKey secretKey = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 返回生成指定算法的秘密密钥的 KeyGenerator 对象</span></span><br><span class="line">        keygen = KeyGenerator.getInstance(algorithm);</span><br><span class="line">        <span class="comment">// 生成一个密钥</span></span><br><span class="line">        secretKey = keygen.generateKey();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 返回密匙</span></span><br><span class="line">    <span class="keyword">return</span> secretKey;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="加密-1"><a href="#加密-1" class="headerlink" title="加密"></a>加密</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 根据密匙进行DES加密</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> key  密匙</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> info 要加密的信息</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> String 加密后的信息</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">encryptByDES</span><span class="params">(SecretKey key, String info)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 定义 加密算法,可用 DES,DESede,Blowfish</span></span><br><span class="line">    String algorithm = <span class="string">&quot;DES&quot;</span>;</span><br><span class="line">    <span class="comment">// 加密随机数生成器 (RNG),(可以不写)</span></span><br><span class="line">    SecureRandom secureRandom = <span class="keyword">new</span> SecureRandom();</span><br><span class="line">    <span class="comment">// 定义要生成的密文</span></span><br><span class="line">    <span class="keyword">byte</span>[] cipherByte = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 得到加密/解密器</span></span><br><span class="line">        Cipher cipher = Cipher.getInstance(algorithm);</span><br><span class="line">        <span class="comment">// 用指定的密钥和模式初始化Cipher对象</span></span><br><span class="line">        <span class="comment">// 参数:(ENCRYPT_MODE, DECRYPT_MODE, WRAP_MODE,UNWRAP_MODE)</span></span><br><span class="line">        cipher.init(Cipher.ENCRYPT_MODE, key, secureRandom);</span><br><span class="line">        <span class="comment">// 对要加密的内容进行编码处理,</span></span><br><span class="line">        cipherByte = cipher.doFinal(info.getBytes());</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 返回密文的十六进制形式</span></span><br><span class="line">    <span class="keyword">return</span> EncodingUtils.byte2hex(cipherByte);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="解密"><a href="#解密" class="headerlink" title="解密"></a>解密</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 根据密匙进行DES解密</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> key   密匙</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> sInfo 要解密的密文</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> String 返回解密后信息</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">decryptByDES</span><span class="params">(SecretKey key, String sInfo)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 定义 加密算法,</span></span><br><span class="line">    String algorithm = <span class="string">&quot;DES&quot;</span>;</span><br><span class="line">    <span class="comment">// 加密随机数生成器 (RNG)</span></span><br><span class="line">    SecureRandom secureRandom = <span class="keyword">new</span> SecureRandom();</span><br><span class="line">    <span class="keyword">byte</span>[] cipherByte = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 得到加密/解密器</span></span><br><span class="line">        Cipher cipher = Cipher.getInstance(algorithm);</span><br><span class="line">        <span class="comment">// 用指定的密钥和模式初始化Cipher对象</span></span><br><span class="line">        cipher.init(Cipher.DECRYPT_MODE, key, secureRandom);</span><br><span class="line">        <span class="comment">// 对要解密的内容进行编码处理</span></span><br><span class="line">        cipherByte = cipher.doFinal(EncodingUtils.hex2byte(sInfo));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// return byte2hex(cipherByte);</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> String(cipherByte);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="秘钥共享"><a href="#秘钥共享" class="headerlink" title="秘钥共享"></a>秘钥共享</h2><p>不使用随机因子</p>
+<p>//TODO 待完善</p>
+<h1 id="非对称加密"><a href="#非对称加密" class="headerlink" title="非对称加密"></a>非对称加密</h1><p>加密的密钥<code>e</code>和解密的密钥<code>d</code>是不同的（<code>e!=d</code>）, 并且加密的密钥<code>e</code>是公开的, 叫做 <code>公钥</code>, 而解密的密钥<code>d</code>是保密的, 叫<code>私钥</code>.</p>
+<p>速度很慢（比对称加密慢100到1000倍），公钥的主要算法有RSA，还包括Blowfish,Diffie-Helman 等，jdk1.5种提供了对RSA的支持，是一个改进的地方</p>
+<p>RSA算法（由发明者Rivest，Shmir和Adleman姓氏首字母缩写而来）是著名的公开密钥加密算法。</p>
+<p>非对称加密的另一用途是身份验证：用私钥加密的信息，可以用公钥对其解密，接收者由此可知这条信息确实来自于拥有私钥的某人。私钥加密的过程即数字签名。</p>
+<p>用公钥加密的数据只有私钥才能解密；相反的，用私钥加密的数据只有公钥才能解密，正是这种不对称性才使得公用密钥密码系统被广泛应用。</p>
+<p><strong>过程</strong></p>
+<p>加密一方使用接收方的公钥<code>e</code> <strong>(如何找到呢？大部分的公钥传递工作实际上都是通过数字证书来实现的)</strong>, 然后用公钥<code>e</code>对明文<code>p</code>进行加密后得到密文<code>c</code>, 并将得到的密文发送给接收方, 接收方收到密文后, 用自己保留的私钥<code>d</code>进行解密, 得到明文<code>p</code>, 需要注意的是：用公钥加密的密文, 只有拥有私钥的一方才能解密, 这样就可以解决加密的各方可以统一使用一个公钥即可.</p>
+<p><strong>优点</strong></p>
+<ol>
+<li>不存在密钥分发的问题, 解码方可以自己生成密钥对, 一个做私钥存起来, 另外一个作为公钥进行发布.</li>
+<li>解决了密钥管理的复杂度问题, 多个加密方都可以使用一个已知的公钥进行加密, 但只有拥有私钥的一方才能解密.</li>
+</ol>
+<p><strong>不足</strong></p>
+<p>加解密的速度没有对称加密快.</p>
+<p><strong>常见的非对称加密算法</strong></p>
+<p>最常见的非对称加密算法就是RSA</p>
+<h2 id="RSA"><a href="#RSA" class="headerlink" title="RSA"></a>RSA</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.security.Key;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.Cipher;</span><br><span class="line"><span class="keyword">import</span> java.security.KeyPairGenerator;</span><br><span class="line"><span class="keyword">import</span> java.security.KeyPair;</span><br><span class="line"></span><br><span class="line"><span class="keyword">byte</span>[] plainText=originString.getBytes(<span class="string">&quot;UTF8&quot;</span>);　　</span><br><span class="line"><span class="comment">//构成一个RSA密钥　</span></span><br><span class="line">System.out.println(<span class="string">&quot;Start generating RSA key&quot;</span>);</span><br><span class="line">KeyPairGenerator keyGen=KeyPairGenerator.getInstance(<span class="string">&quot;RSA&quot;</span>);</span><br><span class="line">keyGen.initialize(<span class="number">1024</span>);　　</span><br><span class="line">KeyPair key=keyGen.generateKeyPair();　</span><br><span class="line">System.out.println(<span class="string">&quot;Finish generating RSA key&quot;</span>);　　</span><br><span class="line"><span class="comment">//获得一个RSA的Cipher类，使用公鈅加密　　</span></span><br><span class="line">Cipher cipher=Cipher.getInstance(<span class="string">&quot;RSA/ECB/PKCS1Padding&quot;</span>);　</span><br><span class="line">System.out.println(<span class="string">&quot;\n&quot;</span>+cipher.getProvider().getInfo());　</span><br><span class="line">System.out.println(<span class="string">&quot;\nStart encryption&quot;</span>);　</span><br><span class="line">cipher.init(Cipher.ENCRYPT_MODE,key.getPublic());　　</span><br><span class="line"><span class="keyword">byte</span>[] cipherText=cipher.doFinal(plainText);　　</span><br><span class="line">System.out.println(<span class="string">&quot;Finish encryption:&quot;</span>);　　</span><br><span class="line">System.out.println(<span class="keyword">new</span> String(cipherText,<span class="string">&quot;UTF8&quot;</span>));　　</span><br><span class="line"><span class="comment">//使用私鈅解密　　</span></span><br><span class="line">System.out.println(<span class="string">&quot;\nStart decryption&quot;</span>);　</span><br><span class="line">cipher.init(Cipher.DECRYPT_MODE,key.getPrivate());　　</span><br><span class="line"><span class="keyword">byte</span>[] newPlainText=cipher.doFinal(cipherText);　　</span><br><span class="line">System.out.println(<span class="string">&quot;Finish decryption:&quot;</span>);　　</span><br><span class="line">String(newPlainText,<span class="string">&quot;UTF8&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<h1 id="混合加密"><a href="#混合加密" class="headerlink" title="混合加密"></a>混合加密</h1><p>混合加密系统, 比如在两个节点间通过便捷的公开密码加密技术建立起安全通信, 然后再用安全的通信产生并发送临时的随机对称密钥, 通过更快的对称加密技术对剩余的数据进行加密.</p>
+<h1 id="Cipher"><a href="#Cipher" class="headerlink" title="Cipher"></a>Cipher</h1><p>KeyGenerator</p>
+<p>javax.crypto.KeyGenerator<br>public final SecretKey generateKey()<br>//生成一个密钥</p>
+<p>public static final KeyGenerator getInstance(String algorithm)<br>//返回生成指定算法的秘密密钥的KeyGenerator对象。</p>
+<p>javax.crypto 接口 SecretKey</p>
+<p>javax.crypto.Cipher 此类为加密和解密提供密码功能。它构成了 Java Cryptographic Extension (JCE) 框架的核心</p>
+<p>public final void init(int opmode,Key key)</p>
+<p>public final byte[] doFinal(byte[] input) 按单部分操作加密或解密数据，或者结束一个多部分操作</p>
+<p>java.security.KeyPairGenerator</p>
+<p>static KeyPairGenerator getInstance(String algorithm)<br>返回生成指定算法的 public/private 密钥对的 KeyPairGenerator 对象。</p>
+<p>java.security.Signature</p>
+<p>使用 Signature 对象签名数据或验证签名包括以下三个阶段：</p>
+<ol>
+<li>初始化，使用<br>初始化验证签名的公钥（请参见 initVerify），或使用<br>初始化签署签名的私钥（也可以选择“安全随机数生成器”）initSign(PrivateKey)和initSign(PrivateKey, SecureRandom)）。</li>
+<li>更新<br>根据初始化类型，这可更新要签名或验证的字节。请参见 update 方法。</li>
+<li>签署或验证所有更新字节的签名。请参见 sign 方法和 verify 方法。</li>
+</ol>
+<h1 id="数字签名"><a href="#数字签名" class="headerlink" title="数字签名"></a>数字签名</h1><p>上面讨论了非对称加密技术在编码中的使用, 解决的是传送数据的私密性, 一般是用公钥作为<code>加密key</code>, 而私钥作为解密<code>key</code>, 那假如是用私钥作为加密key, 而公钥作为解密key呢？<br>java中为数字签名提供了良好的支持，<code>java.security.Signature</code> 类提供了消息签名：</p>
+<blockquote>
+<p>这里要求私钥加密后公钥可解密</p>
+</blockquote>
+<p>由于私钥只有对应一方才知道, 因此若通过对应的公钥可以验证对方是用对应的私钥进行加密的, 则可以说明对方的身份, 这就是<strong>数字签名</strong>.</p>
+<p> 数字签名需要解决的两个任务是：</p>
+<ol>
+<li>谁编写的报文；</li>
+<li>报文的内容是否被篡改过；</li>
+</ol>
+<p>数字签名的过程一般如下：</p>
+<ol>
+<li><em>发送方A</em> 首先对变长的报文提取成一个定长的摘要, 一般是<code>md5</code>等</li>
+<li><em>A</em> 对摘要应用了一个签名函数, 并且用自己的私钥作为参数, 因为只有<em>A</em>才知道私钥, 所以正确的签名会说明签名者就是其所有者.</li>
+<li>一旦计算出签名, 节点<em>A</em>就将其附加到报文的末尾, 并将报文和签名一起都发送给<em>B</em></li>
+<li>在<em>接收端B</em>, 首先会按照同样的算法计算出报文的摘要, 然后对签名用<em>A</em>的公钥进行解码, 得出解码后的摘要, 两个摘要进行比较, 则可以<strong>判断是否是<em>A</em>发送的且内容没被篡改过</strong>.</li>
+</ol>
+<p><img src="/images/network/security/validateSign.png" alt="数字签名"></p>
+<h2 id="创建公钥和私钥"><a href="#创建公钥和私钥" class="headerlink" title="创建公钥和私钥"></a>创建公钥和私钥</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建密匙组，并将公匙，私匙放入到指定文件中</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;</span></span><br><span class="line"><span class="comment"> * 默认放入mykeys.bat文件中</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">createPairKeyWithDSA</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 根据特定的算法一个密钥对生成器</span></span><br><span class="line">        KeyPairGenerator keygen = KeyPairGenerator.getInstance(<span class="string">&quot;DSA&quot;</span>);</span><br><span class="line">        <span class="comment">// 加密随机数生成器 (RNG)</span></span><br><span class="line">        SecureRandom random = <span class="keyword">new</span> SecureRandom();</span><br><span class="line">        <span class="comment">// 重新设置此随机对象的种子</span></span><br><span class="line">        random.setSeed(<span class="number">1000</span>);</span><br><span class="line">        <span class="comment">// 使用给定的随机源（和默认的参数集合）初始化确定密钥大小的密钥对生成器</span></span><br><span class="line">        keygen.initialize(<span class="number">512</span>, random);<span class="comment">// keygen.initialize(512);</span></span><br><span class="line">        <span class="comment">// 生成密钥组</span></span><br><span class="line">        KeyPair keys = keygen.generateKeyPair();</span><br><span class="line">        <span class="comment">// 得到公匙</span></span><br><span class="line">        PublicKey pubkey = keys.getPublic();</span><br><span class="line">        <span class="comment">// 得到私匙</span></span><br><span class="line">        PrivateKey prikey = keys.getPrivate();        </span><br><span class="line">    &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="DSA签名"><a href="#DSA签名" class="headerlink" title="DSA签名"></a>DSA签名</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 利用私匙对信息进行签名 把签名后的信息放入到指定的文件中</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> info     要签名的信息</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> signfile 存入的文件</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">signWithDSA</span><span class="params">(String info, String signfile)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 从文件当中读取私匙</span></span><br><span class="line">    PrivateKey myprikey = ...;</span><br><span class="line">    <span class="comment">// 从文件中读取公匙</span></span><br><span class="line">    PublicKey mypubkey = ...;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// Signature 对象可用来生成和验证数字签名</span></span><br><span class="line">        Signature signet = Signature.getInstance(<span class="string">&quot;DSA&quot;</span>);</span><br><span class="line">        <span class="comment">// 初始化签署签名的私钥</span></span><br><span class="line">        signet.initSign(myprikey);</span><br><span class="line">        <span class="comment">// 更新要由字节签名或验证的数据</span></span><br><span class="line">        signet.update(info.getBytes());</span><br><span class="line">        <span class="comment">// 签署或验证所有更新字节的签名，返回签名</span></span><br><span class="line">        <span class="keyword">byte</span>[] signed = signet.sign();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="验证DSA签名"><a href="#验证DSA签名" class="headerlink" title="验证DSA签名"></a>验证DSA签名</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 读取数字签名文件 根据公匙，签名，信息验证信息的合法性</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> true 验证成功 false 验证失败</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">validateSignWithDSA</span><span class="params">(String signfile)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 读取公匙</span></span><br><span class="line">    PublicKey mypubkey = ...;</span><br><span class="line">    <span class="comment">// 读取签名</span></span><br><span class="line">    <span class="keyword">byte</span>[] signed =...;</span><br><span class="line">    <span class="comment">// 读取信息</span></span><br><span class="line">    String info = ...;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 初始一个Signature对象,并用公钥和签名进行验证</span></span><br><span class="line">        Signature signetcheck = Signature.getInstance(<span class="string">&quot;DSA&quot;</span>);</span><br><span class="line">        <span class="comment">// 初始化验证签名的公钥</span></span><br><span class="line">        signetcheck.initVerify(mypubkey);</span><br><span class="line">        <span class="comment">// 使用指定的 byte 数组更新要签名或验证的数据</span></span><br><span class="line">        signetcheck.update(info.getBytes());</span><br><span class="line">        System.out.println(info);</span><br><span class="line">        <span class="comment">// 验证传入的签名</span></span><br><span class="line">        <span class="keyword">return</span> signetcheck.verify(signed);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h1 id="数字证书和CA"><a href="#数字证书和CA" class="headerlink" title="数字证书和CA"></a>数字证书和CA</h1><h2 id="3-1-确认主机的真实性"><a href="#3-1-确认主机的真实性" class="headerlink" title="3.1. 确认主机的真实性"></a>3.1. 确认主机的真实性</h2><p>**采用https 的server（服务器）必须从CA（Certificate Authority）申请一个用于证明服务器用途类型的数字证书（或者叫CA证书）.该证书只有用于对应的server 时，客户端才信任此主机. **</p>
+<p>CA（Certificate Authority）即”认证机构”，是负责签发证书、认证证书、管理已颁发证书的机构，是PKI（Public Key Infrastructure，公钥基础设施）的核心。它要制定政策和具体步骤来验证、识别用户身份，并对用户证书进行签名，以确保证书持有者的身份和公钥的拥有权。</p>
+<p><strong>CA 也拥有一个证书（内含公钥）和私钥</strong>。网上的公众用户通过验证 CA 的签字从而信任CA ，任何人都可以得到 CA 的证书（含公钥），用以验证它所签发的证书。</p>
+<p> </p>
+<h2 id="3-2-什么是数字证书"><a href="#3-2-什么是数字证书" class="headerlink" title="3.2. 什么是数字证书"></a>3.2. 什么是数字证书</h2><p><strong>数字证书（</strong>CA证书是经过认证的数字证书<strong>）</strong>是一个用于互联网通讯中认证身份的工具，由权威机构——CA机构（Certificate Authority）发行。其作用类似于司机的驾驶执照和公民身份证。CA作为公正的第三方来确保证书的有效性[6]。全国存在多个CA机构（只要你有公信力你也可以成立一家CA机构）。</p>
+<p><strong>数字证书包含一个公钥以及该密钥所有者的信息。证书还标明有有效期，并通过另一密钥（CA私钥）进行签名，</strong>该密钥能保证这些属性的真实性，最重要的是，保证公钥本身的真实性[14]。最简单的证书包含一个<strong>公钥</strong>、名称以及证书授权中心的数字签名（<strong>公开密钥只是证书的一部分内容</strong>）。目前，证书的格式和验证方法普遍遵循<strong>X.509</strong> 国际标准。</p>
+<p>CA机构自身也拥有一个<strong>证书</strong>（<strong>内含公钥</strong>）和一个<strong>私钥。</strong></p>
+<p><strong>用户如果想得到一个数字证书，他应先向 CA申请，CA审查申请者的身份后，给他分配一个公钥，并将公钥与申请者的身份信息绑在一起，同时用自己的私钥签字，最终生成一个证书，发给申请者；同时还将一个与公钥关联的私钥也发给申请者。证书的内容主要有：CA信息、CA签字、证书拥有者信息、证书公钥和证书有效期等。</strong></p>
+<p>某人需要验证一个证书时，用签发该证书的CA的公钥来解密其签名信息，以验证证书是否可信。CA证书也需要验证，验证CA证书是一个递归上溯的过程，验证过程终止于根证书。<strong>根证书是一份特殊的证书，它的签发者是它本身，下载根证书就表明用户对该根证书，以及其所签发的证书都信任。</strong></p>
+<p><img src="http://img.blog.csdn.net/20141109225903192?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvdGVuZnlndW8=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
+<p> </p>
+<h2 id="3-3-数字证书基本原理"><a href="#3-3-数字证书基本原理" class="headerlink" title="3.3. 数字证书基本原理"></a>3.3. 数字证书基本原理</h2><p>数字证书采用<strong>公开密钥加密体制</strong>，利用一个强关联的密钥对进行加、解密。证书拥有者保存好自己的私钥，用它进行解密和签名；并把公钥公开，供一组用户所共享，用于加密和验证签名。</p>
+<p>1、<strong>加密：</strong>发送数据时，发送方使用接收方的公钥对数据加密，接收方用私钥解密，还原消息。算法保证公钥加密的数据只有对应的<strong>私钥</strong>才能解密。</p>
+<p>2、<strong>数字签名：</strong>证书拥有者用私钥对信息进行加密，由于私钥仅为本人所有，这样就生成了别人无法伪造的数据，该数据即<strong>数字签名</strong>。采用数字签名，能够确认以下两点：</p>
+<p>（1）保证信息是由签名者所发送，签名者不能否认或者难以否认；</p>
+<p>（2）保证信息自签发后到收到为止，未曾做过任何修改，签发的文件是真实的文件。</p>
+<p>算法保证只有公钥才能解开私钥加密的信息。</p>
+<h2 id="3-4-如何生成数字证书"><a href="#3-4-如何生成数字证书" class="headerlink" title="3.4. 如何生成数字证书"></a>3.4. 如何生成数字证书</h2><p>略</p>
+<p> </p>
+<p>A用私钥加密了，那么B接受到消息后，用A提供的公钥解密；那么现在有个讨厌的C，他把消息拦截了，然后用自己的私 钥加密，同时把自己的公钥发给B，并告诉B，那是A的公钥，结果….，这时候就需要一个中间机构出来说话了（相信权威，我是正确的），就出现了 Certificate Authority(也即CA），有名的CA机构有Verisign等，目前数字认证的工业标准是：CCITT的X.509：数字证书：它将一个身份标识连同公钥一起进行封装，并由称为认证中心或 CA 的第三方进行数字签名。</p>
+<p><strong>实际上, 好多的公钥都是通过数字证书进行发布的</strong>, 数字证书类似一个人的身份证一样, 由对应的官方的颁发结构颁发的, 类似一个人的身份证有姓名, 身份证ID, 有效期, 颁发机构-一般是某某派出所等, 数字证书也有类似的形式.</p>
+<p>基本的数字证书包括了一些常见的信息：</p>
+<ol>
+<li>对象的名称（人, 服务器, 组织等）</li>
+<li>过期时间</li>
+<li>对象的公钥</li>
+<li>证书发布者（由谁为证书担保）</li>
+<li>来自证书发布者的数字签名.<br>…</li>
+</ol>
+<p>需要注意的是, 任何人都可以创建一个证书, 但不是所有人都能够获得受人尊敬的签发权从而为证书信息提供担保, 并用其私人密钥签发证书.</p>
+<p>不幸的是, 数字证书没有单一的全球标准, 但现在使用的大多数证书是以一种标准格式– <code>X.509 v3</code>, 来存储它们的信息.</p>
+<p>x.509证书格式：</p>
+<table>
+<thead>
+<tr>
+<th><strong>字段</strong></th>
+<th><strong>描述</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>版本号</td>
+<td>这个证书的X.509证书版本号, 现在通常是版本3</td>
+</tr>
+<tr>
+<td>序列号</td>
+<td>证书颁发机构CA生成的唯一整数, CA生成的每个证书都要有一个唯一的系列号, 类似身份证号码</td>
+</tr>
+<tr>
+<td>签名算法ID</td>
+<td>签名使用是算法, 如用RSA加密的MD2摘要</td>
+</tr>
+<tr>
+<td>证书颁发者</td>
+<td>以X.500格式说明的CA的组织名称</td>
+</tr>
+<tr>
+<td>有效期</td>
+<td>证书的有效期, 由一个起始日期和一个结束日期来表示</td>
+</tr>
+<tr>
+<td>对象名称</td>
+<td>证书中描述的实体, 比如一个人或者一个组织, 对象名称以x.500格式表示</td>
+</tr>
+<tr>
+<td>对象的公开密钥信息</td>
+<td>证书对象的公钥, 公钥使用的算法, 以及所有附加的参数</td>
+</tr>
+<tr>
+<td>发布者唯一的ID(可选)</td>
+<td>可选的证书发布者唯一ID, 这样可以重用相同的发布者名称了</td>
+</tr>
+<tr>
+<td>对象唯一的ID（可选)</td>
+<td>可选的证书对象唯一ID, 这样就可以重用相同的对象名称了</td>
+</tr>
+<tr>
+<td>扩展</td>
+<td>一些扩展信息</td>
+</tr>
+<tr>
+<td>证书的颁发机构签名</td>
+<td>CA用指定的签名算法对上述所有字段的数字签名</td>
+</tr>
+</tbody></table>
+<p>x.509证书有很多种, 如服务器端证书, 个人证书等. 每个证书均有对应于证书公钥的私钥, 私钥不能被导出, 访问一般需要密码等. 浏览器会默认存储一些受信任的根证书颁发机构的证书.</p>
+<h2 id="认证"><a href="#认证" class="headerlink" title="认证"></a>认证</h2><h3 id="客户端对服务器认证"><a href="#客户端对服务器认证" class="headerlink" title="客户端对服务器认证"></a>客户端对服务器认证</h3><p>在支付网站中, 用户需要确认他们输入支付密码的站点是真正的经过认证的站点, 而不是被钓鱼的网站, 因此用户有必要认证对应的服务器, 而这种方式是通过服务器证书来进行的. 过程大概如下：</p>
+<ol>
+<li><p>通过https建立一个安全web事务之后, 浏览器会自动获取所连服务器的数字证书；</p>
+<p> 其中服务器证书包括了：</p>
+<p> Web站点名称和主机名<br> Web站点的公钥<br> 颁发机构的名称<br> 颁发机构给证书的签名</p>
+</li>
+<li><p>若服务器<strong>没有证书</strong>, 则安全连接失败.</p>
+</li>
+<li><p>浏览器首先检查服务器<strong>证书是否还在有效期</strong>内, 若过期, 则提示失效；</p>
+</li>
+<li><p>浏览器查看服务器证书对应的CA, 若该CA是很权威的机构, 则浏览器可能已经知道了对应的公钥了（<strong>浏览器会预先安装很多签名颁发机构的证书并认为是受信任的</strong>）, 这时, 浏览器用CA的数字证书里面的公钥来<strong>验证</strong>该CA颁发的服务器<strong>证书</strong>的有效性. 类似去公安局验证某人的身份证是否是真的.</p>
+</li>
+<li><p>若浏览器对签名颁发机构CA一无所知, 浏览器<strong>无法确定</strong>是否该信任这个签名颁发机构, 它通常会向用户<strong>提示</strong>一个对话框, 看看他是否相信这个签名发布者.</p>
+</li>
+<li><p>一旦完成了对服务器证书的验证, 接下来就可以<strong>使用服务器证书</strong>里面的<strong>公钥</strong>进行服务器身份的<strong>验证</strong>；</p>
+</li>
+<li><p>客户端生成一个<strong>随机数</strong>给到服务器, 要求对应服务器用证书的<strong>私钥</strong>进行<strong>签名</strong>.</p>
+</li>
+<li><p>服务器对随机数进行签名, 并回传给到客户端.</p>
+</li>
+<li><p>客户端用服务器证书的<strong>公钥</strong>对<strong>随机数</strong>的<strong>签名</strong>进行<strong>验证</strong>, 若验证通过, 则说明对应的服务器确实拥有对应服务器证书的私钥, 因此判断服务器的身份正常. 否则, 则任务服务器身份被伪造.</p>
+</li>
+</ol>
+<h3 id="服务器对客户端认证"><a href="#服务器对客户端认证" class="headerlink" title="服务器对客户端认证"></a>服务器对客户端认证</h3><p>客户端证书和服务器证书类似, 只是服务器证书增加一些对服务器站点名称和主机名等内容的签注, 客户端证书一般是某个机构针对个人颁发的, 用于标识个人的身份. 如财付通提示用户安装对应的数字证书, 就是一个客户端证书, <strong>在安装客户端证书的时候, 实际上会把用户对应该证书的私钥要保存起来.</strong> 客户端用私钥进行签名, 然后第三方用客户端证书的公钥进行验签实现对客户端身份的认证.</p>
+<h3 id="双向认证"><a href="#双向认证" class="headerlink" title="双向认证"></a>双向认证</h3><p>在发送已加密的HTTP报文前, 客户端和服务器要进行一次SSL握手, 在这个握手的过程中, 它们要完成以下工作：</p>
+<ol>
+<li>  交换协议版本号；</li>
+<li>  选择一个两端都了解的密码；</li>
+<li>  对两端的身份进行验证；</li>
+<li>  生成临时的会话密钥, 后续便用该密钥进行加密信道.</li>
+</ol>
+<h3 id="信任所有的证书"><a href="#信任所有的证书" class="headerlink" title="信任所有的证书"></a>信任所有的证书</h3><h3 id="密钥库"><a href="#密钥库" class="headerlink" title="密钥库"></a>密钥库</h3><p>java平台为你提供了密钥库，用作密钥和证书的资源库。从物理上讲，密钥库是缺省名称为 <code>.keystore</code> 的文件（有一个选项使它成为加密文件）。密钥和证书可以拥有名称（称为别名），每个别名都由唯一的密码保护。密钥库本身也受密码保护；您可以选择让每个别名密码与主密钥库密码匹配。　　</p>
+<p>使用工具keytool，我们来做一件自我认证的事情吧（相信我的认证）：　　</p>
+<ol>
+<li><p>创建密钥库<br><code>keytool -genkey -v -alias feiUserKey -keyalg RSA</code><br>默认在自己的home目录下（windows系统是c:\documents and settings&lt;你的用户名&gt; 目录下的.keystore文件），创建我们用 RSA 算法生成别名为 feiUserKey 的自签名的证书,如果使用了-keystore mm 就在当前目录下创建一个密钥库mm文件来保存密钥和证书。　</p>
+</li>
+<li><p>查看证书：<br><code>keytool -list</code> 列举了密钥库的所有的证书　　也可以在dos下输入<br><code>keytool -help</code> 查看帮助。</p>
+</li>
+<li><p>JAR的签名　　</p>
+</li>
+</ol>
+<p>JAR文件在Java中相当于 ZIP 文件，允许将多个 Java 类文件打包到一个具有 .jar 扩展名的文件中，然后可以对这个jar文件进行数字签名，以证实其来源和真实性。该 JAR 文件的接收方可以根据发送方的签名决定是否信任该代码，并可以确信该内容在接收之前没有被篡改过。同时在部署中，可以通过在策略文件中放置访问控制语句根据签名者的身份分配对机器资源的访问权。这样，有些Applet的安全检验访问就得以进行。　　</p>
+<p>使用<code>jarsigner</code>工具可以对jar文件进行签名：　　</p>
+<p>现在假设我们有个Test.jar文件（可以使用jar命令行工具生成）：　　</p>
+<p><code>jarsigner Test.jar feiUserKey</code> (这里我们上面创建了该别名的证书) ，详细信息可以输入<code>jarsigner</code>查看帮助　　</p>
+<p>验证其真实性：<code>jarsigner -verify　Test.jar</code><br>(注意，验证的是jar是否被修改了，但不检验减少的，如果增加了新的内容，也提示，但减少的不会提示。）　　</p>
+<p>使用Applet中：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;applet code=&quot;Test.class&quot; archive=&quot;Test.jar&quot; width=&quot;150&quot; height=&quot;100&quot;&gt;&lt;/applet&gt;</span><br></pre></td></tr></table></figure>
+<p>然后浏览器就会提示你：准许这个会话-拒绝-始终准许-查看证书等。　　</p>
+<h2 id="安全套接字层（SSL-Secure-Sockets-Layer）和传输层安全性（TLS-Transport-Layer-Security）"><a href="#安全套接字层（SSL-Secure-Sockets-Layer）和传输层安全性（TLS-Transport-Layer-Security）" class="headerlink" title="安全套接字层（SSL Secure Sockets Layer）和传输层安全性（TLS Transport Layer Security）"></a>安全套接字层（SSL Secure Sockets Layer）和传输层安全性（TLS Transport Layer Security）</h2><p>安全套接字层和传输层安全性是用于在客户机和服务器之间构建安全的通信通道的协议。它也用来为客户机认证服务器，以及（不太常用的）为服务器认证客户机。该协议在浏览器应用程序中比较常见，浏览器窗口底部的锁表明 SSL/TLS 有效：　　</p>
+<p>1）当使用 SSL/TLS（通常使用 https:// URL）向站点进行请求时，从服务器向客户机发送一个证书。客户机使用已安装的公共 CA 证书通过这个证书验证服务器的身份，然后检查 IP 名称（机器名）与客户机连接的机器是否匹配。　　</p>
+<p>2）客户机生成一些可以用来生成对话的私钥（称为会话密钥）的随机信息，然后用服务器的公钥对它加密并将它发送到服务器。服务器用自己的私钥解密消息，然后用该随机信息派生出和客户机一样的私有会话密钥。通常在这个阶段使用 RSA 公钥算法。　　</p>
+<p>3）客户机和服务器使用私有会话密钥和私钥算法（通常是 RC4）进行通信。使用另一个密钥的消息认证码来确保消息的完整性。java中<code>javax.net.ssl.SSLServerSocketFactory</code>类提供了一个很好的SSLServerSocker的工 厂类，熟悉Socket编程的读者可以去练习。当编写完服务器端之后，在浏览器上输入https://主机名:端口就会通过SSL/TLS进行通话了。</p>
+<p>注 意：运行服务端的时候要带系统环境变量运行：<br><code>javax.net.ssl.keyStore=密钥库</code>(创建证书时，名字应该为主机名，<br>比如 localhost)和<br><code>javax.net.ssl.keyStorePassword=你的密码</code></p>
+<hr>
+<h1 id="参考文献"><a href="#参考文献" class="headerlink" title="[参考文献]:"></a>[参考文献]:</h1><ol>
+<li>[安全专题][a-security]</li>
+<li><a target="_blank" rel="noopener" href="http://blog.csdn.net/tenfyguo/article/details/40922813">安全HTTPS-全面详解对称加密，非对称加密，数字签名，数字证书和HTTPS</a></li>
+<li><a href="">Applied Crypotography(Bruce Schneier)</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Job/" rel="tag"># Job</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/database/MySQL/syntax_3_multitable_join/" rel="prev" title="MySQL多表关联与笛卡尔积">
+      <i class="fa fa-chevron-left"></i> MySQL多表关联与笛卡尔积
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/network/security/HTTPS-SSL/" rel="next" title="HTTPS与SSL">
+      HTTPS与SSL <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%91%98%E8%A6%81"><span class="nav-number">1.</span> <span class="nav-text">摘要</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#MD5"><span class="nav-number">1.1.</span> <span class="nav-text">MD5</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SHA"><span class="nav-number">1.2.</span> <span class="nav-text">SHA</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86"><span class="nav-number">2.</span> <span class="nav-text">加密</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AF%B9%E7%A7%B0%E5%8A%A0%E5%AF%86"><span class="nav-number">3.</span> <span class="nav-text">对称加密</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%8A%A0%E5%AF%86%E5%AF%86%E9%92%A5"><span class="nav-number">3.1.</span> <span class="nav-text">创建加密密钥</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86-1"><span class="nav-number">3.2.</span> <span class="nav-text">加密</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%A3%E5%AF%86"><span class="nav-number">3.3.</span> <span class="nav-text">解密</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A7%98%E9%92%A5%E5%85%B1%E4%BA%AB"><span class="nav-number">3.4.</span> <span class="nav-text">秘钥共享</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%9D%9E%E5%AF%B9%E7%A7%B0%E5%8A%A0%E5%AF%86"><span class="nav-number">4.</span> <span class="nav-text">非对称加密</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RSA"><span class="nav-number">4.1.</span> <span class="nav-text">RSA</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%B7%B7%E5%90%88%E5%8A%A0%E5%AF%86"><span class="nav-number">5.</span> <span class="nav-text">混合加密</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Cipher"><span class="nav-number">6.</span> <span class="nav-text">Cipher</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E5%AD%97%E7%AD%BE%E5%90%8D"><span class="nav-number">7.</span> <span class="nav-text">数字签名</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%85%AC%E9%92%A5%E5%92%8C%E7%A7%81%E9%92%A5"><span class="nav-number">7.1.</span> <span class="nav-text">创建公钥和私钥</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#DSA%E7%AD%BE%E5%90%8D"><span class="nav-number">7.2.</span> <span class="nav-text">DSA签名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%AA%8C%E8%AF%81DSA%E7%AD%BE%E5%90%8D"><span class="nav-number">7.3.</span> <span class="nav-text">验证DSA签名</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E5%AD%97%E8%AF%81%E4%B9%A6%E5%92%8CCA"><span class="nav-number">8.</span> <span class="nav-text">数字证书和CA</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-%E7%A1%AE%E8%AE%A4%E4%B8%BB%E6%9C%BA%E7%9A%84%E7%9C%9F%E5%AE%9E%E6%80%A7"><span class="nav-number">8.1.</span> <span class="nav-text">3.1. 确认主机的真实性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-%E4%BB%80%E4%B9%88%E6%98%AF%E6%95%B0%E5%AD%97%E8%AF%81%E4%B9%A6"><span class="nav-number">8.2.</span> <span class="nav-text">3.2. 什么是数字证书</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-%E6%95%B0%E5%AD%97%E8%AF%81%E4%B9%A6%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="nav-number">8.3.</span> <span class="nav-text">3.3. 数字证书基本原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4-%E5%A6%82%E4%BD%95%E7%94%9F%E6%88%90%E6%95%B0%E5%AD%97%E8%AF%81%E4%B9%A6"><span class="nav-number">8.4.</span> <span class="nav-text">3.4. 如何生成数字证书</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%A4%E8%AF%81"><span class="nav-number">8.5.</span> <span class="nav-text">认证</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%AF%B9%E6%9C%8D%E5%8A%A1%E5%99%A8%E8%AE%A4%E8%AF%81"><span class="nav-number">8.5.1.</span> <span class="nav-text">客户端对服务器认证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%AF%B9%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%AE%A4%E8%AF%81"><span class="nav-number">8.5.2.</span> <span class="nav-text">服务器对客户端认证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8C%E5%90%91%E8%AE%A4%E8%AF%81"><span class="nav-number">8.5.3.</span> <span class="nav-text">双向认证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%A1%E4%BB%BB%E6%89%80%E6%9C%89%E7%9A%84%E8%AF%81%E4%B9%A6"><span class="nav-number">8.5.4.</span> <span class="nav-text">信任所有的证书</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%86%E9%92%A5%E5%BA%93"><span class="nav-number">8.5.5.</span> <span class="nav-text">密钥库</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E5%85%A8%E5%A5%97%E6%8E%A5%E5%AD%97%E5%B1%82%EF%BC%88SSL-Secure-Sockets-Layer%EF%BC%89%E5%92%8C%E4%BC%A0%E8%BE%93%E5%B1%82%E5%AE%89%E5%85%A8%E6%80%A7%EF%BC%88TLS-Transport-Layer-Security%EF%BC%89"><span class="nav-number">8.6.</span> <span class="nav-text">安全套接字层（SSL Secure Sockets Layer）和传输层安全性（TLS Transport Layer Security）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">9.</span> <span class="nav-text">[参考文献]:</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="上文 主要介绍了JDBC的使用和目前框架中的优化等，本上主要介绍一个非常实用的例子: 根据数据表生成Entity EntityEntity或者DTO是Java中与数据表相对应的实体，将对象的属性封装有利于数据操作(如从数据库中读取某个实体，对这个实体操作，修改，新增等)，根据数据表生成Entity是必须应对的问题（当然可以选择手动敲），目前常用的方法有：  Hibernate工具: Eclipse">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JDBC-根据数据表生成Entity">
+<meta property="og:url" content="http://example.com/Java/skill/JDBC-generate-entity/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="上文 主要介绍了JDBC的使用和目前框架中的优化等，本上主要介绍一个非常实用的例子: 根据数据表生成Entity EntityEntity或者DTO是Java中与数据表相对应的实体，将对象的属性封装有利于数据操作(如从数据库中读取某个实体，对这个实体操作，修改，新增等)，根据数据表生成Entity是必须应对的问题（当然可以选择手动敲），目前常用的方法有：  Hibernate工具: Eclipse">
+<meta property="og:locale">
+<meta property="article:published_time" content="2016-08-12T03:03:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.811Z">
+<meta property="article:author" content="aaronzhang">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/Java/skill/JDBC-generate-entity/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>JDBC-根据数据表生成Entity | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/skill/JDBC-generate-entity/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JDBC-根据数据表生成Entity
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-12 11:03:00" itemprop="dateCreated datePublished" datetime="2016-08-12T11:03:00+08:00">2016-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><a href="/Java/jdbc/">上文</a> 主要介绍了JDBC的使用和目前框架中的优化等，本上主要介绍一个非常实用的例子: <strong>根据数据表生成Entity</strong></p>
+<h1 id="Entity"><a href="#Entity" class="headerlink" title="Entity"></a>Entity</h1><p><code>Entity</code>或者<code>DTO</code>是Java中与数据表相对应的实体，将对象的属性封装有利于数据操作(如从数据库中读取某个实体，对这个实体操作，修改，新增等)，根据数据表生成Entity是必须应对的问题（当然可以选择手动敲），目前常用的方法有：</p>
+<ul>
+<li>Hibernate工具: Eclipse和Intellij IDEA有相应的插件</li>
+<li>Mybatis-generator: 是生成Mybatis的Mapper、Entity和Dao的工具，<a href="JavaWeb/MyBatis/generator/">关于如何与Maven结合使用请参考</a></li>
+</ul>
+<p>本文编写的工具，直接使用JDBC API编写，不依赖IDE和ORM。</p>
+<h1 id="DatabaseMetaData"><a href="#DatabaseMetaData" class="headerlink" title="DatabaseMetaData"></a>DatabaseMetaData</h1><p><a target="_blank" rel="noopener" href="http://tool.oschina.net/uploads/apidocs/jdk-zh/java/sql/DatabaseMetaData.html"><code>DatabaseMetaData</code></a>是<code>java.sql</code>中提供的关于数据库整体信息的API，这个接口使用驱动程序实现的，数据库的开发商对这个接口提供支持并使用不同的方式实现。在本例中使用的是<code>MySQL</code>数据库，也是由<code>mysql-connector-java.jar</code>提供的。</p>
+<p><a target="_blank" rel="noopener" href="http://tool.oschina.net/uploads/apidocs/jdk-zh/java/sql/DatabaseMetaData.html"><code>DatabaseMetaData</code></a> 提高了数据库的整体信息，包括了数据表的信息。一个重要的方法:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line">getColumns</span><br><span class="line"></span><br><span class="line"><span class="function">ResultSet <span class="title">getColumns</span><span class="params">(String catalog,</span></span></span><br><span class="line"><span class="function"><span class="params">                     String schemaPattern,</span></span></span><br><span class="line"><span class="function"><span class="params">                     String tableNamePattern,</span></span></span><br><span class="line"><span class="function"><span class="params">                     String columnNamePattern)</span></span></span><br><span class="line"><span class="function">                     <span class="keyword">throws</span> SQLException</span></span><br><span class="line"><span class="function">获取可在指定类别中使用的表列的描述。</span></span><br><span class="line"><span class="function">仅返回与类别、模式、表和列名称标准匹配的列描述。它们根据 TABLE_CAT、TABLE_SCHEM、TABLE_NAME 和 ORDINAL_POSITION 进行排序。</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">每个列描述都有以下列：</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">  TABLE_CAT String </span>=&gt; 表类别（可为 <span class="keyword">null</span>）</span><br><span class="line">  TABLE_SCHEM String =&gt; 表模式（可为 <span class="keyword">null</span>）</span><br><span class="line">  TABLE_NAME String =&gt; 表名称</span><br><span class="line">  COLUMN_NAME String =&gt; 列名称</span><br><span class="line">  DATA_TYPE <span class="keyword">int</span> =&gt; 来自 java.sql.Types 的 SQL 类型</span><br><span class="line">  TYPE_NAME String =&gt; 数据源依赖的类型名称，对于 UDT，该类型名称是完全限定的</span><br><span class="line">  COLUMN_SIZE <span class="keyword">int</span> =&gt; 列的大小。</span><br><span class="line">  BUFFER_LENGTH 未被使用。</span><br><span class="line">  DECIMAL_DIGITS <span class="keyword">int</span> =&gt; 小数部分的位数。对于 DECIMAL_DIGITS 不适用的数据类型，则返回 Null。</span><br><span class="line">  NUM_PREC_RADIX <span class="keyword">int</span> =&gt; 基数（通常为 <span class="number">10</span> 或 <span class="number">2</span>）</span><br><span class="line">  NULLABLE <span class="keyword">int</span> =&gt; 是否允许使用 NULL。</span><br><span class="line">  columnNoNulls - 可能不允许使用 NULL 值</span><br><span class="line">  columnNullable - 明确允许使用 NULL 值</span><br><span class="line">  columnNullableUnknown - 不知道是否可使用 <span class="keyword">null</span></span><br><span class="line">  REMARKS String =&gt; 描述列的注释（可为 <span class="keyword">null</span>）</span><br><span class="line">  COLUMN_DEF String =&gt; 该列的默认值，当值在单引号内时应被解释为一个字符串（可为 <span class="keyword">null</span>）</span><br><span class="line">  SQL_DATA_TYPE <span class="keyword">int</span> =&gt; 未使用</span><br><span class="line">  SQL_DATETIME_SUB <span class="keyword">int</span> =&gt; 未使用</span><br><span class="line">  CHAR_OCTET_LENGTH <span class="keyword">int</span> =&gt; 对于 <span class="keyword">char</span> 类型，该长度是列中的最大字节数</span><br><span class="line">  ORDINAL_POSITION <span class="keyword">int</span> =&gt; 表中的列的索引（从 <span class="number">1</span> 开始）</span><br><span class="line">  IS_NULLABLE String =&gt; ISO 规则用于确定列是否包括 <span class="keyword">null</span>。</span><br><span class="line">  YES --- 如果参数可以包括 NULL</span><br><span class="line">  NO --- 如果参数不可以包括 NULL</span><br><span class="line">  空字符串 --- 如果不知道参数是否可以包括 <span class="keyword">null</span></span><br><span class="line">  SCOPE_CATLOG String =&gt; 表的类别，它是引用属性的作用域（如果 DATA_TYPE 不是 REF，则为 <span class="keyword">null</span>）</span><br><span class="line">  SCOPE_SCHEMA String =&gt; 表的模式，它是引用属性的作用域（如果 DATA_TYPE 不是 REF，则为 <span class="keyword">null</span>）</span><br><span class="line">  SCOPE_TABLE String =&gt; 表名称，它是引用属性的作用域（如果 DATA_TYPE 不是 REF，则为 <span class="keyword">null</span>）</span><br><span class="line">  SOURCE_DATA_TYPE <span class="keyword">short</span> =&gt; 不同类型或用户生成 Ref 类型、来自 java.sql.Types 的 SQL 类型的源类型（如果 DATA_TYPE 不是 DISTINCT 或用户生成的 REF，则为 <span class="keyword">null</span>）</span><br><span class="line">  IS_AUTOINCREMENT String =&gt; 指示此列是否自动增加</span><br><span class="line">    YES --- 如果该列自动增加</span><br><span class="line">    NO --- 如果该列不自动增加</span><br><span class="line">    空字符串 --- 如果不能确定该列是否是自动增加参数</span><br><span class="line">  COLUMN_SIZE 列表示给定列的指定列大小。对于数值数据，这是最大精度。对于字符数据，这是字符长度。对于日期时间数据类型，这是 String 表示形式的字符长度（假定允许的最大小数秒组件的精度）。对于二进制数据，这是字节长度。对于 ROWID 数据类型，这是字节长度。对于列大小不适用的数据类型，则返回 Null。</span><br><span class="line"></span><br><span class="line">参数：</span><br><span class="line">  catalog - 类别名称；它必须与存储在数据库中的类别名称匹配；该参数为 <span class="string">&quot;&quot;</span> 表示获取没有类别的那些描述；为 <span class="keyword">null</span> 则表示该类别名称不应该用于缩小搜索范围</span><br><span class="line">  schemaPattern - 模式名称的模式；它必须与存储在数据库中的模式名称匹配；该参数为 <span class="string">&quot;&quot;</span> 表示获取没有模式的那些描述；为 <span class="keyword">null</span> 则表示该模式名称不应该用于缩小搜索范围</span><br><span class="line">  tableNamePattern - 表名称模式；它必须与存储在数据库中的表名称匹配</span><br><span class="line">  columnNamePattern - 列名称模式；它必须与存储在数据库中的列名称匹配</span><br><span class="line">返回：</span><br><span class="line">	ResultSet - 每一行都是一个列描述</span><br><span class="line">抛出：</span><br><span class="line">	SQLException - 如果发生数据库访问错误</span><br><span class="line">另请参见：</span><br><span class="line">	getSearchStringEscape()</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Connection conn = DatabaseUtils.openConnection(); <span class="comment">// 得到数据库连接</span></span><br><span class="line">DatabaseMetaData databaseMetaData = conn.getMetaData();<span class="comment">// 获取数据库 MetaData</span></span><br><span class="line"><span class="comment">//获取数据表的表列描述,存放到 ResultSet</span></span><br><span class="line">ResultSet resultSet = databaseMetaData.getColumns(<span class="keyword">null</span>, <span class="string">&quot;%&quot;</span>, tableName, <span class="string">&quot;%&quot;</span>);</span><br><span class="line"><span class="keyword">while</span> (resultSet.next()) &#123;</span><br><span class="line">  String columnName = resultSet.getString(<span class="string">&quot;COLUMN_NAME&quot;</span>); <span class="comment">//获取列名</span></span><br><span class="line">  String dataType = resultSet.getString(<span class="string">&quot;TYPE_NAME&quot;</span>); <span class="comment">//列的数据类型</span></span><br><span class="line">  <span class="keyword">int</span> columnSize = resultSet.getInt(<span class="string">&quot;COLUMN_SIZE&quot;</span>); <span class="comment">//列的大小</span></span><br><span class="line">  String remarks = resultSet.getString(<span class="string">&quot;REMARKS&quot;</span>); <span class="comment">//列的备注</span></span><br><span class="line">  colnames.add(getCamelStr(columnName));</span><br><span class="line">  colTypes.add(dataType);</span><br><span class="line">  colSizes.add(columnSize);</span><br><span class="line">  comments.add(remarks);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="生成类"><a href="#生成类" class="headerlink" title="生成类"></a>生成类</h1><p>生成POJO，包含字段和Setter和Getter</p>
+<h2 id="生成字段"><a href="#生成字段" class="headerlink" title="生成字段"></a>生成字段</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 解析输出属性</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span></span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">processAllAttrs</span><span class="params">(StringBuffer sb)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; colnames.size(); i++) &#123;</span><br><span class="line">    String colName = colnames.get(i);</span><br><span class="line">    String colType = colTypes.get(i);</span><br><span class="line">    String comment = comments.get(i);</span><br><span class="line">    <span class="keyword">if</span> (comments != <span class="keyword">null</span> &amp;&amp; colName != <span class="keyword">null</span>) &#123;</span><br><span class="line">      sb.append(<span class="string">&quot;\t/**\n\t *  &quot;</span> + comment + <span class="string">&quot;\n\t **/\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    sb.append(<span class="string">&quot;\tprivate &quot;</span> + sqlType2JavaType(colType) + <span class="string">&quot; &quot;</span> + colName + <span class="string">&quot;;\r\n&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="生成Getter和Setter"><a href="#生成Getter和Setter" class="headerlink" title="生成Getter和Setter"></a>生成Getter和Setter</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; colnames.size(); i++) &#123;</span><br><span class="line">  String colName = colnames.get(i);</span><br><span class="line">  String colType = colTypes.get(i);</span><br><span class="line">  sb.append(<span class="string">&quot;\tpublic void set&quot;</span> + initcap(colName) + <span class="string">&quot;(&quot;</span> + sqlType2JavaType(colType) + <span class="string">&quot; &quot;</span> + colName</span><br><span class="line">            + <span class="string">&quot;)&#123;\r\n&quot;</span>);</span><br><span class="line">  sb.append(<span class="string">&quot;\t\tthis.&quot;</span> + colName + <span class="string">&quot;=&quot;</span> + colName + <span class="string">&quot;;\r\n&quot;</span>);</span><br><span class="line">  sb.append(<span class="string">&quot;\t&#125;\r\n\r\n&quot;</span>);</span><br><span class="line"></span><br><span class="line">  sb.append(<span class="string">&quot;\tpublic &quot;</span> + sqlType2JavaType(colType) + <span class="string">&quot; get&quot;</span> + initcap(colName) + <span class="string">&quot;()&#123;\r\n&quot;</span>);</span><br><span class="line">  sb.append(<span class="string">&quot;\t\treturn &quot;</span> + colName + <span class="string">&quot;;\r\n&quot;</span>);</span><br><span class="line">  sb.append(<span class="string">&quot;\t&#125;\r\n\r\n&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="组合成类文件"><a href="#组合成类文件" class="headerlink" title="组合成类文件"></a>组合成类文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">StringBuffer sb = <span class="keyword">new</span> StringBuffer();</span><br><span class="line">sb.append(<span class="string">&quot;package &quot;</span> + packagePath + <span class="string">&quot;;\r\n\r\n&quot;</span>);</span><br><span class="line"><span class="keyword">if</span> (needUtilPacket) &#123;</span><br><span class="line">	sb.append(<span class="string">&quot;import java.util.Date;\r\n&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> (needSqlPacket) &#123;</span><br><span class="line">	sb.append(<span class="string">&quot;import java.sql.*;\r\n\r\n\r\n&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line">sb.append(<span class="string">&quot;public class &quot;</span> + initcap(tableName) + <span class="string">&quot; &#123;\r\n\r\n&quot;</span>);</span><br><span class="line">processAllAttrs(sb);<span class="comment">//生成字段</span></span><br><span class="line">sb.append(<span class="string">&quot;\r\n&quot;</span>);</span><br><span class="line">generatGetterSetter(sb);<span class="comment">//生成getter和setter</span></span><br><span class="line">sb.append(<span class="string">&quot;&#125;\r\n&quot;</span>);</span><br><span class="line">System.out.println(sb.toString());</span><br><span class="line"><span class="keyword">return</span> sb.toString();</span><br></pre></td></tr></table></figure>
+
+
+<hr>
+<p>【参考文献】</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/%E5%A4%A7%E6%95%B0%E6%8D%AE%E6%8A%80%E6%9C%AF%E6%A6%82%E8%AE%BA/" rel="prev" title="大数据技术概论">
+      <i class="fa fa-chevron-left"></i> 大数据技术概论
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/lang/" rel="next" title="Java基本语法与小错误">
+      Java基本语法与小错误 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Entity"><span class="nav-number">1.</span> <span class="nav-text">Entity</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DatabaseMetaData"><span class="nav-number">2.</span> <span class="nav-text">DatabaseMetaData</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E7%B1%BB"><span class="nav-number">3.</span> <span class="nav-text">生成类</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E5%AD%97%E6%AE%B5"><span class="nav-number">3.1.</span> <span class="nav-text">生成字段</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%9F%E6%88%90Getter%E5%92%8CSetter"><span class="nav-number">3.2.</span> <span class="nav-text">生成Getter和Setter</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%84%E5%90%88%E6%88%90%E7%B1%BB%E6%96%87%E4%BB%B6"><span class="nav-number">3.3.</span> <span class="nav-text">组合成类文件</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

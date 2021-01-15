@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="01.正则表达式To use regular expressions effectively in Java, you need to know the syntax. The syntax is extensive, enabling you to write very advanced regular expressions. It may take a lot of exercise to">
+<meta property="og:type" content="article">
+<meta property="og:title" content="正则表达式">
+<meta property="og:url" content="http://example.com/Java/tool/01.%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="01.正则表达式To use regular expressions effectively in Java, you need to know the syntax. The syntax is extensive, enabling you to write very advanced regular expressions. It may take a lot of exercise to">
+<meta property="og:locale">
+<meta property="article:published_time" content="2019-08-10T06:58:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.906Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="正则表达式">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/Java/tool/01.%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>正则表达式 | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/01.%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          正则表达式
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="01-正则表达式"><a href="#01-正则表达式" class="headerlink" title="01.正则表达式"></a>01.正则表达式</h1><p>To use regular expressions effectively in Java, you need to know the syntax. The syntax is extensive, enabling you to write very advanced regular expressions. It may take a lot of exercise to fully master the syntax.</p>
+<p>In this text I will go through the basics of the syntax with examples. I will not cover every little detail of the syntax, but focus on the main concepts you need to understand, in order to work with regular expressions. For a full explanation, see the <a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html"><code>Pattern</code> class JavaDoc page</a>.</p>
+<p>Before showing all the advanced options you can use in Java regular expressions, I will give you a quick run-down of the Java regular expression syntax basics.</p>
+<p>The most basic form of regular expressions is an expression that simply matches certain characters. Here is an example:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>This simple regular expression will match occurences of the text “John” in a given input text.</p>
+<p>You can use any characters in the alphabet in a regular expression.</p>
+<p>You can also refer to characters via their octal, hexadecimal or unicode codes. Here are two examples:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>These three expressions all refer to the uppercase <code>A</code> character. The first uses the octal code (<code>101</code>) for <code>A</code>, the second uses the hexadecimal code (<code>41</code>) and the third uses the unicode code (<code>0041</code>).</p>
+<p>Character classes are constructst that enable you to specify a match against multiple characters instead of just one. In other words, a character class matches a single character in the input text against multiple allowed characters in the character class. For instance, you can match either of the characters <code>a</code>, <code>b</code> or <code>c</code> like this:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>Character classes are nested inside a pair of square brackets <code>[]</code>. The brackets themselves are not part of what is being matched.</p>
+<p>You can use character classes for many things. For instance, this example finds all occurrences of the word <code>John</code>, with either a lowercase or uppercase <code>J</code>:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>The character class <code>[Jj]</code> will match either a <code>J</code> or a <code>j</code>, and the rest of the expression will match the characters <code>ohn</code> in that exact sequence.</p>
+<p>There are several other character classes you can use. See the character class table later in this text.</p>
+<p>The Java regular expression syntax has a few predefined character classes you can use. For instance, the <code>\d</code> character class matches any digit, the <code>\s</code> character class matches any white space character, and the <code>\w</code> character matches any word character.</p>
+<p>The predefined character classes do not have to be enclosed in square brackets, but you can if you want to combine them. Here are a few examples:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>The first example matches any digit character. The second example matches any digit or any white space character.</p>
+<p>The predefined character classes are listed in a table later in this text.</p>
+<p>The syntax also include matchers for matching boundaries, like boundaries between words, the beginning and end of the input text etc. For instance, the <code>\w</code> matches boundaries between words, the <code>^</code> matches the beginning of a line, and the <code>$</code> matches the end of a line.</p>
+<p>Here is a boundary matcher example:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>This expression matches a line of text with only the text <code>This is a single line</code>. Notice the start-of-line and end-of-line matchers in the expression. These state that there can be nothing before or after the text, except the beginning and end of a line.</p>
+<p>There is a full list of boundary matchers later in this text.</p>
+<p>Quantifiers enables you to match a given expression or subexpression multiple times. For instance, the following expression matches the letter <code>A</code> zero or more times:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>The <code>*</code> character is a quantifier that means “zero or more times”. There is also a <code>+</code> quantifier meaning “one or more times”, a <code>?</code> quantifier meaning “zero or one time”, and a few others which you can see in the quantifier table later in this text.</p>
+<p>Quantifiers can be either “reluctant”, “greedy” or “possesive”. A reluctant quantifier will match as little as possible of the input text. A greedy quantifier will match as much as possible of the input text. A possesive quantifier will match as much as possible, even if it makes the rest of the expression not match anything, and the expression to fail finding a match.</p>
+<p>I will illustrate the difference between reluctant, greedy and possesive quantifiers with an example. Here is an input text:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>Then look at the following expression with a reluctant quantifier:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>This expression will match the word <code>John</code> followed by zero or more characters The <code>.</code> means “any character”, and the <code>*</code> means “zero or more times”. The <code>?</code> after the <code>*</code> makes the <code>*</code> a reluctant quantifier.</p>
+<p>Being a reluctant quantifier, the quantifier will match as little as possible, meaning zero characters. The expression will thus find the word <code>John</code> with zero characters after, 3 times in the above input text.</p>
+<p>If we change the quantifier to a greedy quantifier, the expression will look like this:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>The greedy quantifier will match as many characters as possible. Now the expression will only match the first occurrence of <code>John</code>, and the greedy quantifier will match the rest of the characters in the input text. Thus, only a single match is found.</p>
+<p>Finally, lets us change the expression a bit to contain a possesive quantifier:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>The <code>+</code> after the <code>*</code> makes it a possesive quantifier.</p>
+<p>This expression will not match the input text given above, even if both the words <code>John</code> and <code>hurt</code> are found in the input text. Why is that? Because the <code>.*+</code> is possesive. Instead of matching as much as possible to make the expression match, as a greedy quantifier would have done, the possesive quantifier matches as much as possible, regardless of whether the expression will match or not.</p>
+<p>The <code>.*+</code> will match all characters after the first occurrence of <code>John</code> in the input text, including the word <code>hurt</code>. Thus, there is no <code>hurt</code> word left to match, when the possesive quantifier has claimed its match.</p>
+<p>If you change the quantifier to a greedy quantifier, the expression will match the input text one time. Here is how the expression looks with a greedy quantifier:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+<p>You will have to play around with the different quantifiers and types to understand how they work. See the table later in this text for a full list of quantifiers.</p>
+<p>The Java regular expression syntax also has support for a few logical operators (and, or, not).</p>
+<p>The <code>and</code> operator is implicit. When you write the expression <code>John</code>, then it means “<code>J</code> and <code>o</code> and <code>h</code> and <code>n</code>“.</p>
+<p>The <code>or</code> operator is explicit, and is written with a <code>|</code>. For instance, the expression <code>John|hurt</code> will match either the word <code>John</code>, or the word <code>hurt</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Construct</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>x</code></td>
+<td>The character x. Any character in the alphabet can be used in place of x.</td>
+</tr>
+<tr>
+<td><code>\\</code></td>
+<td>The backslash character. A single backslash is used as escape character in conjunction with other characters to signal special matching, so to match just the backslash character itself, you need to escape with a backslash character. Hence the double backslash to match a single backslash character.</td>
+</tr>
+<tr>
+<td><code>\0n</code></td>
+<td>The character with octal value <code>0n</code>. n has to be between 0 and 7.</td>
+</tr>
+<tr>
+<td><code>\0nn</code></td>
+<td>The character with octal value <code>0nn</code>. n has to be between 0 and 7.</td>
+</tr>
+<tr>
+<td><code>\0mnn</code></td>
+<td>The character with octal value <code>0mnn</code>. m has to be between 0 and 3, n has to be between 0 and 7.</td>
+</tr>
+<tr>
+<td><code>\xhh</code></td>
+<td>The character with the hexadecimal value <code>0xhh</code>.</td>
+</tr>
+<tr>
+<td><code>\uhhhh</code></td>
+<td>The character with the hexadecimal value <code>0xhhhh</code>. This construct is used to match unicode characters.</td>
+</tr>
+<tr>
+<td><code>\t</code></td>
+<td>The tab character.</td>
+</tr>
+<tr>
+<td><code>\n</code></td>
+<td>The newline (line feed) character (unicode: <code>&#39;\u000A&#39;</code>).</td>
+</tr>
+<tr>
+<td><code>\r</code></td>
+<td>The carriage-return character (unicode: <code>&#39;\u000D&#39;</code>).</td>
+</tr>
+<tr>
+<td><code>\f</code></td>
+<td>The form-feed character (unicode: <code>&#39;\u000C&#39;</code>).</td>
+</tr>
+<tr>
+<td><code>\a</code></td>
+<td>The alert (bell) character (unicode: <code>&#39;\u0007&#39;</code>).</td>
+</tr>
+<tr>
+<td><code>\e</code></td>
+<td>The escape character (unicode: <code>&#39;\u001B&#39;</code>).</td>
+</tr>
+<tr>
+<td><code>\cx</code></td>
+<td>The control character corresponding to <code>x</code></td>
+</tr>
+<tr>
+<td>``</td>
+<td></td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Construct</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>[abc]</code></td>
+<td>Matches <code>a</code>, or <code>b</code> or <code>c</code>. This is called a simple class, and it matches any of the characters in the class.</td>
+</tr>
+<tr>
+<td><code>[^abc]</code></td>
+<td>Matches any character except <code>a</code>, <code>b</code>, and <code>c</code>. This is a negation.</td>
+</tr>
+<tr>
+<td><code>[a-zA-Z]</code></td>
+<td>Matches any character from <code>a</code> to <code>z</code>, or <code>A</code> to <code>Z</code>, including <code>a</code>, <code>A</code>, <code>z</code> and <code>Z</code>. This called a range.</td>
+</tr>
+<tr>
+<td><code>[a-d[m-p]]</code></td>
+<td>Matches any character from <code>a</code> to <code>d</code>, or from <code>m</code> to <code>p</code>. This is called a union.</td>
+</tr>
+<tr>
+<td><code>[a-z&amp;&amp;[def]]</code></td>
+<td>Matches <code>d</code>, <code>e</code>, or <code>f</code>. This is called an intersection (here between the range <code>a-z</code> and the characters <code>def</code>).</td>
+</tr>
+<tr>
+<td><code>[a-z&amp;&amp;[^bc]]</code></td>
+<td>Matches all characters from <code>a</code> to <code>z</code> except <code>b</code> and <code>c</code>. This is called a subtraction.</td>
+</tr>
+<tr>
+<td><code>[a-z&amp;&amp;[^m-p]]</code></td>
+<td>Matches all characters from <code>a</code> to <code>z</code> except the characters from <code>m</code> to <code>p</code>. This is also called a subtraction.</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Construct</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>.</code></td>
+<td>Matches any single character. May or may not match line terminators, depending on what flags were used to compile the <code>Pattern</code>.</td>
+</tr>
+<tr>
+<td><code>\d</code></td>
+<td>Matches any digit [0-9]</td>
+</tr>
+<tr>
+<td><code>\D</code></td>
+<td>Matches any non-digit character [^0-9]</td>
+</tr>
+<tr>
+<td><code>\s</code></td>
+<td>Matches any white space character (space, tab, line break, carriage return)</td>
+</tr>
+<tr>
+<td><code>\S</code></td>
+<td>Matches any non-white space character.</td>
+</tr>
+<tr>
+<td><code>\w</code></td>
+<td>Matches any word character.</td>
+</tr>
+<tr>
+<td><code>\W</code></td>
+<td>Matches any non-word character.</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Construct</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>^</code></td>
+<td>Matches the beginning of a line.</td>
+</tr>
+<tr>
+<td><code>$</code></td>
+<td>Matches then end of a line.</td>
+</tr>
+<tr>
+<td><code>\b</code></td>
+<td>Matches a word boundary.</td>
+</tr>
+<tr>
+<td><code>\B</code></td>
+<td>Matches a non-word boundary.</td>
+</tr>
+<tr>
+<td><code>\A</code></td>
+<td>Matches the beginning of the input text.</td>
+</tr>
+<tr>
+<td><code>\G</code></td>
+<td>Matches the end of the previous match</td>
+</tr>
+<tr>
+<td><code>\Z</code></td>
+<td>Matches the end of the input text except the final terminator if any.</td>
+</tr>
+<tr>
+<td><code>\z</code></td>
+<td>Matches the end of the input text.</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Greedy</th>
+<th>Reluctant</th>
+<th>Possessive</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>X?</code></td>
+<td><code>X??</code></td>
+<td><code>X?+</code></td>
+<td>Matches X once, or not at all (0 or 1 time).</td>
+</tr>
+<tr>
+<td><code>X*</code></td>
+<td><code>X*?</code></td>
+<td><code>X*+</code></td>
+<td>Matches X zero or more times.</td>
+</tr>
+<tr>
+<td><code>X+</code></td>
+<td><code>X+?</code></td>
+<td><code>X++</code></td>
+<td>Matches X one or more times.</td>
+</tr>
+<tr>
+<td><code>X&#123;n&#125;</code></td>
+<td><code>X&#123;n&#125;?</code></td>
+<td><code>X&#123;n&#125;+</code></td>
+<td>Matches X exactly n times.</td>
+</tr>
+<tr>
+<td><code>X&#123;n,&#125;</code></td>
+<td><code>X&#123;n,&#125;?</code></td>
+<td><code>X&#123;n,&#125;+</code></td>
+<td>Matches X at least n times.</td>
+</tr>
+<tr>
+<td><code>X&#123;n, m)</code></td>
+<td><code>X&#123;n, m)?</code></td>
+<td><code>X&#123;n, m)+</code></td>
+<td>Matches X at least n time, but at most m times.</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Construct</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>XY</code></td>
+<td>Matches X and Y (X followed by Y).</td>
+</tr>
+<tr>
+<td>`X</td>
+<td>Y`</td>
+</tr>
+</tbody></table>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/" rel="tag"># 正则表达式</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java/tool/02.RAID/" rel="prev" title="磁盘Raid机制">
+      <i class="fa fa-chevron-left"></i> 磁盘Raid机制
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/metric/JMeter/" rel="next" title="JMeter与性能压测">
+      JMeter与性能压测 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#01-%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="nav-number">1.</span> <span class="nav-text">01.正则表达式</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

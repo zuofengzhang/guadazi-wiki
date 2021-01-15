@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Apache iceberg：Netflix 数据仓库的基石Apache iceberg：Netflix 数据仓库的基石 5-year challenges智能处理引擎  CBO，更好的join实现 缓存结果集，物化视图  减少人工维护数据  data librarian services 数据图书馆服务 declarative instead of imperative 陈述式而不是命令式  P">
+<meta property="og:type" content="article">
+<meta property="og:title" content="guadazi">
+<meta property="og:url" content="http://example.com/bigdata/iceberg/Apache%20iceberg%EF%BC%9ANetflix%20%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="Apache iceberg：Netflix 数据仓库的基石Apache iceberg：Netflix 数据仓库的基石 5-year challenges智能处理引擎  CBO，更好的join实现 缓存结果集，物化视图  减少人工维护数据  data librarian services 数据图书馆服务 declarative instead of imperative 陈述式而不是命令式  P">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/bigdata/iceberg/Apache%20iceberg%EF%BC%9ANetflix%20%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3/_v_images/20201014205326408_1460756353.png">
+<meta property="og:image" content="http://example.com/bigdata/iceberg/Apache%20iceberg%EF%BC%9ANetflix%20%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3/_v_images/20201014205344160_898972367.png">
+<meta property="article:published_time" content="2021-01-15T08:51:32.672Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:32.672Z">
+<meta property="article:author" content="aaronzhang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/bigdata/iceberg/Apache%20iceberg%EF%BC%9ANetflix%20%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3/_v_images/20201014205326408_1460756353.png">
+
+<link rel="canonical" href="http://example.com/bigdata/iceberg/Apache%20iceberg%EF%BC%9ANetflix%20%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title> | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/iceberg/Apache%20iceberg%EF%BC%9ANetflix%20%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 16:51:32" itemprop="dateCreated datePublished" datetime="2021-01-15T16:51:32+08:00">2021-01-15</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Apache-iceberg：Netflix-数据仓库的基石"><a href="#Apache-iceberg：Netflix-数据仓库的基石" class="headerlink" title="Apache iceberg：Netflix 数据仓库的基石"></a>Apache iceberg：Netflix 数据仓库的基石</h1><p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/acWcoZ25zDXetA3ewypG2g?spm=a2c6h.12873639.0.0.7e4b13839s5rpH">Apache iceberg：Netflix 数据仓库的基石</a></p>
+<h2 id="5-year-challenges"><a href="#5-year-challenges" class="headerlink" title="5-year challenges"></a>5-year challenges</h2><p>智能处理引擎</p>
+<ul>
+<li>CBO，更好的join实现</li>
+<li>缓存结果集，物化视图</li>
+</ul>
+<p>减少人工维护数据</p>
+<ul>
+<li>data librarian services 数据图书馆服务</li>
+<li>declarative instead of imperative 陈述式而不是命令式</li>
+</ul>
+<h2 id="Problem-Whack-a-mole"><a href="#Problem-Whack-a-mole" class="headerlink" title="Problem Whack-a-mole"></a>Problem Whack-a-mole</h2><p>1、不安全的操作随处可见: 同时写多个分区，列重命名<br>2、和对象存储交互有时候会出现很大的问题: eventual consistency to performance problems(最终一致性的性能问题)、output committees can’t fix it<br>3、无休止的可扩展性挑战。</p>
+<h2 id="iceberg"><a href="#iceberg" class="headerlink" title="iceberg"></a>iceberg</h2><ol>
+<li>在单个文件中修改或跳过数据</li>
+<li>当然多个文件也支持这些操作</li>
+</ol>
+<p><img src="_v_images/20201014205326408_1460756353.png"></p>
+<p><img src="_v_images/20201014205344160_898972367.png"></p>
+<p>Hive 表的核心思想是把数据组织成目录树，如上所述。</p>
+<p>如果我们需要过滤数据，可以在 where 里面添加分区相关的信息。</p>
+<p>带来的问题是如果一张表有很多分区，我们需要使用 HMS（Hive MetaStore）来记录这些分区，同时底层的文件系统（比如 HDFS）仍然需要在每个分区里面记录这些分区数据。</p>
+<p>这就导致我们需要在 HMS 和 文件系统里面同时保存一些状态信息；因为缺乏锁机制，所以对上面两个系统进行修改也不能保证原子性。</p>
+<p>当然 Hive 这样维护表也不是没有好处。这种设计使得很多引擎（Hive、Spark、Presto、Flink、Pig）都支持读写 Hive 表，同时支持很多第三方工具。简单和透明使得 Hive 表变得不可或缺的。</p>
+<p>Iceberg 的目标包括：</p>
+<p>1、成为静态数据交换的开放规范，维护一个清晰的格式规范，支持多语言，支持跨项目的需求等。<br>2、提升扩展性和可靠性。能够在一个节点上运行，也能在集群上运行。所有的修改都是原子性的，串行化隔离。原生支持云对象存储，支持多并发写。<br>3、修复持续的可用性问题，比如模式演进，分区隐藏，支持时间旅行、回滚等。</p>
+<p>Iceberg 主要设计思想：</p>
+<p>记录表在所有时间的所有文件，和 Delta Lake 或 Apache Hudi 一样，支持 snapshot，其是表在某个时刻的完整文件列表。每一次写操作都会生成一个新的快照。</p>
+<p>读取数据的时候使用当前的快照，Iceberg 使用乐观锁机制来创建新的快照，然后提交。</p>
+<p>Iceberg 这么设计的好处是：</p>
+<ul>
+<li>所有的修改都是原子性的；</li>
+<li>没有耗时的文件系统操作；</li>
+<li>快照是索引好的，以便加速读取；</li>
+<li>CBO metrics 信息是可靠的；</li>
+<li>更新支持版本，支持物化视图。</li>
+</ul>
+<p>Iceberg 在 Netflix 生产环境维护着数十 PB 的数据，数百万个分区。对大表进行查询能够提供低延迟的响应。</p>
+<p>未来工作：1、支持 Spark 向量化以便实现快速的 bulk read，Presto 向量化已经支持。2、行级别的删除，支持 MERGE INTO 等</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/iceberg/DataLake%E4%B8%89%E5%89%91%E5%AE%A2/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/solr/SolrCloud/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Apache-iceberg%EF%BC%9ANetflix-%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3"><span class="nav-number">1.</span> <span class="nav-text">Apache iceberg：Netflix 数据仓库的基石</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#5-year-challenges"><span class="nav-number">1.1.</span> <span class="nav-text">5-year challenges</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Problem-Whack-a-mole"><span class="nav-number">1.2.</span> <span class="nav-text">Problem Whack-a-mole</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#iceberg"><span class="nav-number">1.3.</span> <span class="nav-text">iceberg</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

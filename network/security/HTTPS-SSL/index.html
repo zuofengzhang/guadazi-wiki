@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="HTTPSHTTPS(Hypertext Transfer Protocol Secure)即安全的HTTP. HTTPS的安全基础是安全套接层(Secure Sockets Layer, SSL). HTTP工作在应用层(OSI模型的最高层), SSL协议工作在一个较低的子层, 位于TCP&#x2F;IP协议和HTTP协议之间. 在HTTP报文传输前对其加密, 并在到达时对其解密. 严格地讲, HTTPS">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HTTPS与SSL">
+<meta property="og:url" content="http://example.com/network/security/HTTPS-SSL/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="HTTPSHTTPS(Hypertext Transfer Protocol Secure)即安全的HTTP. HTTPS的安全基础是安全套接层(Secure Sockets Layer, SSL). HTTP工作在应用层(OSI模型的最高层), SSL协议工作在一个较低的子层, 位于TCP&#x2F;IP协议和HTTP协议之间. 在HTTP报文传输前对其加密, 并在到达时对其解密. 严格地讲, HTTPS">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/images/network/security/https-protocal-ssl.png">
+<meta property="og:image" content="http://example.com/images/network/security/http-ssl.png">
+<meta property="og:image" content="http://example.com/images/java/JSSE-classes.gif">
+<meta property="article:published_time" content="2016-10-31T04:26:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.913Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Job">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/network/security/https-protocal-ssl.png">
+
+<link rel="canonical" href="http://example.com/network/security/HTTPS-SSL/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>HTTPS与SSL | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/network/security/HTTPS-SSL/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          HTTPS与SSL
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-10-31 12:26:00" itemprop="dateCreated datePublished" datetime="2016-10-31T12:26:00+08:00">2016-10-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/network/" itemprop="url" rel="index"><span itemprop="name">network</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="HTTPS"><a href="#HTTPS" class="headerlink" title="HTTPS"></a>HTTPS</h1><p>HTTPS(Hypertext Transfer Protocol Secure)即安全的HTTP. HTTPS的安全基础是安全套接层(Secure Sockets Layer, SSL). HTTP工作在应用层(OSI模型的最高层), SSL协议工作在一个较低的子层, 位于TCP/IP协议和HTTP协议之间. 在HTTP报文传输前对其加密, 并在到达时对其解密. 严格地讲, HTTPS并不是一个单独的协议, 而是工作在SSL协议上的HTTP协议. </p>
+<p>HTTPS，即安全的超文本传输协议，采用了SSL技术，被广泛使用以保证Web应用系统的安全性。访问Web应用的编程接口大多封装了 SSL，使得访问 HTTPS 和访问 HTTP 一样简单。</p>
+<p><img src="/images/network/security/https-protocal-ssl.png" alt="img"></p>
+<p>HTTPS主要作用有两种：(1)确认通讯双方的身份, (2)建立安全通道, 保证数据传输安全. </p>
+<h2 id="HTTPS的主要作用"><a href="#HTTPS的主要作用" class="headerlink" title="HTTPS的主要作用"></a>HTTPS的主要作用</h2><h3 id="确认通讯双方的身份"><a href="#确认通讯双方的身份" class="headerlink" title="确认通讯双方的身份"></a>确认通讯双方的身份</h3><p>HTTPS通讯中, 通过签名技术, 通讯双方可以确认对方身份. 身份认证分为单向认证和双向认证.<br>单向认证中只有服务器端有证书, 双向认证中服务器和客户端都有证书. 一般的HTTPS站点只有服务器有证书, 而客户端无证书. </p>
+<p>单向认证是双向认证的简化版. </p>
+<h3 id="建立安全通道-保证数据传输安全"><a href="#建立安全通道-保证数据传输安全" class="headerlink" title="建立安全通道, 保证数据传输安全"></a>建立安全通道, 保证数据传输安全</h3><p>基于SSL协议通讯双方可以协商一个用于对称加密的密钥, 该密钥是一个难以破解的随机数, 而且依赖通讯双方的证书、私钥等来协商. 密钥协商好后, 通讯双方用该密钥对数据进行加解密, 从而保证数据安全. </p>
+<h2 id="HTTPS与HTTP协议的差异"><a href="#HTTPS与HTTP协议的差异" class="headerlink" title="HTTPS与HTTP协议的差异"></a>HTTPS与HTTP协议的差异</h2><ol>
+<li>HTTP 的URL是以”http://“开始, HTTPS的URL是以“https://”开始；</li>
+<li>HTTP默认端口为80, HTTPS的默认端口为443；</li>
+<li>采用HTTPS的Web Server需要到CA申请证书；</li>
+<li>HTTPS由HTTP+SSL来实现, 可进行加密传输、身份认证等, 要比HTTP安全</li>
+<li>HTTP的信息是明文传输, 而HTTPS的信息是加密传输　　</li>
+</ol>
+<h1 id="HTTPS的工作原理"><a href="#HTTPS的工作原理" class="headerlink" title="HTTPS的工作原理"></a>HTTPS的工作原理</h1><p>HTTPS在传输数据之前需要客户端（浏览器）与服务端（网站）之间进行一次握手，在握手过程中将确立双方加密传输数据的密码信息。TLS/SSL协议不仅仅是一套加密传输的协议，更是一件经过艺术家精心设计的艺术品，TLS/SSL中使用了非对称加密，对称加密以及HASH算法。握手过程的简单描述如下：</p>
+<ol>
+<li>浏览器将自己支持的一套加密规则发送给网站。</li>
+<li>网站从中选出一组加密算法与HASH算法，并将自己的身份信息以证书的形式发回给浏览器。证书里面包含了网站地址，加密公钥，以及证书的颁发机构等信息。</li>
+<li>获得网站证书之后浏览器要做以下工作：<br>a) 验证证书的合法性（颁发证书的机构是否合法，证书中包含的网站地址是否与正在访问的地址一致等），如果证书受信任，则浏览器栏里面会显示一个小锁头，否则会给出证书不受信的提示。<br>b) 如果证书受信任，或者是用户接受了不受信的证书，浏览器会生成一串随机数的密码，并用证书中提供的公钥加密。<br>c) 使用约定好的HASH计算握手消息，并使用生成的随机数对消息进行加密，最后将之前生成的所有信息发送给网站。</li>
+<li>网站接收浏览器发来的数据之后要做以下的操作：<br>a) 使用自己的私钥将信息解密取出密码，使用密码解密浏览器发来的握手消息，并验证HASH是否与浏览器发来的一致。<br>b) 使用密码加密一段握手消息，发送给浏览器。</li>
+<li>浏览器解密并计算握手消息的HASH，如果与服务端发来的HASH一致，此时握手过程结束，之后所有的通信数据将由之前浏览器生成的随机密码并利用对称加密算法进行加密。</li>
+</ol>
+<p>这里浏览器与网站互相发送加密的握手消息并验证，目的是为了保证双方都获得了一致的密码，并且可以正常的加密解密数据，为后续真正数据的传输做一次测试。另外，HTTPS一般使用的加密与HASH算法如下：</p>
+<p>非对称加密算法：RSA，DSA/DSS</p>
+<p>对称加密算法：AES，RC4，3DES</p>
+<p>HASH算法：MD5，SHA1，SHA256</p>
+<p>其中非对称加密算法用于在握手过程中加密生成的密码，对称加密算法用于对真正传输的数据进行加密，而HASH算法用于验证数据的完整性。由于浏览器生成的密码是整个数据加密的关键，因此在传输的时候使用了非对称加密算法对其加密。非对称加密算法会生成公钥和私钥，公钥只能用于加密数据，因此可以随意传输，而网站的私钥用于对数据进行解密，所以网站都会非常小心的保管自己的私钥，防止泄漏。</p>
+<p><img src="/images/network/security/http-ssl.png"></p>
+<h1 id="Java中的HTTPS"><a href="#Java中的HTTPS" class="headerlink" title="Java中的HTTPS"></a>Java中的HTTPS</h1><p>Java 包含了访问 Https 链接的 API，会用到一个关键类 <strong>HttpsURLConnection</strong> ;  参见如下实现代码：</p>
+<p>代码1</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建URL对象</span></span><br><span class="line">URL myURL = <span class="keyword">new</span> URL(<span class="string">&quot;https://www.sun.com&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建HttpsURLConnection对象，并设置其SSLSocketFactory对象</span></span><br><span class="line">HttpsURLConnection httpsConn = (HttpsURLConnection) myURL.openConnection();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 取得该连接的输入流，以读取响应内容</span></span><br><span class="line">InputStreamReader insr = <span class="keyword">new</span> InputStreamReader(httpsConn.getInputStream());</span><br><span class="line"></span><br><span class="line"><span class="comment">// 读取服务器的响应内容并显示</span></span><br><span class="line"><span class="keyword">int</span> respInt = insr.read();</span><br><span class="line"><span class="keyword">while</span> (respInt != -<span class="number">1</span>) &#123;</span><br><span class="line">    System.out.print((<span class="keyword">char</span>) respInt);</span><br><span class="line">    respInt = insr.read();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在取得connection的时候和正常浏览器访问一样，仍然会<strong>验证服务端的证书是否被信任</strong>（权威机构发行或者被权威机构签名）; 如果服务端证书不被信任，则默认的实现就会有问题，一般来说，用<strong>SunJSSE</strong>会抛如下异常信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">javax.net.ssl.SSLHandshakeException:</span><br><span class="line">sun.security.validator.ValidatorException: PKIX path building failed:</span><br><span class="line">sun.security.provider.certpath.SunCertPathBuilderException: unable to</span><br><span class="line">find valid certification path to requested target</span><br></pre></td></tr></table></figure>
+
+<h1 id="JSSE"><a href="#JSSE" class="headerlink" title="JSSE"></a>JSSE</h1><p>Java安全套接扩展 (Java Secure Socket Extension, <code>JSSE</code>) 是实现Internet安全通信的一系列包的集合。它是一个<code>SSL</code>和<code>TLS</code>的纯Java实现，可以透明地提供数据加密、服务器认证、信息完整性等功能，可以使我们像使用普通的套接字一样使用JSSE建立的安全套接字。JSSE是一个开放的标准，不只是Sun公司才能实现一个JSSE，事实上其他公司有自己实现的JSSE。</p>
+<h2 id="TrustStore文件"><a href="#TrustStore文件" class="headerlink" title="TrustStore文件"></a>TrustStore文件</h2><p>客户端的 TrustStore 文件。客户端的 TrustStore 文件中保存着被客户端所信任的服务器的证书信息。客户端在进行SSL连接时，JSSE将根据这个文件中的证书决定是否信任服务器端的证书。</p>
+<p>JSSE中，有一个信任管理器类负责决定是否信任远端的证书，这个类有如下的处理规则：</p>
+<ol>
+<li>若系统属性 <strong>javax.net.sll.trustStore</strong> 指定了 TrustStore 文件，那么信任管理器就去jre安装路径下的 lib/security/目录中寻找并使用这个文件来检查证书。</li>
+<li>若该系统属性没有指定 TrustStore 文件，它就会去jre安装路径下寻找默认的 TrustStore 文件，这个文件的相对路径为：lib/security/<strong>jssecacerts</strong>。</li>
+<li>若 jssecacerts 不存在，但是 cacerts 存在（它随J2SDK一起发行，含有数量有限的可信任的基本证书），那么这个默认的 TrustStore 文件就是 lib/security/<strong>cacerts</strong>。</li>
+</ol>
+<p>那遇到这种情况，怎么处理呢？有以下两种方案：</p>
+<ol>
+<li>按照以上信任管理器的规则，<strong>将服务端的公钥(证书)导入到jssecacerts</strong>，或者是在系统属性中设置要加载的 trustStore 文件的路径; 证书导入可以用如下命令：<code>keytool -import -file src_cer_file –keystore dest_cer_store</code> ; 证书可以通过浏览器导出获得; </li>
+<li>实现自己的证书信任管理器类，比如 <strong>MyX509TrustManager</strong> ，该类必须实现<code>X509TrustManager</code>接口中的三个method; 然后在HttpsURLConnection中加载自定义的类.</li>
+</ol>
+<p>　　Java提供了一种非常简洁的方法来访问HTTPS网页，即使用类HttpsURLConnection、URL等。这几个类为支持HTTPS对JSSE相关类做了进一步的封装，例子如下所示：</p>
+<p>TrustStore文件中导入了 <code>https://www.oracle.com</code> 的证书，运行代码 1 当使用<code>HttpsUrlConnection</code>访问该网址时，可以正常的访问。然而把访问的URL改为 <code>https://login.bjut.edu.cn</code> 时，程序将抛出异常<code>javax.net.ssl.SSLException</code>，这是由于<code>https://login.bjut.edu.cn</code> 站点的安全证书不被<code>JSSE</code>所信任。根据<code>JSSE</code>简介中对信任管理器的分析，一种解决这个问题的方法是按照信任管理器的处理规则，把站点的证书放到证书库文件<code>jssecacerts</code>中，或者把证书存放到任一 <code>TrustStore</code> 文件中，然后设置系统属性 <code>javax.net.sll.trustStore</code> 指向该文件。另一种解决方法则是自己实现信任管理器类，让它信任我们指定的证书。下面分别介绍这两种方法: </p>
+<h2 id="将证书导入到TrustStore文件中"><a href="#将证书导入到TrustStore文件中" class="headerlink" title="将证书导入到TrustStore文件中"></a>将证书导入到TrustStore文件中</h2><p>Java提供了命令行工具keytool用于创建证书或者把证书从其它文件中导入到Java自己的TrustStore文件中。把证书从其它文件导入到TrustStore文件中的命令行格式为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">keytool -import -file src_cer_file –keystore dest_cer_store</span><br></pre></td></tr></table></figure>
+<p>　　其中，src_cer_file为存有证书信息的源文件名，dest_cer_store为目标TrustStore文件。</p>
+<p>　　在使用<code>keytool</code>之前，首先要取得源证书文件，这个源文件可使用IE浏览器获得，IE浏览器会把访问过的<code>HTTPS</code>站点的证书保存到本地。从IE浏览器导出证书的方法是打开“Internet 选项”，选择“内容”选项卡，点击“证书…”按钮，在打开的证书对话框中，选中一个证书，然后点击“导出…”按钮，按提示一步步将该证书保存到一文件中。最后就可利用keytool把该证书导入到Java的TrustStore文件中。为了能使Java程序找到该文件，应该把这个文件复制到jre安装路径下的<code>lib/security/</code>目录中。</p>
+<p>　　这样，只需在程序中设置系统属性<code>javax.net.sll.trustStore</code>指向文件dest_cer_store，就能使JSSE信任该证书，从而使程序可以访问使用未经验证的证书的HTTPS站点。</p>
+<p>　　使用这种方法，编程非常简单，但需要手工导出服务器的证书。当服务器证书经常变化时，就需要经常进行手工导出证书的操作。下面介绍的实现X509证书信任管理器类的方法将避免手工导出证书的问题。</p>
+<h2 id="X509证书信任管理器类的实现及应用"><a href="#X509证书信任管理器类的实现及应用" class="headerlink" title="X509证书信任管理器类的实现及应用"></a>X509证书信任管理器类的实现及应用</h2><p>　　在JSSE中，证书信任管理器类就是实现了接口<code>X509TrustManager</code>的类。可以自己实现该接口，让它信任我们指定的证书。</p>
+<p>　　接口<code>X509TrustManager</code>有下述三个公有的方法需要我们实现：</p>
+<p>　　1. <code>void checkClientTrusted(X509Certificate[] chain, String authType)      throws CertificateException</code></p>
+<p>　　该方法检查客户端的证书，若不信任该证书则抛出异常。由于我们不需要对客户端进行认证，因此我们只需要执行默认的信任管理器的这个方法。JSSE中，默认的信任管理器类为<code>TrustManager</code>。</p>
+<p>　　1. <code>void checkServerTrusted(X509Certificate[] chain, String authType)      throws CertificateException</code></p>
+<p>　　该方法检查服务器的证书，若不信任该证书同样抛出异常。通过自己实现该方法，可以使之信任我们指定的任何证书。在实现该方法时，也可以简单的不做任何处理，即一个空的函数体，由于不会抛出异常，它就会信任任何证书。</p>
+<p>　　1. <code>X509Certificate[] getAcceptedIssuers()</code></p>
+<p>　　返回受信任的X509证书数组。</p>
+<p>　　自己实现了信任管理器类，如何使用呢？类<code>HttpsURLConnection</code>似乎并没有提供方法设置信任管理器。其实，<code>HttpsURLConnection</code>通过<code>SSLSocket</code>来建立与HTTPS的安全连接，<code>SSLSocket</code>对象是由<code>SSLSocketFactory</code>生成的。<code>HttpsURLConnection</code>提供了方法<code>setSSLSocketFactory(SSLSocketFactory)</code>设置它使用的<code>SSLSocketFactory</code>对象。<code>SSLSocketFactory</code>通过<code>SSLContext</code>对象来获得，在初始化SSLContext对象时，可指定信任管理器对象。下面用一个图简单表示这几个JSSE类的关系：</p>
+<p><img src="/images/java/JSSE-classes.gif" alt="img"></p>
+<p>　　假设自己实现的X509TrustManager类的类名为：MyX509TrustManager，下面的代码片断说明了如何使用MyX509TrustManager：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> javax.net.ssl.TrustManager;</span><br><span class="line"><span class="keyword">import</span> javax.net.ssl.TrustManagerFactory;</span><br><span class="line"><span class="keyword">import</span> javax.net.ssl.X509TrustManager;</span><br><span class="line"><span class="keyword">import</span> java.io.FileInputStream;</span><br><span class="line"><span class="keyword">import</span> java.security.KeyStore;</span><br><span class="line"><span class="keyword">import</span> java.security.cert.CertificateException;</span><br><span class="line"><span class="keyword">import</span> java.security.cert.X509Certificate;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyX509TrustManager</span> <span class="keyword">implements</span> <span class="title">X509TrustManager</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    * The default X509TrustManager returned by SunX509.  We’ll delegate</span></span><br><span class="line"><span class="comment">    * decisions to it, and fall back to the logic in this class if the</span></span><br><span class="line"><span class="comment">    * default X509TrustManager doesn’t trust it.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    X509TrustManager sunJSSEX509TrustManager;</span><br><span class="line"></span><br><span class="line">    MyX509TrustManager() <span class="keyword">throws</span> Exception &#123;</span><br><span class="line"><span class="comment">// create a &quot;default&quot; JSSE X509TrustManager.</span></span><br><span class="line"></span><br><span class="line">        KeyStore ks = KeyStore.getInstance(<span class="string">&quot;JKS&quot;</span>);</span><br><span class="line">        ks.load(<span class="keyword">new</span> FileInputStream(<span class="string">&quot;trustedCerts&quot;</span>),</span><br><span class="line">                <span class="string">&quot;passphrase&quot;</span>.toCharArray());</span><br><span class="line">        TrustManagerFactory tmf =</span><br><span class="line">                TrustManagerFactory.getInstance(<span class="string">&quot;SunX509&quot;</span>, <span class="string">&quot;SunJSSE&quot;</span>);</span><br><span class="line">        tmf.init(ks);</span><br><span class="line">        TrustManager tms[] = tmf.getTrustManagers();</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">* Iterate over the returned trustmanagers, look</span></span><br><span class="line"><span class="comment">* for an instance of X509TrustManager.  If found,</span></span><br><span class="line"><span class="comment">* use that as our &quot;default&quot; trust manager.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tms.length; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (tms[i] <span class="keyword">instanceof</span> X509TrustManager) &#123;</span><br><span class="line">                sunJSSEX509TrustManager = (X509TrustManager) tms[i];</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">* Find some other way to initialize, or else we have to fail the</span></span><br><span class="line"><span class="comment">* constructor.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="string">&quot;Couldn’t initialize&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    * Delegate to the default trust manager.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">checkClientTrusted</span><span class="params">(X509Certificate[] chain, String authType)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> CertificateException </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            sunJSSEX509TrustManager.checkClientTrusted(chain, authType);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (CertificateException excep) &#123;</span><br><span class="line"><span class="comment">// do any special handling here, or rethrow exception.</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    * Delegate to the default trust manager.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">checkServerTrusted</span><span class="params">(X509Certificate[] chain, String authType)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> CertificateException </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            sunJSSEX509TrustManager.checkServerTrusted(chain, authType);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (CertificateException excep) &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">        * Possibly pop up a dialog box asking whether to trust the</span></span><br><span class="line"><span class="comment">        * cert chain.</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    * Merely pass this through.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="keyword">public</span> X509Certificate[] getAcceptedIssuers() &#123;</span><br><span class="line">        <span class="keyword">return</span> sunJSSEX509TrustManager.getAcceptedIssuers();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用信任管理器创建HTTPS连接</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//创建SSLContext对象，并使用我们指定的信任管理器初始化</span></span><br><span class="line">TrustManager[] tm = &#123;<span class="keyword">new</span> MyX509TrustManager ()&#125;;</span><br><span class="line">SSLContext sslContext = SSLContext.getInstance(<span class="string">&quot;SSL&quot;</span>,<span class="string">&quot;SunJSSE&quot;</span>);</span><br><span class="line">sslContext.init(<span class="keyword">null</span>, tm, <span class="keyword">new</span> java.security.SecureRandom());</span><br><span class="line"></span><br><span class="line"><span class="comment">//从上述SSLContext对象中得到SSLSocketFactory对象</span></span><br><span class="line">SSLSocketFactory ssf = sslContext.getSocketFactory();</span><br><span class="line"></span><br><span class="line"><span class="comment">//创建HttpsURLConnection对象，并设置其SSLSocketFactory对象</span></span><br><span class="line">HttpsURLConnection httpsConn = (HttpsURLConnection)myURL.openConnection();</span><br><span class="line">httpsConn.setSSLSocketFactory(ssf);</span><br></pre></td></tr></table></figure>
+
+
+<p>这样，HttpsURLConnection对象就可以正常连接HTTPS了，无论其证书是否经权威机构的验证，只要实现了接口X509TrustManager的类MyX509TrustManager信任该证书。</p>
+<p>第一种方式<strong>不会破坏JSSE的安全性</strong>，但是要手工导入证书，如果服务器很多，那每台服务器的JRE都必须做相同的操作; 第二种方式<strong>灵活性更高</strong>，但是要小心实现，否则可能会留下安全隐患; </p>
+<h2 id="Java-Key-Store"><a href="#Java-Key-Store" class="headerlink" title="Java Key Store"></a>Java Key Store</h2><p>Java Key Store(JKS)是Java语言中给出的一种密码保护的文件, 可存储密钥和证书. JKS文件好比一个仓库, 为防范别人随便乱拿, 仓库可以设置一把锁, 即JKS文件的密码(storepass). 仓库里可存放多种密钥, 如公钥、私钥和密钥对(由配对公钥和私钥组成). 每个密钥都有一个名字, 称为别名(alias). 仓库里的公钥只要你能进入仓库你就可以随便查看拿走, 私钥则是有密码的(keypass), 只允许有权限的人查看拿走. 所以从JKS文件中读取公钥只需要知道JKS文件(仓库)的密码即可, 但读取私钥时则还必须有私钥的密码[1]. </p>
+<h1 id="网站支持SSL"><a href="#网站支持SSL" class="headerlink" title="网站支持SSL"></a>网站支持SSL</h1><ol>
+<li>将证书上传到服务器</li>
+<li>设置Nignx <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 需要注意：证书路径一定要对，将ssl_certificate 和 ssl_certificate_key的值改成你证书实际存放的路径</span><br><span class="line">server &#123;</span><br><span class="line">    listen 443;</span><br><span class="line">    server_name www.w3ctech.com;</span><br><span class="line">    ssl on;</span><br><span class="line">    ssl_certificate &#x2F;home&#x2F;conf&#x2F;1_www.w3ctech.com_cert.crt;</span><br><span class="line">    ssl_certificate_key &#x2F;home&#x2F;conf&#x2F;2_www.w3ctech.com.key;</span><br><span class="line">    ssl_session_timeout 5m;</span><br><span class="line">    ssl_protocols TLSv1;</span><br><span class="line">    ssl_ciphers HIGH:!aNULL:!MD5;</span><br><span class="line">    ssl_prefer_server_ciphers on;</span><br><span class="line">    location &#x2F; &#123;</span><br><span class="line">        root html;</span><br><span class="line">        index index.html index.htm;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>禁掉80端口 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    #省略其他...</span><br><span class="line">    # http访问时，301跳转至https</span><br><span class="line">    if ($scheme &#x3D; http) &#123;</span><br><span class="line">        return 301 https:&#x2F;&#x2F;$server_name$request_uri;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<hr>
+<p>[参考文献]:</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://www.blogjava.net/etlan/archive/2006/06/29/55767.html">导入HTTPS证书</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.binghe.org/2010/03/use-httpsurlconnection-in-java/">Java中用HttpsURLConnection访问Https链接的问题</a></li>
+<li><a target="_blank" rel="noopener" href="http://toutiao.com/a6346453007501377794/?iid=5952171257">实现HTTPS，原来如此简单</a></li>
+<li><a target="_blank" rel="noopener" href="http://blog.jobbole.com/48369/">HTTPS连接的前几毫秒发生了什么</a></li>
+<li><a target="_blank" rel="noopener" href="http://blog.csdn.net/tenfyguo/article/details/40958727">下】安全HTTPS-全面详解对称加密，非对称加密，数字签名，数字证书和HTTPS</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.codeceo.com/article/https-make-safe.html">详解Https是如何确保安全的？ – 码农网</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Job/" rel="tag"># Job</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/network/security/encrypt-decrypt-signature-certificate/" rel="prev" title="加密/解密/签名/证书及在Java中的使用">
+      <i class="fa fa-chevron-left"></i> 加密/解密/签名/证书及在Java中的使用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/database/mongodb/the-little-mongodb-book/" rel="next" title="The Little MongoDB Book">
+      The Little MongoDB Book <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTPS"><span class="nav-number">1.</span> <span class="nav-text">HTTPS</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTPS%E7%9A%84%E4%B8%BB%E8%A6%81%E4%BD%9C%E7%94%A8"><span class="nav-number">1.1.</span> <span class="nav-text">HTTPS的主要作用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A1%AE%E8%AE%A4%E9%80%9A%E8%AE%AF%E5%8F%8C%E6%96%B9%E7%9A%84%E8%BA%AB%E4%BB%BD"><span class="nav-number">1.1.1.</span> <span class="nav-text">确认通讯双方的身份</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BB%BA%E7%AB%8B%E5%AE%89%E5%85%A8%E9%80%9A%E9%81%93-%E4%BF%9D%E8%AF%81%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93%E5%AE%89%E5%85%A8"><span class="nav-number">1.1.2.</span> <span class="nav-text">建立安全通道, 保证数据传输安全</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTPS%E4%B8%8EHTTP%E5%8D%8F%E8%AE%AE%E7%9A%84%E5%B7%AE%E5%BC%82"><span class="nav-number">1.2.</span> <span class="nav-text">HTTPS与HTTP协议的差异</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTPS%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">HTTPS的工作原理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Java%E4%B8%AD%E7%9A%84HTTPS"><span class="nav-number">3.</span> <span class="nav-text">Java中的HTTPS</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#JSSE"><span class="nav-number">4.</span> <span class="nav-text">JSSE</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TrustStore%E6%96%87%E4%BB%B6"><span class="nav-number">4.1.</span> <span class="nav-text">TrustStore文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%86%E8%AF%81%E4%B9%A6%E5%AF%BC%E5%85%A5%E5%88%B0TrustStore%E6%96%87%E4%BB%B6%E4%B8%AD"><span class="nav-number">4.2.</span> <span class="nav-text">将证书导入到TrustStore文件中</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#X509%E8%AF%81%E4%B9%A6%E4%BF%A1%E4%BB%BB%E7%AE%A1%E7%90%86%E5%99%A8%E7%B1%BB%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8F%8A%E5%BA%94%E7%94%A8"><span class="nav-number">4.3.</span> <span class="nav-text">X509证书信任管理器类的实现及应用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-Key-Store"><span class="nav-number">4.4.</span> <span class="nav-text">Java Key Store</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BD%91%E7%AB%99%E6%94%AF%E6%8C%81SSL"><span class="nav-number">5.</span> <span class="nav-text">网站支持SSL</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

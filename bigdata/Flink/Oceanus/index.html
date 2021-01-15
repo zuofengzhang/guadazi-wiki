@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Oceanus拉取库表信息1curl -o tank_pos_meta.json &amp;#x27;http:&#x2F;&#x2F;&lt;host&gt;:&lt;port&gt;&#x2F;ec&#x2F;v1&#x2F;listTable?pageNum&#x3D;1&amp;pageSize&#x3D;999&amp;type&#x3D;hippo&amp;dbName&#x3D;bank-pos-info&amp;name&#x3D;pos_yyyymmdd&amp;#x27; 123456789">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Oceanus: table meta API">
+<meta property="og:url" content="http://example.com/bigdata/Flink/Oceanus/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="Oceanus拉取库表信息1curl -o tank_pos_meta.json &amp;#x27;http:&#x2F;&#x2F;&lt;host&gt;:&lt;port&gt;&#x2F;ec&#x2F;v1&#x2F;listTable?pageNum&#x3D;1&amp;pageSize&#x3D;999&amp;type&#x3D;hippo&amp;dbName&#x3D;bank-pos-info&amp;name&#x3D;pos_yyyymmdd&amp;#x27; 123456789">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Oceanus/_v_images/20200601183746039_28243.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Oceanus/_v_images/20200601185553966_3881.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Oceanus/_v_images/20200601190109255_17290.png">
+<meta property="article:published_time" content="2019-08-10T06:58:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:32.649Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Image">
+<meta property="article:tag" content="Flink">
+<meta property="article:tag" content="Oceanus">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/bigdata/Flink/Oceanus/_v_images/20200601183746039_28243.png">
+
+<link rel="canonical" href="http://example.com/bigdata/Flink/Oceanus/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>Oceanus: table meta API | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Oceanus/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Oceanus: table meta API
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:32" itemprop="dateModified" datetime="2021-01-15T16:51:32+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Oceanus"><a href="#Oceanus" class="headerlink" title="Oceanus"></a>Oceanus</h1><h2 id="拉取库表信息"><a href="#拉取库表信息" class="headerlink" title="拉取库表信息"></a>拉取库表信息</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -o tank_pos_meta.json &#x27;http://&lt;host&gt;:&lt;port&gt;/ec/v1/listTable?pageNum=1&amp;pageSize=999&amp;type=hippo&amp;dbName=bank-pos-info&amp;name=pos_yyyymmdd&#x27;</span><br></pre></td></tr></table></figure>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">&quot;result_code&quot;</span>: <span class="string">&quot;0&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;result_msg&quot;</span>: <span class="string">&quot;操作成功&quot;</span>,</span><br><span class="line">    <span class="attr">&quot;result_content&quot;</span>: &#123;</span><br><span class="line">        <span class="attr">&quot;tables&quot;</span>: [</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="attr">&quot;id&quot;</span>: <span class="number">2255</span>,</span><br><span class="line">                <span class="attr">&quot;dbName&quot;</span>: <span class="string">&quot;info&quot;</span>,</span><br><span class="line">                <span class="attr">&quot;name&quot;</span>: <span class="string">&quot;pos_yyyymmdd&quot;</span>,</span><br><span class="line">                <span class="attr">&quot;type&quot;</span>: <span class="string">&quot;hippo&quot;</span>,</span><br><span class="line">                <span class="attr">&quot;principals&quot;</span>: <span class="string">&quot;user_name&quot;</span>,</span><br><span class="line">                <span class="attr">&quot;fields&quot;</span>: <span class="string">&quot;db_name,String,db_name: tb_name,String,tb_name: op_name,String,op_name: exp_time_stample,String,exp_time_stample: exp_time_stample_order,String,exp_time_stample_order: Fbill_no,String,Fbill_no: Fbank_type,Long,Fbank_type: Fbiz_type,Long,Fbiz_type: Fpos_status,Long,Fpos_status: Freverse_status,Long,Freverse_status: Freverse_times,Long,Freverse_times: Ftransaction_id,String,Ftransaction_id: Freal_bill_no,String,Freal_bill_no: Ftrace_no,String,Ftrace_no: Ftx_date,String,Ftx_date: Famount,Long,Famount: Fcur_type,Long,Fcur_type: Fuin,String,Fuin: Fuid,Long,Fuid: Fuser_name,String,Fuser_name: Fuser_id_type,Long,Fuser_id_type: Fuser_id,String,Fuser_id: Fuser_phone,String,Fuser_phone: Fcard_no,String,&quot;</span>,</span><br><span class="line">                <span class="attr">&quot;content&quot;</span>: <span class="string">&quot;&quot;</span>,</span><br><span class="line">                <span class="attr">&quot;description&quot;</span>: <span class="string">&quot;银行pos流水&quot;</span>,</span><br><span class="line">                <span class="attr">&quot;attributes&quot;</span>: &#123;</span><br><span class="line">                    <span class="attr">&quot;table.topic&quot;</span>: <span class="string">&quot;bank_pos&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.bid&quot;</span>: <span class="string">&quot;bank_pos&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;data.encode&quot;</span>: <span class="string">&quot;UTF8&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.hippo.addrlist&quot;</span>: <span class="string">&quot;&lt;hippo_master&gt;&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.package&quot;</span>: <span class="string">&quot;true&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.interfaceId&quot;</span>: <span class="string">&quot;t_bank_pos_yyyymmdd&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;source.data.type&quot;</span>: <span class="string">&quot;data.type.default&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.needwatermark&quot;</span>: <span class="string">&quot;false&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.kv&quot;</span>: <span class="string">&quot;false&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.field.splitter&quot;</span>: <span class="string">&quot;0x1&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;is.temporal.table&quot;</span>: <span class="string">&quot;false&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.field.splitter.other&quot;</span>: <span class="string">&quot;1&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.usage&quot;</span>: <span class="string">&quot;table&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.used&quot;</span>: <span class="string">&quot;false&quot;</span>,</span><br><span class="line">                    <span class="attr">&quot;table.running.used&quot;</span>: <span class="string">&quot;false&quot;</span></span><br><span class="line">                &#125;,</span><br><span class="line">                <span class="attr">&quot;modifier&quot;</span>: <span class="string">&quot;&lt;table_owner&gt;&quot;</span>,</span><br><span class="line">                <span class="attr">&quot;modify_time&quot;</span>: <span class="number">1563420065831</span>,</span><br><span class="line">                <span class="attr">&quot;create_time&quot;</span>: <span class="number">1563420065831</span>,</span><br><span class="line">                <span class="attr">&quot;tablesLogs&quot;</span>: <span class="literal">null</span></span><br><span class="line">            &#125;</span><br><span class="line">        ],</span><br><span class="line">        <span class="attr">&quot;total&quot;</span>: <span class="number">1</span>,</span><br><span class="line">        <span class="attr">&quot;pageNum&quot;</span>: <span class="number">1</span>,</span><br><span class="line">        <span class="attr">&quot;pageSize&quot;</span>: <span class="number">999</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="flink的优化"><a href="#flink的优化" class="headerlink" title="flink的优化"></a>flink的优化</h2><h3 id="JobManager-failover"><a href="#JobManager-failover" class="headerlink" title="JobManager failover"></a>JobManager failover</h3><p><img src="_v_images/20200601183746039_28243.png"></p>
+<p>它的 standby 节点是冷备的，JobManager 的切换会导致它管理的所有 Job 都会被重启恢复，这一行为在我们现网环境中是不可接受的。所以，我们首先定制的第一个大特性就是<br>JobManager 的 failover 优化，让 standby 节点变成热备，这使得 JobManager 的切换对 TaskManager 上已经正在运行的 Job 不产生影响。我们已经对 Standalone 以及 Flink on YARN 这两种部署模式支持了这个特性，Flink on YARN 的支持还处于内部验证阶段。我们以对 Standalone 模式的优化为例来进行分析，它主要包含这么几个步骤：</p>
+<ul>
+<li>取消 JobManager 跟 TaskManager 因为心跳超时或 Leadership 变动就 cancel task 的行为；</li>
+<li>对 ExecutionGraph 核心数据的快照；</li>
+<li>通过 ExecutionGraphBuilder 重构空的 ExecutionGraph 加上快照重置来恢复出一个跟原先等价的 ExecutionGraph 对象；</li>
+<li>TaskManager 跟新的 JobManager leader 建立连接后以心跳上报自己的状态和必要的信息；<br>新的 JobManager 确认在 reconcile 阶段 Job 的所有 task 是否正常运行。</li>
+</ul>
+<h3 id="checkpoint失败改进"><a href="#checkpoint失败改进" class="headerlink" title="checkpoint失败改进"></a>checkpoint失败改进</h3><p><img src="_v_images/20200601185553966_3881.png"><br>社区版当前的处理机制。JobMaster 中，每个 Job 会对应一个 Checkpoint Coordinator，它用来管理并协调 Job 检查点的执行。当到达一个检查点的触发周期，Coordinator 会对所有的 Source Task 下发 TriggerCheckpoint 消息，source task 会在自身完成快照后向下游广播 CheckpointBarrier，作为下游 task 触发的通知。其中，如果一个 task 在执行检查点时失败了，这取决于用户是否容忍这个失败（通过一个配置项），如果选择不容忍那么这个失败将变成一个异常导致 task 的失败，与此同时 task 的失败将会通知到 JobMaster，JobMaster 将会通知这个 Job 的其他 task 取消它们的执行。现有的机制存在一些问题：</p>
+<ul>
+<li>Coordinator 并不能控制 Job 是否容忍检查点失败，因为控制权在 task 端；</li>
+<li>Coordinator 当前的失败处理代码逻辑混乱，区分出了触发阶段，却忽略了执行阶段；</li>
+<li>无法实现容忍多少个连续的检查点失败则让 Job 失败的逻辑。</li>
+</ul>
+<p><img src="_v_images/20200601190109255_17290.png"><br>首先，我们对源码中 checkpoint package 下的相关类进行了重构，使得它不再区分触发阶段，引进了更多的检查点失败原因的枚举并重构了相关的代码。然后我们引入了 CheckpointFailureManager 组件，用来统一失败管理，同时为了适配更灵活的容忍失败的能力，我们引入了检查点失败计数器机制。现在，当我们遇到检查点失败后，这个失败信息会直接上报到 Coordinator，而是否要让 Job 失败具体的决策则由 CheckpointFailureManager 作出，这就<strong>使得 Coordinator 具有了完整的检查点控制权，而决策权转让给 CheckpointFailureManager，则充分实现了逻辑解耦</strong>。</p>
+<h3 id="AsyncIO超时"><a href="#AsyncIO超时" class="headerlink" title="AsyncIO超时"></a>AsyncIO超时</h3><h3 id="sql-editor"><a href="#sql-editor" class="headerlink" title="sql editor"></a>sql editor</h3><p>ace editor</p>
+<h3 id="yarn"><a href="#yarn" class="headerlink" title="yarn"></a>yarn</h3><p>[averyzhang@tdw-10-121-139-111 /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646]$ ll<br>总用量 32<br>drwxr-s—  2 u_teg_tdbank users 4096 6月   5 16:07 blobStore-b0fe739d-d5e0-4a87-9c34-2a2492fc84a6<br>drwxr-s—  2 u_teg_tdbank users 4096 6月   5 16:07 blobStore-f8cdfc9d-d7d2-4fb6-9836-da65b414b45a<br>drwxr-s—  3 u_teg_tdbank users 4096 6月   5 16:07 container_e03_1542247480019_1646_01_000002<br>drwx–x— 11 u_teg_tdbank users 4096 6月   5 16:07 filecache<br>drwxr-s—  2 u_teg_tdbank users 4096 6月   5 16:07 flink-dist-cache-d55b9eaa-87b9-404e-a015-c4c90c767ac9<br>drwxr-s—  8 u_teg_tdbank users 4096 6月   5 16:07 flink-io-0bd3c6be-79ef-41d6-95ec-f42a949a10f1<br>drwxr-s—  4 u_teg_tdbank users 4096 6月   5 16:07 localState<br>drwxr-s—  2 u_teg_tdbank users 4096 6月   5 16:07 rocksdb-lib-89c57e29c492279dc1e188992c87925e</p>
+<p>[averyzhang@tdw-10-121-139-111 /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646]$ tree<br>.<br>|– blobStore-b0fe739d-d5e0-4a87-9c34-2a2492fc84a6<br>|– blobStore-f8cdfc9d-d7d2-4fb6-9836-da65b414b45a<br>|– container_e03_1542247480019_1646_01_000002<br>|   |– container_tokens<br>|   |– flink-conf.yaml -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/10/91db3812-bb43-492d-8c32-359b2c21a142-taskmanager-conf.yaml<br>|   |– flink-runtime-oceanus-dependency-lib-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/15/flink-runtime-oceanus-dependency-lib-1.1.0-SNAPSHOT.jar<br>|   |– kafka-connector-0.11-dependency-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/11/kafka-connector-0.11-dependency-1.1.0-SNAPSHOT.jar<br>|   |– launch_container.sh<br>|   |– lct-click-stat-1.0-SNAPSHOT-jar-with-dependencies-20200511152610.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/12/lct-click-stat-1.0-SNAPSHOT-jar-with-dependencies-20200511152610.jar<br>|   |– log4j.properties -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/17/log4j.properties<br>|   |– log4j.zip -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/14/log4j.zip<br>|   |– oceanus-common-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/13/oceanus-common-1.1.0-SNAPSHOT.jar<br>|   |– oceanus-core-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/16/oceanus-core-1.1.0-SNAPSHOT.jar<br>|   |– oceanus-ml-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/18/oceanus-ml-1.1.0-SNAPSHOT.jar<br>|   <code>-- tmp |-- filecache [error opening dir] |-- flink-dist-cache-d55b9eaa-87b9-404e-a015-c4c90c767ac9 |-- flink-io-0bd3c6be-79ef-41d6-95ec-f42a949a10f1 |   |-- job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_337adade1e207453ed3502e01d75fd03__1_8__uuid_6d0d5c24-bb66-4793-afa4-7a7e3c3ffd6a |   |   </code>– db<br>|   |       |– 000013.log<br>|   |       |– 024751.sst<br>|   |       |– 024753.sst<br>|   |       |– CURRENT<br>|   |       |– IDENTITY<br>|   |       |– LOCK<br>|   |       |– LOG<br>|   |       |– MANIFEST-000006<br>|   |       |– OPTIONS-000010<br>|   |       <code>-- OPTIONS-000012 |   |-- job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_337adade1e207453ed3502e01d75fd03__2_8__uuid_18ea3048-b73d-482d-b6c9-615452280981 |   |   </code>– db<br>|   |       |– 000013.log<br>|   |       |– 024739.sst<br>|   |       |– 024741.sst<br>|   |       |– 024742.sst<br>|   |       |– 024743.sst<br>|   |       |– CURRENT<br>|   |       |– IDENTITY<br>|   |       |– LOCK<br>|   |       |– LOG<br>|   |       |– MANIFEST-000006<br>|   |       |– OPTIONS-000010<br>|   |       <code>-- OPTIONS-000012 |   |-- job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_be465a1f98956392d0b820196e75d12b__1_8__uuid_efd7a85c-2a15-4d62-9929-60624dd6ea4a |   |   </code>– db<br>|   |       |– 000013.log<br>|   |       |– 024741.sst<br>|   |       |– 024743.sst<br>|   |       |– 024744.sst<br>|   |       |– 024745.sst<br>|   |       |– 024746.sst<br>|   |       |– 024747.sst<br>|   |       |– 024748.sst<br>|   |       |– 024749.sst<br>|   |       |– CURRENT<br>|   |       |– IDENTITY<br>|   |       |– LOCK<br>|   |       |– LOG<br>|   |       |– MANIFEST-000006<br>|   |       |– OPTIONS-000010<br>|   |       <code>-- OPTIONS-000012 |   |-- job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_be465a1f98956392d0b820196e75d12b__2_8__uuid_e666a8b1-d26d-4688-b089-0a957e49f947 |   |   </code>– db<br>|   |       |– 000013.log<br>|   |       |– 024740.sst<br>|   |       |– 024742.sst<br>|   |       |– 024743.sst<br>|   |       |– CURRENT<br>|   |       |– IDENTITY<br>|   |       |– LOCK<br>|   |       |– LOG<br>|   |       |– MANIFEST-000006<br>|   |       |– OPTIONS-000010<br>|   |       <code>-- OPTIONS-000012 |   |-- job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_eaecdab2f3df15db186c08e889659492__1_8__uuid_24efb767-bdf2-4309-a136-302cc4a18399 |   |   </code>– db<br>|   |       |– 000013.log<br>|   |       |– 024741.sst<br>|   |       |– 024743.sst<br>|   |       |– 024744.sst<br>|   |       |– 024745.sst<br>|   |       |– 024746.sst<br>|   |       |– 024747.sst<br>|   |       |– 024748.sst<br>|   |       |– CURRENT<br>|   |       |– IDENTITY<br>|   |       |– LOCK<br>|   |       |– LOG<br>|   |       |– MANIFEST-000006<br>|   |       |– OPTIONS-000010<br>|   |       <code>-- OPTIONS-000012 |   </code>– job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_eaecdab2f3df15db186c08e889659492__2_8__uuid_776c72fa-68fa-493b-b9ab-03461406816a<br>|       <code>-- db |           |-- 000013.log |           |-- 024740.sst |           |-- 024742.sst |           |-- 024743.sst |           |-- CURRENT |           |-- IDENTITY |           |-- LOCK |           |-- LOG |           |-- MANIFEST-000006 |           |-- OPTIONS-000010 |           </code>– OPTIONS-000012<br>|– localState<br>|   |– aid_AllocationID{e1f41e5a166354d80ad6d6b8d3765fa1}<br>|   <code>-- aid_AllocationID&#123;e6e7f806bb078db66f50eeb3a48f0da9&#125; </code>– rocksdb-lib-89c57e29c492279dc1e188992c87925e<br>    `– librocksdbjni-linux64.so</p>
+<p>23 directories, 87 files</p>
+<p>[averyzhang@tdw-10-121-139-111 /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/container_e03_1542247480019_1646_01_000002]$ ll<br>总用量 52<br>-rw——- 1 u_teg_tdbank users   69 6月   5 16:07 container_tokens<br>lrwxrwxrwx 1 u_teg_tdbank users  154 6月   5 16:07 flink-conf.yaml -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/10/91db3812-bb43-492d-8c32-359b2c21a142-taskmanager-conf.yaml<br>lrwxrwxrwx 1 u_teg_tdbank users  151 6月   5 16:07 flink-runtime-oceanus-dependency-lib-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/15/flink-runtime-oceanus-dependency-lib-1.1.0-SNAPSHOT.jar<br>lrwxrwxrwx 1 u_teg_tdbank users  146 6月   5 16:07 kafka-connector-0.11-dependency-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/11/kafka-connector-0.11-dependency-1.1.0-SNAPSHOT.jar<br>-rwx—— 1 u_teg_tdbank users 6328 6月   5 16:07 launch_container.sh<br>lrwxrwxrwx 1 u_teg_tdbank users  164 6月   5 16:07 lct-click-stat-1.0-SNAPSHOT-jar-with-dependencies-20200511152610.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/12/lct-click-stat-1.0-SNAPSHOT-jar-with-dependencies-20200511152610.jar<br>lrwxrwxrwx 1 u_teg_tdbank users  112 6月   5 16:07 log4j.properties -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/17/log4j.properties<br>lrwxrwxrwx 1 u_teg_tdbank users  105 6月   5 16:07 log4j.zip -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/14/log4j.zip<br>lrwxrwxrwx 1 u_teg_tdbank users  129 6月   5 16:07 oceanus-common-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/13/oceanus-common-1.1.0-SNAPSHOT.jar<br>lrwxrwxrwx 1 u_teg_tdbank users  127 6月   5 16:07 oceanus-core-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/16/oceanus-core-1.1.0-SNAPSHOT.jar<br>lrwxrwxrwx 1 u_teg_tdbank users  125 6月   5 16:07 oceanus-ml-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/18/oceanus-ml-1.1.0-SNAPSHOT.jar<br>drwxr-s— 2 u_teg_tdbank users 4096 6月   5 16:07 tmp</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Image/" rel="tag"># Image</a>
+              <a href="/tags/Flink/" rel="tag"># Flink</a>
+              <a href="/tags/Oceanus/" rel="tag"># Oceanus</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/Impala/01.Impala/" rel="prev" title="Impala基础与痛点">
+      <i class="fa fa-chevron-left"></i> Impala基础与痛点
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/Flink/HBaseConnectors/" rel="next" title="Flink:HBaseConnectors">
+      Flink:HBaseConnectors <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Oceanus"><span class="nav-number">1.</span> <span class="nav-text">Oceanus</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8B%89%E5%8F%96%E5%BA%93%E8%A1%A8%E4%BF%A1%E6%81%AF"><span class="nav-number">1.1.</span> <span class="nav-text">拉取库表信息</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#flink%E7%9A%84%E4%BC%98%E5%8C%96"><span class="nav-number">1.2.</span> <span class="nav-text">flink的优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JobManager-failover"><span class="nav-number">1.2.1.</span> <span class="nav-text">JobManager failover</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#checkpoint%E5%A4%B1%E8%B4%A5%E6%94%B9%E8%BF%9B"><span class="nav-number">1.2.2.</span> <span class="nav-text">checkpoint失败改进</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AsyncIO%E8%B6%85%E6%97%B6"><span class="nav-number">1.2.3.</span> <span class="nav-text">AsyncIO超时</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sql-editor"><span class="nav-number">1.2.4.</span> <span class="nav-text">sql editor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#yarn"><span class="nav-number">1.2.5.</span> <span class="nav-text">yarn</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

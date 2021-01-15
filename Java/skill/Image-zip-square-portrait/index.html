@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="读入图片(本地图片和网络图片)12345678910111213141516171819202122InputStream readImageFromPath(String filePath)            throws IOException &amp;#123;        if (filePath.startsWith(&quot;http&quot;)) &amp;#123;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java图片处理一(压缩图片与生成微信头像)">
+<meta property="og:url" content="http://example.com/Java/skill/Image-zip-square-portrait/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="读入图片(本地图片和网络图片)12345678910111213141516171819202122InputStream readImageFromPath(String filePath)            throws IOException &amp;#123;        if (filePath.startsWith(&quot;http&quot;)) &amp;#123;">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/images/java/util/imageCombinResult.png">
+<meta property="article:published_time" content="2016-07-14T06:58:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.812Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Image">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/java/util/imageCombinResult.png">
+
+<link rel="canonical" href="http://example.com/Java/skill/Image-zip-square-portrait/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>Java图片处理一(压缩图片与生成微信头像) | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/skill/Image-zip-square-portrait/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java图片处理一(压缩图片与生成微信头像)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-07-14 14:58:00" itemprop="dateCreated datePublished" datetime="2016-07-14T14:58:00+08:00">2016-07-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="读入图片-本地图片和网络图片"><a href="#读入图片-本地图片和网络图片" class="headerlink" title="读入图片(本地图片和网络图片)"></a>读入图片(本地图片和网络图片)</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">InputStream <span class="title">readImageFromPath</span><span class="params">(String filePath)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (filePath.startsWith(<span class="string">&quot;http&quot;</span>)) &#123;</span><br><span class="line">            URL url = <span class="keyword">null</span>;</span><br><span class="line">            HttpURLConnection conn;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                url = <span class="keyword">new</span> URL(filePath);</span><br><span class="line">                conn = (HttpURLConnection) url.openConnection();</span><br><span class="line">                conn.setDoInput(<span class="keyword">true</span>);</span><br><span class="line">                conn.connect();</span><br><span class="line">                InputStream inputStream = conn.getInputStream();</span><br><span class="line">                <span class="keyword">return</span> inputStream;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (MalformedURLException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> FileInputStream(<span class="keyword">new</span> File(filePath));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// BufferedImage bi = ImageIO.read(readImageFromPath(filePath));</span></span><br></pre></td></tr></table></figure>
+<h1 id="压缩图像"><a href="#压缩图像" class="headerlink" title="压缩图像"></a>压缩图像</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 图片缩放</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> filePath</span></span><br><span class="line"><span class="comment"> *            图片路径</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> height</span></span><br><span class="line"><span class="comment"> *            高度</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> width</span></span><br><span class="line"><span class="comment"> *            宽度</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> bb</span></span><br><span class="line"><span class="comment"> *            比例不对时是否需要补白</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">BufferedImage <span class="title">resize2</span><span class="params">(String filePath, <span class="keyword">int</span> height, <span class="keyword">int</span> width, <span class="keyword">boolean</span> bb)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="keyword">double</span> ratio = <span class="number">0</span>; <span class="comment">// 缩放比例</span></span><br><span class="line">		BufferedImage bi = ImageIO.read(readImageFromPath(filePath));</span><br><span class="line">		Image itemp = bi.getScaledInstance(width, height,</span><br><span class="line">				Image.SCALE_SMOOTH);</span><br><span class="line">		<span class="comment">// 计算比例</span></span><br><span class="line">		<span class="keyword">if</span> ((bi.getHeight() &gt; height) || (bi.getWidth() &gt; width)) &#123;</span><br><span class="line">			<span class="keyword">if</span> (bi.getHeight() &gt; bi.getWidth()) &#123;</span><br><span class="line">				ratio = (<span class="keyword">new</span> Integer(height)).doubleValue()</span><br><span class="line">						/ bi.getHeight();</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				ratio = (<span class="keyword">new</span> Integer(width)).doubleValue() / bi.getWidth();</span><br><span class="line">			&#125;</span><br><span class="line">			AffineTransformOp op = <span class="keyword">new</span> AffineTransformOp(</span><br><span class="line">					AffineTransform.getScaleInstance(ratio, ratio), <span class="keyword">null</span>);</span><br><span class="line">			itemp = op.filter(bi, <span class="keyword">null</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (bb) &#123;</span><br><span class="line">			BufferedImage image = <span class="keyword">new</span> BufferedImage(width, height,</span><br><span class="line">					BufferedImage.TYPE_INT_RGB);</span><br><span class="line">			Graphics2D g = image.createGraphics();</span><br><span class="line">			g.setColor(Color.white);</span><br><span class="line">			g.fillRect(<span class="number">0</span>, <span class="number">0</span>, width, height);</span><br><span class="line">			<span class="keyword">if</span> (width == itemp.getWidth(<span class="keyword">null</span>))</span><br><span class="line">				g.drawImage(itemp, <span class="number">0</span>, (height - itemp.getHeight(<span class="keyword">null</span>)) / <span class="number">2</span>,</span><br><span class="line">						itemp.getWidth(<span class="keyword">null</span>), itemp.getHeight(<span class="keyword">null</span>),</span><br><span class="line">						Color.white, <span class="keyword">null</span>);</span><br><span class="line">			<span class="keyword">else</span></span><br><span class="line">				g.drawImage(itemp, (width - itemp.getWidth(<span class="keyword">null</span>)) / <span class="number">2</span>, <span class="number">0</span>,</span><br><span class="line">						itemp.getWidth(<span class="keyword">null</span>), itemp.getHeight(<span class="keyword">null</span>),</span><br><span class="line">						Color.white, <span class="keyword">null</span>);</span><br><span class="line">			g.dispose();</span><br><span class="line">			itemp = image;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> (BufferedImage) itemp;</span><br><span class="line">	&#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">		e.printStackTrace();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="生成微信头像"><a href="#生成微信头像" class="headerlink" title="生成微信头像"></a>生成微信头像</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ImageElement</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> left;</span><br><span class="line">	<span class="keyword">int</span> top;</span><br><span class="line">	BufferedImage bufferedImage;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 最多行列数</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> MAX_GRIDS = <span class="number">3</span>;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 行间距</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> spacing = <span class="number">5</span>;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 边距</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> border = <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 图片的目标大小</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> width = <span class="number">200</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">ImageCombinationUtil</span><span class="params">()</span> </span>&#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 生成组合头像</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> paths</span></span><br><span class="line"><span class="comment"> *            用户图像</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> IOException</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">getCombinationOfhead</span><span class="params">(List&lt;String&gt; paths)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> pathSize = paths.size();</span><br><span class="line">	<span class="keyword">if</span> (pathSize == <span class="number">0</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">int</span> maxImageCount = MAX_GRIDS * MAX_GRIDS;</span><br><span class="line">	<span class="keyword">int</span> imageCount = pathSize &gt; maxImageCount ? maxImageCount : pathSize;</span><br><span class="line">	<span class="keyword">int</span> grids = (<span class="keyword">int</span>) Math.ceil(Math.sqrt(imageCount));</span><br><span class="line">	grids = grids &gt; MAX_GRIDS ? MAX_GRIDS : grids;</span><br><span class="line">	<span class="keyword">int</span> hrow = imageCount / grids;</span><br><span class="line">	<span class="keyword">int</span> rows = hrow + (imageCount - hrow * grids &gt; <span class="number">0</span> ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">	<span class="keyword">int</span> columnCountOfLastRow = imageCount - (rows - <span class="number">1</span>) * grids;</span><br><span class="line">	<span class="keyword">int</span> columns = imageCount / rows;</span><br><span class="line">	columns = imageCount - columns * rows &gt; <span class="number">0</span> ? columns + <span class="number">1</span> : columns;</span><br><span class="line">	System.out.println(<span class="string">&quot;imageCount :&quot;</span> + pathSize + <span class="string">&quot;\t grids :&quot;</span> + grids</span><br><span class="line">			+ <span class="string">&quot;\trows:&quot;</span> + rows + <span class="string">&quot;\t columns:&quot;</span> + columns</span><br><span class="line">			+ <span class="string">&quot;\t columnsOfLastRow:&quot;</span> + columnCountOfLastRow);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">int</span>[] matrix = <span class="keyword">new</span> <span class="keyword">int</span>[rows];</span><br><span class="line">	Arrays.fill(matrix, grids);</span><br><span class="line">	matrix[<span class="number">0</span>] = columnCountOfLastRow;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 计算每个图片的尺寸</span></span><br><span class="line">	<span class="keyword">int</span> imageMeasure = (width - <span class="number">2</span> * border - (grids - <span class="number">1</span>)</span><br><span class="line">			* spacing)</span><br><span class="line">			/ grids;</span><br><span class="line"></span><br><span class="line">	List&lt;ImageElement&gt; imageElements = <span class="keyword">new</span> ArrayList&lt;ImageElement&gt;();</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; imageCount; i++) &#123;</span><br><span class="line">		ImageElement imageMatrix = <span class="keyword">new</span> ImageElement();</span><br><span class="line">		imageMatrix.bufferedImage = ImageCombinationUtil.resize2(paths.get(i),</span><br><span class="line">				imageMeasure, imageMeasure, <span class="keyword">true</span>);</span><br><span class="line">		imageElements.add(imageMatrix);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 计算坐标</span></span><br><span class="line">	<span class="keyword">int</span> top = border;</span><br><span class="line">	top = rows &lt; grids ? top + (spacing + imageMeasure) * (grids - rows)</span><br><span class="line">			/ <span class="number">2</span> : top;</span><br><span class="line">	<span class="keyword">int</span> imageIndex = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> row = <span class="number">0</span>; row &lt; matrix.length; row++) &#123;</span><br><span class="line">		<span class="keyword">int</span> column = <span class="number">0</span>;</span><br><span class="line">		<span class="keyword">int</span> left = border;</span><br><span class="line">		left = matrix[row] &lt; grids ? left + (spacing + imageMeasure)</span><br><span class="line">				* (grids - matrix[row])/<span class="number">2</span> : left;</span><br><span class="line">		<span class="keyword">while</span> (column &lt; matrix[row]) &#123;</span><br><span class="line">			imageElements.get(imageIndex).left = left + column</span><br><span class="line">					* (imageMeasure + spacing);</span><br><span class="line">			imageElements.get(imageIndex).top = top + row</span><br><span class="line">					* (imageMeasure + spacing);</span><br><span class="line">			imageIndex++;</span><br><span class="line">			column++;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 创建画板</span></span><br><span class="line">	BufferedImage outImage1 = <span class="keyword">new</span> BufferedImage(width,</span><br><span class="line">			width, BufferedImage.TYPE_INT_RGB);</span><br><span class="line">	<span class="comment">// 生成画布</span></span><br><span class="line">	Graphics g = outImage1.getGraphics();</span><br><span class="line">	Graphics2D g2d = (Graphics2D) g;</span><br><span class="line">	<span class="comment">// 设置背景色</span></span><br><span class="line">	g2d.setBackground(<span class="keyword">new</span> Color(<span class="number">231</span>, <span class="number">231</span>, <span class="number">231</span>));</span><br><span class="line">	<span class="comment">// 通过使用当前绘图表面的背景色进行填充来清除指定的矩形。</span></span><br><span class="line">	g2d.clearRect(<span class="number">0</span>, <span class="number">0</span>, width, width);</span><br><span class="line">	<span class="comment">// 绘制</span></span><br><span class="line">	<span class="keyword">for</span> (ImageElement imageElement : imageElements) &#123;</span><br><span class="line">		g2d.drawImage(imageElement.bufferedImage, imageElement.left,</span><br><span class="line">				imageElement.top, <span class="keyword">null</span>);</span><br><span class="line">		<span class="comment">// 需要改变颜色的话在这里绘上颜色。可能会用到AlphaComposite类</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	String outPath = <span class="string">&quot;d:\\&quot;</span> + System.currentTimeMillis() + <span class="string">&quot;.jpg&quot;</span>;</span><br><span class="line">	String format = <span class="string">&quot;JPG&quot;</span>;</span><br><span class="line">	ImageIO.write(outImage1, format, <span class="keyword">new</span> File(outPath));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>效果</p>
+<p><img src="/images/java/util/imageCombinResult.png"></p>
+<h1 id="图像转化为InputStream"><a href="#图像转化为InputStream" class="headerlink" title="图像转化为InputStream"></a>图像转化为InputStream</h1><p>方便直接从内存上传到服务器</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">InputStream <span class="title">image2InputStream</span><span class="params">(BufferedImage bufferedImage)</span> </span>&#123;</span><br><span class="line">	InputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">	ByteArrayOutputStream outputStream = <span class="keyword">new</span> ByteArrayOutputStream();</span><br><span class="line">	ImageOutputStream imageOutputStream = <span class="keyword">null</span>;</span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		imageOutputStream = ImageIO.createImageOutputStream(outputStream);</span><br><span class="line">		ImageIO.write(bufferedImage, <span class="string">&quot;JPG&quot;</span>, imageOutputStream);</span><br><span class="line">		inputStream = <span class="keyword">new</span> ByteArrayInputStream(outputStream.toByteArray());</span><br><span class="line">	&#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">		e.printStackTrace();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> inputStream;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Image/" rel="tag"># Image</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/network/uploadAndReceiveImages/" rel="prev" title="图片上传与接收">
+      <i class="fa fa-chevron-left"></i> 图片上传与接收
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/multithread/03.volatile/" rel="next" title="Java多线程3: volatile">
+      Java多线程3: volatile <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%AF%BB%E5%85%A5%E5%9B%BE%E7%89%87-%E6%9C%AC%E5%9C%B0%E5%9B%BE%E7%89%87%E5%92%8C%E7%BD%91%E7%BB%9C%E5%9B%BE%E7%89%87"><span class="nav-number">1.</span> <span class="nav-text">读入图片(本地图片和网络图片)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8E%8B%E7%BC%A9%E5%9B%BE%E5%83%8F"><span class="nav-number">2.</span> <span class="nav-text">压缩图像</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%94%9F%E6%88%90%E5%BE%AE%E4%BF%A1%E5%A4%B4%E5%83%8F"><span class="nav-number">3.</span> <span class="nav-text">生成微信头像</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%BE%E5%83%8F%E8%BD%AC%E5%8C%96%E4%B8%BAInputStream"><span class="nav-number">4.</span> <span class="nav-text">图像转化为InputStream</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

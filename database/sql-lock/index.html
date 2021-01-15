@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="数据库锁的基本原理为什么要锁数据库通常有大量的用户在同时操作，所以并发的情况下需要控制对临界资源的操作，数据库通过锁来控制对临界资源的访问，从而保证数据的一致性。例如对于同一个账户，操作之前账户余额为1000，同时开始2个事务，一个事务取款100，一个事务往账户中汇入100，那么2个事务结束后，账户的余额必须还是1000，否则要么银行不干，要么个人不干。  锁类型共享锁(读锁)读锁是共享的，互相不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="数据库锁的基本原理">
+<meta property="og:url" content="http://example.com/database/sql-lock/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="数据库锁的基本原理为什么要锁数据库通常有大量的用户在同时操作，所以并发的情况下需要控制对临界资源的操作，数据库通过锁来控制对临界资源的访问，从而保证数据的一致性。例如对于同一个账户，操作之前账户余额为1000，同时开始2个事务，一个事务取款100，一个事务往账户中汇入100，那么2个事务结束后，账户的余额必须还是1000，否则要么银行不干，要么个人不干。  锁类型共享锁(读锁)读锁是共享的，互相不">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/images/database/lock/concept-02.gif">
+<meta property="article:published_time" content="2016-11-30T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.919Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="database">
+<meta property="article:tag" content="lock">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/database/lock/concept-02.gif">
+
+<link rel="canonical" href="http://example.com/database/sql-lock/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>数据库锁的基本原理 | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/sql-lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          数据库锁的基本原理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-01 00:00:00" itemprop="dateCreated datePublished" datetime="2016-12-01T00:00:00+08:00">2016-12-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="数据库锁的基本原理"><a href="#数据库锁的基本原理" class="headerlink" title="数据库锁的基本原理"></a>数据库锁的基本原理</h1><h2 id="为什么要锁"><a href="#为什么要锁" class="headerlink" title="为什么要锁"></a>为什么要锁</h2><p>数据库通常有大量的用户在同时操作，所以并发的情况下需要控制对临界资源的操作，数据库通过锁来控制对临界资源的访问，从而保证数据的一致性。例如对于同一个账户，操作之前账户余额为1000，同时开始2个事务，一个事务取款100，一个事务往账户中汇入100，那么2个事务结束后，账户的余额必须还是1000，否则要么银行不干，要么个人不干。 </p>
+<h2 id="锁类型"><a href="#锁类型" class="headerlink" title="锁类型"></a>锁类型</h2><h3 id="共享锁-读锁"><a href="#共享锁-读锁" class="headerlink" title="共享锁(读锁)"></a>共享锁(读锁)</h3><p>读锁是共享的，互相不阻塞，也就是可以多个客户同时读取同一资源，而不互相干扰。</p>
+<p>加锁条件：当执行select时，数据库为这个事务分配一把共享锁，来锁定被查询的数据。 </p>
+<p>解锁条件：默认情况下，数据被读取之后，数据库立即解锁。例如select * from table中，先锁定第一行，读取后，立即解锁第一行，然后再锁定第二行，这样大大降低锁争用程度。在repeatable read和serializable 这两种事务隔离级别下，共享锁是在事务结束时释放的，serializable对表加锁。 </p>
+<h3 id="排它锁-独占锁-写锁"><a href="#排它锁-独占锁-写锁" class="headerlink" title="排它锁(独占锁)(写锁)"></a>排它锁(独占锁)(写锁)</h3><p>写锁是排他的，一个写锁会阻塞其他的读锁和写锁，只有这样才能保证同一时刻，只有一个用户能够写入，并阻止其他用户读取正在写入的同一资源。如果要锁定的数据资源，已经放置了其他的锁，则不能再放置排它锁。<br>加锁条件：当执行insert update 和delete语句时，数据库会对操纵的资源使用排它锁。<br>解锁条件：事务结束时解锁。 </p>
+<h2 id="锁原理"><a href="#锁原理" class="headerlink" title="锁原理"></a>锁原理</h2><p>锁的基本原理如下：</p>
+<p>1.当第一个事务访问数据库资源时，如果执行select语句，则必须先获得共享锁，如果执行insert update和delete时，必须获得排它锁<br>2.当第二个事务也要访问相同的资源时，如果执行select语句，也必须先获得共享锁，如果执行insert update或者delete，也必须获得共享锁。根据已经放置在资源上的锁类型，来决定第二个事务是应该等待第一个事务释放锁，还是立即获得锁。 </p>
+<table>
+<thead>
+<tr>
+<th>资源上的锁</th>
+<th>第二个事务进行读</th>
+<th>第二个事务进行写</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>无</td>
+<td>立即获得共享锁</td>
+<td>立即获得排他锁</td>
+</tr>
+<tr>
+<td>共享锁</td>
+<td>立即获得共享锁</td>
+<td>等待第一个事务释放锁</td>
+</tr>
+<tr>
+<td>排他锁</td>
+<td>等待第一个事务释放锁</td>
+<td>等待第一个事务释放锁</td>
+</tr>
+</tbody></table>
+<h2 id="锁粒度"><a href="#锁粒度" class="headerlink" title="锁粒度"></a>锁粒度</h2><p>常见的锁有表锁、 行锁、 页锁、外键锁等。 </p>
+<p>锁有一定的消耗，主要有：获得锁，检查锁是否已经解除，释放锁等，这些操作都会增加系统的开销。<br>表锁开销比较小，但是并发性能也较差，行锁并发性能高，但是需要更多锁，数据库系统一般都支持锁的自动升级，例如一个事务中的锁过多的时候，可能会将行锁升级到表锁。</p>
+<p>mysql的各个存储引擎根据不同的应用场景采用不同的锁机制，MyISAM存储引擎采用表锁，InnoDB使用行锁。如果执行alert table之类的操作，服务器也会采用表锁，而忽略存储引擎的锁机制。<br>页锁，某些数据库支持页锁，页锁粒度介于行锁和表锁之间，用于锁定存放数据的页，1页通常含有n个数据行。 </p>
+<p>外键锁：外键会产生高级别的锁，后面介绍死锁的时候会提到。 </p>
+<h2 id="乐观锁和悲观锁"><a href="#乐观锁和悲观锁" class="headerlink" title="乐观锁和悲观锁"></a>乐观锁和悲观锁</h2><p>悲观锁：假设如果不加锁就一定会出现问题。<br>乐观锁：先假定不会出现并发问题，出现问题后再采取相应的措施。<br>悲观锁通过<code>select * from tbl for update</code>实现。<br>乐观锁可以在表中加一个version字段，每次更新的时候都+1，这样如果出现并发，第二次更新的时候version的值已经不再匹配，可以在这时采取相应的措施。</p>
+<h2 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h2><h3 id="死锁是如何产生的"><a href="#死锁是如何产生的" class="headerlink" title="死锁是如何产生的"></a>死锁是如何产生的</h3><p>同java的死锁一样，都是互相等待对方释放锁，造成了相互阻塞，造成的死锁。<br>请看下面的表格： </p>
+<p><img src="/images/database/lock/concept-02.gif"></p>
+<h3 id="如何避免死锁"><a href="#如何避免死锁" class="headerlink" title="如何避免死锁"></a>如何避免死锁</h3><p>1.修改操作表的顺序<br>从上面的示例中可以看出，如果调整一下操作表的顺序就可以避免死锁。<br>2.外键<br>如果向子表写记录，那么外键约束会检查父表的记录，并锁住父表的记录，来保证这条记录不会在这个事务完成之时就被删除了。<br>产生高级别的锁，会阻止其他事务操作或者其他DML操作，如果是因为外键产生的死锁，可以去掉外键约束，由应用来保证数据的完整性，通常生产环境都不建议加外键约束。<br>3.短事务<br>缩短事务的执行时间，可以减少锁的持有时间，可以降低死锁的风险。 </p>
+<h2 id="锁可能出现的问题"><a href="#锁可能出现的问题" class="headerlink" title="锁可能出现的问题"></a>锁可能出现的问题</h2><p>上锁是有开销的，即使不是给数据行而是给数据页上锁，也是有一定的时间的，如果第一个事务update一张大表，这时候第二个事务update这张大表比较靠后的位置的数据，这时候就可能会出现，第一个事务还没来得及给相应的数据上锁，第二个事务已经上了锁，所以出现第一个事务要等待第二个事务提交后释放锁，才能继续执行的情况。 </p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/database/" rel="tag"># database</a>
+              <a href="/tags/lock/" rel="tag"># lock</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/database/MySQL/best_practices/" rel="prev" title="MySQL数据库设计总结">
+      <i class="fa fa-chevron-left"></i> MySQL数据库设计总结
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/multithread/04.thread-synchronization/" rel="next" title="Java多线程4: 同步锁与Java线程同步方法比较">
+      Java多线程4: 同步锁与Java线程同步方法比较 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E9%94%81%E7%9A%84%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">数据库锁的基本原理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E9%94%81"><span class="nav-number">1.1.</span> <span class="nav-text">为什么要锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%94%81%E7%B1%BB%E5%9E%8B"><span class="nav-number">1.2.</span> <span class="nav-text">锁类型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B1%E4%BA%AB%E9%94%81-%E8%AF%BB%E9%94%81"><span class="nav-number">1.2.1.</span> <span class="nav-text">共享锁(读锁)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%92%E5%AE%83%E9%94%81-%E7%8B%AC%E5%8D%A0%E9%94%81-%E5%86%99%E9%94%81"><span class="nav-number">1.2.2.</span> <span class="nav-text">排它锁(独占锁)(写锁)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%94%81%E5%8E%9F%E7%90%86"><span class="nav-number">1.3.</span> <span class="nav-text">锁原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%94%81%E7%B2%92%E5%BA%A6"><span class="nav-number">1.4.</span> <span class="nav-text">锁粒度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B9%90%E8%A7%82%E9%94%81%E5%92%8C%E6%82%B2%E8%A7%82%E9%94%81"><span class="nav-number">1.5.</span> <span class="nav-text">乐观锁和悲观锁</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AD%BB%E9%94%81"><span class="nav-number">1.6.</span> <span class="nav-text">死锁</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AD%BB%E9%94%81%E6%98%AF%E5%A6%82%E4%BD%95%E4%BA%A7%E7%94%9F%E7%9A%84"><span class="nav-number">1.6.1.</span> <span class="nav-text">死锁是如何产生的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%AD%BB%E9%94%81"><span class="nav-number">1.6.2.</span> <span class="nav-text">如何避免死锁</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%94%81%E5%8F%AF%E8%83%BD%E5%87%BA%E7%8E%B0%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">1.7.</span> <span class="nav-text">锁可能出现的问题</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="MAT为了演示MAT的使用方法，本文采用jamp生成了一个Java继承的dump文件。 4.1 Overview选项当成功启动MAT后，通过菜单选项“File-&gt;Open heap dump…”打开指定的dump文件后，将会生成Overview选项，如下所示：    在Overview选项中，以饼状图的形式列举出了程序内存消耗的一些基本信息，其中每一种不同颜色的饼块都代表了不同比例的内存消耗">
+<meta property="og:type" content="article">
+<meta property="og:title" content="guadazi">
+<meta property="og:url" content="http://example.com/Java/metric/MAT/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="MAT为了演示MAT的使用方法，本文采用jamp生成了一个Java继承的dump文件。 4.1 Overview选项当成功启动MAT后，通过菜单选项“File-&gt;Open heap dump…”打开指定的dump文件后，将会生成Overview选项，如下所示：    在Overview选项中，以饼状图的形式列举出了程序内存消耗的一些基本信息，其中每一种不同颜色的饼块都代表了不同比例的内存消耗">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133304752_1908958530">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133304642_1953557219">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133304535_2038220777">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133304326_712812495">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133304118_1508343283">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133303913_1472138606">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133303706_1037916552">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133303497_195864697">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133303286_1803136553">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133303070_1797820935">
+<meta property="og:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133302509_954891646">
+<meta property="article:published_time" content="2021-01-15T08:51:31.835Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.835Z">
+<meta property="article:author" content="aaronzhang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/Java/metric/MAT/_v_images/20201115133304752_1908958530">
+
+<link rel="canonical" href="http://example.com/Java/metric/MAT/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title> | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/MAT/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 16:51:31" itemprop="dateCreated datePublished" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="MAT"><a href="#MAT" class="headerlink" title="MAT"></a>MAT</h1><p>为了演示MAT的使用方法，本文采用jamp生成了一个Java继承的dump文件。</p>
+<h2 id="4-1-Overview选项"><a href="#4-1-Overview选项" class="headerlink" title="4.1 Overview选项"></a>4.1 Overview选项</h2><p>当成功启动MAT后，通过菜单选项“File-&gt;Open heap dump…”打开指定的dump文件后，将会生成Overview选项，如下所示：</p>
+<p><img src="_v_images/20201115133304752_1908958530">  </p>
+<pre><code>在Overview选项中，以饼状图的形式列举出了程序内存消耗的一些基本信息，其中每一种不同颜色的饼块都代表了不同比例的内存消耗情况。</code></pre>
+<h3 id="4-2-Dominator-Tree"><a href="#4-2-Dominator-Tree" class="headerlink" title="4.2 Dominator Tree"></a>4.2 Dominator Tree</h3><p>如果说需要定位内存泄露的代码点，我们可以通过Dominator Tree菜单选项来进行排查。Dominator Tree提供了一个列表。<br>Dominator Tree：对象之间dominator关系树。如果从GC Root到达Y的的所有path都经过X，那么我们称X dominates Y，或者X是Y的Dominator 。<br>Dominator Tree由系统中复杂的对象图计算而来。从MAT的dominator tree中可以看到占用内存最大的对象以及每个对象的dominator，如下所示：</p>
+<p> <img src="_v_images/20201115133304642_1953557219"></p>
+<p>点开“+”符号，可以进一步查看内层应用情况，同时还可以看到对应类对象的属性值，如下所示：</p>
+<p><img src="_v_images/20201115133304535_2038220777">  </p>
+<h3 id=""><a href="#" class="headerlink" title=""></a></h3><h3 id="4-3-Histogram选项"><a href="#4-3-Histogram选项" class="headerlink" title="4.3 Histogram选项"></a>4.3 Histogram选项</h3><p>进一步，可以通过Histogram分析，Histogram列出了每个类的实例数量，点击Action下的Histogram，得到以下结果：</p>
+<p><img src="_v_images/20201115133304326_712812495">  </p>
+<p>如果需要查询特性的某个类，我们可以在第一行输入类名或者关键词进行正则匹配查找，如查找“netty”：</p>
+<p><img src="_v_images/20201115133304118_1508343283">  </p>
+<p>可以看出，查找“netty”输出的结果列表是无序的，如果匹配到的结果很多，查找起来比较困难，因此，我们可以对结果进行排序：选中结果列表的任意一行，鼠标右键-》Colums-&gt;Sort By-&gt;如Class Name，结果如下：</p>
+<p><img src="_v_images/20201115133303913_1472138606">  </p>
+<pre><code>当我们找到疑似存在泄漏的类之后，我们可以进行进一步分析。比较重要的一点，选中疑似类，右键出来选中List Objects,得到的结果再右键选中&quot;Paths to GC Roots&quot;,我们可以通过它快速找到GC ROOT，如果存在GC ROOT，它就不会被回收。</code></pre>
+<h3 id="-1"><a href="#-1" class="headerlink" title=""></a></h3><h3 id="4-4-Path-to-GC-Roots"><a href="#4-4-Path-to-GC-Roots" class="headerlink" title="4.4 Path to GC Roots"></a>4.4 Path to GC Roots</h3><pre><code>查看一个对象到RC Roots的引用链  
+
+通常在排查内存泄漏的时候，我们会选择exclude all phantom/weak/soft etc.references，意思是查看排除虚引用/弱引用/软引用等的引用链，因为被虚引用/弱引用/软引用的对象可以直接被GC给回收，我们要看的就是某个对象否还存在Strong 引用链（在导出HeapDump之前要手动出发GC来保证），如果有，则说明存在内存泄漏，然后再去排查具体引用。 </code></pre>
+<p><img src="_v_images/20201115133303706_1037916552">  </p>
+<p><strong>其它重要选项：</strong></p>
+<p>1. List objects ：<br>with incoming references 引用到该对象的对象<br>with outcoming references 被该对象引用的对象</p>
+<p>2. Show objects by class ：<br>incoming references 引用到该对象的对象<br>outcoming references 被该对象引用的对象 </p>
+<h3 id="-2"><a href="#-2" class="headerlink" title=""></a></h3><p>4.5 OQL(Object Query Language)</p>
+<p>类似SQL查询语言<br>Classes：Table<br>Objects：Rows<br>Fileds： Cols</p>
+<p><code>select  *  from com.example.mat.Listener</code></p>
+<p><strong>查找size＝0并且未使用过的ArrayList</strong><br><code>select  *  from java.util.ArrayList  where size=0  and modCount=0</code></p>
+<p><strong>查找所有的Activity</strong><br>select * from instanceof android.app.Activity</p>
+<h3 id="4-6-利用Histogram和Dominator-Tree分析内存泄露"><a href="#4-6-利用Histogram和Dominator-Tree分析内存泄露" class="headerlink" title="4.6  利用Histogram和Dominator Tree分析内存泄露"></a>4.6  利用Histogram和Dominator Tree分析内存泄露</h3><pre><code>在分析内存泄露时，必须要掌握粒度，所谓粒度就是你此刻dump的hprof文件究竟是分析谁的泄露，如果你在开始前心中没有个目标，最后取出来的hprof也分析不出什么原因。粒度越小，对你分析问题也就越有利，当你把一个个小粒度问题解决后，整个App的泄露就迎刃而解了。也许这么说，大家心中有点迷糊。下面就举例来说吧：
+
+假如现在有个项目包含Module几十个，每个Module包含的Activity数以百计，现在让你分析它是否内存泄露，如果你只是胡乱抓个hprof根本分析不出什么。假如你就针对某个Activity分析这样问题就简单多了。比如你现在分析ActivityA的内存泄露问题，你可以参考如下步骤：
+
+Step1：进入ActivityA之前，你先dump个hprof文件HprofA；
+
+Step2：进入ActivityA操作一会，再退出ActivityA后dump个hprof文件HprofB；
+
+Step3：采用Histogram和Dominator Tree对比分析这两个Hprof文件，即可得出ActivityA是否泄露</code></pre>
+<p>现在以分析TestActivity为例，按上述步骤实战分析，先抓取进入TestActivity前后的hprof文件，按如下步骤对比两个hprof的异同，如下图1,2：</p>
+<p><img src="_v_images/20201115133303497_195864697">  </p>
+<p>图1 选择所需比较的hprof  </p>
+<p><img src="_v_images/20201115133303286_1803136553">  </p>
+<p>图2 比较两个hprof  </p>
+<pre><code>正如图2所示，易知在执行进出TestActivity后，多出了个TestActivity对象，按理论上来说在进入Activity后会创建个Activity，但是按Back键返回后这个Activity就会被销毁进而从Task栈上被移除，也就是说这个操作前后不应该会多出个Activity，因此可以断定TestActivity存在泄漏。
+
+TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需要找到为何泄漏，为什么本该销毁的Activity却没有被销毁？如知真相如何，请看下图3-4</code></pre>
+<p><img src="_v_images/20201115133303070_1797820935">  </p>
+<p>图3 获取TestActivity的Reference chain  </p>
+<p><img src="_v_images/20201115133302509_954891646">  </p>
+<p>图4 TestActivity的引用关系  </p>
+<pre><code>从图4易知TestActivity没有被释放就是因为GC Root(TestActivity$1)引用着TestActivity，到此原因也一目了然。找到了只是开始，解决才是关键。这时让我们查看下TestActivity代码：  </code></pre>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestActivity</span> <span class="keyword">extends</span> <span class="title">Activity</span> </span>&#123;       <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Object mLock = <span class="keyword">new</span> Object();     <span class="meta">@Override</span>    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">(Bundle savedInstanceState)</span> </span>&#123;                <span class="keyword">super</span>.onCreate(savedInstanceState);        DebugUtil.StrictModeDebug();        setContentView(R.layout.test_main);           <span class="keyword">new</span> Thread()&#123;<span class="comment">//匿名线程            public void run() &#123;                synchronized (mLock) &#123;                    try &#123;                        mLock.wait();                    &#125; catch (InterruptedException e) &#123;                        // TODO Auto-generated catch block                        e.printStackTrace();                    &#125;                &#125;            &#125;        &#125;.start();    &#125;&#125;</span></span><br></pre></td></tr></table></figure>
+<pre><code>从代码上可以发现TestActivity里存在个匿名线程，且一直处于等待状态，直到退出TestActivity仍未被唤醒，进而导致该线程就一直没有结束，它所持有的TestActivity也就无法被释放了（可能大家听到此处会很疑惑，线程没有结束可以理解，但是它并没有持有TestActivity呀？我只能说是隐含this，如还不明白，请自行参阅java内部类相关内容），如要解决此泄露，只需在Activity的onDestory里将线程唤醒让其可以正常结束就OK了。</code></pre>
+<p><strong>优化建议</strong></p>
+<ol>
+<li>使用线程时，一定要确保线程在周期性对象（如Activity）销毁时能正常结束，如能正常结束，但是Activity销毁后还需执行一段时间，也可能造成泄露，此时可采用WeakReference方法来解决，另外在使用Handler的时候，如存在Delay操作，也可以采用WeakReference；</li>
+<li>使用Handler + HandlerThread时，记住在周期性对象销毁时调用looper.quit()方法；</li>
+<li>建议少使用匿名类或内部类，可考虑使用嵌套类（带static那种类），减少对周期性对象的隐性持有；</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java/jvm/GraalVm/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/metric/%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D%E4%B8%8ETLAB/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MAT"><span class="nav-number">1.</span> <span class="nav-text">MAT</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#4-1-Overview%E9%80%89%E9%A1%B9"><span class="nav-number">1.1.</span> <span class="nav-text">4.1 Overview选项</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#4-2-Dominator-Tree"><span class="nav-number">1.1.1.</span> <span class="nav-text">4.2 Dominator Tree</span></a></li><li class="nav-item nav-level-3"><a class="nav-link"><span class="nav-number">1.1.2.</span> <span class="nav-text"></span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-3-Histogram%E9%80%89%E9%A1%B9"><span class="nav-number">1.1.3.</span> <span class="nav-text">4.3 Histogram选项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#-1"><span class="nav-number">1.1.4.</span> <span class="nav-text"></span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-4-Path-to-GC-Roots"><span class="nav-number">1.1.5.</span> <span class="nav-text">4.4 Path to GC Roots</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#-2"><span class="nav-number">1.1.6.</span> <span class="nav-text"></span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-6-%E5%88%A9%E7%94%A8Histogram%E5%92%8CDominator-Tree%E5%88%86%E6%9E%90%E5%86%85%E5%AD%98%E6%B3%84%E9%9C%B2"><span class="nav-number">1.1.7.</span> <span class="nav-text">4.6  利用Histogram和Dominator Tree分析内存泄露</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

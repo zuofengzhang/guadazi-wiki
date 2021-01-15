@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="加密与解密AES123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java中优雅的加解密">
+<meta property="og:url" content="http://example.com/Java/tool/%E5%8A%A0%E5%AF%86%E4%B8%8E%E8%A7%A3%E5%AF%86/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="加密与解密AES123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100">
+<meta property="og:locale">
+<meta property="article:published_time" content="2019-08-10T06:58:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:31.907Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="tool">
+<meta property="article:tag" content="加密">
+<meta property="article:tag" content="解密">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/Java/tool/%E5%8A%A0%E5%AF%86%E4%B8%8E%E8%A7%A3%E5%AF%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>Java中优雅的加解密 | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/%E5%8A%A0%E5%AF%86%E4%B8%8E%E8%A7%A3%E5%AF%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java中优雅的加解密
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:31" itemprop="dateModified" datetime="2021-01-15T16:51:31+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="加密与解密"><a href="#加密与解密" class="headerlink" title="加密与解密"></a>加密与解密</h1><h2 id="AES"><a href="#AES" class="headerlink" title="AES"></a>AES</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.io.UnsupportedEncodingException;</span><br><span class="line"><span class="keyword">import</span> java.security.InvalidKeyException;</span><br><span class="line"><span class="keyword">import</span> java.security.NoSuchAlgorithmException;</span><br><span class="line"><span class="keyword">import</span> java.security.SecureRandom;</span><br><span class="line"><span class="keyword">import</span> java.util.Base64;</span><br><span class="line"><span class="keyword">import</span> java.util.Scanner;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.crypto.BadPaddingException;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.Cipher;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.IllegalBlockSizeException;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.KeyGenerator;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.NoSuchPaddingException;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.SecretKey;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.spec.SecretKeySpec;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> sun.misc.BASE64Decoder;</span><br><span class="line"><span class="keyword">import</span> sun.misc.BASE64Encoder;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * AES对称加密和解密</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SymmetricEncoder</span> </span>&#123;</span><br><span class="line">  <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * 加密</span></span><br><span class="line"><span class="comment">   * 1.构造密钥生成器</span></span><br><span class="line"><span class="comment">   * 2.根据ecnodeRules规则初始化密钥生成器</span></span><br><span class="line"><span class="comment">   * 3.产生密钥</span></span><br><span class="line"><span class="comment">   * 4.创建和初始化密码器</span></span><br><span class="line"><span class="comment">   * 5.内容加密</span></span><br><span class="line"><span class="comment">   * 6.返回字符串</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">AESEncode</span><span class="params">(String encodeRules,String content)</span></span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//1.构造密钥生成器，指定为AES算法,不区分大小写</span></span><br><span class="line">            KeyGenerator keygen=KeyGenerator.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">            <span class="comment">//2.根据ecnodeRules规则初始化密钥生成器</span></span><br><span class="line">            <span class="comment">//生成一个128位的随机源,根据传入的字节数组</span></span><br><span class="line">            keygen.init(<span class="number">128</span>, <span class="keyword">new</span> SecureRandom(encodeRules.getBytes()));</span><br><span class="line">              <span class="comment">//3.产生原始对称密钥</span></span><br><span class="line">            SecretKey original_key=keygen.generateKey();</span><br><span class="line">              <span class="comment">//4.获得原始对称密钥的字节数组</span></span><br><span class="line">            <span class="keyword">byte</span> [] raw=original_key.getEncoded();</span><br><span class="line">            <span class="comment">//5.根据字节数组生成AES密钥</span></span><br><span class="line">            SecretKey key=<span class="keyword">new</span> SecretKeySpec(raw, <span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//6.根据指定算法AES自成密码器</span></span><br><span class="line">            Cipher cipher=Cipher.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//7.初始化密码器，第一个参数为加密(Encrypt_mode)或者解密解密(Decrypt_mode)操作，第二个参数为使用的KEY</span></span><br><span class="line">            cipher.init(Cipher.ENCRYPT_MODE, key);</span><br><span class="line">            <span class="comment">//8.获取加密内容的字节数组(这里要设置为utf-8)不然内容中如果有中文和英文混合中文就会解密为乱码</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_encode=content.getBytes(<span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">            <span class="comment">//9.根据密码器的初始化方式--加密：将数据加密</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_AES=cipher.doFinal(byte_encode);</span><br><span class="line">          <span class="comment">//10.将加密后的数据转换为字符串</span></span><br><span class="line">            <span class="comment">//这里用Base64Encoder中会找不到包</span></span><br><span class="line">            <span class="comment">//解决办法：</span></span><br><span class="line">            <span class="comment">//在项目的Build path中先移除JRE System Library，再添加库JRE System Library，重新编译后就一切正常了。</span></span><br><span class="line">            String AES_encode=<span class="keyword">new</span> String(<span class="keyword">new</span> BASE64Encoder().encode(byte_AES));</span><br><span class="line">          <span class="comment">//11.将字符串返回</span></span><br><span class="line">            <span class="keyword">return</span> AES_encode;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InvalidKeyException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IllegalBlockSizeException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (BadPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (UnsupportedEncodingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//如果有错就返加nulll</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * 解密</span></span><br><span class="line"><span class="comment">     * 解密过程：</span></span><br><span class="line"><span class="comment">     * 1.同加密1-4步</span></span><br><span class="line"><span class="comment">     * 2.将加密后的字符串反纺成byte[]数组</span></span><br><span class="line"><span class="comment">     * 3.将加密内容解密</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">AESDncode</span><span class="params">(String encodeRules,String content)</span></span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//1.构造密钥生成器，指定为AES算法,不区分大小写</span></span><br><span class="line">            KeyGenerator keygen=KeyGenerator.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">            <span class="comment">//2.根据ecnodeRules规则初始化密钥生成器</span></span><br><span class="line">            <span class="comment">//生成一个128位的随机源,根据传入的字节数组</span></span><br><span class="line">            keygen.init(<span class="number">128</span>, <span class="keyword">new</span> SecureRandom(encodeRules.getBytes()));</span><br><span class="line">              <span class="comment">//3.产生原始对称密钥</span></span><br><span class="line">            SecretKey original_key=keygen.generateKey();</span><br><span class="line">              <span class="comment">//4.获得原始对称密钥的字节数组</span></span><br><span class="line">            <span class="keyword">byte</span> [] raw=original_key.getEncoded();</span><br><span class="line">            <span class="comment">//5.根据字节数组生成AES密钥</span></span><br><span class="line">            SecretKey key=<span class="keyword">new</span> SecretKeySpec(raw, <span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//6.根据指定算法AES自成密码器</span></span><br><span class="line">            Cipher cipher=Cipher.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//7.初始化密码器，第一个参数为加密(Encrypt_mode)或者解密(Decrypt_mode)操作，第二个参数为使用的KEY</span></span><br><span class="line">            cipher.init(Cipher.DECRYPT_MODE, key);</span><br><span class="line">            <span class="comment">//8.将加密并编码后的内容解码成字节数组</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_content= <span class="keyword">new</span> BASE64Decoder().decodeBuffer(content);</span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * 解密</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_decode=cipher.doFinal(byte_content);</span><br><span class="line">            String AES_decode=<span class="keyword">new</span> String(byte_decode,<span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span> AES_decode;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InvalidKeyException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IllegalBlockSizeException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (BadPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//如果有错就返加nulll</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SymmetricEncoder se=<span class="keyword">new</span> SymmetricEncoder();</span><br><span class="line">        Scanner scanner=<span class="keyword">new</span> Scanner(System.in);</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 加密</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        System.out.println(<span class="string">&quot;使用AES对称加密，请输入加密的规则&quot;</span>);</span><br><span class="line">        String encodeRules=scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;请输入要加密的内容:&quot;</span>);</span><br><span class="line">        String content = scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;根据输入的规则&quot;</span>+encodeRules+<span class="string">&quot;加密后的密文是:&quot;</span>+se.AESEncode(encodeRules, content));</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 解密</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        System.out.println(<span class="string">&quot;使用AES对称解密，请输入加密的规则：(须与加密相同)&quot;</span>);</span><br><span class="line">         encodeRules=scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;请输入要解密的内容（密文）:&quot;</span>);</span><br><span class="line">         content = scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;根据输入的规则&quot;</span>+encodeRules+<span class="string">&quot;解密后的明文是:&quot;</span>+se.AESDncode(encodeRules, content));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Apache-commons-codec"><a href="#Apache-commons-codec" class="headerlink" title="Apache commons codec"></a>Apache commons codec</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-codec<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-codec<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">version</span>&gt;</span>1.9<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//1、MD5加密</span></span><br><span class="line">String md5Str = DigestUtils.md5Hex(str);</span><br><span class="line">System.out.println(<span class="string">&quot;MD5--&gt;&quot;</span> + md5Str);</span><br><span class="line"></span><br><span class="line"><span class="comment">//SHA1加密</span></span><br><span class="line">String sha1Str = DigestUtils.sha1Hex(str);</span><br><span class="line">System.out.println(<span class="string">&quot;SHA1--&gt;&quot;</span> + sha1Str);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Base64加密</span></span><br><span class="line">String base64Str = Base64.encodeBase64String(str.getBytes());</span><br><span class="line">System.out.println(<span class="string">&quot;base64加密--&gt;&quot;</span> + base64Str);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Base64解密</span></span><br><span class="line">String base64DecodeStr = <span class="keyword">new</span> String(Base64.decodeBase64(base64Str));</span><br><span class="line">System.out.println(<span class="string">&quot;base64解密--&gt;&quot;</span> + base64DecodeStr);</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/tool/" rel="tag"># tool</a>
+              <a href="/tags/%E5%8A%A0%E5%AF%86/" rel="tag"># 加密</a>
+              <a href="/tags/%E8%A7%A3%E5%AF%86/" rel="tag"># 解密</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/Flink/Flink-SQL/" rel="prev" title="FlinkSQL与动态表">
+      <i class="fa fa-chevron-left"></i> FlinkSQL与动态表
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java/tool/typesafe.config/" rel="next" title="typesafe.config与HOCON">
+      typesafe.config与HOCON <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E4%B8%8E%E8%A7%A3%E5%AF%86"><span class="nav-number">1.</span> <span class="nav-text">加密与解密</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#AES"><span class="nav-number">1.1.</span> <span class="nav-text">AES</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Apache-commons-codec"><span class="nav-number">1.2.</span> <span class="nav-text">Apache commons codec</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

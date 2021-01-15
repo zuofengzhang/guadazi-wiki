@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="1. Flink checkpoint 与 高可用Flink Checkpoint 受 Chandy-Lamport 分布式快照启发，可以保证数据的高可用。但是有些情况下，不见得一定有效: Flink On Yarn 模式，某个 Container 发生 OOM 异常，这种情况程序直接变成失败状态，此时 Flink 程序虽然开启 Checkpoint 也无法恢复，因为程序已经变成失败状态，所以此时">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Flink-checkpoint与数据一致性">
+<meta property="og:url" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/index.html">
+<meta property="og:site_name" content="guadazi">
+<meta property="og:description" content="1. Flink checkpoint 与 高可用Flink Checkpoint 受 Chandy-Lamport 分布式快照启发，可以保证数据的高可用。但是有些情况下，不见得一定有效: Flink On Yarn 模式，某个 Container 发生 OOM 异常，这种情况程序直接变成失败状态，此时 Flink 程序虽然开启 Checkpoint 也无法恢复，因为程序已经变成失败状态，所以此时">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/_v_images/20200710154629243_751269158.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/_v_images/20200710154750060_1524377793.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/_v_images/20200710154844838_737658241.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/_v_images/20200714095846469_121820659.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/_v_images/20200714100459823_887900222.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/_v_images/20200714100516223_630729421.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/_v_images/20200713183839429_2053265091.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/_v_images/20201208154240979_1471214802.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/_v_images/20201208154240548_914126344.png">
+<meta property="article:published_time" content="2019-08-10T06:58:00.000Z">
+<meta property="article:modified_time" content="2021-01-15T08:51:32.579Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Flink">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/_v_images/20200710154629243_751269158.png">
+
+<link rel="canonical" href="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>Flink-checkpoint与数据一致性 | guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Flink-checkpoint与数据一致性
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-15 16:51:32" itemprop="dateModified" datetime="2021-01-15T16:51:32+08:00">2021-01-15</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="1-Flink-checkpoint-与-高可用"><a href="#1-Flink-checkpoint-与-高可用" class="headerlink" title="1. Flink checkpoint 与 高可用"></a>1. Flink checkpoint 与 高可用</h1><p>Flink Checkpoint 受 Chandy-Lamport 分布式快照启发，可以保证数据的高可用。但是有些情况下，不见得一定有效:</p>
+<p>Flink On Yarn 模式，某个 Container 发生 OOM 异常，这种情况程序直接变成失败状态，此时 Flink 程序虽然开启 Checkpoint 也无法恢复，因为程序已经变成失败状态，所以此时可以借助外部参与启动程序，比如外部程序检测到实时任务失败时，从新对实时任务进行拉起。</p>
+<h2 id="1-1-2PC"><a href="#1-1-2PC" class="headerlink" title="1.1. 2PC"></a>1.1. 2PC</h2><h3 id="1-1-1-Exactly-once-VS-At-least-once"><a href="#1-1-1-Exactly-once-VS-At-least-once" class="headerlink" title="1.1.1. Exactly-once VS At-least-once"></a>1.1.1. Exactly-once VS At-least-once</h3><p>算子做快照时，如果等所有输入端的barrier都到了才开始做快照，可保证算子的exactly-once；如果为了降低延时而跳过对齐，从而继续处理数据，那么等barrier都到齐后做快照就是at-least-once了，因为这次的快照掺杂了下一次快照的数据，当作业失败恢复的时候，这些数据会重复作用系统，就好像这些数据被消费了两遍。</p>
+<p>注：对齐只会发生在算子的上端是join操作以及上游存在partition或者shuffle的情况，对于直连操作类似map、flatMap、filter等还是会保证exactly-once的语义。</p>
+<h3 id="1-1-2-端到端的Exactly-once实现"><a href="#1-1-2-端到端的Exactly-once实现" class="headerlink" title="1.1.2. 端到端的Exactly once实现"></a>1.1.2. 端到端的Exactly once实现</h3><p>2PC分为几个阶段: 开始事务-&gt;预提交-&gt;提交(或回滚)</p>
+<p>为了保证Exactly once, source和sink必须支持flink的2PC</p>
+<p>当状态涉及到外部系统时，需要外部系统支持事务操作来配合flink实现2PC协议，从而保证数据的exatly-once。<br>这个时候，sink算子除了将自己的state写到后段，还必须准备好事务提交。</p>
+<ul>
+<li>一旦所有的算子完成了它们的pre-commit，它们会要求一个commit。</li>
+<li>如果存在一个算子pre-commit失败了，本次事务失败，我们回滚到上次的checkpoint。</li>
+<li>一旦master做出了commit的决定，那么这个commit必须得到执行，就算宕机恢复也有继续执行。</li>
+</ul>
+<h4 id="1-1-2-1-pre-commit"><a href="#1-1-2-1-pre-commit" class="headerlink" title="1.1.2.1. pre-commit"></a>1.1.2.1. pre-commit</h4><p>pre-commit阶段起始于一次快照的开始，即master节点将checkpoint的barrier注入source端，barrier随着数据向下流动直到sink端。barrier每到一个算子，都会出发算子做本地快照。</p>
+<p><img src="_v_images/20200710154629243_751269158.png" alt="precommit"></p>
+<p>当所有的算子都做完了本地快照并且回复到master节点时，pre-commit阶段才算结束。这个时候，checkpoint已经成功，并且包含了外部系统的状态。如果作业失败，可以进行恢复。</p>
+<p><img src="_v_images/20200710154750060_1524377793.png" alt="precommit-success"></p>
+<h4 id="1-1-2-2-commit"><a href="#1-1-2-2-commit" class="headerlink" title="1.1.2.2. commit"></a>1.1.2.2. commit</h4><p>通知所有的算子这次checkpoint成功了，即2PC的commit阶段。source节点和window节点没有外部状态，所以这时它们不需要做任何操作。<br>而对于sink节点，需要commit这次事务，将数据写到外部系统。</p>
+<p><img src="_v_images/20200710154844838_737658241.png" alt="commit"></p>
+<h4 id="1-1-2-3-rollback"><a href="#1-1-2-3-rollback" class="headerlink" title="1.1.2.3. rollback"></a>1.1.2.3. rollback</h4><p>一旦任何一个算子的快照保存失败，则触发回滚，同样的sink算子也需要取消写入外部的数据</p>
+<h3 id="1-1-3-TwoPhaseCommitSinkFunction"><a href="#1-1-3-TwoPhaseCommitSinkFunction" class="headerlink" title="1.1.3. TwoPhaseCommitSinkFunction"></a>1.1.3. TwoPhaseCommitSinkFunction</h3><p>为了简化2PC的实现成本，flink抽象了TwoPhaseCommitSinkFunction</p>
+<ul>
+<li>beginTransaction。开始一次事务，在目的文件系统创建一个临时文件。接下来我们就可以将数据写到这个文件。</li>
+<li>preCommit。在这个阶段，将文件flush掉，同时重起一个文件写入，作为下一次事务的开始。</li>
+<li>commit。这个阶段，将文件写到真正的目的目录。值得注意的是，这会增加数据可视的延时。</li>
+<li>abort。如果回滚，那么删除临时文件。</li>
+</ul>
+<p>如果pre-commit成功了，但是commit没有到达算子旧宕机了，flink会将算子恢复到pre-commit时的状态，然后继续commit。</p>
+<p>我们需要做的还有就是保证commit的幂等性，这可以通过检查临时文件是否还在来实现。</p>
+<h2 id="1-2-checkpoint"><a href="#1-2-checkpoint" class="headerlink" title="1.2. checkpoint"></a>1.2. checkpoint</h2><p><strong>保留策略</strong>:</p>
+<ul>
+<li>DELETE_ON_CANCELLATION 表示当程序取消时，删除 Checkpoint 存储文件。</li>
+<li>RETAIN_ON_CANCELLATION 表示当程序取消时，保存之前的 Checkpoint 存储文件</li>
+</ul>
+<p>默认情况下，Flink不会触发一次 Checkpoint 当系统有其他 Checkpoint 在进行时，也就是说 Checkpoint 默认的并发为1。</p>
+<p><strong>CheckpointCoordinator</strong> :</p>
+<p>针对 Flink DataStream 任务，程序需要经历从 StreamGraph -&gt; JobGraph -&gt; ExecutionGraph -&gt; 物理执行图四个步骤，其中在 ExecutionGraph 构建时，会初始化 CheckpointCoordinator。ExecutionGraph通过ExecutionGraphBuilder.buildGraph方法构建，在构建完时，会调用 ExecutionGraph 的enableCheckpointing方法创建CheckpointCoordinator</p>
+<p><strong>Flink Checkpoint 参数配置及建议</strong>:</p>
+<ul>
+<li>当 Checkpoint 时间比设置的 Checkpoint 间隔时间要长时，可以设置 Checkpoint 间最小时间间隔 。这样在上次 Checkpoint 完成时，不会立马进行下一次 Checkpoint，而是会等待一个最小时间间隔，然后在进行该次 Checkpoint。否则，每次 Checkpoint 完成时，就会立马开始下一次 Checkpoint，系统会有很多资源消耗 Checkpoint。</li>
+<li>如果Flink状态很大，在进行恢复时，需要从远程存储读取状态恢复，此时可能导致任务恢复很慢，可以设置 Flink Task 本地状态恢复。任务状态本地恢复默认没有开启，可以设置参数state.backend.local-recovery值为true进行激活。</li>
+<li>Checkpoint保存数，Checkpoint 保存数默认是1，也就是保存最新的 Checkpoint 文件，当进行状态恢复时，如果最新的Checkpoint文件不可用时(比如HDFS文件所有副本都损坏或者其他原因)，那么状态恢复就会失败，如果设置 Checkpoint 保存数2，即使最新的Checkpoint恢复失败，那么Flink 会回滚到之前那一次Checkpoint进行恢复。考虑到这种情况，用户可以增加 Checkpoint 保存数。</li>
+<li>建议设置的 Checkpoint 的间隔时间最好大于 Checkpoint 的完成时间。</li>
+</ul>
+<p>下图是不设置 Checkpoint 最小时间间隔示例图，可以看到，系统一致在进行 Checkpoint，可能对运行的任务产生一定影响：<br><img src="_v_images/20200714095846469_121820659.png"></p>
+<h2 id="1-3-savepoint"><a href="#1-3-savepoint" class="headerlink" title="1.3. savepoint"></a>1.3. savepoint</h2><blockquote>
+<p>注意:<br>使用DataStream进行开发，建议为每个算子定义一个 uid，这样我们在修改作业时，即使导致程序拓扑图改变，由于相关算子 uid 没有变，那么这些算子还能够继续使用之前的状态，如果用户没有定义 uid ， Flink 会为每个算子自动生成 uid，如果用户修改了程序，可能导致之前的状态程序不能再进行复用。</p>
+</blockquote>
+<p>Flink 在触发Savepoint 或者 Checkpoint时，会根据这次触发的类型计算出在HDFS上面的目录:</p>
+<p>如果类型是 Savepoint，那么 其 HDFS 上面的目录为：Savepoint 根目录+savepoint-jobid前六位+随机数字，具体如下格式：</p>
+<p><img src="_v_images/20200714100459823_887900222.png"></p>
+<p>Checkpoint 目录为 chk-checkpoint ID,具体格式如下：</p>
+<p><img src="_v_images/20200714100516223_630729421.png"></p>
+<ul>
+<li>使用 flink cancel -s 命令取消作业同时触发 Savepoint 时，会有一个问题，可能存在触发 Savepoint 失败。比如实时程序处于异常状态(比如 Checkpoint失败)，而此时你停止作业，同时触发 Savepoint,这次 Savepoint 就会失败，这种情况会导致，在实时平台上面看到任务已经停止，但是实际实时作业在 Yarn 还在运行。针对这种情况，需要捕获触发 Savepoint 失败的异常，当抛出异常时，可以直接在 Yarn 上面 Kill 掉该任务。</li>
+<li>使用 DataStream 程序开发时，最好为每个算子分配 uid,这样即使作业拓扑图变了，相关算子还是能够从之前的状态进行恢复，默认情况下，Flink 会为每个算子分配 uid,这种情况下，当你改变了程序的某些逻辑时，可能导致算子的 uid 发生改变，那么之前的状态数据，就不能进行复用，程序在启动的时候，就会报错。</li>
+<li>由于 Savepoint 是程序的全局状态，对于某些状态很大的实时任务，当我们触发 Savepoint，可能会对运行着的实时任务产生影响，个人建议如果对于状态过大的实时任务，触发 Savepoint 的时间，不要太过频繁。根据状态的大小，适当的设置触发时间。</li>
+<li>当我们从 Savepoint 进行恢复时，需要检查这次 Savepoint 目录文件是否可用。可能存在你上次触发 Savepoint 没有成功，导致 HDFS 目录上面 Savepoint 文件不可用或者缺少数据文件等，这种情况下，如果在指定损坏的 Savepoint 的状态目录进行状态恢复，任务会启动不起来。</li>
+</ul>
+<h2 id="1-4-snapshot保存到哪里-应该需要汇总到jobManager？"><a href="#1-4-snapshot保存到哪里-应该需要汇总到jobManager？" class="headerlink" title="1.4. snapshot保存到哪里? 应该需要汇总到jobManager？"></a>1.4. snapshot保存到哪里? 应该需要汇总到jobManager？</h2><h2 id="1-5-state-backend"><a href="#1-5-state-backend" class="headerlink" title="1.5. state backend"></a>1.5. state backend</h2><p><img src="_v_images/20200713183839429_2053265091.png"></p>
+<h3 id="FsStateBackend"><a href="#FsStateBackend" class="headerlink" title="FsStateBackend"></a>FsStateBackend</h3><p>构造方法:<br><code>FsStateBackend(URI checkpointDataUri,boolean asynchronousSnapshots)</code></p>
+<p>1 基于文件系统的状态管理器<br>2 如果使用，默认是异步<br>3 比较稳定，3个副本，比较安全。不会出现任务无法恢复等问题<br>4 状态大小受磁盘容量限制</p>
+<p>存储方式:</p>
+<ul>
+<li>State: TaskManager内存</li>
+<li>checkpoint: 外部文件系统(本地或HDFS)</li>
+</ul>
+<p>容量限制:</p>
+<ul>
+<li>单TaskManager上State总量不超过它的内存</li>
+<li>总大小不超过配置的文件系统容量</li>
+</ul>
+<p>推荐使用场景:</p>
+<ul>
+<li>常规使用状态的作业，例如分钟级窗口聚合、join、窗口比较长、kv状态大；需要开启HA的作业</li>
+<li>可以用于生产场景</li>
+</ul>
+<h3 id="RocksDBStateBackend"><a href="#RocksDBStateBackend" class="headerlink" title="RocksDBStateBackend"></a>RocksDBStateBackend</h3><p>状态数据先写入RocksDB，然后异步的将状态数据写入文件系统。正在进行计算的热数据存储在RocksDB，长时间才更新的数据写入磁盘中（文件系统）存储，体量比较小的元数据状态写入JobManager内存中（将工作state保存在RocksDB中，并且默认将checkpoint数据存在文件系统中）</p>
+<p>目前唯一支持incremental的checkpoints的策略</p>
+<p>构造方法:<br><code>RocksDBStateBackend(URI checkpointDataUri,boolean enableIncrementalCheckpointing)</code></p>
+<p>存储方式:</p>
+<ul>
+<li>State: TaskManager上的KV数据库(实际使用内存+硬盘)</li>
+<li>Checkpoint: 外部文件系统(本地或HDFS)</li>
+</ul>
+<p>容量限制:</p>
+<ul>
+<li>单TaskManager上的State总量不超过他的内存+磁盘</li>
+<li>单key最大2G</li>
+<li>总大小不超过配置的文件系统容量</li>
+</ul>
+<p>推荐使用的场景:</p>
+<ul>
+<li>超大状态的作业，例如天级别窗口聚合；需要开启HA的作业；对状态读写性能要求不高的作业</li>
+<li>可以在生产环境使用</li>
+</ul>
+<h3 id="MemoryStateBackend"><a href="#MemoryStateBackend" class="headerlink" title="MemoryStateBackend"></a>MemoryStateBackend</h3><p>构造方法:<br><code>MemoryStateBackend(int maxStateSize, boolean asynchronousSnapshots)</code></p>
+<p>主机内存中的数据可能会丢失，任务可能无法恢复</p>
+<p>存储方式:</p>
+<ul>
+<li>State: TaskManager内存</li>
+<li>Checkpoint: JobManager内存</li>
+</ul>
+<p>容量限制</p>
+<ul>
+<li>单个State maxStateSize默认5M</li>
+<li>maxStateSize &lt;= akka.frameSize 默认10M</li>
+<li>总大小不超过JobManager的内存</li>
+</ul>
+<p>推荐使用场景：</p>
+<ul>
+<li>本地测试；几乎无状态的作业，比如ETL；JobManager不容易挂，或挂掉影响不大的情况</li>
+<li>不推荐在生产环境使用</li>
+</ul>
+<h2 id="1-6-checkpoint-与-savepoint"><a href="#1-6-checkpoint-与-savepoint" class="headerlink" title="1.6. checkpoint 与 savepoint"></a>1.6. checkpoint 与 savepoint</h2><p>Checkpoint指定触发生成时间间隔后，每当需要触发Checkpoint时，会向Flink程序运行时的多个分布式的Stream Source中插入一个Barrier标记，这些Barrier会根据Stream中的数据记录一起流向下游的各个Operator。<br>当一个Operator接收到一个Barrier时，它会暂停处理Steam中新接收到的数据记录。<br>因为一个Operator可能存在多个输入的Stream，而每个Stream中都会存在对应的Barrier，该Operator要等到所有的输入Stream中的Barrier都到达。(<strong>对齐</strong>)<br>当所有Stream中的Barrier都已经到达该Operator，这时所有的Barrier在时间上看来是同一个时刻点（表示已经对齐），在等待所有Barrier到达的过程中，<br>Operator的Buffer中可能已经缓存了一些比Barrier早到达Operator的数据记录（Outgoing Records），这时该Operator会将数据记录（Outgoing Records）发射（Emit）出去，作为下游Operator的输入，<br>最后将Barrier对应Snapshot发射（Emit）出去作为此次Checkpoint的结果数据。</p>
+<p>Checkpoint 是增量做的，每次的时间较短，数据量较小，只要在程序里面启用后会自动触发，用户无须感知；Checkpoint 是作业 failover 的时候自动使用，不需要用户指定。</p>
+<p>Savepoint 是全量做的，每次的时间较长，数据量较大，需要用户主动去触发。Savepoint 一般用于程序的版本更新（详见文档），Bug 修复，A/B Test 等场景，需要用户指定。</p>
+<p><strong>保存的内容</strong></p>
+<ul>
+<li>首先，Savepoint 包含了一个目录，其中包含（通常很大的）二进制文件，这些文件表示了整个流应用在 Checkpoint/Savepoint 时的状态。</li>
+<li>以及一个（相对较小的）元数据文件，包含了指向 Savapoint 各个文件的指针，并存储在所选的分布式文件系统或数据存储中。</li>
+</ul>
+<p><strong>目标</strong></p>
+<p>Savepoint 和 Checkpoint 的不同之处很像传统数据库中备份与恢复日志之间的区别。Checkpoint 的主要目标是充当 Flink 中的恢复机制，确保能从潜在的故障中恢复。相反，Savepoint 的主要目标是充当手动备份、恢复暂停作业的方法。</p>
+<p><strong>实现</strong></p>
+<p>Checkpoint 被设计成轻量和快速的机制。它们可能（但不一定必须）利用底层状态后端的不同功能尽可能快速地恢复数据。例如，基于 RocksDB 状态后端的增量检查点，能够加速 RocksDB 的 checkpoint 过程，这使得 checkpoint 机制变得更加轻量。相反，Savepoint 旨在更多地关注数据的可移植性，并支持对作业做任何更改而状态能保持兼容，这使得生成和恢复的成本更高</p>
+<p><strong>状态文件保留策略</strong></p>
+<p>Checkpoint默认程序删除，可以设置CheckpointConfig中的参数进行保留 。Savepoint会一直保存，除非用户删除 。</p>
+<p><strong>应用</strong></p>
+<ul>
+<li>部署流应用的一个新版本，包括新功能、BUG 修复、或者一个更好的机器学习模型</li>
+<li>引入 A/B 测试，使用相同的源数据测试程序的不同版本，从同一时间点开始测试而不牺牲先前的状态</li>
+<li>在需要更多资源时扩容应用程序</li>
+<li>迁移流应用程序到 Flink 的新版本上，或者迁移到另一个集群</li>
+</ul>
+<h1 id="Flink数据一致性"><a href="#Flink数据一致性" class="headerlink" title="Flink数据一致性"></a>Flink数据一致性</h1><h2 id="一、综述"><a href="#一、综述" class="headerlink" title="一、综述"></a>一、综述</h2><p><strong>flink 通过内部依赖checkpoint 并且可以通过设置其参数exactly-once 实现其内部的一致性</strong>。但要实现其端到端的一致性，还必须保证<br>1、source 外部数据源可重设数据的读取位置<br>2、sink端 需要保证数据从故障恢复时，数据不会重复写入外部系统（或者可以逻辑实现写入多次，但只有一次生效的数据sink端）</p>
+<h2 id="二、sink-端到端实现方式"><a href="#二、sink-端到端实现方式" class="headerlink" title="二、sink 端到端实现方式"></a>二、sink 端到端实现方式</h2><p><strong>幂等操作：</strong><br>一个操作，可以重复执行多次，但只导致一次结果更改，豁免重复操作执行就不起作用了，他的瑕疵 （在系统恢复的过程中，如果这段时间内多个更新或者插入导致状态不一致，但当数据追上就可以了）<br>（逻辑与、逻辑或等）具体理解参照自己以前写的文章。<br><strong>事务写入：</strong><br>事务应该具有四个属性：原子性、一致性、隔离性、持久性等。其具体的实现方式有两种<br><strong>（1）、预写日志</strong><br>简单易于实现，由于数据提前在状态后端中做了缓存，所以无论什么sink系统，都能用这种方式一批搞定，DataStream API提供了一个模板类：GenericWriteAheadSink，来实现这种事务性sink；<br>缺点：<br>1）、sink系统没说他支持事务。有可能出现一部分写入集群了。一部分没有写进去（如果实表，再写一次就写重复了）<br>2）、checkpoint做完了sink才去真正的写入（但其实得等sink都写完checkpoint才能生效，所以WAL这个机制jobmanager确定它写完还不算真正写完，还得有一个外部系统已经确认 完成的checkpoint）<br>（<strong>2）、两阶段提交。 flink 真正实现exactle-once</strong><br>对于每个checkpoint,sink 任务会启动一个事务，并将接下来所有接收的数据添加到事务中，然后将这些数据写入外部sink系统，但不提交他们（这里是预提交）。当checkpoint完成时的通知，它才正式提交事务，实现结果的真正写入；这种方式真正实现了exactly-once,它需要一个提供事务支持的外部sink系统，Flink提供了其具体实现（TwoPhaseCommitSinkFunction接口）</p>
+<h2 id="三、-2pc-对外部-sink的要求"><a href="#三、-2pc-对外部-sink的要求" class="headerlink" title="三、 2pc 对外部 sink的要求"></a>三、 2pc 对外部 sink的要求</h2><p>1、外部sink系统必须事务支持，或者sink任务必须能够模拟外部系统上的事务；<br>2、在checkpoint的间隔期间里，必须能够开启一个事务，并接受数据写入。<br>3、在收到checkpoint完成通知之前，事务必须是“等待提交”的状态，在故障恢复的情况线，这可能需要一些时间。如果个时候sink系统关闭事务（例如超时了），那么未提交的数据就会丢失；<br>4、四年任务必选能够在进程失败后恢复事务<br>5、提交事务必须是幂等操作；</p>
+<p>四、综上不同Source和sink的一致性保证：<br><img src="_v_images/20201208154240979_1471214802.png" alt="在这里插入图片描述"></p>
+<h2 id="五、应用（flinK-kafka-端到端一致性保证）"><a href="#五、应用（flinK-kafka-端到端一致性保证）" class="headerlink" title="五、应用（flinK+kafka 端到端一致性保证）"></a>五、应用（flinK+kafka 端到端一致性保证）</h2><p>flink 和kafka 端到端一致性(kafka(source+flink+kafka(sink)))<br>1、内部 – 利用checkpoint机制，把状态存盘，发生故障的时候可以恢复，保证内部的状态一致性<br>2、source – kafka consumer作为source，可以将偏移量保存下来，如果后续任务出现了故障，恢复的时候可以由连接器重置偏移量，重新消费数据，保证一致性；</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">kafka</span> 0.8 和<span class="selector-tag">kafka</span> 0.11 之后 通过以下配置将偏移量保存，恢复时候重新消费</span><br><span class="line"> <span class="selector-tag">kafka</span><span class="selector-class">.setStartFromLatest</span>();</span><br><span class="line"> <span class="selector-tag">kafka</span><span class="selector-class">.setCommitOffsetsOnCheckpoints</span>(<span class="selector-tag">false</span>);</span><br><span class="line"> <span class="selector-tag">kafka</span> 0.9 和<span class="selector-tag">kafka0</span>.10 未验证是否支持这两个参数(<span class="selector-tag">todo</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>3、sink FlinkkafkaProducer作为Sink，采用两阶段提交的sink，由下图可以看出flink 0.11 已经默认继承了TwoPhaseCommitSinkFunction<br><img src="_v_images/20201208154240548_914126344.png" alt="在这里插入图片描述"><br>但我们需要在参数种传入指定语义，它默认时还是at-least-once<br>此外我们还需要进行一些producer的容错配置：<br>（1）除了启用Flink的检查点之外，还可以通过将适当的semantic参数传递给FlinkKafkaProducer011（FlinkKafkaProducer对于Kafka&gt; = 1.0.0版本）<br>（2）来选择三种不同的操作模式<br>1）、Semantic.NONE 代表at-mostly-once语义<br>2）、Semantic.AT_LEAST_ONCE（Flink默认设置<br>3）、Semantic.EXACTLY_ONCE 使用Kafka事务提供一次精确的语义，每当您使用事务写入Kafka时<br>（3）、请不要忘记消费kafka记录任何应用程序设置所需的设置isolation.leva（read_committed 或者read_uncommitted-后者是默认）<br>read_committed，只是读取已经提交的数据。</p>
+<p>应用；<br>Semantic.EXACTLY_ONCE依赖与下游系统能支持事务操作.以0.11kafka为例.<br>transaction.max.timeout.ms 最大超市时长，默认15分钟，如果需要用exactly语义，需要增加这个值。（因为它小于transaction.timeout.ms ）<br>isolation.level 如果需要用到exactly语义，需要在下级consumerConfig中设置read-commited [read-uncommited(默认值)]<br>transaction.timeout.ms 默认为1hour</p>
+<p><strong>其参数对应关系为 和一些报错问题<br>checkpoint间隔&lt;transaction.timeout.ms&lt;transaction.max.timeout.ms</strong></p>
+<p><strong>参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/createweb/p/11971846.html">https://www.cnblogs.com/createweb/p/11971846.html</a></strong></p>
+<p>注意：<br>1、Semantic.EXACTLY_ONCE 模式每个FlinkKafkaProducer011实例使用一个固定大小的KafkaProducers池。每个检查点使用这些生产者中的每一个。如果并发检查点的数量超过池大小，FlinkKafkaProducer011 将引发异常，并使整个应用程序失败。请相应地配置最大池大小和最大并发检查点数。</p>
+<p>2、Semantic.EXACTLY_ONCE采取所有可能的措施，不要留下任何挥之不去的数据，否则这将有碍于消费者更多地阅读Kafka主题。但是，如果flink应用程序在第一个检查点之前失败，则在重新启动此类应用程序后，系统种将没有有关先前池大小信息，因此，在第一个检查点完成前按比例缩小Flink应用程序的FlinkKafkaProducer011.SAFE_SCALE_DOWN_FACTOR</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">//1。设置最大允许的并行<span class="selector-tag">checkpoint</span>数，防止超过<span class="selector-tag">producer</span>池的个数发生异常</span><br><span class="line"><span class="selector-tag">env</span><span class="selector-class">.getCheckpointConfig</span><span class="selector-class">.setMaxConcurrentCheckpoints</span>(5) </span><br><span class="line">//2。设置<span class="selector-tag">producer</span>的<span class="selector-tag">ack</span>传输配置</span><br><span class="line">// 设置超市时长，默认15分钟，建议1个小时以上</span><br><span class="line"><span class="selector-tag">producerConfig</span><span class="selector-class">.put</span>(<span class="selector-tag">ProducerConfig</span><span class="selector-class">.ACKS_CONFIG</span>, 1) </span><br><span class="line"><span class="selector-tag">producerConfig</span><span class="selector-class">.put</span>(<span class="selector-tag">ProducerConfig</span><span class="selector-class">.TRANSACTION_TIMEOUT_CONFIG</span>, 15000) </span><br><span class="line"></span><br><span class="line">//3。在下一个<span class="selector-tag">kafka</span> <span class="selector-tag">consumer</span>的配置文件，或者代码中设置<span class="selector-tag">ISOLATION_LEVEL_CONFIG-read-commited</span></span><br><span class="line">//<span class="selector-tag">Note</span>:必须在下一个<span class="selector-tag">consumer</span>中指定，当前指定是没用用的</span><br><span class="line"><span class="selector-tag">kafkaonfigs</span><span class="selector-class">.setProperty</span>(<span class="selector-tag">ConsumerConfig</span><span class="selector-class">.ISOLATION_LEVEL_CONFIG</span>,&quot;<span class="selector-tag">read_commited</span>&quot;)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>完整应用代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.shufang.flink.connectors</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Properties</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.api.common.serialization.SimpleStringSchema</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.TimeCharacteristic</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.scala._</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.windowing.time.Time</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer.Semantic</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.connectors.kafka._</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.util.serialization.KeyedSerializationSchemaWrapper</span><br><span class="line"><span class="keyword">import</span> org.apache.kafka.clients.consumer.ConsumerConfig</span><br><span class="line"><span class="keyword">import</span> org.apache.kafka.clients.producer.ProducerConfig</span><br><span class="line"><span class="keyword">import</span> org.apache.kafka.common.serialization.StringDeserializer</span><br><span class="line"></span><br><span class="line">object KafkaSource01 &#123;</span><br><span class="line">  <span class="function">def <span class="title">main</span><span class="params">(args: Array[String])</span>: Unit </span>= &#123;</span><br><span class="line">    val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment</span><br><span class="line"></span><br><span class="line">    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)</span><br><span class="line"></span><br><span class="line">    <span class="comment">//这是checkpoint的超时时间</span></span><br><span class="line">    <span class="comment">//env.getCheckpointConfig.setCheckpointTimeout()</span></span><br><span class="line">    <span class="comment">//设置最大并行的chekpoint</span></span><br><span class="line">    env.getCheckpointConfig.setMaxConcurrentCheckpoints(<span class="number">5</span>)</span><br><span class="line">    env.getCheckpointConfig.setCheckpointInterval(<span class="number">1000</span>) <span class="comment">//增加checkpoint的中间时长，保证可靠性</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 为了保证数据的一致性，我们开启Flink的checkpoint一致性检查点机制，保证容错</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    env.enableCheckpointing(<span class="number">60000</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 从kafka获取数据，一定要记得添加checkpoint，能保证offset的状态可以重置，从数据源保证数据的一致性</span></span><br><span class="line"><span class="comment">     * 保证kafka代理的offset与checkpoint备份中保持状态一致</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    val kafkaonfigs = <span class="keyword">new</span> Properties()</span><br><span class="line"></span><br><span class="line">    <span class="comment">//指定kafka的启动集群</span></span><br><span class="line">    kafkaonfigs.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, <span class="string">&quot;localhost:9092&quot;</span>)</span><br><span class="line">    <span class="comment">//指定消费者组</span></span><br><span class="line">    kafkaonfigs.setProperty(ConsumerConfig.GROUP_ID_CONFIG, <span class="string">&quot;flinkConsumer&quot;</span>)</span><br><span class="line">    <span class="comment">//指定key的反序列化类型</span></span><br><span class="line">    kafkaonfigs.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)</span><br><span class="line">    <span class="comment">//指定value的反序列化类型</span></span><br><span class="line">    kafkaonfigs.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)</span><br><span class="line">    <span class="comment">//指定自动消费offset的起点配置</span></span><br><span class="line">    <span class="comment">//    kafkaonfigs.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, &quot;latest&quot;)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 自定义kafkaConsumer，同时可以指定从哪里开始消费</span></span><br><span class="line"><span class="comment">     * 开启了Flink的检查点之后，我们还要开启kafka-offset的检查点，通过kafkaConsumer.setCommitOffsetsOnCheckpoints(true)开启，</span></span><br><span class="line"><span class="comment">     * 一旦这个检查点开启，那么之前配置的 auto-commit-enable = true的配置就会自动失效</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    val kafkaConsumer = <span class="keyword">new</span> FlinkKafkaConsumer[String](</span><br><span class="line">      <span class="string">&quot;console-topic&quot;</span>,</span><br><span class="line">      <span class="keyword">new</span> SimpleStringSchema(), <span class="comment">// 这个schema是将kafka的数据应设成Flink中的String类型</span></span><br><span class="line">      kafkaonfigs</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 开启kafka-offset检查点状态保存机制</span></span><br><span class="line">    kafkaConsumer.setCommitOffsetsOnCheckpoints(<span class="keyword">true</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">//    kafkaConsumer.setStartFromEarliest()//</span></span><br><span class="line">    <span class="comment">//    kafkaConsumer.setStartFromTimestamp(1010003794)</span></span><br><span class="line">    <span class="comment">//    kafkaConsumer.setStartFromLatest()</span></span><br><span class="line">    <span class="comment">//    kafkaConsumer.setStartFromSpecificOffsets(Map[KafkaTopicPartition,Long]()</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 添加source数据源</span></span><br><span class="line">    val kafkaStream: DataStream[String] = env.addSource(kafkaConsumer)</span><br><span class="line"></span><br><span class="line">    kafkaStream.print()</span><br><span class="line"></span><br><span class="line">    val sinkStream: DataStream[String] = kafkaStream.assignTimestampsAndWatermarks(<span class="keyword">new</span> BoundedOutOfOrdernessTimestampExtractor[String](Time.seconds(<span class="number">5</span>)) &#123;</span><br><span class="line">      <span class="function">override def <span class="title">extractTimestamp</span><span class="params">(element: String)</span>: Long </span>= &#123;</span><br><span class="line">        element.split(<span class="string">&quot;,&quot;</span>)(<span class="number">1</span>).toLong</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 通过FlinkkafkaProduccer API将stream的数据写入到kafka的&#x27;sink-topic&#x27;中</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="comment">//    val brokerList = &quot;localhost:9092&quot;</span></span><br><span class="line">    val topic = <span class="string">&quot;sink-topic&quot;</span></span><br><span class="line">    val producerConfig = <span class="keyword">new</span> Properties()</span><br><span class="line">    producerConfig.put(ProducerConfig.ACKS_CONFIG, <span class="keyword">new</span> Integer(<span class="number">1</span>)) <span class="comment">// 设置producer的ack传输配置</span></span><br><span class="line">    producerConfig.put(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, Time.hours(<span class="number">2</span>)) <span class="comment">//设置超市时长，默认1小时，建议1个小时以上</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 自定义producer，可以通过不同的构造器创建</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    val producer: FlinkKafkaProducer[String] = <span class="keyword">new</span> FlinkKafkaProducer[String](</span><br><span class="line">      topic,</span><br><span class="line">      <span class="keyword">new</span> KeyedSerializationSchemaWrapper[String](SimpleStringSchema),</span><br><span class="line">      producerConfig,</span><br><span class="line">      Semantic.EXACTLY_ONCE</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="comment">//    FlinkKafkaProducer.SAFE_SCALE_DOWN_FACTOR</span></span><br><span class="line">    <span class="comment">/** *****************************************************************************************************************</span></span><br><span class="line"><span class="comment">     * * 出了要开启flink的checkpoint功能，同时还要设置相关配置功能。</span></span><br><span class="line"><span class="comment">     * * 因在0.9或者0.10，默认的FlinkKafkaProducer只能保证at-least-once语义，假如需要满足at-least-once语义，我们还需要设置</span></span><br><span class="line"><span class="comment">     * * setLogFailuresOnly(boolean)    默认false</span></span><br><span class="line"><span class="comment">     * * setFlushOnCheckpoint(boolean)  默认true</span></span><br><span class="line"><span class="comment">     * * come from 官网 below：</span></span><br><span class="line"><span class="comment">     * * Besides enabling Flink’s checkpointing，you should also configure the setter methods setLogFailuresOnly(boolean)</span></span><br><span class="line"><span class="comment">     * * and setFlushOnCheckpoint(boolean) appropriately.</span></span><br><span class="line"><span class="comment">     * ******************************************************************************************************************/</span></span><br><span class="line"></span><br><span class="line">    producer.setLogFailuresOnly(<span class="keyword">false</span>) <span class="comment">//默认是false</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 除了启用Flink的检查点之外，还可以通过将适当的semantic参数传递给FlinkKafkaProducer011（FlinkKafkaProducer对于Kafka&gt; = 1.0.0版本）</span></span><br><span class="line"><span class="comment">     * 来选择三种不同的操作模式：</span></span><br><span class="line"><span class="comment">     * Semantic.NONE  代表at-mostly-once语义</span></span><br><span class="line"><span class="comment">     * Semantic.AT_LEAST_ONCE（Flink默认设置）</span></span><br><span class="line"><span class="comment">     * Semantic.EXACTLY_ONCE：使用Kafka事务提供一次精确的语义，每当您使用事务写入Kafka时，</span></span><br><span class="line"><span class="comment">     * 请不要忘记为使用Kafka记录的任何应用程序设置所需的设置isolation.level（read_committed 或read_uncommitted-后者是默认值)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    sinkStream.addSink(producer)</span><br><span class="line"></span><br><span class="line">    env.execute(<span class="string">&quot;kafka source &amp; sink&quot;</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="[参考文献]"></a>[参考文献]</h2><ol>
+<li><a target="_blank" rel="noopener" href="http://shiyanjun.cn/archives/1855.html">Flink Checkpoint、Savepoint配置与实践</a></li>
+<li><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2018/11/04/how-apache-flink-manages-kafka-consumer-offsets/">Flink 小贴士 (2)：Flink 如何管理 Kafka 消费位点</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/4bcbcda0e2f4">Flink实时计算-深入理解Checkpoint和Savepoint</a></li>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/abs/1506.08603">Lightweight Asynchronous Snapshots for Distributed Dataflows: 分布式数据流轻量级异步快照</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Java/" rel="tag"># Java</a>
+              <a href="/tags/Flink/" rel="tag"># Flink</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java/metric/02_CMS_GC/" rel="prev" title="CMS GC">
+      <i class="fa fa-chevron-left"></i> CMS GC
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/Flink/Flink-backpress-ext/" rel="next" title="【转发】咱们从头到尾讲一次 Flink 网络流控和反压剖析">
+      【转发】咱们从头到尾讲一次 Flink 网络流控和反压剖析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#1-Flink-checkpoint-%E4%B8%8E-%E9%AB%98%E5%8F%AF%E7%94%A8"><span class="nav-number">1.</span> <span class="nav-text">1. Flink checkpoint 与 高可用</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-2PC"><span class="nav-number">1.1.</span> <span class="nav-text">1.1. 2PC</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-1-Exactly-once-VS-At-least-once"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.1.1. Exactly-once VS At-least-once</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-2-%E7%AB%AF%E5%88%B0%E7%AB%AF%E7%9A%84Exactly-once%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.1.2.</span> <span class="nav-text">1.1.2. 端到端的Exactly once实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-2-1-pre-commit"><span class="nav-number">1.1.2.1.</span> <span class="nav-text">1.1.2.1. pre-commit</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-2-2-commit"><span class="nav-number">1.1.2.2.</span> <span class="nav-text">1.1.2.2. commit</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-2-3-rollback"><span class="nav-number">1.1.2.3.</span> <span class="nav-text">1.1.2.3. rollback</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-3-TwoPhaseCommitSinkFunction"><span class="nav-number">1.1.3.</span> <span class="nav-text">1.1.3. TwoPhaseCommitSinkFunction</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-checkpoint"><span class="nav-number">1.2.</span> <span class="nav-text">1.2. checkpoint</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-savepoint"><span class="nav-number">1.3.</span> <span class="nav-text">1.3. savepoint</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-4-snapshot%E4%BF%9D%E5%AD%98%E5%88%B0%E5%93%AA%E9%87%8C-%E5%BA%94%E8%AF%A5%E9%9C%80%E8%A6%81%E6%B1%87%E6%80%BB%E5%88%B0jobManager%EF%BC%9F"><span class="nav-number">1.4.</span> <span class="nav-text">1.4. snapshot保存到哪里? 应该需要汇总到jobManager？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-5-state-backend"><span class="nav-number">1.5.</span> <span class="nav-text">1.5. state backend</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FsStateBackend"><span class="nav-number">1.5.1.</span> <span class="nav-text">FsStateBackend</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RocksDBStateBackend"><span class="nav-number">1.5.2.</span> <span class="nav-text">RocksDBStateBackend</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MemoryStateBackend"><span class="nav-number">1.5.3.</span> <span class="nav-text">MemoryStateBackend</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-6-checkpoint-%E4%B8%8E-savepoint"><span class="nav-number">1.6.</span> <span class="nav-text">1.6. checkpoint 与 savepoint</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%E6%80%A7"><span class="nav-number">2.</span> <span class="nav-text">Flink数据一致性</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E7%BB%BC%E8%BF%B0"><span class="nav-number">2.1.</span> <span class="nav-text">一、综述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%8C%E3%80%81sink-%E7%AB%AF%E5%88%B0%E7%AB%AF%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F"><span class="nav-number">2.2.</span> <span class="nav-text">二、sink 端到端实现方式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E3%80%81-2pc-%E5%AF%B9%E5%A4%96%E9%83%A8-sink%E7%9A%84%E8%A6%81%E6%B1%82"><span class="nav-number">2.3.</span> <span class="nav-text">三、 2pc 对外部 sink的要求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%BA%94%E7%94%A8%EF%BC%88flinK-kafka-%E7%AB%AF%E5%88%B0%E7%AB%AF%E4%B8%80%E8%87%B4%E6%80%A7%E4%BF%9D%E8%AF%81%EF%BC%89"><span class="nav-number">2.4.</span> <span class="nav-text">五、应用（flinK+kafka 端到端一致性保证）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">2.5.</span> <span class="nav-text">[参考文献]</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">228</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">107</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
