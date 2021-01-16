@@ -183,7 +183,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-syncIO/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-window/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-syncIO/" class="post-title-link" itemprop="url">Flink asyncIO</a>
+            <a href="/bigdata/Flink/Flink-window/" class="post-title-link" itemprop="url">Flink-window</a>
         </h2>
 
         <div class="post-meta">
@@ -237,65 +237,20 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-asyncIO"><a href="#Flink-asyncIO" class="headerlink" title="Flink-asyncIO"></a>Flink-asyncIO</h1><p> <img src="_v_images/20201207210251979_867932479.png"></p>
-<p>阿里贡献给flink的，优点就不说了嘛，官网上都有，就是写库不会阻塞性能更好</p>
-<p>然后来看一下， Flink 中异步io主要分为两种</p>
-<p>　　一种是有序Ordered</p>
-<p>　　一种是无序UNordered</p>
-<p>主要区别是往下游output的顺序（注意这里顺序不是写库的顺序既然都异步了写库的顺序自然是无法保证的），有序的会按接收的顺序继续往下游output发送，无序就是谁先处理完谁就先往下游发送</p>
-<p>两张图了解这两种模式的实现</p>
-<p> <img src="_v_images/20201207210251873_2096107056.png"></p>
-<p>有序：record数据会通过异步线程写库，Emitter是一个守护进程，会不停的拉取queue头部的数据，如果头部的数据异步写库完成，Emitter将头数据往下游发送，如果头元素还没有异步写库完成，柱塞 <img src="_v_images/20201207210251766_1309898873.png">     </p>
-<p>无序：record数据会通过异步线程写库，这里有两个queue,一开始放在uncompleteedQueue，当哪个record异步写库成功后就直接放到completedQueue中，Emitter是一个守护进程，completedQueue只要有数据，会不停的拉取queue数据往下游发送 </p>
-<p>可以看到原理还是很简单的，两句话就总结完了，就是利用queue和java的异步线程，现在来看下源码</p>
-<p>这里AsyncIO在Flink中被设计成operator中的一种，自然去OneInputStreamOperator的实现类中去找</p>
-<p>于是来看一下AsyncWaitOperator.java</p>
-<p>　　<img src="_v_images/20201207210251559_1488153726.png"></p>
-<p>看到它的open方法（open方法会在taskmanager启动job的时候全部统一调用，可以翻一下以前的文章）</p>
-<p>这里启动了一个守护线程Emitter,来看下线程具体做了什么</p>
-<p> <img src="_v_images/20201207210251351_312304785.png"></p>
-<p> 1处拉取数据，2处就是常规的将拉取到的数据往下游emit，Emitter拉取数据，这里先不讲因为分为有序的和无序的</p>
-<p> 这里已经知道了这个Emitter的作用是循环的拉取数据往下游发送</p>
-<p> 回到AsyncWaitOperator.java在它的open方法初始化了Emitter,那它是如何处理接收到的数据的呢，看它的ProcessElement（）方法</p>
-<p> <img src="_v_images/20201207210251144_1378849400.png"></p>
-<pre><code>![](_v_images/20201207210250637_60325951.png)</code></pre>
-<p> <img src="_v_images/20201207210250031_255901575.png"></p>
-<p> 其实主要就是三个个方法</p>
-<p>先是！！！将record封装成了一个包装类StreamRecordQueueEntry，主要是这个包装类的构造方法中,创建了一个CompleteableFuture(这个的complete方法其实会等到用户代码执行的时候用户自己决定什么时候完成）</p>
-<p>1处主要就是讲元素加入到了对应的queue,这里也分为两种有序和无序的</p>
-<p> <img src="_v_images/20201207210249826_218236941.png"></p>
-<p>这里也先不讲这两种模式加入数据的区别</p>
-<p>接着2处就是调用用户的代码了，来看看官网的异步io的例子</p>
-<p> <img src="_v_images/20201207210249221_1218191589.png"></p>
-<p> 给了一个Future作为参数，用户自己起了一个线程（这里思考一下就知道了为什么要新起一个异步线程去执行，因为如果不起线程的话，那processElement方法就柱塞了，无法异步了）去写库读库等，然后调用了这个参数的complete方法（也就是前面那个包装类中的CompleteableFuture）并且传入了一个结果</p>
-<p>看下complete方法源码</p>
-<p> <img src="_v_images/20201207210248614_1185315462.png"></p>
-<p> 这个resultFuture是每个record的包装类StreamRecordQueueEntry的其中一个属性是一个CompletableFuture</p>
-<p> 那现在就清楚了，用户代码在自己新起的线程中当自己的逻辑执行完以后会使这个异步线程结束，并输入一个结果</p>
-<p> 那这个干嘛用的呢</p>
-<p>最开始的图中看到有序和无序实现原理，有序用一个queue,无序用两个queue分别就对应了</p>
-<p>OrderedStreamElementQueue类中</p>
-<p> <img src="_v_images/20201207210248409_107213650.png"></p>
-<p> UnorderedStreamElementQueue类中</p>
-<p> <img src="_v_images/20201207210248304_1712699416.png"></p>
-<p>回到前面有两个地方没有细讲，一是两种模式的Emitter是如何拉取数据的，二是两种模式下数据是如何加入OrderedStreamElementQueue的</p>
-<p>有序模式：</p>
-<p>1.先来看一下有序模式的，Emitter的数据拉取，和数据的加入</p>
-<p>　　　　其tryPut（）方法</p>
-<p>　　　　  <img src="_v_images/20201207210248099_682570540.png"></p>
-<p> 　　　  <img src="_v_images/20201207210247594_534665308.png"></p>
-<p> 　　　　<em>onComplete**方法</em></p>
-<p>　　　　　　　<em><img src="_v_images/20201207210247288_2059500658.png"></em></p>
-<pre><code>   onCompleteHandler方法</code></pre>
-<p>　　　　  　<img src="_v_images/20201207210247082_286767362.png">　</p>
-<p>　　这里比较绕，先将接收的数据加入queue中，然后onComplete()中当上一个异步线程getFuture() 其实就是每个元素包装类里面的那个CompletableFuture,当他结束时（会在用户方法用户调用complete时结束）异步调用传入的对象的 accept方法，accept方法中调用了onCompleteHandler（）方法，onCompleteHandler方法中会判断queue是否为空，以及queue的头元素是否完成了用户的异步方法，当完成的时候，就会将headIsCompleted这个对象signalAll（）唤醒</p>
-<p>2.接着看有序模式Emitter的拉取数据</p>
-<pre><code>   ![](_v_images/20201207210246482_1132368562.png)</code></pre>
-<p>   这里有序方式拉取数据的逻辑很清晰，如果为空或者头元素没有完成用户的异步方法，headIsCompleted这个对象会wait住（上面可以知道，当加入元素的到queue且头元素完成异步方法的时候会signalAll（））然后将头数据返回，往下游发送</p>
-<p>这样就实现了有序发送，因为Emitter只拉取头元素且已经完成用户异步方法的头元素</p>
-<p>无序模式： </p>
-<p>　　这里和有序模式就大同小异了，只是变成了,接收数据后直接加入uncompletedQueue，当数据完成异步方法的时候就，放到completedQueue里面去并signalAll（），只要completedqueue里面有数据，Emitter就拉取往下发</p>
-<p>这样就实现了无序模式，也就是异步写入谁先处理完就直接放到完成队列里面去，然后往下发，不用管接收数据的顺序</p>
+          <h1 id="Flink-window"><a href="#Flink-window" class="headerlink" title="Flink-window"></a>Flink-window</h1><h2 id="窗口的触发"><a href="#窗口的触发" class="headerlink" title="窗口的触发"></a>窗口的触发</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line">SingleOutputStreamOperator&lt;ItemEntity&gt; streamOperator = env</span><br><span class="line">        .socketTextStream(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">9091</span>)</span><br><span class="line">        .map(<span class="keyword">new</span> MapFunction&lt;String, ItemEntity&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> ItemEntity <span class="title">map</span><span class="params">(String s)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                String[] split = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (s.isEmpty() || (split = s.split(<span class="string">&quot;,&quot;</span>)).length != <span class="number">2</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                ItemEntity itemEntity = ItemEntity.builder().timestamp(split[<span class="number">0</span>])</span><br><span class="line">                        .eventId(split[<span class="number">1</span>])</span><br><span class="line">                        .build();</span><br><span class="line">                <span class="keyword">return</span> itemEntity;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;)</span><br><span class="line">        .filter(Objects::nonNull)</span><br><span class="line">        .assignTimestampsAndWatermarks(<span class="keyword">new</span> AscendingTimestampExtractor&lt;ItemEntity&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">extractAscendingTimestamp</span><span class="params">(ItemEntity itemEntity)</span> </span>&#123;</span><br><span class="line">                <span class="keyword">long</span> timestamp = itemEntity.getTimestamp();</span><br><span class="line">                <span class="keyword">return</span> timestamp;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">streamOperator</span><br><span class="line">        .keyBy(<span class="keyword">new</span> KeySelector&lt;ItemEntity, String&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> String <span class="title">getKey</span><span class="params">(ItemEntity itemEntity)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                String eventId = itemEntity.getEventId();</span><br><span class="line">                <span class="keyword">return</span> eventId;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;)</span><br><span class="line">        .window(TumblingEventTimeWindows.of(Time.seconds(<span class="number">5</span>)))</span><br><span class="line">        .process(</span><br><span class="line">                <span class="keyword">new</span> ProcessWindowFunction&lt;ItemEntity, Tuple2&lt;String, String&gt;, String, TimeWindow&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(String s, Context context,</span></span></span><br><span class="line"><span class="function"><span class="params">                            Iterable&lt;ItemEntity&gt; iterable,</span></span></span><br><span class="line"><span class="function"><span class="params">                            Collector&lt;Tuple2&lt;String, String&gt;&gt; collector)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                        <span class="keyword">for</span> (ItemEntity itemEntity : iterable) &#123;</span><br><span class="line">                            <span class="keyword">long</span> timestamp = itemEntity.getTimestamp();</span><br><span class="line">                            Date date = <span class="keyword">new</span> Date(timestamp);</span><br><span class="line">                            SimpleDateFormat simpleDateFormat = <span class="keyword">new</span> SimpleDateFormat(</span><br><span class="line">                                    <span class="string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);</span><br><span class="line">                            collector.collect(Tuple2.of(itemEntity.getEventId(),</span><br><span class="line">                                    timestamp + <span class="string">&quot;-&gt;&quot;</span> + simpleDateFormat.format(date)));</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;)</span><br><span class="line">        .print();</span><br><span class="line">env.execute(<span class="string">&quot;test-window&quot;</span>);</span><br></pre></td></tr></table></figure>
+<p>5秒的窗口</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">2020-04-01 00:01:00,1</span><br><span class="line">2020-04-01 00:01:00,1</span><br><span class="line">2020-04-01 00:01:06,1 # 触发计算</span><br><span class="line">(1,1585670460000-&gt;2020-04-01 00:01:00)</span><br><span class="line">(1,1585670460000-&gt;2020-04-01 00:01:00)</span><br><span class="line">2020-04-01 00:01:00,1 # 窗口已经关闭，旧数据</span><br><span class="line"><span class="meta">#</span><span class="bash"> WARN  org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor [] - Timestamp monotony violated: 1585670460000 &lt; 1585670466000</span></span><br><span class="line">2020-04-01 00:01:06,1</span><br><span class="line">2020-04-01 00:01:07,1</span><br><span class="line">2020-04-01 00:01:11,1 # 触发计算</span><br><span class="line">(1,1585670466000-&gt;2020-04-01 00:01:06)</span><br><span class="line">(1,1585670466000-&gt;2020-04-01 00:01:06)</span><br><span class="line">(1,1585670467000-&gt;2020-04-01 00:01:07)</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="window的抽象概念"><a href="#window的抽象概念" class="headerlink" title="window的抽象概念"></a>window的抽象概念</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">Keyed Windows</span><br><span class="line"></span><br><span class="line">stream</span><br><span class="line">       .keyBy(...)               &lt;-  keyed versus non-keyed windows</span><br><span class="line">       .window(...)              &lt;-  required: &quot;assigner&quot;</span><br><span class="line">      [.trigger(...)]            &lt;-  optional: &quot;trigger&quot; (else default trigger)</span><br><span class="line">      [.evictor(...)]            &lt;-  optional: &quot;evictor&quot; (else no evictor)</span><br><span class="line">      [.allowedLateness(...)]    &lt;-  optional: &quot;lateness&quot; (else zero)</span><br><span class="line">      [.sideOutputLateData(...)] &lt;-  optional: &quot;output tag&quot; (else no side output for late data)</span><br><span class="line">       .reduce&#x2F;aggregate&#x2F;fold&#x2F;apply()      &lt;-  required: &quot;function&quot;</span><br><span class="line">      [.getSideOutput(...)]      &lt;-  optional: &quot;output tag&quot;</span><br><span class="line">Non-Keyed Windows</span><br><span class="line"></span><br><span class="line">stream</span><br><span class="line">       .windowAll(...)           &lt;-  required: &quot;assigner&quot;</span><br><span class="line">      [.trigger(...)]            &lt;-  optional: &quot;trigger&quot; (else default trigger)</span><br><span class="line">      [.evictor(...)]            &lt;-  optional: &quot;evictor&quot; (else no evictor)</span><br><span class="line">      [.allowedLateness(...)]    &lt;-  optional: &quot;lateness&quot; (else zero)</span><br><span class="line">      [.sideOutputLateData(...)] &lt;-  optional: &quot;output tag&quot; (else no side output for late data)</span><br><span class="line">       .reduce&#x2F;aggregate&#x2F;fold&#x2F;apply()      &lt;-  required: &quot;function&quot;</span><br><span class="line">      [.getSideOutput(...)]      &lt;-  optional: &quot;output tag&quot;</span><br></pre></td></tr></table></figure>
+<h3 id="window-assigner"><a href="#window-assigner" class="headerlink" title="window assigner"></a>window assigner</h3><h3 id="window-trigger"><a href="#window-trigger" class="headerlink" title="window trigger"></a>window trigger</h3><h3 id="window-evictor"><a href="#window-evictor" class="headerlink" title="window evictor"></a>window evictor</h3><h2 id="windowOperator工作流程"><a href="#windowOperator工作流程" class="headerlink" title="windowOperator工作流程"></a>windowOperator工作流程</h2><p><img src="_v_images/20201206173044901_44534749.png"></p>
+<h3 id="window-state"><a href="#window-state" class="headerlink" title="window state"></a>window state</h3><p><img src="_v_images/20201206173354630_1171217287.png"></p>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2016/05/25/flink-internals-window-mechanism/">flink原理与实现: window机制</a></li>
+<li><a target="_blank" rel="noopener" href="https://xie.infoq.cn/article/0d5038bc42862b3db79c571bd">flink窗口应用与实现</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/a1240466196/article/details/108334436">Flink原理: 窗口原理详解</a></li>
+</ol>
 
       
     </div>

@@ -871,6 +871,164 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/01.MySQL/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/01.MySQL/" class="post-title-link" itemprop="url">MacOS中MySQL密码丢失处理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:56:46" itemprop="dateModified" datetime="2021-01-16T14:56:46+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="01-MySQL"><a href="#01-MySQL" class="headerlink" title="01.MySQL"></a>01.MySQL</h1><h2 id="修改root密码-不成功"><a href="#修改root密码-不成功" class="headerlink" title="修改root密码 不成功"></a>修改root密码 不成功</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Open &amp; Edit /etc/my.cnf or /etc/mysql/my.cnf, depending on your distro.</span><br><span class="line">Add skip-grant-tables under [mysqld]</span><br><span class="line">Restart Mysql</span><br><span class="line">You should be able to login to mysql now using the below command mysql -u root -p</span><br><span class="line">Run mysql&gt; flush privileges;</span><br><span class="line">Set new password by ALTER USER &#x27;root&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;NewPassword&#x27;;</span><br><span class="line">Go back to /etc/my.cnf and remove/comment skip-grant-tables</span><br><span class="line">Restart Mysql</span><br><span class="line">Now you will be able to login with the new password mysql -u root -p</span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> drop user root@localhost;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> flush privileges;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> create user root@localhost identified by <span class="string">&#x27;abc.123&#x27;</span>;</span></span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">grant all privileges on *.* to root@localhost;</span><br><span class="line"></span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
+<h2 id="mac-brew重装-不成功"><a href="#mac-brew重装-不成功" class="headerlink" title="mac brew重装 不成功"></a>mac brew重装 不成功</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">brew uninstall mysql --ignore-dependencies</span><br><span class="line">sudo rm -rf /usr/local/Cellar/mysql</span><br><span class="line">brew cleanup</span><br><span class="line">sudo rm -rf /usr/local/var/mysql</span><br><span class="line">brew install mysql</span><br></pre></td></tr></table></figure>
+<h2 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h2><h3 id="创建索引"><a href="#创建索引" class="headerlink" title="创建索引"></a>创建索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t_zxg_hot_news_result <span class="keyword">add</span> index</span><br><span class="line"> idx_hot_news_cnt (ftype,fcnt,ftime,fnews_id,fmsg_type);</span><br></pre></td></tr></table></figure>
+<h3 id="删除索引"><a href="#删除索引" class="headerlink" title="删除索引"></a>删除索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t_zxg_hot_news_result <span class="keyword">drop</span> index idx_hot_news_cnt ;</span><br></pre></td></tr></table></figure>
+<h3 id="查询索引"><a href="#查询索引" class="headerlink" title="查询索引"></a>查询索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> t_zxg_hot_news_result;</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+------------+------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">Table</span>                 <span class="operator">|</span> Non_unique <span class="operator">|</span> Key_name         <span class="operator">|</span> Seq_in_index <span class="operator">|</span> Column_name <span class="operator">|</span> <span class="keyword">Collation</span> <span class="operator">|</span> <span class="keyword">Cardinality</span> <span class="operator">|</span> Sub_part <span class="operator">|</span> Packed <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Index_type <span class="operator">|</span> Comment <span class="operator">|</span> Index_comment <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+------------+------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">0</span>          <span class="operator">|</span> <span class="keyword">PRIMARY</span>          <span class="operator">|</span> <span class="number">1</span>            <span class="operator">|</span> fid         <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">765715</span>      <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">1</span>            <span class="operator">|</span> ftype       <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">5</span>           <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">2</span>            <span class="operator">|</span> fcnt        <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">4072</span>        <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">3</span>            <span class="operator">|</span> ftime       <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">49236</span>       <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">4</span>            <span class="operator">|</span> fnews_id    <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">800020</span>      <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">5</span>            <span class="operator">|</span> fmsg_type   <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">792176</span>      <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+------------+------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/02.InnoDBLocks/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/02.InnoDBLocks/" class="post-title-link" itemprop="url">InnoDB中的锁机制</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:56:46" itemprop="dateModified" datetime="2021-01-16T14:56:46+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="InnoDB中的锁机制"><a href="#InnoDB中的锁机制" class="headerlink" title="InnoDB中的锁机制"></a>InnoDB中的锁机制</h1><p>获取锁争用情况</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">mysql root<span class="variable">@localhost</span>:dlock<span class="operator">&gt;</span> <span class="keyword">show</span> status <span class="keyword">like</span> <span class="string">&#x27;innodb_row_lock%&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="operator">+</span><span class="comment">-------------------------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Variable_name                 <span class="operator">|</span> <span class="keyword">Value</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------------------------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_current_waits <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_time          <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_time_avg      <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_time_max      <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_waits         <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------------------------------+-------+</span></span><br><span class="line"><span class="number">5</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"><span class="type">Time</span>: <span class="number">0.012</span>s</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/00_docker%E6%9E%84%E5%BB%BAJava%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1295,445 +1453,6 @@
 </ol>
 <p>3. Connection time  建立连接时间 （2.13新增参数）</p>
 <pre><code>   不常用，请求连接建立的时间，这个时间 &lt; Latency time &lt; Elapsed time</code></pre>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/02.RAID/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/tool/02.RAID/" class="post-title-link" itemprop="url">磁盘Raid机制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:46" itemprop="dateModified" datetime="2021-01-16T14:56:46+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Raid"><a href="#Raid" class="headerlink" title="Raid"></a>Raid</h1>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/01.%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/tool/01.%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/" class="post-title-link" itemprop="url">正则表达式</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:46" itemprop="dateModified" datetime="2021-01-16T14:56:46+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="01-正则表达式"><a href="#01-正则表达式" class="headerlink" title="01.正则表达式"></a>01.正则表达式</h1><p>To use regular expressions effectively in Java, you need to know the syntax. The syntax is extensive, enabling you to write very advanced regular expressions. It may take a lot of exercise to fully master the syntax.</p>
-<p>In this text I will go through the basics of the syntax with examples. I will not cover every little detail of the syntax, but focus on the main concepts you need to understand, in order to work with regular expressions. For a full explanation, see the <a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html"><code>Pattern</code> class JavaDoc page</a>.</p>
-<p>Before showing all the advanced options you can use in Java regular expressions, I will give you a quick run-down of the Java regular expression syntax basics.</p>
-<p>The most basic form of regular expressions is an expression that simply matches certain characters. Here is an example:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>This simple regular expression will match occurences of the text “John” in a given input text.</p>
-<p>You can use any characters in the alphabet in a regular expression.</p>
-<p>You can also refer to characters via their octal, hexadecimal or unicode codes. Here are two examples:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>These three expressions all refer to the uppercase <code>A</code> character. The first uses the octal code (<code>101</code>) for <code>A</code>, the second uses the hexadecimal code (<code>41</code>) and the third uses the unicode code (<code>0041</code>).</p>
-<p>Character classes are constructst that enable you to specify a match against multiple characters instead of just one. In other words, a character class matches a single character in the input text against multiple allowed characters in the character class. For instance, you can match either of the characters <code>a</code>, <code>b</code> or <code>c</code> like this:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>Character classes are nested inside a pair of square brackets <code>[]</code>. The brackets themselves are not part of what is being matched.</p>
-<p>You can use character classes for many things. For instance, this example finds all occurrences of the word <code>John</code>, with either a lowercase or uppercase <code>J</code>:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>The character class <code>[Jj]</code> will match either a <code>J</code> or a <code>j</code>, and the rest of the expression will match the characters <code>ohn</code> in that exact sequence.</p>
-<p>There are several other character classes you can use. See the character class table later in this text.</p>
-<p>The Java regular expression syntax has a few predefined character classes you can use. For instance, the <code>\d</code> character class matches any digit, the <code>\s</code> character class matches any white space character, and the <code>\w</code> character matches any word character.</p>
-<p>The predefined character classes do not have to be enclosed in square brackets, but you can if you want to combine them. Here are a few examples:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>The first example matches any digit character. The second example matches any digit or any white space character.</p>
-<p>The predefined character classes are listed in a table later in this text.</p>
-<p>The syntax also include matchers for matching boundaries, like boundaries between words, the beginning and end of the input text etc. For instance, the <code>\w</code> matches boundaries between words, the <code>^</code> matches the beginning of a line, and the <code>$</code> matches the end of a line.</p>
-<p>Here is a boundary matcher example:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>This expression matches a line of text with only the text <code>This is a single line</code>. Notice the start-of-line and end-of-line matchers in the expression. These state that there can be nothing before or after the text, except the beginning and end of a line.</p>
-<p>There is a full list of boundary matchers later in this text.</p>
-<p>Quantifiers enables you to match a given expression or subexpression multiple times. For instance, the following expression matches the letter <code>A</code> zero or more times:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>The <code>*</code> character is a quantifier that means “zero or more times”. There is also a <code>+</code> quantifier meaning “one or more times”, a <code>?</code> quantifier meaning “zero or one time”, and a few others which you can see in the quantifier table later in this text.</p>
-<p>Quantifiers can be either “reluctant”, “greedy” or “possesive”. A reluctant quantifier will match as little as possible of the input text. A greedy quantifier will match as much as possible of the input text. A possesive quantifier will match as much as possible, even if it makes the rest of the expression not match anything, and the expression to fail finding a match.</p>
-<p>I will illustrate the difference between reluctant, greedy and possesive quantifiers with an example. Here is an input text:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>Then look at the following expression with a reluctant quantifier:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>This expression will match the word <code>John</code> followed by zero or more characters The <code>.</code> means “any character”, and the <code>*</code> means “zero or more times”. The <code>?</code> after the <code>*</code> makes the <code>*</code> a reluctant quantifier.</p>
-<p>Being a reluctant quantifier, the quantifier will match as little as possible, meaning zero characters. The expression will thus find the word <code>John</code> with zero characters after, 3 times in the above input text.</p>
-<p>If we change the quantifier to a greedy quantifier, the expression will look like this:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>The greedy quantifier will match as many characters as possible. Now the expression will only match the first occurrence of <code>John</code>, and the greedy quantifier will match the rest of the characters in the input text. Thus, only a single match is found.</p>
-<p>Finally, lets us change the expression a bit to contain a possesive quantifier:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>The <code>+</code> after the <code>*</code> makes it a possesive quantifier.</p>
-<p>This expression will not match the input text given above, even if both the words <code>John</code> and <code>hurt</code> are found in the input text. Why is that? Because the <code>.*+</code> is possesive. Instead of matching as much as possible to make the expression match, as a greedy quantifier would have done, the possesive quantifier matches as much as possible, regardless of whether the expression will match or not.</p>
-<p>The <code>.*+</code> will match all characters after the first occurrence of <code>John</code> in the input text, including the word <code>hurt</code>. Thus, there is no <code>hurt</code> word left to match, when the possesive quantifier has claimed its match.</p>
-<p>If you change the quantifier to a greedy quantifier, the expression will match the input text one time. Here is how the expression looks with a greedy quantifier:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-<p>You will have to play around with the different quantifiers and types to understand how they work. See the table later in this text for a full list of quantifiers.</p>
-<p>The Java regular expression syntax also has support for a few logical operators (and, or, not).</p>
-<p>The <code>and</code> operator is implicit. When you write the expression <code>John</code>, then it means “<code>J</code> and <code>o</code> and <code>h</code> and <code>n</code>“.</p>
-<p>The <code>or</code> operator is explicit, and is written with a <code>|</code>. For instance, the expression <code>John|hurt</code> will match either the word <code>John</code>, or the word <code>hurt</code>.</p>
-<table>
-<thead>
-<tr>
-<th>Construct</th>
-<th>Matches</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>x</code></td>
-<td>The character x. Any character in the alphabet can be used in place of x.</td>
-</tr>
-<tr>
-<td><code>\\</code></td>
-<td>The backslash character. A single backslash is used as escape character in conjunction with other characters to signal special matching, so to match just the backslash character itself, you need to escape with a backslash character. Hence the double backslash to match a single backslash character.</td>
-</tr>
-<tr>
-<td><code>\0n</code></td>
-<td>The character with octal value <code>0n</code>. n has to be between 0 and 7.</td>
-</tr>
-<tr>
-<td><code>\0nn</code></td>
-<td>The character with octal value <code>0nn</code>. n has to be between 0 and 7.</td>
-</tr>
-<tr>
-<td><code>\0mnn</code></td>
-<td>The character with octal value <code>0mnn</code>. m has to be between 0 and 3, n has to be between 0 and 7.</td>
-</tr>
-<tr>
-<td><code>\xhh</code></td>
-<td>The character with the hexadecimal value <code>0xhh</code>.</td>
-</tr>
-<tr>
-<td><code>\uhhhh</code></td>
-<td>The character with the hexadecimal value <code>0xhhhh</code>. This construct is used to match unicode characters.</td>
-</tr>
-<tr>
-<td><code>\t</code></td>
-<td>The tab character.</td>
-</tr>
-<tr>
-<td><code>\n</code></td>
-<td>The newline (line feed) character (unicode: <code>&#39;\u000A&#39;</code>).</td>
-</tr>
-<tr>
-<td><code>\r</code></td>
-<td>The carriage-return character (unicode: <code>&#39;\u000D&#39;</code>).</td>
-</tr>
-<tr>
-<td><code>\f</code></td>
-<td>The form-feed character (unicode: <code>&#39;\u000C&#39;</code>).</td>
-</tr>
-<tr>
-<td><code>\a</code></td>
-<td>The alert (bell) character (unicode: <code>&#39;\u0007&#39;</code>).</td>
-</tr>
-<tr>
-<td><code>\e</code></td>
-<td>The escape character (unicode: <code>&#39;\u001B&#39;</code>).</td>
-</tr>
-<tr>
-<td><code>\cx</code></td>
-<td>The control character corresponding to <code>x</code></td>
-</tr>
-<tr>
-<td>``</td>
-<td></td>
-</tr>
-</tbody></table>
-<table>
-<thead>
-<tr>
-<th>Construct</th>
-<th>Matches</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>[abc]</code></td>
-<td>Matches <code>a</code>, or <code>b</code> or <code>c</code>. This is called a simple class, and it matches any of the characters in the class.</td>
-</tr>
-<tr>
-<td><code>[^abc]</code></td>
-<td>Matches any character except <code>a</code>, <code>b</code>, and <code>c</code>. This is a negation.</td>
-</tr>
-<tr>
-<td><code>[a-zA-Z]</code></td>
-<td>Matches any character from <code>a</code> to <code>z</code>, or <code>A</code> to <code>Z</code>, including <code>a</code>, <code>A</code>, <code>z</code> and <code>Z</code>. This called a range.</td>
-</tr>
-<tr>
-<td><code>[a-d[m-p]]</code></td>
-<td>Matches any character from <code>a</code> to <code>d</code>, or from <code>m</code> to <code>p</code>. This is called a union.</td>
-</tr>
-<tr>
-<td><code>[a-z&amp;&amp;[def]]</code></td>
-<td>Matches <code>d</code>, <code>e</code>, or <code>f</code>. This is called an intersection (here between the range <code>a-z</code> and the characters <code>def</code>).</td>
-</tr>
-<tr>
-<td><code>[a-z&amp;&amp;[^bc]]</code></td>
-<td>Matches all characters from <code>a</code> to <code>z</code> except <code>b</code> and <code>c</code>. This is called a subtraction.</td>
-</tr>
-<tr>
-<td><code>[a-z&amp;&amp;[^m-p]]</code></td>
-<td>Matches all characters from <code>a</code> to <code>z</code> except the characters from <code>m</code> to <code>p</code>. This is also called a subtraction.</td>
-</tr>
-</tbody></table>
-<table>
-<thead>
-<tr>
-<th>Construct</th>
-<th>Matches</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>.</code></td>
-<td>Matches any single character. May or may not match line terminators, depending on what flags were used to compile the <code>Pattern</code>.</td>
-</tr>
-<tr>
-<td><code>\d</code></td>
-<td>Matches any digit [0-9]</td>
-</tr>
-<tr>
-<td><code>\D</code></td>
-<td>Matches any non-digit character [^0-9]</td>
-</tr>
-<tr>
-<td><code>\s</code></td>
-<td>Matches any white space character (space, tab, line break, carriage return)</td>
-</tr>
-<tr>
-<td><code>\S</code></td>
-<td>Matches any non-white space character.</td>
-</tr>
-<tr>
-<td><code>\w</code></td>
-<td>Matches any word character.</td>
-</tr>
-<tr>
-<td><code>\W</code></td>
-<td>Matches any non-word character.</td>
-</tr>
-</tbody></table>
-<table>
-<thead>
-<tr>
-<th>Construct</th>
-<th>Matches</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>^</code></td>
-<td>Matches the beginning of a line.</td>
-</tr>
-<tr>
-<td><code>$</code></td>
-<td>Matches then end of a line.</td>
-</tr>
-<tr>
-<td><code>\b</code></td>
-<td>Matches a word boundary.</td>
-</tr>
-<tr>
-<td><code>\B</code></td>
-<td>Matches a non-word boundary.</td>
-</tr>
-<tr>
-<td><code>\A</code></td>
-<td>Matches the beginning of the input text.</td>
-</tr>
-<tr>
-<td><code>\G</code></td>
-<td>Matches the end of the previous match</td>
-</tr>
-<tr>
-<td><code>\Z</code></td>
-<td>Matches the end of the input text except the final terminator if any.</td>
-</tr>
-<tr>
-<td><code>\z</code></td>
-<td>Matches the end of the input text.</td>
-</tr>
-</tbody></table>
-<table>
-<thead>
-<tr>
-<th>Greedy</th>
-<th>Reluctant</th>
-<th>Possessive</th>
-<th>Matches</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>X?</code></td>
-<td><code>X??</code></td>
-<td><code>X?+</code></td>
-<td>Matches X once, or not at all (0 or 1 time).</td>
-</tr>
-<tr>
-<td><code>X*</code></td>
-<td><code>X*?</code></td>
-<td><code>X*+</code></td>
-<td>Matches X zero or more times.</td>
-</tr>
-<tr>
-<td><code>X+</code></td>
-<td><code>X+?</code></td>
-<td><code>X++</code></td>
-<td>Matches X one or more times.</td>
-</tr>
-<tr>
-<td><code>X&#123;n&#125;</code></td>
-<td><code>X&#123;n&#125;?</code></td>
-<td><code>X&#123;n&#125;+</code></td>
-<td>Matches X exactly n times.</td>
-</tr>
-<tr>
-<td><code>X&#123;n,&#125;</code></td>
-<td><code>X&#123;n,&#125;?</code></td>
-<td><code>X&#123;n,&#125;+</code></td>
-<td>Matches X at least n times.</td>
-</tr>
-<tr>
-<td><code>X&#123;n, m)</code></td>
-<td><code>X&#123;n, m)?</code></td>
-<td><code>X&#123;n, m)+</code></td>
-<td>Matches X at least n time, but at most m times.</td>
-</tr>
-</tbody></table>
-<table>
-<thead>
-<tr>
-<th>Construct</th>
-<th>Matches</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>XY</code></td>
-<td>Matches X and Y (X followed by Y).</td>
-</tr>
-<tr>
-<td>`X</td>
-<td>Y`</td>
-</tr>
-</tbody></table>
 
       
     </div>
