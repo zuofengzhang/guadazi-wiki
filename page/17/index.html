@@ -183,6 +183,113 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_3_multitable_join/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/syntax_3_multitable_join/" class="post-title-link" itemprop="url">MySQL多表关联与笛卡尔积</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-10-13 00:00:00" itemprop="dateCreated datePublished" datetime="2016-10-13T00:00:00+08:00">2016-10-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 23:01:39" itemprop="dateModified" datetime="2021-01-16T23:01:39+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="多表关联"><a href="#多表关联" class="headerlink" title="多表关联"></a>多表关联</h1><p>内联接 外联接 左外联接 右外连接 全外连接 自然联接</p>
+<h1 id="笛卡尔"><a href="#笛卡尔" class="headerlink" title="笛卡尔"></a>笛卡尔</h1><p>笛卡尔（Descartes）乘积又叫直积。假设集合A={a,b}，集合B={0,1,2}，则两个集合的笛卡尔积为</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">(a,0),</span><br><span class="line">(a,1),</span><br><span class="line">(a,2),</span><br><span class="line">(b,0),</span><br><span class="line">(b,1),</span><br><span class="line">(b,2)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以扩展到多个集合的情况。</p>
+<h2 id="内连接"><a href="#内连接" class="headerlink" title="内连接"></a>内连接</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a,b <span class="keyword">where</span> a.x <span class="operator">=</span> b.x; <span class="operator">/</span><span class="operator">/</span>内连接</span><br></pre></td></tr></table></figure>
+<p>与</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">inner</span> <span class="keyword">join</span> b <span class="keyword">on</span> a.x<span class="operator">=</span>b.x; <span class="operator">/</span><span class="operator">/</span>内连接</span><br></pre></td></tr></table></figure>
+<p>效果是一样的，都是计算笛卡尔积，对上面笛卡尔积的每一条记录看它是否满足限制条件，如果满足，则它在结果集中。</p>
+<h2 id="外连接"><a href="#外连接" class="headerlink" title="外连接"></a>外连接</h2><p>当外连接，不加任何条件时，也会计算笛卡尔积。如：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">left</span> <span class="keyword">join</span> b <span class="keyword">on</span> <span class="number">1</span><span class="operator">=</span><span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<h2 id="交叉连接-CROSS-JOIN"><a href="#交叉连接-CROSS-JOIN" class="headerlink" title="交叉连接(CROSS JOIN)"></a>交叉连接(CROSS JOIN)</h2><p>没有WHERE 子句，它返回<code>连接表</code>中所有数据行的笛卡尔积<br>先返回 左表所有行，左表行在与右表行一一组合，等于两个表相乘.</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">cross</span> <span class="keyword">join</span> b <span class="keyword">where</span> a.x<span class="operator">=</span>b.x;</span><br></pre></td></tr></table></figure>
+<p>等同于</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">inner</span> <span class="keyword">join</span> b <span class="keyword">on</span> a.x<span class="operator">=</span>b.x;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>MySQL中不存在交叉连接</p>
+</blockquote>
+<h2 id="避免笛卡尔积的方法"><a href="#避免笛卡尔积的方法" class="headerlink" title="避免笛卡尔积的方法"></a>避免笛卡尔积的方法</h2><p>由于笛卡尔积的结果集是各个查询表规模之积，往往是数量级的差别。</p>
+<h3 id="转换为子查询"><a href="#转换为子查询" class="headerlink" title="转换为子查询"></a>转换为子查询</h3><p>假设存在如下三个表:</p>
+<p>查询方式一:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">DISTINCT</span></span><br><span class="line">	u.user_id <span class="keyword">AS</span> recommendUserId</span><br><span class="line"><span class="keyword">FROM</span></span><br><span class="line">	user_info u</span><br><span class="line"><span class="keyword">WHERE</span></span><br><span class="line">	<span class="number">1</span> <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"><span class="keyword">AND</span> u.user_id <span class="keyword">IN</span> (</span><br><span class="line">	<span class="keyword">SELECT</span></span><br><span class="line">		a.entity_id</span><br><span class="line">	<span class="keyword">FROM</span></span><br><span class="line">		address_info a</span><br><span class="line">	<span class="keyword">WHERE</span></span><br><span class="line">		a.city_code <span class="operator">=</span> <span class="number">10010</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>查询方式二：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">DISTINCT</span></span><br><span class="line">	u.user_id <span class="keyword">AS</span> recommendUserId</span><br><span class="line"><span class="keyword">FROM</span></span><br><span class="line">	user_info u,</span><br><span class="line">	address_info a</span><br><span class="line"><span class="keyword">WHERE</span></span><br><span class="line">	<span class="number">1</span> <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"><span class="keyword">AND</span> a.city_code <span class="operator">=</span> <span class="string">&#x27;10010&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>对比发现： ‘查询方式一’使用了子查询，查询是分两步进行的，第一步先从<code>address_info</code>选出一个结果，然后在<code>user_info</code>中查询，规模为<code>user_info</code>的大小。<br>而<code>查询方式二</code>查询规模是笛卡尔积，即<code>user_info</code>与<code>address_info</code>规模之积。</p>
+<h1 id="内连接-1"><a href="#内连接-1" class="headerlink" title="内连接"></a>内连接</h1><p>内连 接只保留交叉积中满足连接条件的那些行。如果某行在一个表中存在，但在另一个表中不存在，则结果表中不包括该信息。</p>
+<h1 id="外连接-1"><a href="#外连接-1" class="headerlink" title="外连接"></a>外连接</h1><p>左外连 接包括内连 接和左表中未包括在内连 接中的那些行。</p>
+<p>右外连 接包括内连 接和右表中未包括在内连 接中的那些行。</p>
+<p>全外连 接包括内连 接以及左表和右表中未包括在内连 接中的行。<br>内连 接一般是检索两个表里连接字段都存在的数据。<br>左连接的意思是，查询左（语句前面）表里的所有内容，无论右边表里有没有。右边表里没有的内容用NULL代替。<br>右连接和左连接相反。</p>
+<h2 id="左外连接"><a href="#左外连接" class="headerlink" title="左外连接"></a>左外连接</h2><h2 id="右外连接"><a href="#右外连接" class="headerlink" title="右外连接"></a>右外连接</h2><h2 id="全外连接"><a href="#全外连接" class="headerlink" title="全外连接"></a>全外连接</h2><h1 id="交叉连接"><a href="#交叉连接" class="headerlink" title="交叉连接"></a>交叉连接</h1><hr>
+<p>[参考文献]：</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_8250c39a0101k74c.html">SQL中—-SELECT语句中内连接,左连接,右连接,自连接和全连接 </a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/Quartz/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +321,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:54:36" itemprop="dateModified" datetime="2021-01-16T15:54:36+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 23:01:39" itemprop="dateModified" datetime="2021-01-16T23:01:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -329,7 +436,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:54:36" itemprop="dateModified" datetime="2021-01-16T15:54:36+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 23:01:39" itemprop="dateModified" datetime="2021-01-16T23:01:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -491,7 +598,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:54:36" itemprop="dateModified" datetime="2021-01-16T15:54:36+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 23:01:39" itemprop="dateModified" datetime="2021-01-16T23:01:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -568,7 +675,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:54:36" itemprop="dateModified" datetime="2021-01-16T15:54:36+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 23:01:39" itemprop="dateModified" datetime="2021-01-16T23:01:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -664,7 +771,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:54:38" itemprop="dateModified" datetime="2021-01-16T15:54:38+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 23:01:41" itemprop="dateModified" datetime="2021-01-16T23:01:41+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -751,7 +858,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:54:36" itemprop="dateModified" datetime="2021-01-16T15:54:36+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 23:01:39" itemprop="dateModified" datetime="2021-01-16T23:01:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -862,7 +969,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:54:38" itemprop="dateModified" datetime="2021-01-16T15:54:38+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 23:01:41" itemprop="dateModified" datetime="2021-01-16T23:01:41+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -938,7 +1045,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:54:38" itemprop="dateModified" datetime="2021-01-16T15:54:38+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 23:01:41" itemprop="dateModified" datetime="2021-01-16T23:01:41+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1034,7 +1141,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Impala/Impala-why-faster-than-hive/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/HDFS/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1048,7 +1155,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Impala/Impala-why-faster-than-hive/" class="post-title-link" itemprop="url">Impala: why faster than hive</a>
+            <a href="/bigdata/Hadoop/HDFS/" class="post-title-link" itemprop="url">HDFS基础</a>
         </h2>
 
         <div class="post-meta">
@@ -1065,7 +1172,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:54:38" itemprop="dateModified" datetime="2021-01-16T15:54:38+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 23:01:41" itemprop="dateModified" datetime="2021-01-16T23:01:41+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1088,147 +1195,16 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>[TOC]</p>
-<h1 id="Impala"><a href="#Impala" class="headerlink" title="Impala"></a>Impala</h1><blockquote>
-<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/16755599/how-does-impala-provide-faster-query-response-compared-to-hive">How does impala provide faster query response compared to hive</a></p>
-</blockquote>
-<p>Impala = SQL on HDFS<br>Hive = SQL on Hadoop</p>
-<p>impala darmon running on datanode<br>cache some of the data that is in HDFS</p>
-<h2 id="why-fast"><a href="#why-fast" class="headerlink" title="why fast"></a>why fast</h2><blockquote>
-<p>why Impala is faster than Hive in Query processing? Below are the some key points.</p>
-</blockquote>
-<ul>
-<li>While processing SQL-like queries, Impala does not write intermediate results on disk(like in Hive MapReduce); instead full SQL processing is done in memory, which makes it faster.</li>
-<li>With Impala, the query starts its execution instantly compared to MapReduce, which may take significant time to start processing larger SQL queries and this adds more time in processing.</li>
-<li>Impala Query Planner uses smart algorithms to execute queries in multiple stages in parallel nodes to provide results faster, avoiding sorting and shuffle steps, which may be unnecessary in most of the cases.</li>
-<li>Impala has information about each data block in HDFS, so when processing the query, it takes advantage of this knowledge to distribute queries more evenly in all DataNodes.</li>
-<li>There exists Impala daemon, which runs on each DataNode. These are responsible for processing queries.When query submitted, impalad(Impala daemon) reads and writes to data file and parallelizes the query by distributing the work to all other Impala nodes in the Impala cluster.</li>
-<li>Another key reason for fast performance is that Impala first generates assembly-level code for each query. The assembly code executes faster than any other code framework because while Impala queries are running natively in memory, having a framework will add additional delay in the execution due to the framework overhead.</li>
+          <ul>
+<li>NameNode 保存这个文件的数据块信息</li>
+<li>DataNode 存储实际的文件</li>
+<li>当MR启动的时候，首先获取所要处理的文件的块信息和节点信息，然后在这些节点上同时启动任务，在数据所在节点上同时处理</li>
 </ul>
-<ol>
-<li>在处理类似sql的查询时，Impala不会在磁盘上写入中间结果(如Hive MapReduce);相反，SQL处理完全是在内存中完成的，这使它更快。</li>
-<li>不使用map/reduce, 将数据fork到jvm和流量穿透是非常昂贵的。Impala将查询任务分割成子任务，在数据所在的节点上，各个节点独立并行运行，最后再单个节点上汇总结果。</li>
-<li>与MapReduce相比，Impala查询立即开始执行，MapReduce可能会花费大量时间来开始处理较大的SQL查询，这会增加处理时间。</li>
-<li>Impala Query Planner使用智能算法在并行节点中的多个stage执行查询，以更快地提供结果，避免sortinh和shuffle步骤，这在大多数情况下可能是不必要的。</li>
-<li>Impala拥有关于HDFS每个数据块的信息，因此在处理查询时，它利用这些知识在所有数据节点中更均匀地分布查询。</li>
-<li>存在在每个DataNode上运行的Impala守护进程。它们负责处理查询。当提交查询时，impalad(Impala守护进程)对数据文件进行读写操作，并通过将工作分配给Impala集群中的所有其他Impala节点来并行化查询。</li>
-<li>快速性能的另一个关键原因是Impala首先为每个查询生成汇编级别的代码。汇编代码的执行速度比任何其他代码框架都快，因为Impala查询在本机的内存中运行时，拥有一个框架会由于框架开销而增加额外的执行延迟。</li>
-<li>它使用hdfs存储，对于大文件来说速度很快。它尽可能多地缓存查询、结果和数据。</li>
-<li>它支持新的文件格式，如parquet，即列式存储格式。使用这种格式，数据扫描量更少</li>
-</ol>
-<p>Impala在内存中的处理所有查询，因此节点上的内存限制肯定是一个因素。必须有足够的内存来支持生成的数据集，在复杂的连接操作期间，数据集可能会成倍增长。如果查询开始处理数据，结果数据集无法装入可用内存，则查询将失败。</p>
-<h3 id="disadvantage"><a href="#disadvantage" class="headerlink" title="disadvantage"></a>disadvantage</h3><ol>
-<li>不支持UDF和自定义序列化</li>
-<li>impala查询是HiveSQL的子集</li>
-<li>hive支持存储和查询，而impala只能查询</li>
-</ol>
-<h2 id="Impala-doesn’t-provide-fault-tolerance-compared-to-Hive"><a href="#Impala-doesn’t-provide-fault-tolerance-compared-to-Hive" class="headerlink" title="Impala doesn’t provide fault-tolerance compared to Hive"></a>Impala doesn’t provide fault-tolerance compared to Hive</h2><p>so if there is a problem during your query then it’s gone. </p>
-<blockquote>
-<p>Definitely for ETL type of jobs where failure of one job would be costly I would recommend Hive, but Impala can be awesome for small ad-hoc queries, for example for data scientists or business analysts who just want to take a look and analyze some data without building robust jobs. Also from my personal experience, Impala is still not very mature, and I’ve seen some crashes sometimes when the amount of data is larger than available memory.</p>
-</blockquote>
-<p>对于ETL类型的工作，如果一个工作的失败代价很高，我会推荐Hive，但是Impala对于小的特别查询来说可能是很棒的，例如对于那些只想查看和分析一些数据而不想构建健壮工作的数据科学家或业务分析师来说。从我个人的经验来看，Impala还不太成熟，有时当数据量超过可用内存时，我会看到一些崩溃。</p>
-<blockquote>
-<p>This means if your join, sort, or group by didn’t fit in memory, Impala would just kill the query. No warning. Just dead. Hive would never do that because it’s underlying processing architecture has no problem doing that.</p>
-</blockquote>
-<p>这就意味着，内存不能承载join sort或group运算，Impala会无告警的立即kill掉查询，直接失败。而hive离线处理架构可以轻松处理，不会死掉</p>
-<h2 id="MPP"><a href="#MPP" class="headerlink" title="MPP"></a>MPP</h2><blockquote>
-<p>Impala uses MPP(massively parallel processing) unlike Hive which uses MapReduce under the hood, which involves some initial overheads (as Charles sir has specified). Massively parallel processing is a type of computing that uses many separate CPUs running in parallel to execute a single program where each CPU has it’s own dedicated memory. The very fact that Impala, being MPP based, doesn’t involve the overheads of a MapReduce jobs viz. job setup and creation, slot assignment, split creation, map generation etc., makes it blazingly fast.</p>
-</blockquote>
-<p>Impala提供了更快的响应，因为它使用了MPP(大规模并行处理)，而Hive在底层使用了MapReduce，这涉及到一些初始开销(正如Charles sir所指定的)。大规模并行处理是一种计算类型，它使用许多单独的并行运行的CPU来执行单个程序，其中每个CPU都有自己的专用内存。Impala是基于MPP的，它不涉及MapReduce作业的开销，即作业设置和创建、插槽分配、分割创建、地图生成等，这使得它的运行速度非常快。</p>
-<blockquote>
-<p>But that doesn’t mean that Impala is the solution to all your problems. Being highly memory intensive (MPP), it is not a good fit for tasks that require heavy data operations like joins etc., as you just can’t fit everything into the memory. This is where Hive is a better fit.</p>
-</blockquote>
-<p>MPP 作为高度内存密集型的运算，因为无法将所有的数据放入内存，并不适合需要大数据量的操作(如join)；反而Hive更适合</p>
-<p>实时的对部分数据即时查询适合Impala，对大数据的批处理请求，适合Hive</p>
-<h2 id="Impala-not-always-faster-than-hive"><a href="#Impala-not-always-faster-than-hive" class="headerlink" title="Impala not always faster than hive"></a>Impala not always faster than hive</h2><blockquote>
-<p>In my current job we used to make all the querys with Impala, the biggest query (like 800 million rows after 8 joins) was taking from 2 to 20 mins (depending if the tables where already on memory or not) I migrate that Query to Hive, partitioned the tables and create buckets on them, now it takes 3–4 mins, It may be a few more seconds than the best 2 mins with Impala but it’s much more fast if we consider that most of the time Impala takes 12–18 mins.</p>
-</blockquote>
-<p>在我目前的工作中，使用Impala进行所有的查询，最大的查询(比如8个连接后的8亿行)需要2到20分钟(取决于表是否已经在内存中);我将该查询迁移到Hive，对表进行分区并在其上创建桶，现在需要3到4分钟，这可能比Impala最好的2分钟多几秒钟，但如果我们考虑Impala大部分时间需要12到18分钟，速度会快得多。 </p>
+<p>MapReduce是底层编程语言，您需要专业知识才能在此级别工作。工程师在Map Reduce上开发了一个名为Hive的层，以便用户可以使用SQL来处理HDFS中存储的数据。Hive将这些SQL查询转换为一系列Map Reduce，然后调度执行。因此，Hive极大地简化了数据处理任务。但是Hive使用底层Map Reduce体系结构，这是用于处理数据的另一层</p>
+<p>Impala 一旦部署在Hadoop集群中，它将在每个数据节点上运行自己的进程，并完全跳过MapReduce阶段。一旦收到一个SQL，Impala master节点调度数据所在的节点上直接执行任务。因为它跳过MapReduce转换阶段并直接在节点上执行，所以它可以完成每秒钟的SQL查询</p>
+<p>当您在Hive中启动查询时，在背景地图中，Reduce会出现在启动查询需要花费大量时间的画面中，就像您在Impala中启动查询一样，它使用自己的体系结构，即MPP(大规模并行处理)而不是Map Reduce来从HDFS获取结果。它在内存中执行查询，总是比磁盘快。</p>
+<p>It’s an HDFS quirk. A file that’s currently being written to will appear to have a size of 0 but once it’s closed it will show its true size</p>
 
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/AsyncApiScalaSink/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/AsyncApiScalaSink/" class="post-title-link" itemprop="url">Flink AsyncApiScalaSink</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:54:38" itemprop="dateModified" datetime="2021-01-16T15:54:38+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Flink-AsyncApiScalaSink"><a href="#Flink-AsyncApiScalaSink" class="headerlink" title="Flink AsyncApiScalaSink"></a>Flink AsyncApiScalaSink</h1><p>andrew建议：</p>
-<ul>
-<li>onCompeleted没有把IOException暴露给用户</li>
-<li>链接配置之类的参数如何传递进去</li>
-<li>反压机制如何做？sink经常遇到的问题，下游抖动会直接导致数据丢失</li>
-<li>反压 限流 重试</li>
-<li>支持batch，条数控制</li>
-<li>checkpoint时，需要batch立即flush出去</li>
-</ul>
-<h2 id="Http-Client"><a href="#Http-Client" class="headerlink" title="Http Client"></a>Http Client</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpclient<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.5.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpcore<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.4.5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpcore-nio<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.4.5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpasyncclient<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.1.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<h2 id="AsyncApiScalaSink"><a href="#AsyncApiScalaSink" class="headerlink" title="AsyncApiScalaSink"></a>AsyncApiScalaSink</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.<span class="type">IOException</span></span><br><span class="line"><span class="keyword">import</span> java.util</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.flink.configuration.<span class="type">Configuration</span></span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.functions.sink.&#123;<span class="type">RichSinkFunction</span>, <span class="type">SinkFunction</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http._</span><br><span class="line"><span class="keyword">import</span> org.apache.http.client.entity.<span class="type">UrlEncodedFormEntity</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.client.methods.&#123;<span class="type">HttpEntityEnclosingRequestBase</span>, <span class="type">HttpPost</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http.concurrent.<span class="type">FutureCallback</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.impl.client.<span class="type">DefaultConnectionKeepAliveStrategy</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.impl.nio.client.&#123;<span class="type">CloseableHttpAsyncClient</span>, <span class="type">HttpAsyncClients</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http.message.<span class="type">BasicNameValuePair</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.util.<span class="type">EntityUtils</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AsyncApiScalaSink</span>[<span class="type">E</span>](<span class="params">httpInvoker: <span class="type">HttpInvoker</span>[<span class="type">E</span>]</span>) <span class="keyword">extends</span> <span class="title">RichSinkFunction</span>[<span class="type">E</span>] </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> httpClient: <span class="type">CloseableHttpAsyncClient</span> = _</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">open</span></span>(parameters: <span class="type">Configuration</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    httpClient = <span class="type">HttpAsyncClients</span>.custom.setKeepAliveStrategy(<span class="type">DefaultConnectionKeepAliveStrategy</span>.<span class="type">INSTANCE</span>).build</span><br><span class="line">    httpClient.start()</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">invoke</span></span>(value: <span class="type">E</span>, context: <span class="type">SinkFunction</span>.<span class="type">Context</span>[_]): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">var</span> httpEntity: <span class="type">HttpEntityEnclosingRequestBase</span> = <span class="literal">null</span></span><br><span class="line">    <span class="keyword">val</span> method: <span class="type">String</span> = httpInvoker.getMethod</span><br><span class="line">    <span class="keyword">val</span> url: <span class="type">String</span> = httpInvoker.getUrl</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">&quot;GET&quot;</span> == method) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">&quot;POST&quot;</span> == method) &#123;</span><br><span class="line">      <span class="keyword">val</span> params1: util.<span class="type">Map</span>[<span class="type">String</span>, <span class="type">String</span>] = httpInvoker.getParams(value)</span><br><span class="line">      <span class="keyword">val</span> params: util.<span class="type">List</span>[<span class="type">NameValuePair</span>] = <span class="keyword">new</span> util.<span class="type">ArrayList</span>[<span class="type">NameValuePair</span>]</span><br><span class="line">      <span class="keyword">if</span> (params1 != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">import</span> scala.collection.<span class="type">JavaConversions</span>._</span><br><span class="line">        <span class="keyword">for</span> (entry &lt;- params1.entrySet) &#123;</span><br><span class="line">          <span class="keyword">val</span> key: <span class="type">String</span> = entry.getKey</span><br><span class="line">          <span class="keyword">val</span> value1: <span class="type">String</span> = entry.getValue</span><br><span class="line">          params.add(<span class="keyword">new</span> <span class="type">BasicNameValuePair</span>(key, value1))</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">val</span> entity: <span class="type">UrlEncodedFormEntity</span> = <span class="keyword">new</span> <span class="type">UrlEncodedFormEntity</span>(params, <span class="type">Consts</span>.<span class="type">UTF_8</span>)</span><br><span class="line">      httpEntity = <span class="keyword">new</span> <span class="type">HttpPost</span>(url)</span><br><span class="line">      httpEntity.setEntity(entity)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    httpClient.execute(httpEntity, <span class="keyword">new</span> <span class="type">FutureCallback</span>[<span class="type">HttpResponse</span>]() &#123;</span><br><span class="line">      <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">completed</span></span>(response: <span class="type">HttpResponse</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">        <span class="keyword">val</span> statusLine: <span class="type">StatusLine</span> = response.getStatusLine</span><br><span class="line">        <span class="keyword">val</span> httpStatusCode: <span class="type">Int</span> = statusLine.getStatusCode</span><br><span class="line">        <span class="keyword">var</span> content: <span class="type">String</span> = <span class="literal">null</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="keyword">val</span> entity: <span class="type">HttpEntity</span> = response.getEntity</span><br><span class="line">          content = <span class="type">EntityUtils</span>.toString(entity)</span><br><span class="line">        &#125; <span class="keyword">catch</span> &#123;</span><br><span class="line">          <span class="keyword">case</span> e: <span class="type">IOException</span> =&gt;</span><br><span class="line">            <span class="type">System</span>.err.print(e.getMessage)</span><br><span class="line">        &#125;</span><br><span class="line">        httpInvoker.onCompleted(value, httpStatusCode, content)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">override</span></span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">def</span> <span class="title">failed</span></span>(ex: <span class="type">Exception</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">        httpInvoker.onFailed(value, ex)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">override</span></span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">def</span> <span class="title">cancelled</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">        httpInvoker.onCanceled(value)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">close</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">    httpClient.close()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="HttpInvoker"><a href="#HttpInvoker" class="headerlink" title="HttpInvoker"></a>HttpInvoker</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.<span class="type">Serializable</span>;</span><br><span class="line"><span class="keyword">import</span> java.util.<span class="type">Map</span>;</span><br><span class="line"></span><br><span class="line">public interface <span class="type">HttpInvoker</span>&lt;<span class="type">E</span>&gt; <span class="keyword">extends</span> <span class="type">Serializable</span> &#123;</span><br><span class="line">    <span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">String</span>&gt; getParams(<span class="type">E</span> e);</span><br><span class="line"></span><br><span class="line">    <span class="type">String</span> getMethod();</span><br><span class="line"></span><br><span class="line">    <span class="type">String</span> getUrl();</span><br><span class="line"></span><br><span class="line">    void onCompleted(<span class="type">E</span> value, int httpStatusCode, <span class="type">String</span> content);</span><br><span class="line"></span><br><span class="line">    void onFailed(<span class="type">E</span> value, <span class="type">Exception</span> ex);</span><br><span class="line"></span><br><span class="line">    void onCanceled(<span class="type">E</span> value);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
       
     </div>
 
@@ -1312,7 +1288,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">222</span>
+          <span class="site-state-item-count">223</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

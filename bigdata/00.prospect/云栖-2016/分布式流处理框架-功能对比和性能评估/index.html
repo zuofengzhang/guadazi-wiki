@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="分布式流处理框架-功能对比和性能评估 一决高下，分布式流处理框架孰优孰劣 云计算小粉 2016-11-02 5328浏览量 简介： 本文PPT来自技术专家毛玮于10月16日在2016年杭州云栖大会上发表的《分布式流处理框架–功能对比和性能评估》。 本文PPT来自技术专家毛玮于10月16日在2016年杭州云栖大会上发表的《分布式流处理框架–功能对比和性能评估》。   目前，分布式流处理框架数量不少，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式流处理框架-功能对比和性能评估">
+<meta property="og:url" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/index.html">
+<meta property="og:site_name" content="Guadazi">
+<meta property="og:description" content="分布式流处理框架-功能对比和性能评估 一决高下，分布式流处理框架孰优孰劣 云计算小粉 2016-11-02 5328浏览量 简介： 本文PPT来自技术专家毛玮于10月16日在2016年杭州云栖大会上发表的《分布式流处理框架–功能对比和性能评估》。 本文PPT来自技术专家毛玮于10月16日在2016年杭州云栖大会上发表的《分布式流处理框架–功能对比和性能评估》。   目前，分布式流处理框架数量不少，">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174109699_1039679665.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174109488_176992187.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174109277_1914688123.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174109167_1740972651.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174109059_799300942.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174108950_1728564351.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174108740_56727971.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174108631_256006029.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174108407_1053983324.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174108298_187677301.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174108088_1798866771.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174107979_349773665.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174107770_1636034084.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174107661_302506208.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174107453_120268134.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174107343_263678876.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174107132_1236121026.png">
+<meta property="og:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174106650_450715541.png">
+<meta property="article:published_time" content="2021-01-15T11:47:00.000Z">
+<meta property="article:modified_time" content="2021-01-16T15:01:40.271Z">
+<meta property="article:author" content="aaronzhang">
+<meta property="article:tag" content="Storm">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/_v_images/20210116174109699_1039679665.png">
+
+<link rel="canonical" href="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>分布式流处理框架-功能对比和性能评估 | Guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/00.prospect/%E4%BA%91%E6%A0%96-2016/%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          分布式流处理框架-功能对比和性能评估
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 23:01:40" itemprop="dateModified" datetime="2021-01-16T23:01:40+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="分布式流处理框架-功能对比和性能评估"><a href="#分布式流处理框架-功能对比和性能评估" class="headerlink" title="分布式流处理框架-功能对比和性能评估"></a>分布式流处理框架-功能对比和性能评估</h1><p> 一决高下，分布式流处理框架孰优孰劣</p>
+<p><a target="_blank" rel="noopener" href="https://developer.aliyun.com/profile/zjqrelxrl3raq">云计算小粉</a> 2016-11-02 5328浏览量</p>
+<p><strong>简介：</strong> 本文PPT来自技术专家毛玮于10月16日在2016年杭州云栖大会上发表的《分布式流处理框架–功能对比和性能评估》。</p>
+<p><strong>本文PPT来自技术专家毛玮于10月16日在2016年杭州云栖大会上发表的《分布式流处理框架–功能对比和性能评估》。</strong>  </p>
+<p>目前，分布式流处理框架数量不少，各有特色，究竟哪个性能更好、哪个效率更高、哪个更适合我呢？一般来说，当选择不同的流处理系统时，我们往往需要关注以下六大方面：1.运行时和编程模型2.函数式原语3.状态管理 4.消息传输保障 5.容错 6.性能。  </p>
+<p>其中，运行时模型主要包括原生的流处理和微批处理。流处理意味着所有输入的记录一旦到达即会一个接着一个进行处理，微批处理则把输入的数据按照某种预先定义的时间间隔分成短小的批量数据，流经流处理系统。编程模型一般分为组合式和声明式。组合式编程提供基本的构建模块，它们必须紧密结合来创建拓扑，相对应地，声明式API操作是定义的函数。  </p>
+<p>在下面的图中我们不仅会具体介绍每个要点，而且还会列出主流的框架，如Spark Streaming、Storm、Flink、Heron框架的性能对比测试结果数据。  </p>
+<p><img src="_v_images/20210116174109699_1039679665.png" alt="c060971ac4de3ca279af9fe3356609cd34004360">  </p>
+<p><img src="_v_images/20210116174109488_176992187.png" alt="10951ecaa791504b4042ed21961de925b13314ed">  </p>
+<p><img src="_v_images/20210116174109277_1914688123.png" alt="6408d63b6afaae86500d391753beb63ed652a139">  </p>
+<p><img src="_v_images/20210116174109167_1740972651.png" alt="1de09d7f4f7cb02460e7c355a598fb77529b1441">  </p>
+<p><img src="_v_images/20210116174109059_799300942.png" alt="1e4113599f69e4c9c96040c01ec4374ba6ef4193">  </p>
+<p><img src="_v_images/20210116174108950_1728564351.png" alt="186946959b7a50c0978ddbff567615543189c0a4">  </p>
+<p><img src="_v_images/20210116174108740_56727971.png" alt="218f012ceb890d08dd4e3d800b2c1da28165e465">  </p>
+<p><img src="_v_images/20210116174108631_256006029.png" alt="25ec173c4a4a8419cace969ec585634eb1100cca">  </p>
+<p><img src="_v_images/20210116174108407_1053983324.png" alt="ec754530d225d39dbcc2a926ca5014c1615612db">  </p>
+<p><img src="_v_images/20210116174108298_187677301.png" alt="f2262a5442d810056e1b1561b870cb9573bae2d0">  </p>
+<p><img src="_v_images/20210116174108088_1798866771.png" alt="7665d61e0a071ea670a775c3eaa0721761b67e26">  </p>
+<p><img src="_v_images/20210116174107979_349773665.png" alt="460aeec6adb58c5081e1c90180bcb6b92218842b">  </p>
+<p><img src="_v_images/20210116174107770_1636034084.png" alt="ffc431e90c721d2df29562c1a2be939e023bdf93">  </p>
+<p><img src="_v_images/20210116174107661_302506208.png" alt="ee58c03b044c4f9c0e7d9f412e58964786c36e8b">  </p>
+<p><img src="_v_images/20210116174107453_120268134.png" alt="6d20aaaff6db49582b1a26daa975ff8f81c237f4">  </p>
+<p><img src="_v_images/20210116174107343_263678876.png" alt="77c87a96d16f41c88518fcd5a51bab8ff9ae0383">  </p>
+<p><img src="_v_images/20210116174107132_1236121026.png" alt="260d1a3a13654485aa5f125e768d323f03aad02a">  </p>
+<p><img src="_v_images/20210116174106650_450715541.png" alt="f2d17d30d4a2ed04cc23ba1ef0d8e36c5ff0dc1e"></p>
+<p><a target="_blank" rel="noopener" href="https://myslide.cn/slides/241">[Intel]分布式流式数据处理框架：功能对比以及性能评估-王华峰</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Storm/" rel="tag"># Storm</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/Flink/Flink-SQL/" rel="prev" title="Flink-SQL">
+      <i class="fa fa-chevron-left"></i> Flink-SQL
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/00.prospect/FFA-2020/FFA-2020/" rel="next" title="FFA-2020">
+      FFA-2020 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%88%86%E5%B8%83%E5%BC%8F%E6%B5%81%E5%A4%84%E7%90%86%E6%A1%86%E6%9E%B6-%E5%8A%9F%E8%83%BD%E5%AF%B9%E6%AF%94%E5%92%8C%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0"><span class="nav-number">1.</span> <span class="nav-text">分布式流处理框架-功能对比和性能评估</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">223</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">106</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
