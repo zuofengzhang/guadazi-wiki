@@ -183,445 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/MapReducer/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Hadoop/MapReducer/" class="post-title-link" itemprop="url">mapReducer</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-26 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-26T00:00:00+08:00">2017-02-26</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="mapReducer-处理数据的流程"><a href="#mapReducer-处理数据的流程" class="headerlink" title="mapReducer 处理数据的流程"></a>mapReducer 处理数据的流程</h1><p>Map Reducer shuffle </p>
-<p>partition sorting combiner</p>
-<p>shuffle过程</p>
-<p>MapReducer过程</p>
-<p>参考文献: <a target="_blank" rel="noopener" href="http://www.cnblogs.com/ljy2013/articles/4435657.html">http://www.cnblogs.com/ljy2013/articles/4435657.html</a></p>
-<h1 id="MapReducer-实践"><a href="#MapReducer-实践" class="headerlink" title="MapReducer 实践"></a>MapReducer 实践</h1><ol>
-<li>wordCount解析</li>
-<li>Mapper class, CombinerClass,ReducerClass </li>
-<li>分析 TokenCountMapper  与 LongSumReducer</li>
-<li>常用的系列化类: 实现 WriteComparable 的类</li>
-</ol>
-<h1 id="文件的读写"><a href="#文件的读写" class="headerlink" title="文件的读写"></a>文件的读写</h1><h2 id="InputFormat"><a href="#InputFormat" class="headerlink" title="InputFormat"></a>InputFormat</h2><ul>
-<li><p>TextInputFormat 是 InputFormat 的默认实现, TextInputFormat<br>返回的键是每行的字节偏移量，返回的值是该行的数据。<br>key: LongWritable<br>value: Text</p>
-</li>
-<li><p><code>KeyValueTextInputFormat</code> 使用分隔符分割每行，分隔符之前的是键，之后的是值。默认的分隔符是制表符(\T)，分离器的属性通过<br><code>key.value.separator.in.input.line</code>中指定</p>
-</li>
-</ul>
-<p>key: Text<br>value: Text</p>
-<ul>
-<li><code>SequenceFileInputFormat&lt;K,V&gt;</code> 用户自定义的序列化格式, 序列化文件为Hadoop专用的压缩二进制文件格式</li>
-</ul>
-<p>key: K 用户定义<br>value: V 用户定义</p>
-<ul>
-<li><code>NLineInputFormat</code> key为分片的偏移量，value为包含N行数据的片段，N通过属性 <code>mapred.line.inout.format.linespermap</code>中指定，默认为1<br>key: LongWritable<br>value: Text</li>
-</ul>
-<p>通过 <code>JobConf.setInputFormat(KeyValueTextInputFormat.class)</code>指定</p>
-<h2 id="自定义-InputFormat"><a href="#自定义-InputFormat" class="headerlink" title="自定义 InputFormat"></a>自定义 InputFormat</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">InputFormat</span>&lt;<span class="title">K</span>,<span class="title">V</span>&gt; </span>&#123;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	* 将输入的文件分割成 numSplits 个片段</span></span><br><span class="line"><span class="comment">	*/</span></span><br><span class="line">	InputSplit[] getSplits(JobConf job, <span class="keyword">int</span> numSplits) <span class="keyword">throws</span> IOException;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	* </span></span><br><span class="line"><span class="comment">	*/</span></span><br><span class="line">	<span class="function">RecordReader&lt;K,V&gt; <span class="title">getRecordReader</span><span class="params">( InputSplit split, </span></span></span><br><span class="line"><span class="function"><span class="params">		JobConf job,</span></span></span><br><span class="line"><span class="function"><span class="params">		Reporter reporter)</span> <span class="keyword">throws</span> IOException</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>上述所有的 <code>InputFormat</code> 都是 <code>FileInputFormat</code> 类的一个子类，<code>FileInputFormat</code>默认实现了 <code>InputFormat</code> 接口，且实现了 <code>getSplits</code> 方法,把输入的数据粗略的划分为一组分片, 每个分片的大小必须大于<code>mapred.min.split.size</code>个字节,且小于文件系统的块, 在实际情况下,一个分片的大小总是一个块的大小,在HDFS中默认为64MB; 而 <code>getRecordReader</code>为抽象方法,  在自定义实现<code>InputFormat</code>时, 可以通过继承 <code>FileInputFormat</code> , 自定义 <code>getRecordReader</code> 方法.</p>
-<ul>
-<li><p><code>isSplitable</code> 方法</p>
-</li>
-<li><p><code>RecordReader</code></p>
-</li>
-<li><p>编写 InputFormat 实例</p>
-</li>
-</ul>
-<h1 id="OutputFormat"><a href="#OutputFormat" class="headerlink" title="OutputFormat"></a>OutputFormat</h1><hr>
-<p>【参考文献】</p>
-<ol>
-<li><a href="ref-url" title="ref-alt-title">ref-title</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/HDFS-Java-API/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Hadoop/HDFS-Java-API/" class="post-title-link" itemprop="url">HDFS Java API</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-25 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-25T00:00:00+08:00">2017-02-25</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Hadoop是采用Java实现的，所有的命令和操作全部采用Java完成。<br>HDFS: Hadoop Distributed File System 是Hadoop提供的分布式文件系统。</p>
-<p>本文介绍HDFS的Java API </p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.hadoop<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hadoop-core<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>首先，看一个例子:</p>
-<h1 id="putMerge-本地文件合并并保存到HDFS"><a href="#putMerge-本地文件合并并保存到HDFS" class="headerlink" title="putMerge: 本地文件合并并保存到HDFS"></a>putMerge: 本地文件合并并保存到HDFS</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * copy files in &lt;code&gt;srcDir&lt;/code&gt; </span></span><br><span class="line"><span class="comment"> * and merge to &lt;code&gt;objectFileName&lt;/code&gt; in HDFS</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> srcDir    本地文件夹</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> objectFileName HDFS文件名</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">putMerge</span><span class="params">(String srcDir, String objectFileName)</span> </span>&#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;srcDir:&quot;</span> + srcDir+<span class="string">&quot;\t objDir:&quot;</span> + objectFileName);</span><br><span class="line">    <span class="comment">// 读取HDFS的默认配置, 配置文件主要包括: </span></span><br><span class="line">    <span class="comment">// core-default.xml, core-site.xml, mapred-default.xml, mapred-site.xml, yarn-default.xml, yarn-site.xml, hdfs-default.xml, hdfs-site.xml</span></span><br><span class="line">    Configuration conf = <span class="keyword">new</span> Configuration();</span><br><span class="line">    FileSystem hdfs = <span class="keyword">null</span>;</span><br><span class="line">    LocalFileSystem local = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        hdfs = FileSystem.get(conf);<span class="comment">// 获取HDFS配置的FileSystem</span></span><br><span class="line">        local = FileSystem.getLocal(conf);<span class="comment">// 获取本地配置FileSystem</span></span><br><span class="line">        Path inputDir = <span class="keyword">new</span> Path(srcDir); <span class="comment">// 设定输入目录</span></span><br><span class="line">        System.out.println(<span class="string">&quot;inputDir: &quot;</span> + inputDir);</span><br><span class="line">        System.out.println(<span class="string">&quot;local.homeDirectory: &quot;</span> + local.getHomeDirectory());</span><br><span class="line">        System.out.println(<span class="string">&quot;local.workingDirectory: &quot;</span> + local.getWorkingDirectory());</span><br><span class="line">        System.out.println(<span class="string">&quot;local.uri: &quot;</span> + local.getUri());</span><br><span class="line">        System.out.println(<span class="string">&quot;local.conf: &quot;</span> + local.getConf());</span><br><span class="line"></span><br><span class="line">        FileStatus[] inputFiles = local.listStatus(inputDir);</span><br><span class="line">        System.out.println(<span class="string">&quot;inputFiles: &quot;</span> + inputFiles);</span><br><span class="line">        <span class="keyword">for</span> (FileStatus inputFile : inputFiles) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;inputFile: &quot;</span> + inputFile);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (inputFiles.length == <span class="number">0</span>) &#123;</span><br><span class="line">            System.err.println(<span class="string">&quot;input file path is empty!&quot;</span>);</span><br><span class="line">            System.exit(<span class="number">1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        Path hdfsFile = <span class="keyword">new</span> Path(objectFileName); <span class="comment">// 设定输出文件名称</span></span><br><span class="line">        FSDataOutputStream out = hdfs.create(hdfsFile, <span class="keyword">new</span> Progressable() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">progress</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                System.out.print(<span class="string">&quot;*&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="keyword">for</span> (FileStatus inputFile : inputFiles) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;inputFile.path.name: &quot;</span> + inputFile.getPath().getName());</span><br><span class="line">            FSDataInputStream in = local.open(inputFile.getPath());</span><br><span class="line">            <span class="keyword">byte</span> buffer[] = <span class="keyword">new</span> <span class="keyword">byte</span>[<span class="number">256</span>];</span><br><span class="line">            <span class="keyword">int</span> bytesRead = <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">while</span> ((bytesRead = in.read(buffer)) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                out.write(buffer, <span class="number">0</span>, bytesRead);</span><br><span class="line">            &#125;</span><br><span class="line">            in.close();</span><br><span class="line">            System.out.println();</span><br><span class="line">        &#125;</span><br><span class="line">        out.close();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    System.out.println();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>执行:</p>
-<ol>
-<li>打包</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mvn package</span><br></pre></td></tr></table></figure>
-<ol start="2">
-<li>复制到container</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker cp ~/IdeaProjects/MyTest/out/artifacts/HadoopTest_jar/HadoopTest.jar hadoop0:/root/putMerge.jar</span><br></pre></td></tr></table></figure>
-<ol start="3">
-<li>执行</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop jar putMerge.jar en002 en002.txt</span><br></pre></td></tr></table></figure>
-<p>执行结果</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">version 1</span><br><span class="line">args:en002</span><br><span class="line">args:en002.txt</span><br><span class="line">srcDir:en002</span><br><span class="line">objDir:en002.txt</span><br><span class="line">inputDir: en002</span><br><span class="line">local.homeDirectory: file:/root</span><br><span class="line">local.workingDirectory: file:/root</span><br><span class="line">local.uri: file:///</span><br><span class="line">local.conf: Configuration: core-default.xml, core-site.xml, mapred-default.xml, mapred-site.xml, yarn-default.xml, yarn-site.xml, hdfs-default.xml, hdfs-site.xml</span><br><span class="line">inputFiles: [Lorg.apache.hadoop.fs.FileStatus;@4073c6c9</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/shengjing.txt; isDirectory=false; length=4467663; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/at.txt; isDirectory=false; length=829203; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/abc.txt; isDirectory=false; length=0; replication=1; blocksize=33554432; modification_time=1495543277000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/a.txt; isDirectory=false; length=18516; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/av.txt; isDirectory=false; length=189407; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/David.txt; isDirectory=false; length=1519616; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/Oliver.txt; isDirectory=false; length=981553; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/Jane.txt; isDirectory=false; length=1114997; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/Romeo.txt; isDirectory=false; length=145397; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile.path.name: shengjing.txt</span><br><span class="line"></span><br><span class="line">inputFile.path.name: at.txt</span><br><span class="line">*******</span><br><span class="line">inputFile.path.name: abc.txt</span><br><span class="line"></span><br><span class="line">inputFile.path.name: a.txt</span><br><span class="line"></span><br><span class="line">inputFile.path.name: av.txt</span><br><span class="line">*******</span><br><span class="line">inputFile.path.name: David.txt</span><br><span class="line">******************************************************************</span><br><span class="line">inputFile.path.name: Oliver.txt</span><br><span class="line">***************************</span><br><span class="line">inputFile.path.name: Jane.txt</span><br><span class="line">**********************************</span><br><span class="line">inputFile.path.name: Romeo.txt</span><br><span class="line">**</span><br><span class="line">**</span><br></pre></td></tr></table></figure>
-<p>可能出现的问题:</p>
-<ol>
-<li><code>LocalFileSystem.listStatus</code>返回为 <code>empty</code>, 可能的原因有:<ul>
-<li>Hadoop没有权限读取目录或目录中的文件</li>
-<li>本地目录中的文件是中文的，而系统不支持显示中文</li>
-</ul>
-</li>
-</ol>
-<h1 id="FileSystem"><a href="#FileSystem" class="headerlink" title="FileSystem"></a>FileSystem</h1><p><a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/fs/FileSystem.html">DOCS-FileSystem</a><br>FileSystem 是Hadoop提供的操作本地文件和HDFS中文件的API，可以实现CRUD等操作</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Append to an existing file.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> FSDataOutputStream <span class="title">append</span><span class="params">(Path f)</span> <span class="keyword">throws</span> IOException</span></span><br><span class="line"><span class="function"><span class="comment">/**</span></span></span><br><span class="line"><span class="function"><span class="comment">* Concat existing files together.</span></span></span><br><span class="line"><span class="function"><span class="comment">*/</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">concat</span><span class="params">(Path trg,Path[] psrcs)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> IOException</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="comment">/** </span></span></span><br><span class="line"><span class="function"><span class="comment">* Renames Path src to Path dst. </span></span></span><br><span class="line"><span class="function"><span class="comment">* Can take place on local fs or remote DFS.</span></span></span><br><span class="line"><span class="function"><span class="comment">*/</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">boolean</span> <span class="title">rename</span><span class="params">(Path src, Path dst)</span> <span class="keyword">throws</span> IOException</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span></span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-
-<h2 id="创建目录"><a href="#创建目录" class="headerlink" title="创建目录"></a>创建目录</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/20130709&quot;</span>);  </span><br><span class="line">fs.create(path);  </span><br><span class="line">fs.close();  </span><br></pre></td></tr></table></figure>
-
-
-<h2 id="删除目录"><a href="#删除目录" class="headerlink" title="删除目录"></a>删除目录</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/20130710&quot;</span>);  </span><br><span class="line">fs.delete(path);  </span><br><span class="line">fs.close(); </span><br></pre></td></tr></table></figure>
-<h2 id="写文件"><a href="#写文件" class="headerlink" title="写文件"></a>写文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/write.txt&quot;</span>);  </span><br><span class="line">FSDataOutputStream out = fs.create(path);  </span><br><span class="line">out.writeUTF(<span class="string">&quot;da jia hao,cai shi zhen de hao!&quot;</span>);  </span><br><span class="line">fs.close();</span><br></pre></td></tr></table></figure>
-<h2 id="读文件"><a href="#读文件" class="headerlink" title="读文件"></a>读文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/write.txt&quot;</span>);  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">if</span>(fs.exists(path))&#123;  </span><br><span class="line">    FSDataInputStream is = fs.open(path);  </span><br><span class="line">    FileStatus status = fs.getFileStatus(path);  </span><br><span class="line">    <span class="comment">// status.getLen() 返回文件的长度 字节长度</span></span><br><span class="line">    <span class="keyword">byte</span>[] buffer = <span class="keyword">new</span> <span class="keyword">byte</span>[Integer.parseInt(String.valueOf(status.getLen()))];  </span><br><span class="line">    is.readFully(<span class="number">0</span>, buffer);  </span><br><span class="line">    is.close();  </span><br><span class="line">    fs.close();  </span><br><span class="line">    System.out.println(buffer.toString());  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="上传本地文件到HDFS"><a href="#上传本地文件到HDFS" class="headerlink" title="上传本地文件到HDFS"></a>上传本地文件到HDFS</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path src = <span class="keyword">new</span> Path(<span class="string">&quot;/home/hadoop/word.txt&quot;</span>);  </span><br><span class="line">Path dst = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/&quot;</span>);  </span><br><span class="line"><span class="comment">// FileSystem可以直接将本地文件复制到HDFS的制定目录</span></span><br><span class="line">fs.copyFromLocalFile(src, dst);  </span><br><span class="line">fs.close(); </span><br></pre></td></tr></table></figure>
-<h2 id="删除文件"><a href="#删除文件" class="headerlink" title="删除文件"></a>删除文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line"><span class="comment">// 删除文件和目录均是通过FileSystem.delete(Path path)</span></span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/word.txt&quot;</span>);  </span><br><span class="line">fs.delete(path);  </span><br><span class="line">fs.close();</span><br></pre></td></tr></table></figure>
-
-<h2 id="获取给定目录下的所有子目录以及子文件"><a href="#获取给定目录下的所有子目录以及子文件" class="headerlink" title="获取给定目录下的所有子目录以及子文件"></a>获取给定目录下的所有子目录以及子文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration(); </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop&quot;</span>);  </span><br><span class="line">getFile(path,fs);  </span><br><span class="line"><span class="comment">//fs.close();   </span></span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">getFile</span><span class="params">(Path path,FileSystem fs)</span> <span class="keyword">throws</span> IOException </span>&#123;  </span><br><span class="line">    FileStatus[] fileStatus = fs.listStatus(path);  </span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;fileStatus.length;i++)&#123;  </span><br><span class="line">        <span class="keyword">if</span>(fileStatus[i].isDir())&#123;  </span><br><span class="line">            Path p = <span class="keyword">new</span> Path(fileStatus[i].getPath().toString());  </span><br><span class="line">            getFile(p,fs);  </span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;  </span><br><span class="line">            System.out.println(fileStatus[i].getPath().toString());  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h2 id="查找某个文件在HDFS集群的位置"><a href="#查找某个文件在HDFS集群的位置" class="headerlink" title="查找某个文件在HDFS集群的位置"></a>查找某个文件在HDFS集群的位置</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * 查找某个文件在HDFS集群的位置 </span></span><br><span class="line"><span class="comment"> */</span>  </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">getFileLocal</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;  </span><br><span class="line">    Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">    FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">    Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/write.txt&quot;</span>);  </span><br><span class="line">      </span><br><span class="line">    FileStatus status = fs.getFileStatus(path);  </span><br><span class="line">    BlockLocation[] locations = fs.getFileBlockLocations(status, <span class="number">0</span>, status.getLen());  </span><br><span class="line">      </span><br><span class="line">    <span class="keyword">int</span> length = locations.length;  </span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;length;i++)&#123;  </span><br><span class="line">        String[] hosts = locations[i].getHosts();  </span><br><span class="line">        System.out.println(<span class="string">&quot;block_&quot;</span> + i + <span class="string">&quot;_location:&quot;</span> + hosts[i]);  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
-
-<h2 id="HDFS集群上所有节点名称信息"><a href="#HDFS集群上所有节点名称信息" class="headerlink" title="HDFS集群上所有节点名称信息"></a>HDFS集群上所有节点名称信息</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * HDFS集群上所有节点名称信息 </span></span><br><span class="line"><span class="comment"> */</span>  </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">getHDFSNode</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;  </span><br><span class="line">    Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">    FileSystem fs = FileSystem.get(conf);  </span><br><span class="line"></span><br><span class="line">    DistributedFileSystem  dfs = (DistributedFileSystem)fs;  </span><br><span class="line">    DatanodeInfo[] dataNodeStats = dfs.getDataNodeStats();  </span><br><span class="line">      </span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;dataNodeStats.length;i++)&#123;  </span><br><span class="line">        System.out.println(<span class="string">&quot;DataNode_&quot;</span> + i + <span class="string">&quot;_Node:&quot;</span> + dataNodeStats[i].getHostName());  </span><br><span class="line">    &#125;  </span><br><span class="line">      </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
-<h1 id="读写"><a href="#读写" class="headerlink" title="读写"></a>读写</h1><p><code>FSDataInputStream</code> 与 <code>FSDataOutputStream</code></p>
-<p><code>FSDataInputStream</code> 扩展了 <code>DataInputStream</code> 以支持随机读</p>
-<h2 id="InputFormat"><a href="#InputFormat" class="headerlink" title="InputFormat"></a>InputFormat</h2><ul>
-<li><p>TextInputFormat 是 InputFormat 的默认实现, TextInputFormat<br>返回的键是每行的字节偏移量，返回的值是该行的数据。<br>key: LongWritable<br>value: Text</p>
-</li>
-<li><p><code>KeyValueTextInputFormat</code> 使用分隔符分割每行，分隔符之前的是键，之后的是值。默认的分隔符是制表符(\T)，分离器的属性通过<br><code>key.value.separator.in.input.line</code>中指定</p>
-</li>
-</ul>
-<p>key: Text<br>value: Text</p>
-<ul>
-<li><code>SequenceFileInputFormat&lt;K,V&gt;</code> 用户自定义的序列化格式, 序列化文件为Hadoop专用的压缩二进制文件格式</li>
-</ul>
-<p>key: K 用户定义<br>value: V 用户定义</p>
-<ul>
-<li><code>NLineInputFormat</code> key为分片的偏移量，value为包含N行数据的片段，N通过属性 <code>mapred.line.inout.format.linespermap</code>中指定，默认为1<br>key: LongWritable<br>value: Text</li>
-</ul>
-<hr>
-<p>【参考文献】</p>
-<ol>
-<li><a href="ref-url" title="ref-alt-title"></a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/hadoop-cluser-configuration/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Hadoop/hadoop-cluser-configuration/" class="post-title-link" itemprop="url">Hadoop集群节点配置及搭建</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>[&lt;&lt;] Hadoop专题</p>
-<p>在<a href="hadoop-01">上一篇</a>中介绍了在Docker搭建三个节点的Hadoop集群，本文主要介绍hadoop集群节点的配置</p>
-<p>NameNode<br>SecondNameNode<br>DataNode</p>
-<p>JobTracker<br>JobTask</p>
-<p>移动计算 而非 移动数据</p>
-<h2 id="查看classpath"><a href="#查看classpath" class="headerlink" title="查看classpath"></a>查看classpath</h2><p>hadoop命令行</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hadoop classpath</span><br><span class="line">/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
-<p>配置文件</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.application.classpath<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<hr>
-<p>[参考文献]</p>
-<ol>
-<li></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/storm/base/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/storm/base/" class="post-title-link" itemprop="url">Apache Storm专题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="大数据流式计算及应用实践"><a href="#大数据流式计算及应用实践" class="headerlink" title="大数据流式计算及应用实践"></a>大数据流式计算及应用实践</h1><p>面向感知的数据流处理模型<br>R树、B+树</p>
-<p>CAP（Consistency，Availability，tolerance to network Partitions） 理论说明，分布式系统中的一致性、可用性、分区容错性三者不可兼得。</p>
-<p>所以，并行关系数据库必然无法获得较强的扩展性和良好的系统可用性。<br>面对这些挑战，以Google的BigTable为代表的NoSQL（notonlySQL）数据库发展起来。BigTable是一个多维稀疏排序表，由行和列组成，每个存储单元都有一个时间戳，形成三维结构。同一个数据单元的多个操作形成数据的多个版本，由时间戳来区分。</p>
-<p>高性能批数据处理模式、流式数据处理模式和两者混合的模式。</p>
-<p>批处理模式就是修改以Hadoop为代表的批处理框架，减少中间结果的写盘次数，增加作业间的流水化程度来提高单位时间的吞吐量。流处理模式，是针对流式数据的一种天然适合的处理方法，将到达的数据在维护的滑动窗口内进行处理，这将在下一章详细说明，典型系统如YahooS4和Storm。而两者混合的模式，主要思路是基于MapReduce模型增加或改变其中的某些处理步骤，以实现流处理。</p>
-<p>四个时间点？<br>契税 多少？<br>查封 离婚 继承</p>
-<p>距离 环境 学校</p>
-<p>高性能批数据处理模式、流式数据处理模式和两者混合的模式。其中，批处理模式就是修改以Hadoop为代表的批处理框架，减少中间结果的写盘次数，增加作业间的流水化程度来提高单位时间的吞吐量。流处理模式，是针对流式数据的一种天然适合的处理方法，将到达的数据在维护的滑动窗口内进行处理，这将在下一章详细说明，典型系统如Yahoo S4和Storm。而两者混合的模式，主要思路是基于MapReduce模型增加或改变其中的某些处理步骤，以实现流处理。例如，DEDUCE系统扩展了IBM的流式数据处理System S，使其支持MapReduce。此外，SparkStreaming通过引入离散流（discretized streams）编程模型，改进了批处理模式，大幅提高了处理速度，并在Spark系统上实现了集成。</p>
-<p>Storm 作为 一种 分布式 系统 的 体系 结构、 分布式 通信、 作业、 接 入/ 处理 组件 和 若干 进阶 的 概念。</p>
-<p>丁维龙; 等. Storm：大数据流式计算及应用实践 (高端云计算与大数据丛书) (Kindle 位置 1278-1279). 电子工业出版社. Kindle 版本. </p>
-<p>supervisor</p>
-<p>工作进程执行指定topology的子集，而同一个topology可以由多个工作进程完成；一个工作进程由多个工作线程组成，工作线程是spout/bolt的运行时实例，数量由spout/bolt的数目及其配置确定。supervisor是分布式部署的，在Storm中的地位类似于Hadoop中的TaskTracker。</p>
-<p>首先是作业在Storm系统中的部署。<br>    ① 用户将作业打包（即将topology的代码组织为jar文件），通过Storm的客户端命令或者控制台节点的Web接口，提交至Storm系统的主控节点；<br>    ② 主控节点根据系统的全局配置和作业中的局部配置，将接收的代码分发至调度的工作节点；<br>    ③ 工作节点下载来自主控节点的代码包，并根据主控节点的调度生成相关的工作进程和线程。</p>
-<p>其次是系统节点状态的协调，包括如下几个部分。<br>    ①主控节点与协调节点之间：主控节点将系统全局的配置、节点局部的配置、主控节点运行时的状态，通过服务接口交由Zookeeper维护，由协调节点实现配置管理与状态监控；<br>    ②工作节点与协调节点之间：工作节点将自身的状态、工作进程和工作线程的状态，通过服务接口交由Zookeeper维护，由协调节点实现状态获取与更新；<br>    ③主控节点与控制台节点之间：控制台节点调用主控节点开放相关的接口，可以获取系统、作业、工作进程、工作线程和任务的运行时状态。</p>
-<p>最后是工作节点间作业计算结果的数据传输，包括如下几个部分。<br>    ①组件间线程级的数据传递：在同一进程内，spout/bolt的工作线程将处理结果向作业的下游组件传递；<br>    ②组件间进程级的数据传递：在不同进程间（无论是否在同一台机器中），spout/bolt的工作线程将处理的结果向作业的下游组件传递。进程是操作系统中程序运行时的基本单元，线程是进程的最小调度单位，Storm的分布式数据处理，也是通过进程线程的调度实现的。<br>    注意：考虑到作业的独立性与安全性，Storm不支持跨作业的数据传递，故这里工作节点间的数据传输，一定存在于同一作业（隶属同一topology）的运行时实例进程/线程之间。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/base/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -653,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:20:58" itemprop="dateModified" datetime="2021-01-16T15:20:58+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -883,7 +444,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:17:28" itemprop="dateModified" datetime="2021-01-16T15:17:28+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:20:56" itemprop="dateModified" datetime="2021-01-16T15:20:56+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -984,7 +545,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:17:28" itemprop="dateModified" datetime="2021-01-16T15:17:28+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:20:56" itemprop="dateModified" datetime="2021-01-16T15:20:56+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1153,7 +714,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:20:58" itemprop="dateModified" datetime="2021-01-16T15:20:58+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1263,7 +824,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:17:28" itemprop="dateModified" datetime="2021-01-16T15:17:28+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:20:56" itemprop="dateModified" datetime="2021-01-16T15:20:56+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1330,6 +891,132 @@ Dockerfile的内容为:</li>
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/RPC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/RPC/" class="post-title-link" itemprop="url">RPC</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 15:20:58" itemprop="dateModified" datetime="2021-01-16T15:20:58+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>RPC -  Remote Procedure Call 远程过程调用<br>是一种进程间通信方式。它允许程序调用另一个地址空间（通常是共享网络的另一台机器上）的过程或函数，而不用程序员显式编码这个远程调用的细节。即程序员无论是调用本地的还是远程的，本质上编写的调用代码基本相同。</p>
+<p>RPC 的鼻祖<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Bruce_Jay_Nelson">Bruce Jay Nelson</a> 在1980s提出了基本的实现结构<br><img src="/images/distributed/RPC/rpc-struct-01.png" alt="RPC基本实现结构"></p>
+<p>图中的<code>user</code>即为<code>client</code></p>
+<h1 id="常见的RPC协议"><a href="#常见的RPC协议" class="headerlink" title="常见的RPC协议"></a>常见的RPC协议</h1><p>CORBAR: 为了解决异构平台的 RPC，使用了 <code>IDL</code>（Interface Definition Language）来定义远程接口，并将其映射到特定的平台语言中。后来大部分的跨语言平台 RPC 基本都采用了此类方式，比如我们熟悉的 Web Service（SOAP），近年开源的Thrift 等。他们大部分都通过 IDL 定义，并提供工具来映射生成不同语言平台的 user-stub 和 server-stub，并通过框架库来提供 RPCRuntime 的支持。不过貌似每个不同的 RPC 框架都定义了各自不同的 IDL 格式，导致程序员的学习成本进一步上升（苦逼啊），Web Service 尝试建立业界标准，无赖标准规范复杂而效率偏低，否则 Thrift 等更高效的 RPC 框架就没必要出现了。</p>
+<p>IDL 是为了跨平台语言实现 RPC 不得已的选择，要解决更广泛的问题自然导致了更复杂的方案。而对于同一平台内的 RPC 而言显然没必要搞个中间语言出来，例如Java原生的 RMI，这样对于 java 程序员而言显得更直接简单，降低使用的学习成本。目前市面上提供的 RPC 框架已经可算是五花八门，百家争鸣了。需要根据实际使用场景谨慎选型，需要考虑的选型因素我觉得至少包括下面几点：</p>
+<ol>
+<li>性能指标</li>
+<li>是否需要跨语言平台</li>
+<li>内网开放还是公网开放</li>
+<li>开源 RPC 框架本身的质量、社区活跃度</li>
+</ol>
+<h2 id="CORBAR"><a href="#CORBAR" class="headerlink" title="CORBAR"></a>CORBAR</h2><h2 id="RMI"><a href="#RMI" class="headerlink" title="RMI"></a>RMI</h2><h2 id="Web-Service（SOAP）"><a href="#Web-Service（SOAP）" class="headerlink" title="Web Service（SOAP）"></a>Web Service（SOAP）</h2><h2 id="Thrift"><a href="#Thrift" class="headerlink" title="Thrift"></a>Thrift</h2><h1 id="异步调用与同步调用"><a href="#异步调用与同步调用" class="headerlink" title="异步调用与同步调用"></a>异步调用与同步调用</h1><ol>
+<li>同步调用<br>客户方等待调用执行完成并返回结果。  </li>
+<li>异步调用<br>客户方调用后不用等待执行结果返回，但依然可以通过回调通知等方式获取返回结果。<br>若客户方不关心调用返回结果，则变成单向异步调用，单向调用不用返回结果。  </li>
+</ol>
+<h2 id="RPC-结构拆解"><a href="#RPC-结构拆解" class="headerlink" title="RPC 结构拆解"></a>RPC 结构拆解</h2><p><img src="http://img.blog.csdn.net/20150108170231000?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbWluZGZsb2F0aW5n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
+<p>RPC 服务方通过 <code>RpcServer</code> 去导出（export）远程接口方法，而客户方通过 <code>RpcClient</code> 去引入（import）远程接口方法。客户方像调用本地方法一样去调用远程接口方法，RPC 框架提供接口的代理实现，实际的调用将委托给代理<code>RpcProxy</code> 。代理封装调用信息并将调用转交给<code>RpcInvoker</code> 去实际执行。在客户端的<code>RpcInvoker</code> 通过连接器<code>RpcConnector</code> 去维持与服务端的通道<code>RpcChannel</code>，并使用<code>RpcProtocol</code> 执行协议编码（encode）并将编码后的请求消息通过通道发送给服务方。</p>
+<p>RPC 服务端接收器 <code>RpcAcceptor</code> 接收客户端的调用请求，同样使用<code>RpcProtocol</code> 执行协议解码（decode）。解码后的调用信息传递给<code>RpcProcessor</code> 去控制处理调用过程，最后再委托调用给<code>RpcInvoker</code> 去实际执行并返回调用结果。</p>
+<h2 id="RPC-组件职责"><a href="#RPC-组件职责" class="headerlink" title="RPC 组件职责"></a>RPC 组件职责</h2><p>上面我们进一步拆解了 RPC 实现结构的各个组件组成部分，下面我们详细说明下每个组件的职责划分。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">1. RpcServer  </span><br><span class="line">   负责导出（export）远程接口  </span><br><span class="line">2. RpcClient  </span><br><span class="line">   负责导入（import）远程接口的代理实现  </span><br><span class="line">3. RpcProxy  </span><br><span class="line">   远程接口的代理实现  </span><br><span class="line">4. RpcInvoker  </span><br><span class="line">   客户方实现：负责编码调用信息和发送调用请求到服务方并等待调用结果返回  </span><br><span class="line">   服务方实现：负责调用服务端接口的具体实现并返回调用结果  </span><br><span class="line">5. RpcProtocol  </span><br><span class="line">   负责协议编&#x2F;解码  </span><br><span class="line">6. RpcConnector  </span><br><span class="line">   负责维持客户方和服务方的连接通道和发送数据到服务方  </span><br><span class="line">7. RpcAcceptor  </span><br><span class="line">   负责接收客户方请求并返回请求结果  </span><br><span class="line">8. RpcProcessor  </span><br><span class="line">   负责在服务方控制调用过程，包括管理调用线程池、超时时间等  </span><br><span class="line">9. RpcChannel  </span><br><span class="line">   数据传输通道  </span><br></pre></td></tr></table></figure>
+<h2 id="RPC-实现分析"><a href="#RPC-实现分析" class="headerlink" title="RPC 实现分析"></a>RPC 实现分析</h2><p>在进一步拆解了组件并划分了职责之后，这里以在  Java 平台实现该 RPC 框架概念模型为例，详细分析下实现中需要考虑的因素。</p>
+<h3 id="导出远程接口"><a href="#导出远程接口" class="headerlink" title="导出远程接口"></a>导出远程接口</h3><p>导出远程接口的意思是指只有导出的接口可以供远程调用，而未导出的接口则不能。在 java 中导出接口的代码片段可能如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">DemoService demo   = <span class="keyword">new</span> ...;  </span><br><span class="line">RpcServer   server = <span class="keyword">new</span> ...;  </span><br><span class="line">server.export(DemoService.class, demo, options);  </span><br></pre></td></tr></table></figure>
+<p>我们可以导出整个接口，也可以更细粒度一点只导出接口中的某些方法，如：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 只导出 DemoService 中签名为 hi(String s) 的方法  </span></span><br><span class="line">server.export(DemoService.class, demo, <span class="string">&quot;hi&quot;</span>, <span class="keyword">new</span> Class&lt;?&gt;[] &#123; String.class &#125;, options);  </span><br></pre></td></tr></table></figure>
+<p>java 中还有一种比较特殊的调用就是多态，也就是一个接口可能有多个实现，那么远程调用时到底调用哪个？这个本地调用的语义是通过 jvm 提供的引用多态性隐式实现的，那么对于 RPC 来说跨进程的调用就没法隐式实现了。如果前面<code>DemoService</code> 接口有 2 个实现，那么在导出接口时就需要特殊标记不同的实现，如：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">DemoService demo   = <span class="keyword">new</span> ...;  </span><br><span class="line">DemoService demo2  = <span class="keyword">new</span> ...;  </span><br><span class="line">RpcServer   server = <span class="keyword">new</span> ...;  </span><br><span class="line">server.export(DemoService.class, demo, options);  </span><br><span class="line">server.export(<span class="string">&quot;demo2&quot;</span>, DemoService.class, demo2, options);  </span><br></pre></td></tr></table></figure>
+<p>上面 demo2 是另一个实现，我们标记为 “demo2” 来导出，那么远程调用时也需要传递该标记才能调用到正确的实现类，这样就解决了多态调用的语义。</p>
+<h3 id="导入远程接口与客户端代理"><a href="#导入远程接口与客户端代理" class="headerlink" title="导入远程接口与客户端代理"></a>导入远程接口与客户端代理</h3><p>导入相对于导出远程接口，客户端代码为了能够发起调用必须要获得远程接口的方法或过程定义。目前，大部分跨语言平台 RPC 框架采用根据 IDL 定义通过 code generator 去生成 stub 代码，这种方式下实际导入的过程就是通过代码生成器在编译期完成的。我所使用过的一些跨语言平台 RPC 框架如 CORBAR、WebService、ICE、Thrift 均是此类方式。</p>
+<p>代码生成的方式对跨语言平台 RPC 框架而言是必然的选择，而对于同一语言平台的 RPC 则可以通过共享接口定义来实现。在 java 中导入接口的代码片段可能如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">RpcClient client = <span class="keyword">new</span> ...;  </span><br><span class="line">DemoService demo = client.refer(DemoService.class);  </span><br><span class="line">demo.hi(<span class="string">&quot;how are you?&quot;</span>);  </span><br></pre></td></tr></table></figure>
+<p>在 java 中 ‘import’ 是关键字，所以代码片段中我们用 refer 来表达导入接口的意思。这里的导入方式本质也是一种代码生成技术，只不过是在运行时生成，比静态编译期的代码生成看起来更简洁些。java 里至少提供了两种技术来提供动态代码生成，一种是 jdk 动态代理，另外一种是字节码生成。动态代理相比字节码生成使用起来更方便，但动态代理方式在性能上是要逊色于直接的字节码生成的，而字节码生成在代码可读性上要差很多。两者权衡起来，个人认为牺牲一些性能来获得代码可读性和可维护性显得更重要。</p>
+<h3 id="协议编解码"><a href="#协议编解码" class="headerlink" title="协议编解码"></a>协议编解码</h3><p>客户端代理在发起调用前需要对调用信息进行编码，这就要考虑需要编码些什么信息并以什么格式传输到服务端才能让服务端完成调用。出于效率考虑，编码的信息越少越好（传输数据少），编码的规则越简单越好（执行效率高）。我们先看下需要编码些什么信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">-- 调用编码 --  </span><br><span class="line">1. 接口方法  </span><br><span class="line">   包括接口名、方法名  </span><br><span class="line">2. 方法参数  </span><br><span class="line">   包括参数类型、参数值  </span><br><span class="line">3. 调用属性  </span><br><span class="line">   包括调用属性信息，例如调用附件隐式参数、调用超时时间等  </span><br><span class="line">  </span><br><span class="line">-- 返回编码 --  </span><br><span class="line"> 1. 返回结果  </span><br><span class="line">    接口方法中定义的返回值  </span><br><span class="line"> 2. 返回码  </span><br><span class="line">    异常返回码  </span><br><span class="line"> 3. 返回异常信息  </span><br><span class="line">    调用异常信息  </span><br></pre></td></tr></table></figure>
+<p>除了以上这些必须的调用信息，我们可能还需要一些元信息以方便程序编解码以及未来可能的扩展。这样我们的编码消息里面就分成了两部分，一部分是元信息、另一部分是调用的必要信息。如果设计一种 RPC 协议消息的话，元信息我们把它放在协议消息头中，而必要信息放在协议消息体中。下面给出一种概念上的 RPC 协议消息设计格式：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">-- 消息头 --  </span><br><span class="line">magic      : 协议魔数，为解码设计  </span><br><span class="line">header size: 协议头长度，为扩展设计  </span><br><span class="line">version    : 协议版本，为兼容设计  </span><br><span class="line">st         : 消息体序列化类型  </span><br><span class="line">hb         : 心跳消息标记，为长连接传输层心跳设计  </span><br><span class="line">ow         : 单向消息标记，  </span><br><span class="line">rp         : 响应消息标记，不置位默认是请求消息  </span><br><span class="line">status code: 响应消息状态码  </span><br><span class="line">reserved   : 为字节对齐保留  </span><br><span class="line">message id : 消息 id  </span><br><span class="line">body size  : 消息体长度  </span><br><span class="line">  </span><br><span class="line">-- 消息体 --  </span><br><span class="line">采用序列化编码，常见有以下格式  </span><br><span class="line">xml   : 如 webservie soap  </span><br><span class="line">json  : 如 JSON-RPC  </span><br><span class="line">binary: 如 thrift; hession; kryo 等  </span><br></pre></td></tr></table></figure>
+<p>格式确定后编解码就简单了，由于头长度一定所以我们比较关心的就是消息体的序列化方式。序列化我们关心三个方面：<br>\1. 序列化和反序列化的效率，越快越好。 <br>\2. 序列化后的字节长度，越小越好。 <br>\3. 序列化和反序列化的兼容性，接口参数对象若增加了字段，是否兼容。<br>上面这三点有时是鱼与熊掌不可兼得，这里面涉及到具体的序列化库实现细节，就不在本文进一步展开分析了。</p>
+<h3 id="传输服务"><a href="#传输服务" class="headerlink" title="传输服务"></a>传输服务</h3><p>协议编码之后，自然就是需要将编码后的 RPC 请求消息传输到服务方，服务方执行后返回结果消息或确认消息给客户方。RPC 的应用场景实质是一种可靠的请求应答消息流，和 HTTP 类似。因此选择长连接方式的 TCP 协议会更高效，与 HTTP 不同的是在协议层面我们定义了每个消息的唯一 id，因此可以更容易的复用连接。</p>
+<p>既然使用长连接，那么第一个问题是到底 client 和 server 之间需要多少根连接？实际上单连接和多连接在使用上没有区别，对于数据传输量较小的应用类型，单连接基本足够。单连接和多连接最大的区别在于，每根连接都有自己私有的发送和接收缓冲区，因此大数据量传输时分散在不同的连接缓冲区会得到更好的吞吐效率。所以，如果你的数据传输量不足以让单连接的缓冲区一直处于饱和状态的话，那么使用多连接并不会产生任何明显的提升，反而会增加连接管理的开销。</p>
+<p>连接是由 client 端发起建立并维持。如果 client 和 server 之间是直连的，那么连接一般不会中断（当然物理链路故障除外）。如果 client 和 server 连接经过一些负载中转设备，有可能连接一段时间不活跃时会被这些中间设备中断。为了保持连接有必要定时为每个连接发送心跳数据以维持连接不中断。心跳消息是 RPC 框架库使用的内部消息，在前文协议头结构中也有一个专门的心跳位，就是用来标记心跳消息的，它对业务应用透明。</p>
+<h3 id="执行调用"><a href="#执行调用" class="headerlink" title="执行调用"></a>执行调用</h3><p>client stub 所做的事情仅仅是编码消息并传输给服务方，而真正调用过程发生在服务方。server stub 从前文的结构拆解中我们细分了 <code>RpcProcessor</code> 和<code>RpcInvoker</code> 两个组件，一个负责控制调用过程，一个负责真正调用。这里我们还是以 java 中实现这两个组件为例来分析下它们到底需要做什么？</p>
+<p>java 中实现代码的动态接口调用目前一般通过反射调用。除了原生的 jdk 自带的反射，一些第三方库也提供了性能更优的反射调用，因此 <code>RpcInvoker</code> 就是封装了反射调用的实现细节。</p>
+<p>调用过程的控制需要考虑哪些因素，<code>RpcProcessor</code> 需要提供什么样地调用控制服务呢？下面提出几点以启发思考：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. 效率提升  </span><br><span class="line">   每个请求应该尽快被执行，因此我们不能每请求来再创建线程去执行，需要提供线程池服务。  </span><br><span class="line">2. 资源隔离  </span><br><span class="line">   当我们导出多个远程接口时，如何避免单一接口调用占据所有线程资源，而引发其他接口执行阻塞。  </span><br><span class="line">3. 超时控制  </span><br><span class="line">   当某个接口执行缓慢，而 client 端已经超时放弃等待后，server 端的线程继续执行此时显得毫无意义。  </span><br></pre></td></tr></table></figure>
+
+<h2 id="RPC-异常处理"><a href="#RPC-异常处理" class="headerlink" title="RPC 异常处理"></a>RPC 异常处理</h2><p>无论 RPC 怎样努力把远程调用伪装的像本地调用，但它们依然有很大的不同点，而且有一些异常情况是在本地调用时绝对不会碰到的。在说异常处理之前，我们先比较下本地调用和 RPC 调用的一些差异：</p>
+<ol>
+<li>本地调用一定会执行，而远程调用则不一定，调用消息可能因为网络原因并未发送到服务方。</li>
+<li>本地调用只会抛出接口声明的异常，而远程调用还会跑出 RPC 框架运行时的其他异常。</li>
+<li>本地调用和远程调用的性能可能差距很大，这取决于 RPC 固有消耗所占的比重。<br>正是这些区别决定了使用 RPC 时需要更多考量。当调用远程接口抛出异常时，异常可能是一个业务异常，也可能是 RPC 框架抛出的运行时异常（如：网络中断等）。业务异常表明服务方已经执行了调用，可能因为某些原因导致未能正常执行，而 RPC 运行时异常则有可能服务方根本没有执行，对调用方而言的异常处理策略自然需要区分。</li>
+</ol>
+<p>由于 RPC 固有的消耗相对本地调用高出几个数量级，本地调用的固有消耗是纳秒级，而 RPC 的固有消耗是在毫秒级。那么对于过于轻量的计算任务就并不合适导出远程接口由独立的进程提供服务，只有花在计算任务上时间远远高于 RPC 的固有消耗才值得导出为远程接口提供服务。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此我们提出了一个 RPC 实现的概念框架，并详细分析了需要考虑的一些实现细节。无论 RPC 的概念是如何优雅，但是“草丛中依然有几条蛇隐藏着”，只有深刻理解了 RPC 的本质，才能更好地应用。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/PhantomJS/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1361,7 +1048,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:20:58" itemprop="dateModified" datetime="2021-01-16T15:20:58+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1413,6 +1100,356 @@ Dockerfile的内容为:</li>
 <li><a target="_blank" rel="noopener" href="https://www.qcloud.com/community/article/743451001489391682">PhantomJS 基础及示例</a></li>
 </ol>
 
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/cluster_deploy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/cluster_deploy/" class="post-title-link" itemprop="url">mac搭建hadoop、hive、spark、flink环境</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 15:20:58" itemprop="dateModified" datetime="2021-01-16T15:20:58+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="mysql"><a href="#mysql" class="headerlink" title="mysql"></a>mysql</h1><p>启动mysql</p>
+<p>brew services start mysql</p>
+<p>abc.ABC.123</p>
+<h1 id="集群搭建"><a href="#集群搭建" class="headerlink" title="集群搭建"></a>集群搭建</h1><ol>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/33117305">mac osx 搭建hadoop开发环境</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/u010638969/article/details/51283216">spark on yarn</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/65825211">hive环境搭建</a></li>
+</ol>
+<p>按照上面文章的方式搭建，启动hdfs、yarn</p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/33968422/bin-bash-bin-java-no-such-file-or-directory"><strong>必须使用这个命令</strong></a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动yarn</span></span></span><br><span class="line">hadoop/sbin/./yarn-daemon.sh start resourcemanager</span><br><span class="line">hadoop/sbin./yarn-daemon.sh start nodemanager</span><br><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动hdfs</span></span></span><br><span class="line">hadoop/sbin/start-hdfs.sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="http://localhost:50070/">hdfs-web</a><br><a target="_blank" rel="noopener" href="http://localhost:8088/">yarn-web</a></p>
+<h2 id="hive"><a href="#hive" class="headerlink" title="hive"></a>hive</h2><p>create user ‘hadoop’@’%’ identified by ‘hadoop%HADOOP%123’;</p>
+<p>grant all privileges on <em>.</em> to ‘hadoop’@’%’ with grant option;</p>
+<p>flush privileges;</p>
+<h2 id="flink-on-yarn"><a href="#flink-on-yarn" class="headerlink" title="flink on yarn"></a>flink on yarn</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/xu470438000/article/details/79576989">flink on yarn部署</a></p>
+<p>在flink lib下增加flink-hadoop兼容包<a target="_blank" rel="noopener" href="https://repo.maven.apache.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.7.5-7.0/flink-shaded-hadoop-2-uber-2.7.5-7.0.jar">Pre-bundled Hadoop 2.7.5</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动</span></span><br><span class="line">bin/start-cluster.sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="搭建AthenaX"><a href="#搭建AthenaX" class="headerlink" title="搭建AthenaX"></a>搭建AthenaX</h2><p><a target="_blank" rel="noopener" href="https://athenax.readthedocs.io/en/latest/getting_started/">Building AthenaX and Flink</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/base/" class="post-title-link" itemprop="url">MySQL</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-27 11:00:00" itemprop="dateCreated datePublished" datetime="2016-12-27T11:00:00+08:00">2016-12-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 15:20:56" itemprop="dateModified" datetime="2021-01-16T15:20:56+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ol>
+<li>语法<ul>
+<li><a href="/database/MySQL/syntax_1">基础语法1</a></li>
+<li><a href="/database/MySQL/syntax_2_in_or">in与or</a></li>
+<li><a href="/database/MySQL/syntax_3_multitable_join">多表join</a></li>
+<li><a href="/database/MySQL/syntax_4_advanced">高级语法</a></li>
+<li><a href="/database/MySQL/syntax_5_sample">使用样例</a></li>
+</ul>
+</li>
+<li>最佳实践<ul>
+<li><a href="/database/MySQL/best_practices">最佳实践</a></li>
+</ul>
+</li>
+<li>架构<ul>
+<li><a href="/database/MySQL/struct_1">架构</a></li>
+</ul>
+</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_4_advanced/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/syntax_4_advanced/" class="post-title-link" itemprop="url">MySQL高级语法</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-27 11:00:00" itemprop="dateCreated datePublished" datetime="2016-12-27T11:00:00+08:00">2016-12-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 15:20:56" itemprop="dateModified" datetime="2021-01-16T15:20:56+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="replace-into"><a href="#replace-into" class="headerlink" title="replace into"></a>replace into</h1><p><code>replace into t(id, update_time) values(1, now());</code><br>或<br><code>replace into t(id, update_time) select 1, now();</code></p>
+<p><code>replace into</code> 跟 <code>insert</code> 功能类似，不同点在于：<br><code>replace into</code> 首先尝试插入数据到表中，</p>
+<ol>
+<li>如果发现表中已经有此行数据（根据主键或者唯一索引判断）则先删除此行数据，然后插入新的数据。</li>
+<li>否则，直接插入新数据。</li>
+</ol>
+<p>要注意的是：插入数据的表必须有主键或者是唯一索引！否则的话，<code>replace into</code> 会直接插入数据，这将导致表中出现重复的数据。<br>MySQL replace into 有三种形式：</p>
+<ol>
+<li><code>replace into tbl_name(col_name, ...) values(...)</code></li>
+<li><code>replace into tbl_name(col_name, ...) select ...</code></li>
+<li><code>replace into tbl_name set col_name=value, ...</code></li>
+</ol>
+<p>前两种形式用的多些。其中 “into” 关键字可以省略，不过最好加上 “into”，这样意思更加直观。另外，对于那些没有给予值的列，MySQL 将自动为这些列赋上默认值。</p>
+<h1 id="MySQL高级"><a href="#MySQL高级" class="headerlink" title="MySQL高级"></a>MySQL高级</h1><h1 id="理解SQL语句"><a href="#理解SQL语句" class="headerlink" title="理解SQL语句"></a>理解SQL语句</h1><h1 id="创建外键的SQL语句"><a href="#创建外键的SQL语句" class="headerlink" title="创建外键的SQL语句"></a>创建外键的SQL语句</h1><h2 id="创建数据表"><a href="#创建数据表" class="headerlink" title="创建数据表"></a>创建数据表</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> a(</span><br><span class="line">  id <span class="type">INT</span> <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span>,</span><br><span class="line">  b_id <span class="type">INT</span>,</span><br><span class="line">  <span class="keyword">CONSTRAINT</span> b_fk <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> (b_id) <span class="keyword">REFERENCES</span> b(id)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<h2 id="修改数据表"><a href="#修改数据表" class="headerlink" title="修改数据表"></a>修改数据表</h2><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[<span class="keyword">CONSTRAINT</span> symbol] <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> [id] (index_col_name, ...)  </span><br><span class="line">    <span class="keyword">REFERENCES</span> tbl_name (index_col_name, ...)  </span><br><span class="line">    [ON DELETE &#123;RESTRICT | CASCADE | SET NULL | NO ACTION&#125;]  </span><br><span class="line">    [ON UPDATE &#123;RESTRICT | CASCADE | SET NULL | NO ACTION&#125;]  </span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a</span><br><span class="line"><span class="keyword">ADD</span> <span class="keyword">CONSTRAINT</span> b_fk <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_id <span class="keyword">REFERENCES</span> b(id);</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a</span><br><span class="line"><span class="keyword">ADD</span> <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_fk(b_id)  <span class="keyword">REFERENCES</span> b(id);</span><br></pre></td></tr></table></figure>
+<h2 id="删除外键"><a href="#删除外键" class="headerlink" title="删除外键"></a>删除外键</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a <span class="keyword">DROP</span> <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_fk;</span><br></pre></td></tr></table></figure>
+<p>MySQL <code>KEY...REFERENCES</code>修饰符添加一个<code>ON DELETE</code> 或<code>ON UPDATE</code>子句简化任务，它告诉了数据库在这种情况如何处理孤立任务</p>
+<table>
+<thead>
+<tr>
+<th>关键字</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CASCADE</td>
+<td>删除包含与已删除键值有参照关系的所有记录</td>
+</tr>
+<tr>
+<td>SET NULL</td>
+<td>修改包含与已删除键值有参照关系的所有记录，使用NULL值替换（只能用于已标记为NOT NULL的字段）</td>
+</tr>
+<tr>
+<td>RESTRICT</td>
+<td>拒绝删除要求，直到使用删除键值的辅助表被手工删除，并且没有参照时(这是默认设置，也是最安全的设置)</td>
+</tr>
+<tr>
+<td>NO ACTION</td>
+<td>啥也不做</td>
+</tr>
+</tbody></table>
+<p>请注意，通过ON UPDATE 和 ON DELETE规则，设置MySQL能够实现自动操作时，如果键的关系没有设置好，可能会导致严重的数据破坏，<br>例如：如果一系列的表通过外键关系和ON DELETE CASCADE 规则连接时，任意一个主表的变化都会导致甚至只和原始删除有一些将要联系的记录在没有警告的情况被删除，所以，我们在操作之前还要检查这些规则的，操作之后还要再次检查.</p>
+<h1 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h1><p>事务回滚</p>
+<h1 id="视图"><a href="#视图" class="headerlink" title="视图"></a>视图</h1><h1 id="触发器"><a href="#触发器" class="headerlink" title="触发器"></a>触发器</h1><h1 id="序列号"><a href="#序列号" class="headerlink" title="序列号"></a>序列号</h1><h1 id="权限"><a href="#权限" class="headerlink" title="权限"></a>权限</h1><h2 id="使用技巧"><a href="#使用技巧" class="headerlink" title="使用技巧"></a>使用技巧</h2><ol>
+<li><p>如何更新使用过滤条件中包括自身的表?<br>在MySQL中, 不允许更新的表不能出现在FROM从句中, 但是可以使用JOIN从句中.</p>
+<p>联合更新</p>
+</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> user1 a <span class="keyword">JOIN</span>(</span><br><span class="line">  <span class="keyword">SELECT</span> b.`user_name`</span><br><span class="line">  <span class="keyword">FROM</span> user1 a <span class="keyword">INNER</span> <span class="keyword">JOIN</span> user2 b</span><br><span class="line">  <span class="keyword">ON</span> a.`user_name`<span class="operator">=</span> b.`user_name`</span><br><span class="line">) b <span class="keyword">ON</span> a.`user_name`<span class="operator">=</span>b.`user_name`</span><br><span class="line"><span class="keyword">SET</span> a.`<span class="keyword">over</span>`<span class="operator">=</span>`齐天大圣`;</span><br></pre></td></tr></table></figure>
+<ol>
+<li>优化子查询</li>
+<li>优化聚合查询</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> a.user_name, b.timestr,b.kills  </span><br><span class="line"><span class="keyword">from</span> <span class="keyword">user</span> a  </span><br><span class="line"><span class="keyword">join</span> user_kills b</span><br><span class="line"><span class="keyword">on</span> a.id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">where</span> b.kills<span class="operator">=</span>(</span><br><span class="line">  <span class="keyword">select</span> <span class="built_in">max</span>(c.kills) <span class="keyword">from</span> user_kills c <span class="keyword">where</span> c.user_id<span class="operator">=</span>b.user_id</span><br><span class="line">);  </span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> a.user_name,b.timestr,b.kills</span><br><span class="line"><span class="keyword">FROM</span> user1 a</span><br><span class="line"><span class="keyword">JOIN</span> user_kills b <span class="keyword">ON</span> a.id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">JOIN</span> user_kills c <span class="keyword">ON</span> c.user_id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> a.user_name,b.timestr,c.kills</span><br><span class="line"><span class="keyword">HAVING</span> b.kills<span class="operator">=</span><span class="built_in">MAX</span>(c.kills);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>如何实现分组选择</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> d.user_name, c.timestr , kills</span><br><span class="line"><span class="keyword">FROM</span> (</span><br><span class="line">  <span class="keyword">SELECT</span> user_id,timestr,kills,</span><br><span class="line">  (<span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> user_kills b <span class="keyword">WHERE</span></span><br><span class="line">    b.user_id<span class="operator">=</span>a.user_id <span class="keyword">AND</span> a.kills<span class="operator">&lt;=</span>b.kills) <span class="keyword">AS</span> cnt</span><br><span class="line">    <span class="keyword">FROM</span> user_kills a</span><br><span class="line">    <span class="keyword">GROUP</span> <span class="keyword">BY</span> user_id,timestr,kills</span><br><span class="line">) c <span class="keyword">JOIN</span> user1 d <span class="keyword">ON</span> c.user_id<span class="operator">=</span>d.id</span><br><span class="line"><span class="keyword">WHERE</span> cnt<span class="operator">&lt;=</span><span class="number">2</span></span><br></pre></td></tr></table></figure>
+<ol>
+<li><p>删除重复记录</p>
+</li>
+<li><p>行列转换</p>
+</li>
+</ol>
+<p>MySQL</p>
+<h1 id="SQL语句类型"><a href="#SQL语句类型" class="headerlink" title="SQL语句类型:"></a>SQL语句类型:</h1><ol>
+<li>DDL 数据定义语言</li>
+<li>TPL 事务处理语言</li>
+<li>DCL 数据控制语言</li>
+<li>DML 数据操作语言</li>
+</ol>
+<h1 id="事务-1"><a href="#事务-1" class="headerlink" title="事务"></a>事务</h1><h1 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h1><h1 id="JOIN"><a href="#JOIN" class="headerlink" title="JOIN"></a>JOIN</h1><p>只写JOIN, 默认是inner join</p>
+<ol>
+<li>更新使用过滤条件中包括自身的表?<br>不能更新from从句的表</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> user1 <span class="keyword">set</span> <span class="keyword">over</span><span class="operator">=</span><span class="string">&#x27;齐天大圣&#x27;</span> <span class="keyword">where</span> user1.user_name <span class="keyword">in</span> (</span><br><span class="line">        <span class="keyword">select</span> b.user_name <span class="keyword">from</span> user1 a <span class="keyword">join</span> user2 b <span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line">        );</span><br></pre></td></tr></table></figure>
+<p>会报错!</p>
+<p>使用JOIN可以解决此问题</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> user1 a <span class="keyword">join</span>(</span><br><span class="line">        <span class="keyword">select</span> b.user_name</span><br><span class="line">        <span class="keyword">from</span> user1 a</span><br><span class="line">        <span class="keyword">join</span> user2 b</span><br><span class="line">        <span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line">        ) b</span><br><span class="line"><span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line"><span class="keyword">set</span> a.over<span class="operator">=</span><span class="string">&#x27;齐天大圣&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>表结构：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[Exam](</span><br><span class="line">    [S_date] [datetime] <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Order_Id] [<span class="type">varchar</span>](<span class="number">50</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Product_Id] [<span class="type">varchar</span>](<span class="number">50</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Amt] [<span class="type">numeric</span>](<span class="number">18</span>, <span class="number">0</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span></span><br><span class="line">) <span class="keyword">ON</span> [<span class="keyword">PRIMARY</span>]</span><br></pre></td></tr></table></figure>
+<p>题目一: 写一条Sql语句查询前出100到199的记录<br>题目二: 写一条Sql语句删除重复[除时间外的所有字段字段相同]的记录,保留重复记录中时间最大的记录<br>题目三: 一条Sql语句查出年份,1月,2月,3月….12月的订单总数列表<br>题目四: 一条sql语句查询出年份,本月销量,上月销量,环比%,去年同期销量,同比%列表</p>
+<p>1:</p>
+<pre><code>select * from Exam limit 100,100</code></pre>
+<p>2 :</p>
+<p>3 :</p>
+<p>   select year(s_date) as ‘年’ ,month(s_date) as ‘月’, count(Amt) as ‘订单数’ from Exam group by year(s_date),Month(s_date);</p>
+<h2 id="导入-导出"><a href="#导入-导出" class="headerlink" title="导入/导出"></a>导入/导出</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">#导出整个库的表结构如下：</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename <span class="operator">&gt;</span> createtab.sql，</span><br><span class="line"></span><br><span class="line">#如果只想导出 表 test1，test2，test3 的 表结构 和 数据呢？</span><br><span class="line">#该如何导出？</span><br><span class="line"></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename test1 test2 test3 <span class="operator">&gt;</span> createtab.sql</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 上面的是导出指定表结构，下面这个可以导出指定表结构和数据</span></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="comment">--tables databasename &gt; createtab.sql</span></span><br><span class="line"></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename test1 test2 test3 <span class="operator">&gt;</span> createtab.sql</span><br></pre></td></tr></table></figure>
+<h1 id="exist-与-in的区别"><a href="#exist-与-in的区别" class="headerlink" title="exist 与 in的区别"></a>exist 与 in的区别</h1><h1 id="union与union-all"><a href="#union与union-all" class="headerlink" title="union与union all"></a>union与union all</h1><h1 id="in的长度"><a href="#in的长度" class="headerlink" title="in的长度"></a>in的长度</h1><h1 id="in-与exist是否使用索引"><a href="#in-与exist是否使用索引" class="headerlink" title="in 与exist是否使用索引"></a>in 与exist是否使用索引</h1><h1 id="select-distinct-只能单个字段"><a href="#select-distinct-只能单个字段" class="headerlink" title="select  distinct  只能单个字段"></a>select  distinct  只能单个字段</h1>
       
     </div>
 
@@ -1496,7 +1533,7 @@ Dockerfile的内容为:</li>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">226</span>
+          <span class="site-state-item-count">222</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1509,7 +1546,7 @@ Dockerfile的内容为:</li>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">111</span>
+        <span class="site-state-item-count">107</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
