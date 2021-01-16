@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:47" itemprop="dateModified" datetime="2021-01-16T14:56:47+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -240,264 +240,6 @@
           <h1 id="ElasticSearch"><a href="#ElasticSearch" class="headerlink" title="ElasticSearch"></a>ElasticSearch</h1><p>Es 基于lucene</p>
 <p>Elasticsearch 是一个分布式、可扩展、实时的搜索与数据分析引擎。</p>
 <p><a target="_blank" rel="noopener" href="https://github.com/oldratlee/useful-scripts">ES分析脚本</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/AsyncApiScalaSink/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/AsyncApiScalaSink/" class="post-title-link" itemprop="url">Flink AsyncApiScalaSink</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:47" itemprop="dateModified" datetime="2021-01-16T14:56:47+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Flink-AsyncApiScalaSink"><a href="#Flink-AsyncApiScalaSink" class="headerlink" title="Flink AsyncApiScalaSink"></a>Flink AsyncApiScalaSink</h1><p>andrew建议：</p>
-<ul>
-<li>onCompeleted没有把IOException暴露给用户</li>
-<li>链接配置之类的参数如何传递进去</li>
-<li>反压机制如何做？sink经常遇到的问题，下游抖动会直接导致数据丢失</li>
-<li>反压 限流 重试</li>
-<li>支持batch，条数控制</li>
-<li>checkpoint时，需要batch立即flush出去</li>
-</ul>
-<h2 id="Http-Client"><a href="#Http-Client" class="headerlink" title="Http Client"></a>Http Client</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpclient<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.5.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpcore<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.4.5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpcore-nio<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.4.5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpasyncclient<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.1.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<h2 id="AsyncApiScalaSink"><a href="#AsyncApiScalaSink" class="headerlink" title="AsyncApiScalaSink"></a>AsyncApiScalaSink</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.<span class="type">IOException</span></span><br><span class="line"><span class="keyword">import</span> java.util</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.flink.configuration.<span class="type">Configuration</span></span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.functions.sink.&#123;<span class="type">RichSinkFunction</span>, <span class="type">SinkFunction</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http._</span><br><span class="line"><span class="keyword">import</span> org.apache.http.client.entity.<span class="type">UrlEncodedFormEntity</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.client.methods.&#123;<span class="type">HttpEntityEnclosingRequestBase</span>, <span class="type">HttpPost</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http.concurrent.<span class="type">FutureCallback</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.impl.client.<span class="type">DefaultConnectionKeepAliveStrategy</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.impl.nio.client.&#123;<span class="type">CloseableHttpAsyncClient</span>, <span class="type">HttpAsyncClients</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http.message.<span class="type">BasicNameValuePair</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.util.<span class="type">EntityUtils</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AsyncApiScalaSink</span>[<span class="type">E</span>](<span class="params">httpInvoker: <span class="type">HttpInvoker</span>[<span class="type">E</span>]</span>) <span class="keyword">extends</span> <span class="title">RichSinkFunction</span>[<span class="type">E</span>] </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> httpClient: <span class="type">CloseableHttpAsyncClient</span> = _</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">open</span></span>(parameters: <span class="type">Configuration</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    httpClient = <span class="type">HttpAsyncClients</span>.custom.setKeepAliveStrategy(<span class="type">DefaultConnectionKeepAliveStrategy</span>.<span class="type">INSTANCE</span>).build</span><br><span class="line">    httpClient.start()</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">invoke</span></span>(value: <span class="type">E</span>, context: <span class="type">SinkFunction</span>.<span class="type">Context</span>[_]): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">var</span> httpEntity: <span class="type">HttpEntityEnclosingRequestBase</span> = <span class="literal">null</span></span><br><span class="line">    <span class="keyword">val</span> method: <span class="type">String</span> = httpInvoker.getMethod</span><br><span class="line">    <span class="keyword">val</span> url: <span class="type">String</span> = httpInvoker.getUrl</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">&quot;GET&quot;</span> == method) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">&quot;POST&quot;</span> == method) &#123;</span><br><span class="line">      <span class="keyword">val</span> params1: util.<span class="type">Map</span>[<span class="type">String</span>, <span class="type">String</span>] = httpInvoker.getParams(value)</span><br><span class="line">      <span class="keyword">val</span> params: util.<span class="type">List</span>[<span class="type">NameValuePair</span>] = <span class="keyword">new</span> util.<span class="type">ArrayList</span>[<span class="type">NameValuePair</span>]</span><br><span class="line">      <span class="keyword">if</span> (params1 != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">import</span> scala.collection.<span class="type">JavaConversions</span>._</span><br><span class="line">        <span class="keyword">for</span> (entry &lt;- params1.entrySet) &#123;</span><br><span class="line">          <span class="keyword">val</span> key: <span class="type">String</span> = entry.getKey</span><br><span class="line">          <span class="keyword">val</span> value1: <span class="type">String</span> = entry.getValue</span><br><span class="line">          params.add(<span class="keyword">new</span> <span class="type">BasicNameValuePair</span>(key, value1))</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">val</span> entity: <span class="type">UrlEncodedFormEntity</span> = <span class="keyword">new</span> <span class="type">UrlEncodedFormEntity</span>(params, <span class="type">Consts</span>.<span class="type">UTF_8</span>)</span><br><span class="line">      httpEntity = <span class="keyword">new</span> <span class="type">HttpPost</span>(url)</span><br><span class="line">      httpEntity.setEntity(entity)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    httpClient.execute(httpEntity, <span class="keyword">new</span> <span class="type">FutureCallback</span>[<span class="type">HttpResponse</span>]() &#123;</span><br><span class="line">      <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">completed</span></span>(response: <span class="type">HttpResponse</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">        <span class="keyword">val</span> statusLine: <span class="type">StatusLine</span> = response.getStatusLine</span><br><span class="line">        <span class="keyword">val</span> httpStatusCode: <span class="type">Int</span> = statusLine.getStatusCode</span><br><span class="line">        <span class="keyword">var</span> content: <span class="type">String</span> = <span class="literal">null</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="keyword">val</span> entity: <span class="type">HttpEntity</span> = response.getEntity</span><br><span class="line">          content = <span class="type">EntityUtils</span>.toString(entity)</span><br><span class="line">        &#125; <span class="keyword">catch</span> &#123;</span><br><span class="line">          <span class="keyword">case</span> e: <span class="type">IOException</span> =&gt;</span><br><span class="line">            <span class="type">System</span>.err.print(e.getMessage)</span><br><span class="line">        &#125;</span><br><span class="line">        httpInvoker.onCompleted(value, httpStatusCode, content)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">override</span></span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">def</span> <span class="title">failed</span></span>(ex: <span class="type">Exception</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">        httpInvoker.onFailed(value, ex)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">override</span></span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">def</span> <span class="title">cancelled</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">        httpInvoker.onCanceled(value)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">close</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">    httpClient.close()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="HttpInvoker"><a href="#HttpInvoker" class="headerlink" title="HttpInvoker"></a>HttpInvoker</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.<span class="type">Serializable</span>;</span><br><span class="line"><span class="keyword">import</span> java.util.<span class="type">Map</span>;</span><br><span class="line"></span><br><span class="line">public interface <span class="type">HttpInvoker</span>&lt;<span class="type">E</span>&gt; <span class="keyword">extends</span> <span class="type">Serializable</span> &#123;</span><br><span class="line">    <span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">String</span>&gt; getParams(<span class="type">E</span> e);</span><br><span class="line"></span><br><span class="line">    <span class="type">String</span> getMethod();</span><br><span class="line"></span><br><span class="line">    <span class="type">String</span> getUrl();</span><br><span class="line"></span><br><span class="line">    void onCompleted(<span class="type">E</span> value, int httpStatusCode, <span class="type">String</span> content);</span><br><span class="line"></span><br><span class="line">    void onFailed(<span class="type">E</span> value, <span class="type">Exception</span> ex);</span><br><span class="line"></span><br><span class="line">    void onCanceled(<span class="type">E</span> value);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-base/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/Flink-base/" class="post-title-link" itemprop="url">Flink核心知识点梳理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:47" itemprop="dateModified" datetime="2021-01-16T14:56:47+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Flink"><a href="#Flink" class="headerlink" title="Flink"></a>Flink</h1><p><img src="_v_images/flink-structure.svg" alt="The processes involved in executing a Flink dataflow"></p>
-<h2 id="stateful-stream-processing"><a href="#stateful-stream-processing" class="headerlink" title="stateful stream processing"></a>stateful stream processing</h2><p>processFunction</p>
-<p>低阶API<br>构建一些新的组件<br>比如 利用定时做一定情况下的匹配和缓存<br>灵活，开发比较复杂</p>
-<p>凌晨更新  注册定时器 </p>
-<h2 id="state"><a href="#state" class="headerlink" title="state"></a>state</h2><p>状态托管<br>operator state 算子状态<br>keyed state<br>State Backend (rocksdb + hdfs)</p>
-<h2 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h2><p>barrier</p>
-<h2 id="DataStream-广播"><a href="#DataStream-广播" class="headerlink" title="DataStream 广播"></a>DataStream 广播</h2><h2 id="CoLocationGroup"><a href="#CoLocationGroup" class="headerlink" title="CoLocationGroup"></a>CoLocationGroup</h2><h2 id="SlotSharingGroup"><a href="#SlotSharingGroup" class="headerlink" title="SlotSharingGroup"></a>SlotSharingGroup</h2><h3 id="如何自定义-Window？"><a href="#如何自定义-Window？" class="headerlink" title="如何自定义 Window？"></a>如何自定义 Window？</h3><p>1、Window Assigner</p>
-<p>负责将元素分配到不同的 window。</p>
-<p>Window API 提供了自定义的 WindowAssigner 接口，我们可以实现 WindowAssigner 的</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public abstract Collection&lt;W&gt; assignWindows(T element, long timestamp)</span><br></pre></td></tr></table></figure>
-<p>方法。同时，对于基于 Count 的 window 而言，默认采用了 GlobalWindow 的 window assigner，例如：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">keyBy.window(GlobalWindows.create())</span><br></pre></td></tr></table></figure>
-<p>2、Trigger</p>
-<p>Trigger 即触发器，定义何时或什么情况下移除 window</p>
-<p>我们可以指定触发器来覆盖 WindowAssigner 提供的默认触发器。 请注意，指定的触发器不会添加其他触发条件，但会替换当前触发器。</p>
-<p>3、Evictor（可选）</p>
-<p>驱逐者，即保留上一 window 留下的某些元素</p>
-<p>4、通过 apply WindowFunction 来返回 DataStream 类型数据。</p>
-<p>利用 Flink 的内部窗口机制和 DataStream API 可以实现自定义的窗口逻辑，例如 session window。</p>
-<h3 id="EventTime-amp-ProcessTime-amp-IngestionTime"><a href="#EventTime-amp-ProcessTime-amp-IngestionTime" class="headerlink" title="EventTime &amp; ProcessTime &amp; IngestionTime"></a>EventTime &amp; ProcessTime &amp; IngestionTime</h3><p> Event time programs must specify how to generate <em>Event Time Watermarks</em>, which is the mechanism that signals progress in event time</p>
-<p>Internally, <em>ingestion time</em> is treated much like <em>event time</em>, but with automatic timestamp assignment and automatic watermark generation.</p>
-<h2 id="watermark"><a href="#watermark" class="headerlink" title="watermark"></a>watermark</h2><p>kafka的每个分区event-time到来的时间不一致</p>
-<p>using Flink’s Kafka-partition-aware watermark generation. watermarks are generated inside the Kafka consumer, per Kafka partition, and the per-partition watermarks are merged in the same way as watermarks are merged on stream shuffles.</p>
-<p>watermark在每个kafka分区的kafka消费者中产生，每个分区的watermark合并起来，如在stream shuffle中合并watermark一样</p>
-<h2 id="HadoopOutputFormat"><a href="#HadoopOutputFormat" class="headerlink" title="HadoopOutputFormat"></a>HadoopOutputFormat</h2><p>flink hbase connector</p>
-<h2 id="算子之间数据传递，是如何序列化的"><a href="#算子之间数据传递，是如何序列化的" class="headerlink" title="算子之间数据传递，是如何序列化的"></a>算子之间数据传递，是如何序列化的</h2>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-datasource/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/Flink-datasource/" class="post-title-link" itemprop="url">Flink: 数据源重放</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:47" itemprop="dateModified" datetime="2021-01-16T14:56:47+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="flink-table-api"><a href="#flink-table-api" class="headerlink" title="flink-table-api"></a>flink-table-api</h1><h2 id="Hippo和Tube如何实现重放"><a href="#Hippo和Tube如何实现重放" class="headerlink" title="Hippo和Tube如何实现重放?"></a>Hippo和Tube如何实现重放?</h2><h3 id="FlinkHippoConsumer"><a href="#FlinkHippoConsumer" class="headerlink" title="FlinkHippoConsumer"></a>FlinkHippoConsumer</h3><h2 id="举一反三"><a href="#举一反三" class="headerlink" title="举一反三"></a>举一反三</h2><h3 id="org-apache-flink-streaming-api-functions-source-RichParallelSourceFunction"><a href="#org-apache-flink-streaming-api-functions-source-RichParallelSourceFunction" class="headerlink" title="org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction"></a>org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction</h3><p>构建并行数据流的基础类，在执行时，运行时将执行与源配置的并行一样多的该函数的并行实例。</p>
-<h2 id="org-apache-flink-types-Row"><a href="#org-apache-flink-types-Row" class="headerlink" title="org.apache.flink.types.Row"></a>org.apache.flink.types.Row</h2><p>一行数据</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Object[]  fields</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -548,7 +290,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:47" itemprop="dateModified" datetime="2021-01-16T14:56:47+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -644,88 +386,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/HDFS/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Hadoop/HDFS/" class="post-title-link" itemprop="url">HDFS基础</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:47" itemprop="dateModified" datetime="2021-01-16T14:56:47+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <ul>
-<li>NameNode 保存这个文件的数据块信息</li>
-<li>DataNode 存储实际的文件</li>
-<li>当MR启动的时候，首先获取所要处理的文件的块信息和节点信息，然后在这些节点上同时启动任务，在数据所在节点上同时处理</li>
-</ul>
-<p>MapReduce是底层编程语言，您需要专业知识才能在此级别工作。工程师在Map Reduce上开发了一个名为Hive的层，以便用户可以使用SQL来处理HDFS中存储的数据。Hive将这些SQL查询转换为一系列Map Reduce，然后调度执行。因此，Hive极大地简化了数据处理任务。但是Hive使用底层Map Reduce体系结构，这是用于处理数据的另一层</p>
-<p>Impala 一旦部署在Hadoop集群中，它将在每个数据节点上运行自己的进程，并完全跳过MapReduce阶段。一旦收到一个SQL，Impala master节点调度数据所在的节点上直接执行任务。因为它跳过MapReduce转换阶段并直接在节点上执行，所以它可以完成每秒钟的SQL查询</p>
-<p>当您在Hive中启动查询时，在背景地图中，Reduce会出现在启动查询需要花费大量时间的画面中，就像您在Impala中启动查询一样，它使用自己的体系结构，即MPP(大规模并行处理)而不是Map Reduce来从HDFS获取结果。它在内存中执行查询，总是比磁盘快。</p>
-<p>It’s an HDFS quirk. A file that’s currently being written to will appear to have a size of 0 but once it’s closed it will show its true size</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Impala/Impala-why-faster-than-hive/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -757,7 +417,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:47" itemprop="dateModified" datetime="2021-01-16T14:56:47+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -855,6 +515,346 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/HDFS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Hadoop/HDFS/" class="post-title-link" itemprop="url">HDFS基础</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ul>
+<li>NameNode 保存这个文件的数据块信息</li>
+<li>DataNode 存储实际的文件</li>
+<li>当MR启动的时候，首先获取所要处理的文件的块信息和节点信息，然后在这些节点上同时启动任务，在数据所在节点上同时处理</li>
+</ul>
+<p>MapReduce是底层编程语言，您需要专业知识才能在此级别工作。工程师在Map Reduce上开发了一个名为Hive的层，以便用户可以使用SQL来处理HDFS中存储的数据。Hive将这些SQL查询转换为一系列Map Reduce，然后调度执行。因此，Hive极大地简化了数据处理任务。但是Hive使用底层Map Reduce体系结构，这是用于处理数据的另一层</p>
+<p>Impala 一旦部署在Hadoop集群中，它将在每个数据节点上运行自己的进程，并完全跳过MapReduce阶段。一旦收到一个SQL，Impala master节点调度数据所在的节点上直接执行任务。因为它跳过MapReduce转换阶段并直接在节点上执行，所以它可以完成每秒钟的SQL查询</p>
+<p>当您在Hive中启动查询时，在背景地图中，Reduce会出现在启动查询需要花费大量时间的画面中，就像您在Impala中启动查询一样，它使用自己的体系结构，即MPP(大规模并行处理)而不是Map Reduce来从HDFS获取结果。它在内存中执行查询，总是比磁盘快。</p>
+<p>It’s an HDFS quirk. A file that’s currently being written to will appear to have a size of 0 but once it’s closed it will show its true size</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/AsyncApiScalaSink/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/AsyncApiScalaSink/" class="post-title-link" itemprop="url">Flink AsyncApiScalaSink</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-AsyncApiScalaSink"><a href="#Flink-AsyncApiScalaSink" class="headerlink" title="Flink AsyncApiScalaSink"></a>Flink AsyncApiScalaSink</h1><p>andrew建议：</p>
+<ul>
+<li>onCompeleted没有把IOException暴露给用户</li>
+<li>链接配置之类的参数如何传递进去</li>
+<li>反压机制如何做？sink经常遇到的问题，下游抖动会直接导致数据丢失</li>
+<li>反压 限流 重试</li>
+<li>支持batch，条数控制</li>
+<li>checkpoint时，需要batch立即flush出去</li>
+</ul>
+<h2 id="Http-Client"><a href="#Http-Client" class="headerlink" title="Http Client"></a>Http Client</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpclient<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.5.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpcore<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.4.5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpcore-nio<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.4.5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpasyncclient<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.1.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="AsyncApiScalaSink"><a href="#AsyncApiScalaSink" class="headerlink" title="AsyncApiScalaSink"></a>AsyncApiScalaSink</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.<span class="type">IOException</span></span><br><span class="line"><span class="keyword">import</span> java.util</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.flink.configuration.<span class="type">Configuration</span></span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.functions.sink.&#123;<span class="type">RichSinkFunction</span>, <span class="type">SinkFunction</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http._</span><br><span class="line"><span class="keyword">import</span> org.apache.http.client.entity.<span class="type">UrlEncodedFormEntity</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.client.methods.&#123;<span class="type">HttpEntityEnclosingRequestBase</span>, <span class="type">HttpPost</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http.concurrent.<span class="type">FutureCallback</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.impl.client.<span class="type">DefaultConnectionKeepAliveStrategy</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.impl.nio.client.&#123;<span class="type">CloseableHttpAsyncClient</span>, <span class="type">HttpAsyncClients</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http.message.<span class="type">BasicNameValuePair</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.util.<span class="type">EntityUtils</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AsyncApiScalaSink</span>[<span class="type">E</span>](<span class="params">httpInvoker: <span class="type">HttpInvoker</span>[<span class="type">E</span>]</span>) <span class="keyword">extends</span> <span class="title">RichSinkFunction</span>[<span class="type">E</span>] </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> httpClient: <span class="type">CloseableHttpAsyncClient</span> = _</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">open</span></span>(parameters: <span class="type">Configuration</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    httpClient = <span class="type">HttpAsyncClients</span>.custom.setKeepAliveStrategy(<span class="type">DefaultConnectionKeepAliveStrategy</span>.<span class="type">INSTANCE</span>).build</span><br><span class="line">    httpClient.start()</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">invoke</span></span>(value: <span class="type">E</span>, context: <span class="type">SinkFunction</span>.<span class="type">Context</span>[_]): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">var</span> httpEntity: <span class="type">HttpEntityEnclosingRequestBase</span> = <span class="literal">null</span></span><br><span class="line">    <span class="keyword">val</span> method: <span class="type">String</span> = httpInvoker.getMethod</span><br><span class="line">    <span class="keyword">val</span> url: <span class="type">String</span> = httpInvoker.getUrl</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">&quot;GET&quot;</span> == method) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">&quot;POST&quot;</span> == method) &#123;</span><br><span class="line">      <span class="keyword">val</span> params1: util.<span class="type">Map</span>[<span class="type">String</span>, <span class="type">String</span>] = httpInvoker.getParams(value)</span><br><span class="line">      <span class="keyword">val</span> params: util.<span class="type">List</span>[<span class="type">NameValuePair</span>] = <span class="keyword">new</span> util.<span class="type">ArrayList</span>[<span class="type">NameValuePair</span>]</span><br><span class="line">      <span class="keyword">if</span> (params1 != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">import</span> scala.collection.<span class="type">JavaConversions</span>._</span><br><span class="line">        <span class="keyword">for</span> (entry &lt;- params1.entrySet) &#123;</span><br><span class="line">          <span class="keyword">val</span> key: <span class="type">String</span> = entry.getKey</span><br><span class="line">          <span class="keyword">val</span> value1: <span class="type">String</span> = entry.getValue</span><br><span class="line">          params.add(<span class="keyword">new</span> <span class="type">BasicNameValuePair</span>(key, value1))</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">val</span> entity: <span class="type">UrlEncodedFormEntity</span> = <span class="keyword">new</span> <span class="type">UrlEncodedFormEntity</span>(params, <span class="type">Consts</span>.<span class="type">UTF_8</span>)</span><br><span class="line">      httpEntity = <span class="keyword">new</span> <span class="type">HttpPost</span>(url)</span><br><span class="line">      httpEntity.setEntity(entity)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    httpClient.execute(httpEntity, <span class="keyword">new</span> <span class="type">FutureCallback</span>[<span class="type">HttpResponse</span>]() &#123;</span><br><span class="line">      <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">completed</span></span>(response: <span class="type">HttpResponse</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">        <span class="keyword">val</span> statusLine: <span class="type">StatusLine</span> = response.getStatusLine</span><br><span class="line">        <span class="keyword">val</span> httpStatusCode: <span class="type">Int</span> = statusLine.getStatusCode</span><br><span class="line">        <span class="keyword">var</span> content: <span class="type">String</span> = <span class="literal">null</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="keyword">val</span> entity: <span class="type">HttpEntity</span> = response.getEntity</span><br><span class="line">          content = <span class="type">EntityUtils</span>.toString(entity)</span><br><span class="line">        &#125; <span class="keyword">catch</span> &#123;</span><br><span class="line">          <span class="keyword">case</span> e: <span class="type">IOException</span> =&gt;</span><br><span class="line">            <span class="type">System</span>.err.print(e.getMessage)</span><br><span class="line">        &#125;</span><br><span class="line">        httpInvoker.onCompleted(value, httpStatusCode, content)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">override</span></span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">def</span> <span class="title">failed</span></span>(ex: <span class="type">Exception</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">        httpInvoker.onFailed(value, ex)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">override</span></span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">def</span> <span class="title">cancelled</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">        httpInvoker.onCanceled(value)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">close</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">    httpClient.close()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="HttpInvoker"><a href="#HttpInvoker" class="headerlink" title="HttpInvoker"></a>HttpInvoker</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.<span class="type">Serializable</span>;</span><br><span class="line"><span class="keyword">import</span> java.util.<span class="type">Map</span>;</span><br><span class="line"></span><br><span class="line">public interface <span class="type">HttpInvoker</span>&lt;<span class="type">E</span>&gt; <span class="keyword">extends</span> <span class="type">Serializable</span> &#123;</span><br><span class="line">    <span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">String</span>&gt; getParams(<span class="type">E</span> e);</span><br><span class="line"></span><br><span class="line">    <span class="type">String</span> getMethod();</span><br><span class="line"></span><br><span class="line">    <span class="type">String</span> getUrl();</span><br><span class="line"></span><br><span class="line">    void onCompleted(<span class="type">E</span> value, int httpStatusCode, <span class="type">String</span> content);</span><br><span class="line"></span><br><span class="line">    void onFailed(<span class="type">E</span> value, <span class="type">Exception</span> ex);</span><br><span class="line"></span><br><span class="line">    void onCanceled(<span class="type">E</span> value);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-base/" class="post-title-link" itemprop="url">Flink核心知识点梳理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink"><a href="#Flink" class="headerlink" title="Flink"></a>Flink</h1><p><img src="_v_images/flink-structure.svg" alt="The processes involved in executing a Flink dataflow"></p>
+<h2 id="stateful-stream-processing"><a href="#stateful-stream-processing" class="headerlink" title="stateful stream processing"></a>stateful stream processing</h2><p>processFunction</p>
+<p>低阶API<br>构建一些新的组件<br>比如 利用定时做一定情况下的匹配和缓存<br>灵活，开发比较复杂</p>
+<p>凌晨更新  注册定时器 </p>
+<h2 id="state"><a href="#state" class="headerlink" title="state"></a>state</h2><p>状态托管<br>operator state 算子状态<br>keyed state<br>State Backend (rocksdb + hdfs)</p>
+<h2 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h2><p>barrier</p>
+<h2 id="DataStream-广播"><a href="#DataStream-广播" class="headerlink" title="DataStream 广播"></a>DataStream 广播</h2><h2 id="CoLocationGroup"><a href="#CoLocationGroup" class="headerlink" title="CoLocationGroup"></a>CoLocationGroup</h2><h2 id="SlotSharingGroup"><a href="#SlotSharingGroup" class="headerlink" title="SlotSharingGroup"></a>SlotSharingGroup</h2><h3 id="如何自定义-Window？"><a href="#如何自定义-Window？" class="headerlink" title="如何自定义 Window？"></a>如何自定义 Window？</h3><p>1、Window Assigner</p>
+<p>负责将元素分配到不同的 window。</p>
+<p>Window API 提供了自定义的 WindowAssigner 接口，我们可以实现 WindowAssigner 的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public abstract Collection&lt;W&gt; assignWindows(T element, long timestamp)</span><br></pre></td></tr></table></figure>
+<p>方法。同时，对于基于 Count 的 window 而言，默认采用了 GlobalWindow 的 window assigner，例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">keyBy.window(GlobalWindows.create())</span><br></pre></td></tr></table></figure>
+<p>2、Trigger</p>
+<p>Trigger 即触发器，定义何时或什么情况下移除 window</p>
+<p>我们可以指定触发器来覆盖 WindowAssigner 提供的默认触发器。 请注意，指定的触发器不会添加其他触发条件，但会替换当前触发器。</p>
+<p>3、Evictor（可选）</p>
+<p>驱逐者，即保留上一 window 留下的某些元素</p>
+<p>4、通过 apply WindowFunction 来返回 DataStream 类型数据。</p>
+<p>利用 Flink 的内部窗口机制和 DataStream API 可以实现自定义的窗口逻辑，例如 session window。</p>
+<h3 id="EventTime-amp-ProcessTime-amp-IngestionTime"><a href="#EventTime-amp-ProcessTime-amp-IngestionTime" class="headerlink" title="EventTime &amp; ProcessTime &amp; IngestionTime"></a>EventTime &amp; ProcessTime &amp; IngestionTime</h3><p> Event time programs must specify how to generate <em>Event Time Watermarks</em>, which is the mechanism that signals progress in event time</p>
+<p>Internally, <em>ingestion time</em> is treated much like <em>event time</em>, but with automatic timestamp assignment and automatic watermark generation.</p>
+<h2 id="watermark"><a href="#watermark" class="headerlink" title="watermark"></a>watermark</h2><p>kafka的每个分区event-time到来的时间不一致</p>
+<p>using Flink’s Kafka-partition-aware watermark generation. watermarks are generated inside the Kafka consumer, per Kafka partition, and the per-partition watermarks are merged in the same way as watermarks are merged on stream shuffles.</p>
+<p>watermark在每个kafka分区的kafka消费者中产生，每个分区的watermark合并起来，如在stream shuffle中合并watermark一样</p>
+<h2 id="HadoopOutputFormat"><a href="#HadoopOutputFormat" class="headerlink" title="HadoopOutputFormat"></a>HadoopOutputFormat</h2><p>flink hbase connector</p>
+<h2 id="算子之间数据传递，是如何序列化的"><a href="#算子之间数据传递，是如何序列化的" class="headerlink" title="算子之间数据传递，是如何序列化的"></a>算子之间数据传递，是如何序列化的</h2>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-datasource/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-datasource/" class="post-title-link" itemprop="url">Flink: 数据源重放</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 15:17:29" itemprop="dateModified" datetime="2021-01-16T15:17:29+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="flink-table-api"><a href="#flink-table-api" class="headerlink" title="flink-table-api"></a>flink-table-api</h1><h2 id="Hippo和Tube如何实现重放"><a href="#Hippo和Tube如何实现重放" class="headerlink" title="Hippo和Tube如何实现重放?"></a>Hippo和Tube如何实现重放?</h2><h3 id="FlinkHippoConsumer"><a href="#FlinkHippoConsumer" class="headerlink" title="FlinkHippoConsumer"></a>FlinkHippoConsumer</h3><h2 id="举一反三"><a href="#举一反三" class="headerlink" title="举一反三"></a>举一反三</h2><h3 id="org-apache-flink-streaming-api-functions-source-RichParallelSourceFunction"><a href="#org-apache-flink-streaming-api-functions-source-RichParallelSourceFunction" class="headerlink" title="org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction"></a>org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction</h3><p>构建并行数据流的基础类，在执行时，运行时将执行与源配置的并行一样多的该函数的并行实例。</p>
+<h2 id="org-apache-flink-types-Row"><a href="#org-apache-flink-types-Row" class="headerlink" title="org.apache.flink.types.Row"></a>org.apache.flink.types.Row</h2><p>一行数据</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Object[]  fields</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/clickhouse/ClickHouse/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -886,7 +886,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:46" itemprop="dateModified" datetime="2021-01-16T14:56:46+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:17:28" itemprop="dateModified" datetime="2021-01-16T15:17:28+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1018,7 +1018,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:46" itemprop="dateModified" datetime="2021-01-16T14:56:46+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:17:28" itemprop="dateModified" datetime="2021-01-16T15:17:28+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1127,7 +1127,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:56:46" itemprop="dateModified" datetime="2021-01-16T14:56:46+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 15:17:28" itemprop="dateModified" datetime="2021-01-16T15:17:28+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1279,7 +1279,7 @@
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
