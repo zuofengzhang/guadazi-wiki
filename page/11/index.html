@@ -183,272 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/01_tuner/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/metric/01_tuner/" class="post-title-link" itemprop="url">Java性能调优</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:07" itemprop="dateModified" datetime="2021-01-16T11:49:07+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="调优"><a href="#调优" class="headerlink" title="调优"></a>调优</h1><h2 id="TODO"><a href="#TODO" class="headerlink" title="TODO"></a>TODO</h2><p>jhat<br>vmstat</p>
-<h2 id="测试样例"><a href="#测试样例" class="headerlink" title="测试样例"></a>测试样例</h2><p>新docker container，全新的系统，以纯净的系统Centos为例</p>
-<h3 id="安装java"><a href="#安装java" class="headerlink" title="安装java"></a>安装java</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 安装java8</span></span><br><span class="line">[root@centos ~]# yum install -y java-1.8.0-openjdk*</span><br><span class="line"><span class="meta">#</span><span class="bash"> 创建deploy用户，用于折腾</span></span><br><span class="line">[root@centos ~]# useradd deploy</span><br><span class="line">[root@centos ~]# su deploy</span><br><span class="line">[root@centos ~]# cd</span><br></pre></td></tr></table></figure>
-
-
-<h3 id="创建工作目录"><a href="#创建工作目录" class="headerlink" title="创建工作目录"></a>创建工作目录</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 创建并切换到工作目录</span></span><br><span class="line">[deploy@centos ~]$ mkdir -p lk-optimization</span><br><span class="line">[deploy@centos ~]$ cd !$</span><br></pre></td></tr></table></figure>
-<p>创建package，用于存放java源文件和编译后的class文件</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[deploy@centos ~]$ mkdir -p src/com/lk/optimization/demo target</span><br><span class="line">[deploy@centos ~]$ vim !$/DemoTest.java</span><br></pre></td></tr></table></figure>
-<h3 id="新建Java文件"><a href="#新建Java文件" class="headerlink" title="新建Java文件"></a>新建Java文件</h3><p>//        Thread thread = Thread.currentThread();</p>
-<p>//        System.out.println(thread.getName());<br>//        thread.join();<br>        System.out.println(“join over”);</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.lk.optimization.demo;</span><br><span class="line"><span class="keyword">import</span> java.util.List;</span><br><span class="line"><span class="keyword">import</span> java.util.ArrayList;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DemoTest</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] atgs)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">		<span class="keyword">new</span> Handler().doHandle();</span><br><span class="line">		Runtime.getRuntime().addShutdownHook(<span class="keyword">new</span> Thread() &#123;</span><br><span class="line">				<span class="meta">@Override</span></span><br><span class="line">				<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">				System.out.println(<span class="keyword">this</span>.getName() + <span class="string">&quot; is shutting down ....&quot;</span>);</span><br><span class="line">				&#125;</span><br><span class="line">				&#125;);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Handler</span> </span>&#123;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">doHandle</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">			String workerName=<span class="string">&quot;worker-&quot;</span>+(i+<span class="number">1</span>);</span><br><span class="line">			<span class="keyword">new</span> Thread(<span class="keyword">new</span> Worker(workerName), <span class="string">&quot;handler-&quot;</span> + i).start();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Worker</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> String workerName;</span><br><span class="line">	<span class="keyword">private</span> List&lt;String&gt; list;</span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">Worker</span><span class="params">(String workerName)</span></span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.workerName=workerName;</span><br><span class="line">		<span class="keyword">this</span>.list=<span class="keyword">new</span> ArrayList&lt;&gt;(<span class="number">1000</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">			System.out.println(workerName+<span class="string">&quot; start!&quot;</span>);</span><br><span class="line">			<span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">				<span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;<span class="number">100</span>;i++)&#123;</span><br><span class="line">					list.add(<span class="string">&quot;&quot;</span>+i);</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">if</span>(list.size()&gt;<span class="number">1000</span>)&#123;</span><br><span class="line">					list.clear();</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">try</span> &#123;</span><br><span class="line">					Thread.sleep(<span class="number">100</span>);</span><br><span class="line">					System.out.println(workerName+<span class="string">&quot;: sleep over&quot;</span>);</span><br><span class="line">				&#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">					e.printStackTrace();</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">[deploy@centos ~]$ find src -name &quot;*.java&quot; | xargs javac -d target</span><br><span class="line"></span><br><span class="line">[deploy@centos ~]$ tree</span><br><span class="line">.</span><br><span class="line">├── src</span><br><span class="line">│   └── com</span><br><span class="line">│       └── lk</span><br><span class="line">│           └── optimization</span><br><span class="line">│               └── demo</span><br><span class="line">│                   └── DemoTest.java</span><br><span class="line">└── target</span><br><span class="line">    └── com</span><br><span class="line">        └── lk</span><br><span class="line">            └── optimization</span><br><span class="line">                └── demo</span><br><span class="line">                    ├── DemoTest$1.class</span><br><span class="line">                    ├── DemoTest.class</span><br><span class="line">                    ├── Handler.class</span><br><span class="line">                    └── Worker.class</span><br><span class="line"></span><br><span class="line">10 directories, 5 files</span><br></pre></td></tr></table></figure>
-<h3 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[deploy@centos ~]$ nohup java -cp target  -Xcomp -XX:MaxNewSize=1000000  -XX:MaxHeapSize=2000000 com.lk.optimization.demo.DemoTest &amp;</span><br><span class="line">main</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="ps-查看进程和线程信息"><a href="#ps-查看进程和线程信息" class="headerlink" title="ps 查看进程和线程信息"></a>ps 查看进程和线程信息</h2><p>ps命令选项:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">********* simple selection *********  ********* selection by list *********</span><br><span class="line">-A all processes                      -C by command name</span><br><span class="line">-N negate selection                   -G by real group ID (supports names)</span><br><span class="line">-a all w/ tty except session leaders  -U by real user ID (supports names)</span><br><span class="line">-d all except session leaders         -g by session OR by effective group name</span><br><span class="line">-e all processes                      -p by process ID</span><br><span class="line">T  all processes on this terminal     -s processes in the sessions given</span><br><span class="line">a  all w/ tty, including other users  -t by tty</span><br><span class="line">g  OBSOLETE -- DO NOT USE             -u by effective user ID (supports names)</span><br><span class="line">r  only running processes             U  processes for specified users</span><br><span class="line">x  processes w/o controlling ttys     t  by tty</span><br><span class="line">*********** output format **********  *********** long options ***********</span><br><span class="line">-o,o user-defined  -f full            --Group --User --pid --cols --ppid</span><br><span class="line">-j,j job control   s  signal          --group --user --sid --rows --info</span><br><span class="line">-O,O preloaded -o  v  virtual memory  --cumulative --format --deselect</span><br><span class="line">-l,l long          u  user-oriented   --sort --tty --forest --version</span><br><span class="line">-F   extra full    X  registers       --heading --no-heading --context</span><br><span class="line">                         ********* misc options *********</span><br><span class="line">-V,V  show version      L  list format codes  f  ASCII art forest</span><br><span class="line">-m,m,-L,-T,H  threads   S  children in sum    -y change -l format</span><br><span class="line">-M,Z  security data     c  true command name  -c scheduling class</span><br><span class="line">-w,w  wide output       n  numeric WCHAN,UID  -H process hierarchy</span><br></pre></td></tr></table></figure>
-
-
-<p>root用户查看进程信息</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[root@centos ~]# ps -ef  | grep -v ps</span><br><span class="line">UID        PID  PPID  C STIME TTY          TIME CMD</span><br><span class="line">root         1     0  0 13:16 ?        00:00:00 /usr/sbin/sshd -D</span><br><span class="line">root        14     0  0 13:23 pts/0    00:00:00 /bin/bash</span><br><span class="line">root       421     1  0 13:58 ?        00:00:00 sshd: root@pts/1</span><br><span class="line">root       423   421  0 13:58 pts/1    00:00:00 -bash</span><br><span class="line">root       461     1  0 14:15 ?        00:00:00 sshd: root@pts/2</span><br><span class="line">root       463   461  0 14:15 pts/2    00:00:00 -bash</span><br><span class="line">root       519     1  0 14:16 ?        00:00:00 sshd: root@pts/3</span><br><span class="line">root       521   519  0 14:16 pts/3    00:00:00 -bash</span><br><span class="line">root       785   423  0 14:59 pts/1    00:00:00 su deploy</span><br><span class="line">deploy     786   785  0 14:59 pts/1    00:00:00 bash</span><br><span class="line">deploy    1129   786  0 15:32 pts/1    00:00:02 java -cp target com.lk.optimization.demo.DemoTest</span><br></pre></td></tr></table></figure>
-<p>ps 命令</p>
-<ul>
-<li>-e 显示所有进程信息</li>
-<li>-f 显示所有的字段</li>
-<li>-l long format</li>
-<li>-L 显示NLWP (number of threads) and LWP (thread ID) 显示线程信息</li>
-<li>-p 只显示指定的PID</li>
-</ul>
-<p>字段的解释可以在man页的<code>STANDARD FORMAT SPECIFIERS</code>中查找</p>
-<p>默认情况下，ps显示与当前用户相同EUID以及调用了同一个终端的进程。</p>
-<ul>
-<li>PID是进程ID</li>
-<li>TTY为与进程关联的终端名称</li>
-<li>TIME为以<code>[dd-]hh:mm:ss</code>格式显示的CPU时间</li>
-<li>CMD为执行的名称, 默认不排序</li>
-<li>PPID为父进程ID，根据ID可以找到进程的调用关系</li>
-</ul>
-<p>样例中的进程信息:</p>
-<table>
-<thead>
-<tr>
-<th>进程id</th>
-<th>解释</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>0</td>
-<td>0号进程是根进程</td>
-</tr>
-<tr>
-<td>1</td>
-<td>通过sshd发起的ssh连接</td>
-</tr>
-<tr>
-<td>421</td>
-<td>ssh连接，用户为root，终端为pts/1，子进程全部这个终端</td>
-</tr>
-<tr>
-<td>423</td>
-<td>bash shell</td>
-</tr>
-<tr>
-<td>785</td>
-<td>切换deploy账户</td>
-</tr>
-<tr>
-<td>786</td>
-<td>deploy账户的bash shell</td>
-</tr>
-<tr>
-<td>1129</td>
-<td>java启动进程</td>
-</tr>
-</tbody></table>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">[root@centos ~]# ps -flL -p 1129</span><br><span class="line">F S UID        PID  PPID   LWP  C NLWP PRI  NI ADDR SZ WCHAN  STIME TTY          TIME CMD</span><br><span class="line">0 S deploy    1129   786  1129  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">5 S deploy    1129   786  1130  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">1 S deploy    1129   786  1131  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">1 S deploy    1129   786  1132  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">1 S deploy    1129   786  1133  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">1 S deploy    1129   786  1134  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">1 S deploy    1129   786  1135  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">1 S deploy    1129   786  1136  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">1 S deploy    1129   786  1137  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">1 S deploy    1129   786  1138  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">1 S deploy    1129   786  1139  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br><span class="line">1 S deploy    1129   786  1140  0   27  80   0 - 934507 -     15:32 pts/1    00:00:00 java -cp target com.lk.optimization.demo.DemoTest</span><br></pre></td></tr></table></figure>
-<h3 id="Process-Format"><a href="#Process-Format" class="headerlink" title="Process Format"></a>Process Format</h3><ol>
-<li>F PROCESS FLAGS   1 forked但没有执行 5超级用户权限</li>
-<li>S PROCESS STATE CODES<pre><code>D    Uninterruptible sleep (usually IO)
-R    Running or runnable (on run queue)
-S    Interruptible sleep (waiting for an event to complete)
-T    Stopped, either by a job control signal or because it is being traced.
-W    paging (not valid since the 2.6.xx kernel)
-X    dead (should never be seen)
-Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its parent.</code></pre>
-</li>
-<li>lwp (light weight process, or thread) ID 线程ID</li>
-<li>C  processor utilization. Currently, this is the integer value of the percent usage over the lifetime of the process.</li>
-<li>NLWP 轻量级进程的个数</li>
-<li>ni         NI       nice value. This ranges from 19 (nicest) to -20 (not nice to others)</li>
-<li>size       SZ       approximate amount of swap space that would be required if the process were to dirty all writable pages and then be swapped out. This number is very rough!</li>
-<li>wchan      WCHAN    name of the kernel function in which the process is sleeping, a “-“ if the process is running, or a “*” if the process is multi-threaded and ps is not displaying threads.</li>
-</ol>
-<h3 id="线程信息"><a href="#线程信息" class="headerlink" title="线程信息"></a>线程信息</h3><p>线程线程的选项:</p>
-<ul>
-<li>H     Show threads as if they were processes 显示正在处理的线程</li>
-<li>-L     Show threads, possibly with LWP and NLWP columns 显示线程</li>
-<li>-T     Show threads, possibly with SPID column 显示线程</li>
-<li>m     Show threads after processes</li>
-<li>-m    Show threads after processes</li>
-</ul>
-<p>通过上面的例子，可以看出</p>
-<p>线程id是1129~1154, 共27个线程<br>实际handler线程和main线程加起来是11个，为什么是27个线程呢</p>
-<h2 id="top-查看资源"><a href="#top-查看资源" class="headerlink" title="top 查看资源"></a>top 查看资源</h2><p>以线程模式查看下进程31951的所有线程情况</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">top -Hp 31951</span><br></pre></td></tr></table></figure>
-<p>![top-thread](images/20190728100827299_123372753.png =634x)</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">-H : Threads toggle</span><br><span class="line">            Starts  top with the last remembered ’H’ state reversed.  When this toggle is On, all individual threads will be displayed.  Otherwise, top displays a summation of all threads in a process. 当此开关打开时，将显示所有单个线程。否则，top显示进程中所有线程的总和。</span><br><span class="line"></span><br><span class="line">-p : Monitor PIDs as:  -pN1 -pN2 ...  or  -pN1, N2 [,...]</span><br><span class="line">            Monitor only processes with specified process IDs.  This option can be given up to 20 times, or you can provide a comma delimited list with up  to  20 pids.  Co-mingling both approaches is permitted. This  is  a  command-line  option  only.  And should you wish to return to normal operation, it is not necessary to quit and and restart top  --  just issue the ’&#x3D;’ interactive command.</span><br><span class="line">            打开top后，&#x3D; 可以切换回全部进程</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="jstack-Java线程栈信息"><a href="#jstack-Java线程栈信息" class="headerlink" title="jstack Java线程栈信息"></a>jstack Java线程栈信息</h2><p>jstack中的线程id为16进制，需要将从top或ps获取的线程id转换为16进制,</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">printf %x &lt;tid&gt;</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>注意:</p>
-<ol>
-<li>jstack必须和运行的JVM进程是同一个用户</li>
-</ol>
-</blockquote>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Options:</span><br><span class="line">    -F  to force a thread dump. Use when jstack &lt;pid&gt; does not respond (process is hung)</span><br><span class="line">    -m  to print both java and native frames (mixed mode)</span><br><span class="line">    -l  long listing. Prints additional information about locks</span><br><span class="line">    -h or -help to print this help message</span><br></pre></td></tr></table></figure>
-<h2 id="虚拟机信息flag"><a href="#虚拟机信息flag" class="headerlink" title="虚拟机信息flag"></a>虚拟机信息flag</h2><p>打印虚拟机所有的参数</p>
-<p><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/java.html">java 命令文档</a></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">java -XX:+PrintFlagsFinal -version | grep :</span><br><span class="line">java -XX:+PrintFlagsInitial -version</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">java -XX:+PrintFlagsFinal -version | grep -v :&#x3D;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">The -XX:+PrintFlagsFinal (emphasis on &quot;Final&quot;) option displays what options HotSpot ended up using for running Java code while </span><br><span class="line">-XX:+PrintFlagsInitial (emphasis on &quot;Initial&quot;) displays what options were provided to HotSpot initially, before HotSpot has made its own tweaks.</span><br></pre></td></tr></table></figure>
-
-<h2 id="jinfo"><a href="#jinfo" class="headerlink" title="jinfo"></a>jinfo</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">jinfo -flags <span class="variable">$PID</span></span><br><span class="line"></span><br><span class="line">Attaching to process ID 29893, please <span class="built_in">wait</span>...</span><br><span class="line">Debugger attached successfully.</span><br><span class="line">Server compiler detected.  <span class="comment"># 服务器版本的编译器</span></span><br><span class="line">JVM version is 25.232-b09 <span class="comment"># jvm版本</span></span><br><span class="line">Non-default VM flags:</span><br><span class="line">-XX:CICompilerCount=2</span><br><span class="line">-XX:InitialHeapSize=33554432 <span class="comment"># 初始堆大小 33M</span></span><br><span class="line">-XX:MaxHeapSize=524288000 <span class="comment"># 最大堆大小 524M</span></span><br><span class="line">-XX:MaxNewSize=174718976  <span class="comment">#年轻代最大大小 174M</span></span><br><span class="line">-XX:MinHeapDeltaBytes=196608 <span class="comment">#堆自动增加步长最小196K</span></span><br><span class="line">-XX:NewSize=11141120  <span class="comment">#年轻代大小11M</span></span><br><span class="line">-XX:OldSize=22413312 <span class="comment">#老年代大小22M</span></span><br><span class="line">-XX:+UseCompressedClassPointers  <span class="comment">#压缩类指针</span></span><br><span class="line">-XX:+UseCompressedOops <span class="comment">#压缩</span></span><br><span class="line">-XX:+UseParallelGC <span class="comment"># 使用并行回收器</span></span><br><span class="line"></span><br><span class="line">Command line:</span><br></pre></td></tr></table></figure>
-<h2 id="jstat查看jvm统计信息和垃圾回收信息"><a href="#jstat查看jvm统计信息和垃圾回收信息" class="headerlink" title="jstat查看jvm统计信息和垃圾回收信息"></a>jstat查看jvm统计信息和垃圾回收信息</h2><p>JVM statistics</p>
-<p><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/technotes/tools/windows/jstat.html#BEHHGFAE">jstat docs</a></p>
-<p><a target="_blank" rel="noopener" href="https://app.yinxiang.com/shard/s30/nl/6747836/1db66cb0-6a66-4766-84ba-5d5b51df1fd2">jstat 命令使用样例</a></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">➜ jstat -options</span><br><span class="line">-<span class="class"><span class="keyword">class</span> # <span class="title">classLoader</span>行为的统计信息</span></span><br><span class="line"><span class="class">-<span class="title">compiler</span> #  <span class="title">Java</span> <span class="title">HotSpot</span> <span class="title">VM</span> <span class="title">Just</span>-<span class="title">in</span>-<span class="title">Time</span> <span class="title">compiler</span>行为的统计信息</span></span><br><span class="line"><span class="class">-<span class="title">gc</span> # 垃圾回收堆的统计信息</span></span><br><span class="line"><span class="class">-<span class="title">gccapacity</span> # 每代的大小和容量</span></span><br><span class="line"><span class="class">-<span class="title">gccause</span> # 垃圾收集统计及回收原因</span></span><br><span class="line"><span class="class">-<span class="title">gcmetacapacity</span></span></span><br><span class="line"><span class="class">-<span class="title">gcnew</span></span></span><br><span class="line"><span class="class">-<span class="title">gcnewcapacity</span></span></span><br><span class="line"><span class="class">-<span class="title">gcold</span></span></span><br><span class="line"><span class="class">-<span class="title">gcoldcapacity</span></span></span><br><span class="line"><span class="class">-<span class="title">gcutil</span> # <span class="title">gc</span>统计信息汇总，展示<span class="title">gc</span>次数、耗时和各个分区的大小</span></span><br><span class="line"><span class="class">-<span class="title">printcompilation</span></span></span><br><span class="line"><span class="class"></span></span><br><span class="line"><span class="class"></span></span><br><span class="line">class: Displays statistics about the behavior of the class loader.</span><br><span class="line">compiler: Displays statistics about the behavior of the Java HotSpot VM Just-in-Time compiler.</span><br><span class="line">gc: Displays statistics about the behavior of the garbage collected heap.</span><br><span class="line">gccapacity: Displays statistics about the capacities of the generations and their corresponding spaces.</span><br><span class="line">gccause: <span class="function">Displays a summary about garbage collection <span class="title">statistics</span> <span class="params">(same as -gcutil)</span>, with the cause of the last and <span class="title">current</span> <span class="params">(when applicable)</span> garbage collection events.</span></span><br><span class="line"><span class="function">gcnew: Displays statistics of the behavior of the new generation.</span></span><br><span class="line"><span class="function">gcnewcapacity: Displays statistics about the sizes of the new generations and its corresponding spaces.</span></span><br><span class="line"><span class="function">gcold: Displays statistics about the behavior of the old generation and metaspace statistics.</span></span><br><span class="line"><span class="function">gcoldcapacity: Displays statistics about the sizes of the old generation.</span></span><br><span class="line"><span class="function">gcmetacapacity: Displays statistics about the sizes of the metaspace.</span></span><br><span class="line"><span class="function">gcutil: Displays a summary about garbage collection statistics.</span></span><br><span class="line"><span class="function">printcompilation: Displays Java HotSpot VM compilation method statistics.</span></span><br></pre></td></tr></table></figure>
-<p>GC堆统计</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">jstat -gc <span class="number">12196</span></span><br><span class="line"> S0C    S1C    S0U    S1U      EC       EU        OC         OU       MC     MU    CCSC   CCSU   YGC     YGCT    FGC    FGCT     GCT   </span><br><span class="line"><span class="number">512.0</span>  <span class="number">1024.0</span> <span class="number">496.0</span>   <span class="number">0.0</span>   <span class="number">67584.0</span>  <span class="number">38337.9</span>   <span class="number">437248.0</span>   <span class="number">75268.8</span>   <span class="number">83992.0</span> <span class="number">80411.0</span> <span class="number">9496.0</span> <span class="number">8854.4</span>    <span class="number">388</span>    <span class="number">5.643</span>   <span class="number">3</span>      <span class="number">0.390</span>    <span class="number">6.033</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">-gc option</span><br><span class="line">Garbage-collected heap statistics.</span><br><span class="line"></span><br><span class="line">S0C: Current survivor space 0 capacity (kB).   #s0区当前容量</span><br><span class="line">S1C: Current survivor space 1 capacity (kB). #s1区当前容量</span><br><span class="line">S0U: Survivor space 0 utilization (kB). #s0区使用量</span><br><span class="line">S1U: Survivor space 1 utilization (kB). #s1区使用量</span><br><span class="line">EC: <span class="function">Current eden space <span class="title">capacity</span> <span class="params">(kB)</span>. #eden区容量</span></span><br><span class="line"><span class="function">EU: Eden space <span class="title">utilization</span> <span class="params">(kB)</span>. #eden区使用量</span></span><br><span class="line"><span class="function">OC: Current old space <span class="title">capacity</span> <span class="params">(kB)</span>. #old区容量</span></span><br><span class="line"><span class="function">OU: Old space <span class="title">utilization</span> <span class="params">(kB)</span>. #old区使用量</span></span><br><span class="line"><span class="function">MC: Metaspace <span class="title">capacity</span> <span class="params">(kB)</span>. #metaspace容量</span></span><br><span class="line"><span class="function">MU: Metacspace <span class="title">utilization</span> <span class="params">(kB)</span>. #metaspace使用量</span></span><br><span class="line"><span class="function">CCSC: Compressed class space <span class="title">capacity</span> <span class="params">(kB)</span>. #压缩类空间容量</span></span><br><span class="line"><span class="function">CCSU: Compressed class space <span class="title">used</span> <span class="params">(kB)</span>. #压缩类空间使用量</span></span><br><span class="line"><span class="function">YGC: Number of young generation garbage collection events.  # YGC次数</span></span><br><span class="line"><span class="function">YGCT: Young generation garbage collection time. #YGC耗时</span></span><br><span class="line"><span class="function">FGC: Number of full GC events. # Full GC次数</span></span><br><span class="line"><span class="function">FGCT: Full garbage collection time. # Full GC耗时</span></span><br><span class="line"><span class="function">GCT: Total garbage collection time. # GC总耗时</span></span><br></pre></td></tr></table></figure>
-<p>GC统计</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">jstat -gcutil <span class="number">12196</span></span><br><span class="line">  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT</span><br><span class="line"> <span class="number">96.88</span>   <span class="number">0.00</span>  <span class="number">89.96</span>  <span class="number">17.21</span>  <span class="number">95.74</span>  <span class="number">93.24</span>    <span class="number">388</span>    <span class="number">5.643</span>     <span class="number">3</span>    <span class="number">0.390</span>    <span class="number">6.033</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">-gcutil option</span><br><span class="line">Summary of garbage collection statistics.</span><br><span class="line"></span><br><span class="line">S0: Survivor space <span class="number">0</span> utilization as a percentage of the space<span class="string">&#x27;s current capacity. # s0区使用率</span></span><br><span class="line">S1: Survivor space 1 utilization as a percentage of the space&#x27;s current capacity. # S1区使用率</span><br><span class="line">E: Eden space utilization as a percentage of the space<span class="string">&#x27;s current capacity. # eden区使用率</span></span><br><span class="line">O: Old space utilization as a percentage of the space&#x27;s current capacity. # old区使用率</span><br><span class="line">M: Metaspace utilization as a percentage of the space<span class="string">&#x27;s current capacity. # Metaspace使用率</span></span><br><span class="line"><span class="string">CCS: Compressed class space utilization as a percentage. # 压缩类空间使用率</span></span><br><span class="line"><span class="string">YGC: Number of young generation GC events. # YGC次数</span></span><br><span class="line"><span class="string">YGCT: Young generation garbage collection time. # YGC耗时</span></span><br><span class="line"><span class="string">FGC: Number of full GC events. # Full GC次数</span></span><br><span class="line"><span class="string">FGCT: Full garbage collection time. # Full GC耗时</span></span><br><span class="line"><span class="string">GCT: Total garbage collection time. # GC总耗时</span></span><br></pre></td></tr></table></figure>
-
-<h2 id="堆dump"><a href="#堆dump" class="headerlink" title="堆dump"></a>堆dump</h2><p>full gc前后dump</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -XX:HeapDumpPath=./heap/ -XX:+HeapDumpOnOutOfMemoryError -XX:+HeapDumpAfterFullGC</span><br></pre></td></tr></table></figure>
-<p><code>HeapDumpPath</code>: dump path<br><code>HeapDumpOnOutOfMemoryError</code> 内存溢出dump<br><code>HeapDumpAfterFullGC</code>、<code>HeapDumpBeforeFullGC</code> ：Full GC前后dump</p>
-<h3 id="jmap"><a href="#jmap" class="headerlink" title="jmap"></a>jmap</h3><p>Prints shared object memory maps or heap memory details for a process, core file, or remote debug server. This command is experimental and unsupported.<br>打印进程、核心文件或远程调试服务器的共享对象内存映射或堆内存详细信息</p>
-<p><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/8/docs/technotes/tools/windows/jmap.html#BEHHGFAE">jmap docs</a></p>
-<p>jmap -heap <pid></p>
-<p>堆的各个分区大小</p>
-<p><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000010648021">堆内存分析-GC日志解读</a></p>
-<p>展示堆满的情况下的各个分区大小</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">&gt; jmap -heap <span class="number">16186</span></span><br><span class="line">Attaching to process ID <span class="number">16186</span>, please wait...</span><br><span class="line">Debugger attached successfully.</span><br><span class="line">Server compiler detected.</span><br><span class="line">JVM version is <span class="number">25.242</span>-b08</span><br><span class="line"></span><br><span class="line">using thread-local object allocation.</span><br><span class="line">Parallel GC with <span class="number">6</span> thread(s)</span><br><span class="line"></span><br><span class="line">Heap Configuration:</span><br><span class="line">   MinHeapFreeRatio         = <span class="number">0</span></span><br><span class="line">   MaxHeapFreeRatio         = <span class="number">100</span></span><br><span class="line">   MaxHeapSize              = <span class="number">522190848</span> (<span class="number">498.</span>0MB)</span><br><span class="line">   NewSize                  = <span class="number">11010048</span> (<span class="number">10.</span>5MB)</span><br><span class="line">   MaxNewSize               = <span class="number">174063616</span> (<span class="number">166.</span>0MB)</span><br><span class="line">   OldSize                  = <span class="number">22544384</span> (<span class="number">21.</span>5MB)</span><br><span class="line">   NewRatio                 = <span class="number">2</span></span><br><span class="line">   SurvivorRatio            = <span class="number">8</span></span><br><span class="line">   MetaspaceSize            = <span class="number">21807104</span> (<span class="number">20.</span>796875MB)</span><br><span class="line">   CompressedClassSpaceSize = <span class="number">1073741824</span> (<span class="number">1024.</span>0MB)</span><br><span class="line">   MaxMetaspaceSize         = <span class="number">17592186044415</span> MB</span><br><span class="line">   G1HeapRegionSize         = <span class="number">0</span> (<span class="number">0.</span>0MB)</span><br><span class="line"></span><br><span class="line">Heap Usage:</span><br><span class="line">PS Young Generation</span><br><span class="line">Eden Space:</span><br><span class="line">   capacity = <span class="number">58720256</span> (<span class="number">56.</span>0MB)</span><br><span class="line">   used     = <span class="number">49193976</span> (<span class="number">46.</span>91503143310547MB)</span><br><span class="line">   free     = <span class="number">9526280</span> (<span class="number">9.</span>084968566894531MB)</span><br><span class="line">   <span class="number">83.7768418448312</span>% used</span><br><span class="line">From Space:</span><br><span class="line">   capacity = <span class="number">57147392</span> (<span class="number">54.</span>5MB)</span><br><span class="line">   used     = <span class="number">0</span> (<span class="number">0.</span>0MB)</span><br><span class="line">   free     = <span class="number">57147392</span> (<span class="number">54.</span>5MB)</span><br><span class="line">   <span class="number">0.0</span>% used</span><br><span class="line">To Space:</span><br><span class="line">   capacity = <span class="number">57671680</span> (<span class="number">55.</span>0MB)</span><br><span class="line">   used     = <span class="number">0</span> (<span class="number">0.</span>0MB)</span><br><span class="line">   free     = <span class="number">57671680</span> (<span class="number">55.</span>0MB)</span><br><span class="line">   <span class="number">0.0</span>% used</span><br><span class="line">PS Old Generation</span><br><span class="line">   capacity = <span class="number">348127232</span> (<span class="number">332.</span>0MB)</span><br><span class="line">   used     = <span class="number">347644232</span> (<span class="number">331.</span>5393753051758MB)</span><br><span class="line">   free     = <span class="number">483000</span> (<span class="number">0.</span>46062469482421875MB)</span><br><span class="line">   <span class="number">99.8612576220409</span>% used</span><br><span class="line"></span><br><span class="line"><span class="number">10381</span> interned Strings occupying <span class="number">935984</span> bytes.</span><br></pre></td></tr></table></figure>
-
-<h2 id="远程监控"><a href="#远程监控" class="headerlink" title="远程监控"></a>远程监控</h2><h3 id="JVM开启远程JMX"><a href="#JVM开启远程JMX" class="headerlink" title="JVM开启远程JMX"></a>JVM开启远程JMX</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 开启远程调试端口</span></span><br><span class="line">-Dcom.sun.management.jmxremote.port=8777</span><br><span class="line"><span class="comment"># 开启本地调试端口</span></span><br><span class="line">-Dcom.sun.management.jmxremote.rmi.port=8777</span><br><span class="line"><span class="comment"># jmx远程服务默认是开启ssl和认证功能功能的，也可以通过jvm选项把这两个功能关闭</span></span><br><span class="line">-Dcom.sun.management.jmxremote.authenticate=<span class="literal">false</span></span><br><span class="line">-Dcom.sun.management.jmxremote.ssl=<span class="literal">false</span></span><br><span class="line"><span class="comment"># jmx默认是通过localhost的ip地址提供RMI服务的，如果要明确指定RMI服务地址或主机名（比如主机有多个接口，想使用非hostname关联的接口）</span></span><br><span class="line">-Djava.rmi.server.hostname=10.242.93.40</span><br></pre></td></tr></table></figure>
-<p>例子:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">java \</span><br><span class="line">-Djava.rmi.server.hostname=0.0.0.0 \</span><br><span class="line">-Dcom.sun.management.jmxremote \</span><br><span class="line">-Dcom.sun.management.jmxremote.rmi.port=8000 \</span><br><span class="line">-Dcom.sun.management.jmxremote.port=8001 \</span><br><span class="line">-Dcom.sun.management.jmxremote.authenticate=false \</span><br><span class="line">-Dcom.sun.management.jmxremote.ssl=false \</span><br><span class="line">-jar demo-0.0.1-SNAPSHOT.jar</span><br></pre></td></tr></table></figure>
-<h3 id="Tomcat-开启远程"><a href="#Tomcat-开启远程" class="headerlink" title="Tomcat 开启远程"></a>Tomcat 开启远程</h3><p>修改<code>catalina.sh</code>,</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">JAVA_OPTS&#x3D;&quot;$JAVA_OPTS -Djava.rmi.server.hostname&#x3D;0.0.0.0 </span><br><span class="line">-Dcom.sun.management.jmxremote </span><br><span class="line">-Dcom.sun.management.jmxremote.rmi.port&#x3D;8000 </span><br><span class="line">-Dcom.sun.management.jmxremote.port&#x3D;8001 </span><br><span class="line">-Dcom.sun.management.jmxremote.authenticate&#x3D;false </span><br><span class="line">-Dcom.sun.management.jmxremote.ssl&#x3D;false &quot;</span><br></pre></td></tr></table></figure>
-<h3 id="jvisualvm"><a href="#jvisualvm" class="headerlink" title="jvisualvm"></a>jvisualvm</h3><p><a target="_blank" rel="noopener" href="https://visualvm.github.io/pluginscenters.html">插件中心</a></p>
-<ul>
-<li>新建远程主机0.0.0.0</li>
-<li>新建JMX链接: 端口是8001</li>
-</ul>
-<p><a target="_blank" rel="noopener" href="https://visualvm.github.io/documentation.html">中文文档</a></p>
-<h2 id="开启jstatd连接"><a href="#开启jstatd连接" class="headerlink" title="开启jstatd连接"></a>开启jstatd连接</h2><h2 id="BTrace"><a href="#BTrace" class="headerlink" title="BTrace"></a>BTrace</h2><p><a target="_blank" rel="noopener" href="https://github.com/btraceio/btrace">官网</a></p>
-<h2 id="JDWP与tomcat远程调试"><a href="#JDWP与tomcat远程调试" class="headerlink" title="JDWP与tomcat远程调试"></a>JDWP与tomcat远程调试</h2><h2 id="Tomcat-监控"><a href="#Tomcat-监控" class="headerlink" title="Tomcat 监控"></a>Tomcat 监控</h2><h3 id="JDWP"><a href="#JDWP" class="headerlink" title="JDWP"></a>JDWP</h3><h3 id="Tomcat-manager"><a href="#Tomcat-manager" class="headerlink" title="Tomcat-manager"></a>Tomcat-manager</h3><h3 id="psi-probe监控"><a href="#psi-probe监控" class="headerlink" title="psi-probe监控"></a>psi-probe监控</h3><h2 id="Nginx"><a href="#Nginx" class="headerlink" title="Nginx"></a>Nginx</h2><h3 id="ngx-http-stub-status监控连接信息"><a href="#ngx-http-stub-status监控连接信息" class="headerlink" title="ngx_http_stub_status监控连接信息"></a>ngx_http_stub_status监控连接信息</h3><h3 id="ngxtop监控请求信息"><a href="#ngxtop监控请求信息" class="headerlink" title="ngxtop监控请求信息"></a>ngxtop监控请求信息</h3><h2 id="字节码"><a href="#字节码" class="headerlink" title="字节码"></a>字节码</h2><p><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.4">常量池官方文档</a></p>
-<h3 id="深入解析String-intern"><a href="#深入解析String-intern" class="headerlink" title="深入解析String#intern"></a>深入解析String#intern</h3><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/goldenfish1919/article/details/80410349">深入解析String.intern</a><br><a target="_blank" rel="noopener" href="https://tech.meituan.com/2014/03/06/in-depth-understanding-string-intern.html">原文出处: 深入解析String.intern</a></p>
-<p>字符串的常量池</p>
-<p>常量池在哪里？</p>
-<ul>
-<li>Jdk1.6及之前： 有永久代, 常量池在方法区</li>
-<li>Jdk1.7：       有永久代，但已经逐步“去永久代”，常量池在堆</li>
-<li>Jdk1.8及之后： 无永久代，常量池在元空间</li>
-</ul>
-<h3 id="String去重"><a href="#String去重" class="headerlink" title="String去重"></a>String去重</h3><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/goldenfish1919/article/details/20233263">String Deduplication in G1</a></p>
-<p>-XX:+UseStringDeduplication   开启String去重<br>-XX:+PrintStringDeduplicationStatistics 打印详细的去重统计<br>-XX:StringDeduplicationAgeThreshold=15 达到这个年龄的String对象才会去重</p>
-<h2 id="重用代码优化方法"><a href="#重用代码优化方法" class="headerlink" title="重用代码优化方法"></a>重用代码优化方法</h2><ul>
-<li>尽量重用对象，不要循环创建对象，比如：for循环字符串拼接</li>
-<li>容器类初始化的时候指定长度</li>
-<li>ArrayList随机遍历快，LinkedList添加删除快</li>
-<li>集合遍历尽量减少重复计算  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;collection.size();i++) <span class="comment">// collection.size() 提取成常量</span></span><br></pre></td></tr></table></figure></li>
-<li>使用Entry遍历Map  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span>(Map.Entry&lt;String,String&gt; entry:map.entrySet())&#123;</span><br><span class="line">    String key=entry.getKey();</span><br><span class="line">    String value=entry.getValue();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-<li>大数组复制用<code>System.arrayCopy()</code></li>
-<li>尽量使用基本类型而不是包装类型  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Integer i=<span class="number">100</span>;</span><br><span class="line">System.out.println(i);</span><br></pre></td></tr></table></figure>
-  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Code:</span><br><span class="line">  stack&#x3D;2, locals&#x3D;2, args_size&#x3D;1</span><br><span class="line">     0: bipush        100                 &#x2F;&#x2F; 将100压入栈</span><br><span class="line">     2: invokestatic  #2                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Integer.valueOf:(I)Ljava&#x2F;lang&#x2F;Integer;</span><br><span class="line">     5: astore_1</span><br><span class="line">     6: getstatic     #3                  &#x2F;&#x2F; Field java&#x2F;lang&#x2F;System.out:Ljava&#x2F;io&#x2F;PrintStream;</span><br><span class="line">     9: aload_1</span><br><span class="line">    10: invokevirtual #4                  &#x2F;&#x2F; Method java&#x2F;io&#x2F;PrintStream.println:(Ljava&#x2F;lang&#x2F;Object;)V</span><br><span class="line">    13: return</span><br></pre></td></tr></table></figure>
-  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Integer i1=<span class="number">100</span>;</span><br><span class="line">Integer i2=<span class="number">100</span>;</span><br><span class="line">System.out.println(i1==i2); <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
-  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">Code:</span><br><span class="line">  stack&#x3D;3, locals&#x3D;3, args_size&#x3D;1</span><br><span class="line">     0: bipush        100</span><br><span class="line">     2: invokestatic  #2                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Integer.valueOf:(I)Ljava&#x2F;lang&#x2F;Integer;</span><br><span class="line">     5: astore_1</span><br><span class="line">     6: bipush        100</span><br><span class="line">     8: invokestatic  #2                  &#x2F;&#x2F; Method java&#x2F;lang&#x2F;Integer.valueOf:(I)Ljava&#x2F;lang&#x2F;Integer;</span><br><span class="line">    11: astore_2</span><br><span class="line">    12: getstatic     #3                  &#x2F;&#x2F; Field java&#x2F;lang&#x2F;System.out:Ljava&#x2F;io&#x2F;PrintStream;</span><br><span class="line">    15: aload_1</span><br><span class="line">    16: aload_2</span><br><span class="line">    17: if_acmpne     24</span><br><span class="line">    20: iconst_1</span><br><span class="line">    21: goto          25</span><br><span class="line">    24: iconst_0</span><br><span class="line">    25: invokevirtual #5                  &#x2F;&#x2F; Method java&#x2F;io&#x2F;PrintStream.println:(Z)V</span><br><span class="line">    28: return</span><br></pre></td></tr></table></figure>
-  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Integer i1=<span class="number">1000</span>;</span><br><span class="line">Integer i2=<span class="number">1000</span>;</span><br><span class="line">System.out.println(i1==i2);  <span class="comment">// false</span></span><br></pre></td></tr></table></figure>
-  <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">Code:</span><br><span class="line">  stack=3, locals=3, args_size=1</span><br><span class="line">     0: sipush        1000</span><br><span class="line">     3: invokestatic  #2                  // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;</span><br><span class="line">     6: astore_1</span><br><span class="line">     7: sipush        1000</span><br><span class="line">    10: invokestatic  #2                  // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;</span><br><span class="line">    13: astore_2</span><br><span class="line">    14: getstatic     #3                  // Field java/lang/System.out:Ljava/io/PrintStream;</span><br><span class="line">    17: aload_1</span><br><span class="line">    18: aload_2</span><br><span class="line">    19: if_acmpne     26</span><br><span class="line">    22: iconst_1</span><br><span class="line">    23: goto          27</span><br><span class="line">    26: iconst_0</span><br><span class="line">    27: invokevirtual #5                  // Method java/io/PrintStream.println:(Z)V</span><br><span class="line">    30: return</span><br></pre></td></tr></table></figure>
-  Integer.valueOf 内部有缓存，如果大于-128且小于<code>java.lang.Integer.IntegerCache.high</code>(默认值是127)，则返回缓存</li>
-<li>尽量使用非同步的容器，vector和ArrayList</li>
-<li>尽量减少同步作用范围，synchronized方法vs代码块  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">f1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;f1&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">f2</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="keyword">this</span>) &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;f4&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">f3</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;f3&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">f4</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (TestPrimaryType.class) &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;f4&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-<li>使用ThreadLocal缓存线程不安全对象，simpleDateFormat</li>
-<li>尽量使用延迟加载，懒惰单例模式  <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestPrimaryType</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">TestPrimaryType</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">TestPrimaryTypeHolder</span> </span>&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> TestPrimaryType instance = <span class="keyword">new</span> TestPrimaryType();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    ** 调用这个方法时，发生对TestPrimaryTypeHolder的引用，才创建instance对象</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> TestPrimaryType <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> TestPrimaryTypeHolder.instance;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
-<li>尽量减少使用反射，加缓存</li>
-<li>尽量使用连接池、线程池、对象池、缓存</li>
-<li>及时释放资源，I/O流、socket、数据库连接</li>
-<li>慎用异常，不要用抛异常来标示正常的业务逻辑</li>
-<li>String操作尽量少用正则表达式  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">replace VS replaceAll: 尽量用replace</span><br><span class="line">split</span><br></pre></td></tr></table></figure></li>
-<li>日志输出注意使用不同的级别</li>
-<li>日志中参数拼接使用占位符  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">log.info(“orderId:”+orgerId); &#x2F;&#x2F; 不推荐</span><br><span class="line">log.info(“orderId:&#123;&#125;”,orgerId); &#x2F;&#x2F;推荐</span><br></pre></td></tr></table></figure></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/Java%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%8B%E6%80%A7%E8%83%BD%E7%9B%91%E6%8E%A7%E4%B8%8E%E8%B0%83%E4%BC%98%E8%AF%A6%E8%A7%A3%E7%AC%94%E8%AE%B0/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -480,7 +214,7 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:07" itemprop="dateModified" datetime="2021-01-16T11:49:07+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:27" itemprop="dateModified" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -839,6 +573,210 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-backpress-ext/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-backpress-ext/" class="post-title-link" itemprop="url">【转发】咱们从头到尾讲一次 Flink 网络流控和反压剖析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>本文根据 Apache Flink 系列直播整理而成，由 Apache Flink Contributor、OPPO 大数据平台研发负责人张俊老师分享。主要内容如下：</p>
+<ul>
+<li><p>网络流控的概念与背景</p>
+</li>
+<li><p>TCP的流控机制</p>
+</li>
+<li><p>Flink TCP-based 反压机制（before V1.5）</p>
+</li>
+<li><p>Flink Credit-based 反压机制 （since V1.5）</p>
+</li>
+<li><p>总结与思考</p>
+</li>
+</ul>
+<h2 id="网络流控的概念与背景"><a href="#网络流控的概念与背景" class="headerlink" title="网络流控的概念与背景"></a>网络流控的概念与背景</h2><h3 id="为什么需要网络流控"><a href="#为什么需要网络流控" class="headerlink" title="为什么需要网络流控"></a>为什么需要网络流控</h3><p><img src="_v_images/20200714171454820_132283117"></p>
+<p>首先我们可以看下这张最精简的网络流控的图，Producer 的吞吐率是 2MB/s，Consumer 是 1MB/s，这个时候我们就会发现在网络通信的时候我们的 Producer 的速度是比 Consumer 要快的，有 1MB/s 的这样的速度差，假定我们两端都有一个 Buffer，Producer 端有一个发送用的 Send Buffer，Consumer 端有一个接收用的 Receive Buffer，在网络端的吞吐率是 2MB/s，过了 5s 后我们的 Receive Buffer 可能就撑不住了，这时候会面临两种情况：</p>
+<ul>
+<li><p>1.如果 Receive Buffer 是有界的，这时候新到达的数据就只能被丢弃掉了。</p>
+</li>
+<li><p>2.如果 Receive Buffer 是无界的，Receive Buffer 会持续的扩张，最终会导致 Consumer 的内存耗尽。</p>
+</li>
+</ul>
+<h3 id="网络流控的实现：静态限速"><a href="#网络流控的实现：静态限速" class="headerlink" title="网络流控的实现：静态限速"></a>网络流控的实现：静态限速</h3><p><img src="_v_images/20200714171454414_685240728"></p>
+<p>为了解决这个问题，我们就需要网络流控来解决上下游速度差的问题，传统的做法可以在 Producer 端实现一个类似 Rate Limiter 这样的静态限流，Producer 的发送速率是 2MB/s，但是经过限流这一层后，往 Send Buffer 去传数据的时候就会降到 1MB/s 了，这样的话 Producer 端的发送速率跟 Consumer 端的处理速率就可以匹配起来了，就不会导致上述问题。但是这个解决方案有两点限制：</p>
+<ul>
+<li><p>1、事先无法预估 Consumer 到底能承受多大的速率</p>
+</li>
+<li><p>2、 Consumer 的承受能力通常会动态地波动</p>
+</li>
+</ul>
+<h3 id="网络流控的实现：动态反馈-自动反压"><a href="#网络流控的实现：动态反馈-自动反压" class="headerlink" title="网络流控的实现：动态反馈/自动反压"></a>网络流控的实现：动态反馈/自动反压</h3><p><img src="_v_images/20200714171454209_1020595047"></p>
+<p>针对静态限速的问题我们就演进到了动态反馈（自动反压）的机制，我们需要 Consumer 能够及时的给 Producer 做一个 feedback，即告知 Producer 能够承受的速率是多少。动态反馈分为两种：</p>
+<ul>
+<li><p>1、负反馈：接受速率小于发送速率时发生，告知 Producer 降低发送速率</p>
+</li>
+<li><p>2、正反馈：发送速率小于接收速率时发生，告知 Producer 可以把发送速率提上来</p>
+</li>
+</ul>
+<p>让我们来看几个经典案例</p>
+<h3 id="案例一：Storm-反压实现"><a href="#案例一：Storm-反压实现" class="headerlink" title="案例一：Storm 反压实现"></a>案例一：Storm 反压实现</h3><p><img src="_v_images/20200714171454004_1684651238"></p>
+<p>上图就是 Storm 里实现的反压机制，可以看到 Storm 在每一个 Bolt 都会有一个监测反压的线程（Backpressure Thread），这个线程一但检测到 Bolt 里的接收队列（recv queue）出现了严重阻塞就会把这个情况写到 ZooKeeper 里，ZooKeeper 会一直被 Spout 监听，监听到有反压的情况就会停止发送，通过这样的方式匹配上下游的发送接收速率。</p>
+<h3 id="案例二：Spark-Streaming-反压实现"><a href="#案例二：Spark-Streaming-反压实现" class="headerlink" title="案例二：Spark Streaming 反压实现"></a>案例二：Spark Streaming 反压实现</h3><p><img src="_v_images/20200714171453699_1486221085"></p>
+<p>Spark Streaming 里也有做类似这样的 feedback 机制，上图 Fecher 会实时的从 Buffer、Processing 这样的节点收集一些指标然后通过 Controller 把速度接收的情况再反馈到 Receiver，实现速率的匹配。</p>
+<h3 id="疑问：为什么-Flink（before-V1-5）里没有用类似的方式实现-feedback-机制？"><a href="#疑问：为什么-Flink（before-V1-5）里没有用类似的方式实现-feedback-机制？" class="headerlink" title="疑问：为什么 Flink（before V1.5）里没有用类似的方式实现 feedback 机制？"></a>疑问：为什么 Flink（before V1.5）里没有用类似的方式实现 feedback 机制？</h3><p>首先在解决这个疑问之前我们需要先了解一下 Flink 的网络传输是一个什么样的架构。</p>
+<p><img src="_v_images/20200714171453393_758272414"></p>
+<p>这张图就体现了 Flink 在做网络传输的时候基本的数据的流向，发送端在发送网络数据前要经历自己内部的一个流程，会有一个自己的 Network Buffer，在底层用 Netty 去做通信，Netty 这一层又有属于自己的 ChannelOutbound Buffer，因为最终是要通过 Socket 做网络请求的发送，所以在 Socket 也有自己的 Send Buffer，同样在接收端也有对应的三级 Buffer。学过计算机网络的时候我们应该了解到，TCP 是自带流量控制的。实际上 Flink （before V1.5）就是通过 TCP 的流控机制来实现 feedback 的。</p>
+<h2 id="TCP-流控机制"><a href="#TCP-流控机制" class="headerlink" title="TCP 流控机制"></a>TCP 流控机制</h2><p>根据下图我们来简单的回顾一下 TCP 包的格式结构。首先，他有 Sequence number 这样一个机制给每个数据包做一个编号，还有 ACK number 这样一个机制来确保 TCP 的数据传输是可靠的，除此之外还有一个很重要的部分就是 Window Size，接收端在回复消息的时候会通过 Window Size 告诉发送端还可以发送多少数据。</p>
+<p><img src="_v_images/20200714171452987_650184722"></p>
+<p>接下来我们来简单看一下这个过程。</p>
+<h3 id="TCP-流控：滑动窗口"><a href="#TCP-流控：滑动窗口" class="headerlink" title="TCP 流控：滑动窗口"></a>TCP 流控：滑动窗口</h3><p><img src="_v_images/20200714171452683_1953611527"></p>
+<p>TCP 的流控就是基于滑动窗口的机制，现在我们有一个 Socket 的发送端和一个 Socket 的接收端，目前我们的发送端的速率是我们接收端的 3 倍，这样会发生什么样的一个情况呢？假定初始的时候我们发送的 window 大小是 3，然后我们接收端的 window 大小是固定的，就是接收端的 Buffer 大小为 5。</p>
+<p><img src="_v_images/20200714171452278_1991948370"></p>
+<p>首先，发送端会一次性发 3 个 packets，将 1，2，3 发送给接收端，接收端接收到后会将这 3 个 packets 放到 Buffer 里去。</p>
+<p><img src="_v_images/20200714171452072_41416741"></p>
+<p>接收端一次消费 1 个 packet，这时候 1 就已经被消费了，然后我们看到接收端的滑动窗口会往前滑动一格，这时候 2，3 还在 Buffer 当中 而 4，5，6 是空出来的，所以接收端会给发送端发送 ACK = 4 ，代表发送端可以从 4 开始发送，同时会将 window 设置为 3 （Buffer 的大小 5 减去已经存下的 2 和 3），发送端接收到回应后也会将他的滑动窗口向前移动到 4，5，6。</p>
+<p><img src="_v_images/20200714171451767_719493078"></p>
+<p>这时候发送端将 4，5，6 发送，接收端也能成功的接收到 Buffer 中去。</p>
+<p><img src="_v_images/20200714171451562_313469730"></p>
+<p>到这一阶段后，接收端就消费到 2 了，同样他的窗口也会向前滑动一个，这时候他的 Buffer 就只剩一个了，于是向发送端发送 ACK = 7、window = 1。发送端收到之后滑动窗口也向前移，但是这个时候就不能移动 3 格了，虽然发送端的速度允许发 3 个 packets 但是 window 传值已经告知只能接收一个，所以他的滑动窗口就只能往前移一格到 7 ，这样就达到了限流的效果，发送端的发送速度从 3 降到 1。</p>
+<p><img src="_v_images/20200714171451057_482639053"></p>
+<p><img src="_v_images/20200714171450752_1192910727"></p>
+<p>我们再看一下这种情况，这时候发送端将 7 发送后，接收端接收到，但是由于接收端的消费出现问题，一直没有从 Buffer 中去取，这时候接收端向发送端发送 ACK = 8、window = 0 ，由于这个时候 window = 0，发送端是不能发送任何数据，也就会使发送端的发送速度降为 0。这个时候发送端不发送任何数据了，接收端也不进行任何的反馈了，那么如何知道消费端又开始消费了呢？</p>
+<p><img src="_v_images/20200714171450147_1390602232"></p>
+<p><img src="_v_images/20200714171449642_832142513"></p>
+<p><img src="_v_images/20200714171449037_394744327"></p>
+<p>TCP 当中有一个 ZeroWindowProbe 的机制，发送端会定期的发送 1 个字节的探测消息，这时候接收端就会把 window 的大小进行反馈。当接收端的消费恢复了之后，接收到探测消息就可以将 window 反馈给发送端端了从而恢复整个流程。TCP 就是通过这样一个滑动窗口的机制实现 feedback。</p>
+<h2 id="Flink-TCP-based-反压机制（before-V1-5）"><a href="#Flink-TCP-based-反压机制（before-V1-5）" class="headerlink" title="Flink TCP-based 反压机制（before V1.5）"></a>Flink TCP-based 反压机制（before V1.5）</h2><h3 id="示例：WindowWordCount"><a href="#示例：WindowWordCount" class="headerlink" title="示例：WindowWordCount"></a>示例：WindowWordCount</h3><p><img src="_v_images/20200714171448732_1736435542"></p>
+<p>大体的逻辑就是从 Socket 里去接收数据，每 5s 去进行一次 WordCount，将这个代码提交后就进入到了编译阶段。</p>
+<h3 id="编译阶段：生成-JobGraph"><a href="#编译阶段：生成-JobGraph" class="headerlink" title="编译阶段：生成 JobGraph"></a>编译阶段：生成 JobGraph</h3><p><img src="_v_images/20200714171448227_116055159"></p>
+<p>这时候还没有向集群去提交任务，在 Client 端会将 StreamGraph 生成 JobGraph，JobGraph 就是做为向集群提交的最基本的单元。在生成 JobGrap 的时候会做一些优化，将一些没有 Shuffle 机制的节点进行合并。有了 JobGraph 后就会向集群进行提交，进入运行阶段。</p>
+<h3 id="运行阶段：调度-ExecutionGraph"><a href="#运行阶段：调度-ExecutionGraph" class="headerlink" title="运行阶段：调度 ExecutionGraph"></a>运行阶段：调度 ExecutionGraph</h3><p><img src="_v_images/20200714171447922_1674684296"></p>
+<p>JobGraph 提交到集群后会生成 ExecutionGraph ，这时候就已经具备基本的执行任务的雏形了，把每个任务拆解成了不同的 SubTask，上图 ExecutionGraph 中的 Intermediate Result Partition 就是用于发送数据的模块，最终会将 ExecutionGraph 交给 JobManager 的调度器，将整个 ExecutionGraph 调度起来。然后我们概念化这样一张物理执行图，可以看到每个 Task 在接收数据时都会通过这样一个 InputGate 可以认为是负责接收数据的，再往前有这样一个 ResultPartition 负责发送数据，在 ResultPartition 又会去做分区跟下游的 Task 保持一致，就形成了 ResultSubPartition 和 InputChannel 的对应关系。这就是从逻辑层上来看的网络传输的通道，基于这么一个概念我们可以将反压的问题进行拆解。</p>
+<h3 id="问题拆解：反压传播两个阶段"><a href="#问题拆解：反压传播两个阶段" class="headerlink" title="问题拆解：反压传播两个阶段"></a>问题拆解：反压传播两个阶段</h3><p><img src="_v_images/20200714171447717_722983245"></p>
+<p>反压的传播实际上是分为两个阶段的，对应着上面的执行图，我们一共涉及 3 个 TaskManager，在每个 TaskManager 里面都有相应的 Task 在执行，还有负责接收数据的 InputGate，发送数据的 ResultPartition，这就是一个最基本的数据传输的通道。在这时候假设最下游的 Task （Sink）出现了问题，处理速度降了下来这时候是如何将这个压力反向传播回去呢？这时候就分为两种情况：</p>
+<ul>
+<li><p>跨 TaskManager ，反压如何从 InputGate 传播到 ResultPartition</p>
+</li>
+<li><p>TaskManager 内，反压如何从 ResultPartition 传播到 InputGate</p>
+</li>
+</ul>
+<h3 id="跨-TaskManager-数据传输"><a href="#跨-TaskManager-数据传输" class="headerlink" title="跨 TaskManager 数据传输"></a>跨 TaskManager 数据传输</h3><p><img src="_v_images/20200714171447411_1651413338"></p>
+<p>前面提到，发送数据需要 ResultPartition，在每个 ResultPartition 里面会有分区 ResultSubPartition，中间还会有一些关于内存管理的 Buffer。 对于一个 TaskManager 来说会有一个统一的 Network BufferPool 被所有的 Task 共享，在初始化时会从 Off-heap Memory 中申请内存，申请到内存的后续内存管理就是同步 Network BufferPool 来进行的，不需要依赖 JVM GC 的机制去释放。有了 Network BufferPool 之后可以为每一个 ResultSubPartition 创建 Local BufferPool 。 如上图左边的 TaskManager 的 Record Writer 写了 &lt;1，2&gt; 这个两个数据进来，因为 ResultSubPartition 初始化的时候为空，没有 Buffer 用来接收，就会向 Local BufferPool 申请内存，这时 Local BufferPool 也没有足够的内存于是将请求转到 Network BufferPool，最终将申请到的 Buffer 按原链路返还给 ResultSubPartition，&lt;1，2&gt; 这个两个数据就可以被写入了。之后会将 ResultSubPartition 的 Buffer 拷贝到 Netty 的 Buffer 当中最终拷贝到 Socket 的 Buffer 将消息发送出去。然后接收端按照类似的机制去处理将消息消费掉。 接下来我们来模拟上下游处理速度不匹配的场景，发送端的速率为 2，接收端的速率为 1，看一下反压的过程是怎样的。</p>
+<h3 id="跨-TaskManager-反压过程"><a href="#跨-TaskManager-反压过程" class="headerlink" title="跨 TaskManager 反压过程"></a>跨 TaskManager 反压过程</h3><p><img src="_v_images/20200714171447006_680735181"></p>
+<p>因为速度不匹配就会导致一段时间后 InputChannel 的 Buffer 被用尽，于是他会向 Local BufferPool 申请新的 Buffer ，这时候可以看到 Local BufferPool 中的一个 Buffer 就会被标记为 Used。</p>
+<p><img src="_v_images/20200714171446799_1194236091"></p>
+<p>发送端还在持续以不匹配的速度发送数据，然后就会导致 InputChannel 向 Local BufferPool 申请 Buffer 的时候发现没有可用的 Buffer 了，这时候就只能向 Network BufferPool 去申请，当然每个 Local BufferPool 都有最大的可用的 Buffer，防止一个 Local BufferPool 把 Network BufferPool 耗尽。这时候看到 Network BufferPool 还是有可用的 Buffer 可以向其申请。</p>
+<p><img src="_v_images/20200714171445992_941635712"></p>
+<p>一段时间后，发现 Network BufferPool 没有可用的 Buffer，或是 Local BufferPool 的最大可用 Buffer 到了上限无法向 Network BufferPool 申请，没有办法去读取新的数据，这时 Netty AutoRead 就会被禁掉，Netty 就不会从 Socket 的 Buffer 中读取数据了。</p>
+<p><img src="_v_images/20200714171444186_160162504"></p>
+<p>显然，再过不久 Socket 的 Buffer 也被用尽，这时就会将 Window = 0 发送给发送端（前文提到的 TCP 滑动窗口的机制）。这时发送端的 Socket 就会停止发送。</p>
+<p><img src="_v_images/20200714171443780_1304730499"></p>
+<p>很快发送端的 Socket 的 Buffer 也被用尽，Netty 检测到 Socket 无法写了之后就会停止向 Socket 写数据。</p>
+<p><img src="_v_images/20200714171443573_720011262"></p>
+<p>Netty 停止写了之后，所有的数据就会阻塞在 Netty 的 Buffer 当中了，但是 Netty 的 Buffer 是无界的，可以通过 Netty 的水位机制中的 high watermark 控制他的上界。当超过了 high watermark，Netty 就会将其 channel 置为不可写，ResultSubPartition 在写之前都会检测 Netty 是否可写，发现不可写就会停止向 Netty 写数据。</p>
+<p><img src="_v_images/20200714171443267_566801867"></p>
+<p>这时候所有的压力都来到了 ResultSubPartition，和接收端一样他会不断的向 Local BufferPool 和 Network BufferPool 申请内存。</p>
+<p><img src="_v_images/20200714171442761_1041985779"></p>
+<p>Local BufferPool 和 Network BufferPool 都用尽后整个 Operator 就会停止写数据，达到跨 TaskManager 的反压。</p>
+<h3 id="TaskManager-内反压过程"><a href="#TaskManager-内反压过程" class="headerlink" title="TaskManager 内反压过程"></a>TaskManager 内反压过程</h3><p>了解了跨 TaskManager 反压过程后再来看 TaskManager 内反压过程就更好理解了，下游的 TaskManager 反压导致本 TaskManager 的 ResultSubPartition 无法继续写入数据，于是 Record Writer 的写也被阻塞住了，因为 Operator 需要有输入才能有计算后的输出，输入跟输出都是在同一线程执行， Record Writer 阻塞了，Record Reader 也停止从 InputChannel 读数据，这时上游的 TaskManager 还在不断地发送数据，最终将这个 TaskManager 的 Buffer 耗尽。具体流程可以参考下图，这就是 TaskManager 内的反压过程。</p>
+<p><img src="_v_images/20200714171442455_926070537"></p>
+<p><img src="_v_images/20200714171442149_493428448"></p>
+<p><img src="_v_images/20200714171441744_1291490922"></p>
+<p><img src="_v_images/20200714171441439_2105575637"></p>
+<h2 id="Flink-Credit-based-反压机制（since-V1-5）"><a href="#Flink-Credit-based-反压机制（since-V1-5）" class="headerlink" title="Flink Credit-based 反压机制（since V1.5）"></a>Flink Credit-based 反压机制（since V1.5）</h2><h3 id="TCP-based-反压的弊端"><a href="#TCP-based-反压的弊端" class="headerlink" title="TCP-based 反压的弊端"></a>TCP-based 反压的弊端</h3><p><img src="_v_images/20200714171441134_1354461165"></p>
+<p>在介绍 Credit-based 反压机制之前，先分析下 TCP 反压有哪些弊端。</p>
+<ul>
+<li><p>在一个 TaskManager 中可能要执行多个 Task，如果多个 Task 的数据最终都要传输到下游的同一个 TaskManager 就会复用同一个 Socket 进行传输，这个时候如果单个 Task 产生反压，就会导致复用的 Socket 阻塞，其余的 Task 也无法使用传输，checkpoint barrier 也无法发出导致下游执行 checkpoint 的延迟增大。</p>
+</li>
+<li><p>依赖最底层的 TCP 去做流控，会导致反压传播路径太长，导致生效的延迟比较大。</p>
+</li>
+</ul>
+<h3 id="引入-Credit-based-反压"><a href="#引入-Credit-based-反压" class="headerlink" title="引入 Credit-based 反压"></a>引入 Credit-based 反压</h3><p>这个机制简单的理解起来就是在 Flink 层面实现类似 TCP 流控的反压机制来解决上述的弊端，Credit 可以类比为 TCP 的 Window 机制。</p>
+<h3 id="Credit-based-反压过程"><a href="#Credit-based-反压过程" class="headerlink" title="Credit-based 反压过程"></a>Credit-based 反压过程</h3><p><img src="_v_images/20200714171440828_629774125"></p>
+<p>如图所示在 Flink 层面实现反压机制，就是每一次 ResultSubPartition 向 InputChannel 发送消息的时候都会发送一个 backlog size 告诉下游准备发送多少消息，下游就会去计算有多少的 Buffer 去接收消息，算完之后如果有充足的 Buffer 就会返还给上游一个 Credit 告知他可以发送消息（图上两个 ResultSubPartition 和 InputChannel 之间是虚线是因为最终还是要通过 Netty 和 Socket 去通信），下面我们看一个具体示例。</p>
+<p><img src="_v_images/20200714171440422_2073806088"></p>
+<p>假设我们上下游的速度不匹配，上游发送速率为 2，下游接收速率为 1，可以看到图上在 ResultSubPartition 中累积了两条消息，10 和 11， backlog 就为 2，这时就会将发送的数据 &lt;8,9&gt; 和 backlog = 2 一同发送给下游。下游收到了之后就会去计算是否有 2 个 Buffer 去接收，可以看到 InputChannel 中已经不足了这时就会从 Local BufferPool 和 Network BufferPool 申请，好在这个时候 Buffer 还是可以申请到的。</p>
+<p><img src="_v_images/20200714171440216_190878629"></p>
+<p>过了一段时间后由于上游的发送速率要大于下游的接受速率，下游的 TaskManager 的 Buffer 已经到达了申请上限，这时候下游就会向上游返回 Credit = 0，ResultSubPartition 接收到之后就不会向 Netty 去传输数据，上游 TaskManager 的 Buffer 也很快耗尽，达到反压的效果，这样在 ResultSubPartition 层就能感知到反压，不用通过 Socket 和 Netty 一层层地向上反馈，降低了反压生效的延迟。同时也不会将 Socket 去阻塞，解决了由于一个 Task 反压导致 TaskManager 和 TaskManager 之间的 Socket 阻塞的问题。</p>
+<h2 id="总结与思考"><a href="#总结与思考" class="headerlink" title="总结与思考"></a>总结与思考</h2><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li><p>网络流控是为了在上下游速度不匹配的情况下，防止下游出现过载</p>
+</li>
+<li><p>网络流控有静态限速和动态反压两种手段</p>
+</li>
+<li><p>Flink 1.5 之前是基于 TCP 流控 + bounded buffer 实现反压</p>
+</li>
+<li><p>Flink 1.5 之后实现了自己托管的 credit - based 流控机制，在应用层模拟 TCP 的流控机制</p>
+</li>
+</ul>
+<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><p>有了动态反压，静态限速是不是完全没有作用了？</p>
+<p><img src="_v_images/20200714171439509_423419298"></p>
+<p>实际上动态反压不是万能的，我们流计算的结果最终是要输出到一个外部的存储（Storage），外部数据存储到 Sink 端的反压是不一定会触发的，这要取决于外部存储的实现，像 Kafka 这样是实现了限流限速的消息中间件可以通过协议将反压反馈给 Sink 端，但是像 ES 无法将反压进行传播反馈给 Sink 端，这种情况下为了防止外部存储在大的数据量下被打爆，我们就可以通过静态限速的方式在 Source 端去做限流。所以说动态反压并不能完全替代静态限速的，需要根据合适的场景去选择处理方案。</p>
+<p>作者：阿里云云栖号<br>链接：<a target="_blank" rel="noopener" href="https://juejin.im/post/5dce4b265188254a2b1faddf">https://juejin.im/post/5dce4b265188254a2b1faddf</a><br>来源：掘金<br>著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -870,7 +808,7 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1067,210 +1005,6 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-backpress-ext/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/Flink-backpress-ext/" class="post-title-link" itemprop="url">【转发】咱们从头到尾讲一次 Flink 网络流控和反压剖析</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本文根据 Apache Flink 系列直播整理而成，由 Apache Flink Contributor、OPPO 大数据平台研发负责人张俊老师分享。主要内容如下：</p>
-<ul>
-<li><p>网络流控的概念与背景</p>
-</li>
-<li><p>TCP的流控机制</p>
-</li>
-<li><p>Flink TCP-based 反压机制（before V1.5）</p>
-</li>
-<li><p>Flink Credit-based 反压机制 （since V1.5）</p>
-</li>
-<li><p>总结与思考</p>
-</li>
-</ul>
-<h2 id="网络流控的概念与背景"><a href="#网络流控的概念与背景" class="headerlink" title="网络流控的概念与背景"></a>网络流控的概念与背景</h2><h3 id="为什么需要网络流控"><a href="#为什么需要网络流控" class="headerlink" title="为什么需要网络流控"></a>为什么需要网络流控</h3><p><img src="_v_images/20200714171454820_132283117"></p>
-<p>首先我们可以看下这张最精简的网络流控的图，Producer 的吞吐率是 2MB/s，Consumer 是 1MB/s，这个时候我们就会发现在网络通信的时候我们的 Producer 的速度是比 Consumer 要快的，有 1MB/s 的这样的速度差，假定我们两端都有一个 Buffer，Producer 端有一个发送用的 Send Buffer，Consumer 端有一个接收用的 Receive Buffer，在网络端的吞吐率是 2MB/s，过了 5s 后我们的 Receive Buffer 可能就撑不住了，这时候会面临两种情况：</p>
-<ul>
-<li><p>1.如果 Receive Buffer 是有界的，这时候新到达的数据就只能被丢弃掉了。</p>
-</li>
-<li><p>2.如果 Receive Buffer 是无界的，Receive Buffer 会持续的扩张，最终会导致 Consumer 的内存耗尽。</p>
-</li>
-</ul>
-<h3 id="网络流控的实现：静态限速"><a href="#网络流控的实现：静态限速" class="headerlink" title="网络流控的实现：静态限速"></a>网络流控的实现：静态限速</h3><p><img src="_v_images/20200714171454414_685240728"></p>
-<p>为了解决这个问题，我们就需要网络流控来解决上下游速度差的问题，传统的做法可以在 Producer 端实现一个类似 Rate Limiter 这样的静态限流，Producer 的发送速率是 2MB/s，但是经过限流这一层后，往 Send Buffer 去传数据的时候就会降到 1MB/s 了，这样的话 Producer 端的发送速率跟 Consumer 端的处理速率就可以匹配起来了，就不会导致上述问题。但是这个解决方案有两点限制：</p>
-<ul>
-<li><p>1、事先无法预估 Consumer 到底能承受多大的速率</p>
-</li>
-<li><p>2、 Consumer 的承受能力通常会动态地波动</p>
-</li>
-</ul>
-<h3 id="网络流控的实现：动态反馈-自动反压"><a href="#网络流控的实现：动态反馈-自动反压" class="headerlink" title="网络流控的实现：动态反馈/自动反压"></a>网络流控的实现：动态反馈/自动反压</h3><p><img src="_v_images/20200714171454209_1020595047"></p>
-<p>针对静态限速的问题我们就演进到了动态反馈（自动反压）的机制，我们需要 Consumer 能够及时的给 Producer 做一个 feedback，即告知 Producer 能够承受的速率是多少。动态反馈分为两种：</p>
-<ul>
-<li><p>1、负反馈：接受速率小于发送速率时发生，告知 Producer 降低发送速率</p>
-</li>
-<li><p>2、正反馈：发送速率小于接收速率时发生，告知 Producer 可以把发送速率提上来</p>
-</li>
-</ul>
-<p>让我们来看几个经典案例</p>
-<h3 id="案例一：Storm-反压实现"><a href="#案例一：Storm-反压实现" class="headerlink" title="案例一：Storm 反压实现"></a>案例一：Storm 反压实现</h3><p><img src="_v_images/20200714171454004_1684651238"></p>
-<p>上图就是 Storm 里实现的反压机制，可以看到 Storm 在每一个 Bolt 都会有一个监测反压的线程（Backpressure Thread），这个线程一但检测到 Bolt 里的接收队列（recv queue）出现了严重阻塞就会把这个情况写到 ZooKeeper 里，ZooKeeper 会一直被 Spout 监听，监听到有反压的情况就会停止发送，通过这样的方式匹配上下游的发送接收速率。</p>
-<h3 id="案例二：Spark-Streaming-反压实现"><a href="#案例二：Spark-Streaming-反压实现" class="headerlink" title="案例二：Spark Streaming 反压实现"></a>案例二：Spark Streaming 反压实现</h3><p><img src="_v_images/20200714171453699_1486221085"></p>
-<p>Spark Streaming 里也有做类似这样的 feedback 机制，上图 Fecher 会实时的从 Buffer、Processing 这样的节点收集一些指标然后通过 Controller 把速度接收的情况再反馈到 Receiver，实现速率的匹配。</p>
-<h3 id="疑问：为什么-Flink（before-V1-5）里没有用类似的方式实现-feedback-机制？"><a href="#疑问：为什么-Flink（before-V1-5）里没有用类似的方式实现-feedback-机制？" class="headerlink" title="疑问：为什么 Flink（before V1.5）里没有用类似的方式实现 feedback 机制？"></a>疑问：为什么 Flink（before V1.5）里没有用类似的方式实现 feedback 机制？</h3><p>首先在解决这个疑问之前我们需要先了解一下 Flink 的网络传输是一个什么样的架构。</p>
-<p><img src="_v_images/20200714171453393_758272414"></p>
-<p>这张图就体现了 Flink 在做网络传输的时候基本的数据的流向，发送端在发送网络数据前要经历自己内部的一个流程，会有一个自己的 Network Buffer，在底层用 Netty 去做通信，Netty 这一层又有属于自己的 ChannelOutbound Buffer，因为最终是要通过 Socket 做网络请求的发送，所以在 Socket 也有自己的 Send Buffer，同样在接收端也有对应的三级 Buffer。学过计算机网络的时候我们应该了解到，TCP 是自带流量控制的。实际上 Flink （before V1.5）就是通过 TCP 的流控机制来实现 feedback 的。</p>
-<h2 id="TCP-流控机制"><a href="#TCP-流控机制" class="headerlink" title="TCP 流控机制"></a>TCP 流控机制</h2><p>根据下图我们来简单的回顾一下 TCP 包的格式结构。首先，他有 Sequence number 这样一个机制给每个数据包做一个编号，还有 ACK number 这样一个机制来确保 TCP 的数据传输是可靠的，除此之外还有一个很重要的部分就是 Window Size，接收端在回复消息的时候会通过 Window Size 告诉发送端还可以发送多少数据。</p>
-<p><img src="_v_images/20200714171452987_650184722"></p>
-<p>接下来我们来简单看一下这个过程。</p>
-<h3 id="TCP-流控：滑动窗口"><a href="#TCP-流控：滑动窗口" class="headerlink" title="TCP 流控：滑动窗口"></a>TCP 流控：滑动窗口</h3><p><img src="_v_images/20200714171452683_1953611527"></p>
-<p>TCP 的流控就是基于滑动窗口的机制，现在我们有一个 Socket 的发送端和一个 Socket 的接收端，目前我们的发送端的速率是我们接收端的 3 倍，这样会发生什么样的一个情况呢？假定初始的时候我们发送的 window 大小是 3，然后我们接收端的 window 大小是固定的，就是接收端的 Buffer 大小为 5。</p>
-<p><img src="_v_images/20200714171452278_1991948370"></p>
-<p>首先，发送端会一次性发 3 个 packets，将 1，2，3 发送给接收端，接收端接收到后会将这 3 个 packets 放到 Buffer 里去。</p>
-<p><img src="_v_images/20200714171452072_41416741"></p>
-<p>接收端一次消费 1 个 packet，这时候 1 就已经被消费了，然后我们看到接收端的滑动窗口会往前滑动一格，这时候 2，3 还在 Buffer 当中 而 4，5，6 是空出来的，所以接收端会给发送端发送 ACK = 4 ，代表发送端可以从 4 开始发送，同时会将 window 设置为 3 （Buffer 的大小 5 减去已经存下的 2 和 3），发送端接收到回应后也会将他的滑动窗口向前移动到 4，5，6。</p>
-<p><img src="_v_images/20200714171451767_719493078"></p>
-<p>这时候发送端将 4，5，6 发送，接收端也能成功的接收到 Buffer 中去。</p>
-<p><img src="_v_images/20200714171451562_313469730"></p>
-<p>到这一阶段后，接收端就消费到 2 了，同样他的窗口也会向前滑动一个，这时候他的 Buffer 就只剩一个了，于是向发送端发送 ACK = 7、window = 1。发送端收到之后滑动窗口也向前移，但是这个时候就不能移动 3 格了，虽然发送端的速度允许发 3 个 packets 但是 window 传值已经告知只能接收一个，所以他的滑动窗口就只能往前移一格到 7 ，这样就达到了限流的效果，发送端的发送速度从 3 降到 1。</p>
-<p><img src="_v_images/20200714171451057_482639053"></p>
-<p><img src="_v_images/20200714171450752_1192910727"></p>
-<p>我们再看一下这种情况，这时候发送端将 7 发送后，接收端接收到，但是由于接收端的消费出现问题，一直没有从 Buffer 中去取，这时候接收端向发送端发送 ACK = 8、window = 0 ，由于这个时候 window = 0，发送端是不能发送任何数据，也就会使发送端的发送速度降为 0。这个时候发送端不发送任何数据了，接收端也不进行任何的反馈了，那么如何知道消费端又开始消费了呢？</p>
-<p><img src="_v_images/20200714171450147_1390602232"></p>
-<p><img src="_v_images/20200714171449642_832142513"></p>
-<p><img src="_v_images/20200714171449037_394744327"></p>
-<p>TCP 当中有一个 ZeroWindowProbe 的机制，发送端会定期的发送 1 个字节的探测消息，这时候接收端就会把 window 的大小进行反馈。当接收端的消费恢复了之后，接收到探测消息就可以将 window 反馈给发送端端了从而恢复整个流程。TCP 就是通过这样一个滑动窗口的机制实现 feedback。</p>
-<h2 id="Flink-TCP-based-反压机制（before-V1-5）"><a href="#Flink-TCP-based-反压机制（before-V1-5）" class="headerlink" title="Flink TCP-based 反压机制（before V1.5）"></a>Flink TCP-based 反压机制（before V1.5）</h2><h3 id="示例：WindowWordCount"><a href="#示例：WindowWordCount" class="headerlink" title="示例：WindowWordCount"></a>示例：WindowWordCount</h3><p><img src="_v_images/20200714171448732_1736435542"></p>
-<p>大体的逻辑就是从 Socket 里去接收数据，每 5s 去进行一次 WordCount，将这个代码提交后就进入到了编译阶段。</p>
-<h3 id="编译阶段：生成-JobGraph"><a href="#编译阶段：生成-JobGraph" class="headerlink" title="编译阶段：生成 JobGraph"></a>编译阶段：生成 JobGraph</h3><p><img src="_v_images/20200714171448227_116055159"></p>
-<p>这时候还没有向集群去提交任务，在 Client 端会将 StreamGraph 生成 JobGraph，JobGraph 就是做为向集群提交的最基本的单元。在生成 JobGrap 的时候会做一些优化，将一些没有 Shuffle 机制的节点进行合并。有了 JobGraph 后就会向集群进行提交，进入运行阶段。</p>
-<h3 id="运行阶段：调度-ExecutionGraph"><a href="#运行阶段：调度-ExecutionGraph" class="headerlink" title="运行阶段：调度 ExecutionGraph"></a>运行阶段：调度 ExecutionGraph</h3><p><img src="_v_images/20200714171447922_1674684296"></p>
-<p>JobGraph 提交到集群后会生成 ExecutionGraph ，这时候就已经具备基本的执行任务的雏形了，把每个任务拆解成了不同的 SubTask，上图 ExecutionGraph 中的 Intermediate Result Partition 就是用于发送数据的模块，最终会将 ExecutionGraph 交给 JobManager 的调度器，将整个 ExecutionGraph 调度起来。然后我们概念化这样一张物理执行图，可以看到每个 Task 在接收数据时都会通过这样一个 InputGate 可以认为是负责接收数据的，再往前有这样一个 ResultPartition 负责发送数据，在 ResultPartition 又会去做分区跟下游的 Task 保持一致，就形成了 ResultSubPartition 和 InputChannel 的对应关系。这就是从逻辑层上来看的网络传输的通道，基于这么一个概念我们可以将反压的问题进行拆解。</p>
-<h3 id="问题拆解：反压传播两个阶段"><a href="#问题拆解：反压传播两个阶段" class="headerlink" title="问题拆解：反压传播两个阶段"></a>问题拆解：反压传播两个阶段</h3><p><img src="_v_images/20200714171447717_722983245"></p>
-<p>反压的传播实际上是分为两个阶段的，对应着上面的执行图，我们一共涉及 3 个 TaskManager，在每个 TaskManager 里面都有相应的 Task 在执行，还有负责接收数据的 InputGate，发送数据的 ResultPartition，这就是一个最基本的数据传输的通道。在这时候假设最下游的 Task （Sink）出现了问题，处理速度降了下来这时候是如何将这个压力反向传播回去呢？这时候就分为两种情况：</p>
-<ul>
-<li><p>跨 TaskManager ，反压如何从 InputGate 传播到 ResultPartition</p>
-</li>
-<li><p>TaskManager 内，反压如何从 ResultPartition 传播到 InputGate</p>
-</li>
-</ul>
-<h3 id="跨-TaskManager-数据传输"><a href="#跨-TaskManager-数据传输" class="headerlink" title="跨 TaskManager 数据传输"></a>跨 TaskManager 数据传输</h3><p><img src="_v_images/20200714171447411_1651413338"></p>
-<p>前面提到，发送数据需要 ResultPartition，在每个 ResultPartition 里面会有分区 ResultSubPartition，中间还会有一些关于内存管理的 Buffer。 对于一个 TaskManager 来说会有一个统一的 Network BufferPool 被所有的 Task 共享，在初始化时会从 Off-heap Memory 中申请内存，申请到内存的后续内存管理就是同步 Network BufferPool 来进行的，不需要依赖 JVM GC 的机制去释放。有了 Network BufferPool 之后可以为每一个 ResultSubPartition 创建 Local BufferPool 。 如上图左边的 TaskManager 的 Record Writer 写了 &lt;1，2&gt; 这个两个数据进来，因为 ResultSubPartition 初始化的时候为空，没有 Buffer 用来接收，就会向 Local BufferPool 申请内存，这时 Local BufferPool 也没有足够的内存于是将请求转到 Network BufferPool，最终将申请到的 Buffer 按原链路返还给 ResultSubPartition，&lt;1，2&gt; 这个两个数据就可以被写入了。之后会将 ResultSubPartition 的 Buffer 拷贝到 Netty 的 Buffer 当中最终拷贝到 Socket 的 Buffer 将消息发送出去。然后接收端按照类似的机制去处理将消息消费掉。 接下来我们来模拟上下游处理速度不匹配的场景，发送端的速率为 2，接收端的速率为 1，看一下反压的过程是怎样的。</p>
-<h3 id="跨-TaskManager-反压过程"><a href="#跨-TaskManager-反压过程" class="headerlink" title="跨 TaskManager 反压过程"></a>跨 TaskManager 反压过程</h3><p><img src="_v_images/20200714171447006_680735181"></p>
-<p>因为速度不匹配就会导致一段时间后 InputChannel 的 Buffer 被用尽，于是他会向 Local BufferPool 申请新的 Buffer ，这时候可以看到 Local BufferPool 中的一个 Buffer 就会被标记为 Used。</p>
-<p><img src="_v_images/20200714171446799_1194236091"></p>
-<p>发送端还在持续以不匹配的速度发送数据，然后就会导致 InputChannel 向 Local BufferPool 申请 Buffer 的时候发现没有可用的 Buffer 了，这时候就只能向 Network BufferPool 去申请，当然每个 Local BufferPool 都有最大的可用的 Buffer，防止一个 Local BufferPool 把 Network BufferPool 耗尽。这时候看到 Network BufferPool 还是有可用的 Buffer 可以向其申请。</p>
-<p><img src="_v_images/20200714171445992_941635712"></p>
-<p>一段时间后，发现 Network BufferPool 没有可用的 Buffer，或是 Local BufferPool 的最大可用 Buffer 到了上限无法向 Network BufferPool 申请，没有办法去读取新的数据，这时 Netty AutoRead 就会被禁掉，Netty 就不会从 Socket 的 Buffer 中读取数据了。</p>
-<p><img src="_v_images/20200714171444186_160162504"></p>
-<p>显然，再过不久 Socket 的 Buffer 也被用尽，这时就会将 Window = 0 发送给发送端（前文提到的 TCP 滑动窗口的机制）。这时发送端的 Socket 就会停止发送。</p>
-<p><img src="_v_images/20200714171443780_1304730499"></p>
-<p>很快发送端的 Socket 的 Buffer 也被用尽，Netty 检测到 Socket 无法写了之后就会停止向 Socket 写数据。</p>
-<p><img src="_v_images/20200714171443573_720011262"></p>
-<p>Netty 停止写了之后，所有的数据就会阻塞在 Netty 的 Buffer 当中了，但是 Netty 的 Buffer 是无界的，可以通过 Netty 的水位机制中的 high watermark 控制他的上界。当超过了 high watermark，Netty 就会将其 channel 置为不可写，ResultSubPartition 在写之前都会检测 Netty 是否可写，发现不可写就会停止向 Netty 写数据。</p>
-<p><img src="_v_images/20200714171443267_566801867"></p>
-<p>这时候所有的压力都来到了 ResultSubPartition，和接收端一样他会不断的向 Local BufferPool 和 Network BufferPool 申请内存。</p>
-<p><img src="_v_images/20200714171442761_1041985779"></p>
-<p>Local BufferPool 和 Network BufferPool 都用尽后整个 Operator 就会停止写数据，达到跨 TaskManager 的反压。</p>
-<h3 id="TaskManager-内反压过程"><a href="#TaskManager-内反压过程" class="headerlink" title="TaskManager 内反压过程"></a>TaskManager 内反压过程</h3><p>了解了跨 TaskManager 反压过程后再来看 TaskManager 内反压过程就更好理解了，下游的 TaskManager 反压导致本 TaskManager 的 ResultSubPartition 无法继续写入数据，于是 Record Writer 的写也被阻塞住了，因为 Operator 需要有输入才能有计算后的输出，输入跟输出都是在同一线程执行， Record Writer 阻塞了，Record Reader 也停止从 InputChannel 读数据，这时上游的 TaskManager 还在不断地发送数据，最终将这个 TaskManager 的 Buffer 耗尽。具体流程可以参考下图，这就是 TaskManager 内的反压过程。</p>
-<p><img src="_v_images/20200714171442455_926070537"></p>
-<p><img src="_v_images/20200714171442149_493428448"></p>
-<p><img src="_v_images/20200714171441744_1291490922"></p>
-<p><img src="_v_images/20200714171441439_2105575637"></p>
-<h2 id="Flink-Credit-based-反压机制（since-V1-5）"><a href="#Flink-Credit-based-反压机制（since-V1-5）" class="headerlink" title="Flink Credit-based 反压机制（since V1.5）"></a>Flink Credit-based 反压机制（since V1.5）</h2><h3 id="TCP-based-反压的弊端"><a href="#TCP-based-反压的弊端" class="headerlink" title="TCP-based 反压的弊端"></a>TCP-based 反压的弊端</h3><p><img src="_v_images/20200714171441134_1354461165"></p>
-<p>在介绍 Credit-based 反压机制之前，先分析下 TCP 反压有哪些弊端。</p>
-<ul>
-<li><p>在一个 TaskManager 中可能要执行多个 Task，如果多个 Task 的数据最终都要传输到下游的同一个 TaskManager 就会复用同一个 Socket 进行传输，这个时候如果单个 Task 产生反压，就会导致复用的 Socket 阻塞，其余的 Task 也无法使用传输，checkpoint barrier 也无法发出导致下游执行 checkpoint 的延迟增大。</p>
-</li>
-<li><p>依赖最底层的 TCP 去做流控，会导致反压传播路径太长，导致生效的延迟比较大。</p>
-</li>
-</ul>
-<h3 id="引入-Credit-based-反压"><a href="#引入-Credit-based-反压" class="headerlink" title="引入 Credit-based 反压"></a>引入 Credit-based 反压</h3><p>这个机制简单的理解起来就是在 Flink 层面实现类似 TCP 流控的反压机制来解决上述的弊端，Credit 可以类比为 TCP 的 Window 机制。</p>
-<h3 id="Credit-based-反压过程"><a href="#Credit-based-反压过程" class="headerlink" title="Credit-based 反压过程"></a>Credit-based 反压过程</h3><p><img src="_v_images/20200714171440828_629774125"></p>
-<p>如图所示在 Flink 层面实现反压机制，就是每一次 ResultSubPartition 向 InputChannel 发送消息的时候都会发送一个 backlog size 告诉下游准备发送多少消息，下游就会去计算有多少的 Buffer 去接收消息，算完之后如果有充足的 Buffer 就会返还给上游一个 Credit 告知他可以发送消息（图上两个 ResultSubPartition 和 InputChannel 之间是虚线是因为最终还是要通过 Netty 和 Socket 去通信），下面我们看一个具体示例。</p>
-<p><img src="_v_images/20200714171440422_2073806088"></p>
-<p>假设我们上下游的速度不匹配，上游发送速率为 2，下游接收速率为 1，可以看到图上在 ResultSubPartition 中累积了两条消息，10 和 11， backlog 就为 2，这时就会将发送的数据 &lt;8,9&gt; 和 backlog = 2 一同发送给下游。下游收到了之后就会去计算是否有 2 个 Buffer 去接收，可以看到 InputChannel 中已经不足了这时就会从 Local BufferPool 和 Network BufferPool 申请，好在这个时候 Buffer 还是可以申请到的。</p>
-<p><img src="_v_images/20200714171440216_190878629"></p>
-<p>过了一段时间后由于上游的发送速率要大于下游的接受速率，下游的 TaskManager 的 Buffer 已经到达了申请上限，这时候下游就会向上游返回 Credit = 0，ResultSubPartition 接收到之后就不会向 Netty 去传输数据，上游 TaskManager 的 Buffer 也很快耗尽，达到反压的效果，这样在 ResultSubPartition 层就能感知到反压，不用通过 Socket 和 Netty 一层层地向上反馈，降低了反压生效的延迟。同时也不会将 Socket 去阻塞，解决了由于一个 Task 反压导致 TaskManager 和 TaskManager 之间的 Socket 阻塞的问题。</p>
-<h2 id="总结与思考"><a href="#总结与思考" class="headerlink" title="总结与思考"></a>总结与思考</h2><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
-<li><p>网络流控是为了在上下游速度不匹配的情况下，防止下游出现过载</p>
-</li>
-<li><p>网络流控有静态限速和动态反压两种手段</p>
-</li>
-<li><p>Flink 1.5 之前是基于 TCP 流控 + bounded buffer 实现反压</p>
-</li>
-<li><p>Flink 1.5 之后实现了自己托管的 credit - based 流控机制，在应用层模拟 TCP 的流控机制</p>
-</li>
-</ul>
-<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><p>有了动态反压，静态限速是不是完全没有作用了？</p>
-<p><img src="_v_images/20200714171439509_423419298"></p>
-<p>实际上动态反压不是万能的，我们流计算的结果最终是要输出到一个外部的存储（Storage），外部数据存储到 Sink 端的反压是不一定会触发的，这要取决于外部存储的实现，像 Kafka 这样是实现了限流限速的消息中间件可以通过协议将反压反馈给 Sink 端，但是像 ES 无法将反压进行传播反馈给 Sink 端，这种情况下为了防止外部存储在大的数据量下被打爆，我们就可以通过静态限速的方式在 Source 端去做限流。所以说动态反压并不能完全替代静态限速的，需要根据合适的场景去选择处理方案。</p>
-<p>作者：阿里云云栖号<br>链接：<a target="_blank" rel="noopener" href="https://juejin.im/post/5dce4b265188254a2b1faddf">https://juejin.im/post/5dce4b265188254a2b1faddf</a><br>来源：掘金<br>著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-TableAPI/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1302,7 +1036,7 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1556,7 +1290,7 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -2099,7 +1833,7 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:07" itemprop="dateModified" datetime="2021-01-16T11:49:07+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:27" itemprop="dateModified" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -2130,6 +1864,84 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_27035123/article/details/77651534">Java线程与内核线程</a></li>
 </ol>
 
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/10.async-wait-with-latch/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/multithread/10.async-wait-with-latch/" class="post-title-link" itemprop="url">使用CountLatch实现异步等待</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-07-03 00:00:00" itemprop="dateCreated datePublished" datetime="2019-07-03T00:00:00+08:00">2019-07-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:28:27" itemprop="dateModified" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="10-async-wait-with-latch"><a href="#10-async-wait-with-latch" class="headerlink" title="10.async-wait-with-latch"></a>10.async-wait-with-latch</h1><p>利用CountLatch异步等待</p>
+<blockquote>
+<p>摘自JavaFx源码</p>
+<p>com.sun.javafx.application.LauncherImpl#launchApplication(java.lang.Class&lt;? extends javafx.application.Application&gt;, java.lang.Class&lt;? extends javafx.application.Preloader&gt;, java.lang.String[])</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 接收异常</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">volatile</span> RuntimeException launchException = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">final</span> CountDownLatch launchLatch = <span class="keyword">new</span> CountDownLatch(<span class="number">1</span>);</span><br><span class="line">Thread launcherThread = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        launchApplication1(appClass, preloaderClass, args);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RuntimeException rte) &#123;</span><br><span class="line">        launchException = rte;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">        launchException =</span><br><span class="line">            <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Application launch exception&quot;</span>, ex);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Error err) &#123;</span><br><span class="line">        launchException =</span><br><span class="line">            <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Application launch error&quot;</span>, err);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="comment">// countDown</span></span><br><span class="line">        launchLatch.countDown();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line">launcherThread.setName(<span class="string">&quot;JavaFX-Launcher&quot;</span>);</span><br><span class="line">launcherThread.start();</span><br><span class="line"><span class="comment">// 异步线程启动</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Wait for FX launcher thread to finish before returning to user</span></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    launchLatch.await();</span><br><span class="line">&#125; <span class="keyword">catch</span> (InterruptedException ex) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Unexpected exception: &quot;</span>, ex);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (launchException != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> launchException;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
       
     </div>
 
@@ -2179,7 +1991,7 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:07" itemprop="dateModified" datetime="2021-01-16T11:49:07+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:27" itemprop="dateModified" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -2232,84 +2044,6 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/10.async-wait-with-latch/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/multithread/10.async-wait-with-latch/" class="post-title-link" itemprop="url">使用CountLatch实现异步等待</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-07-03 00:00:00" itemprop="dateCreated datePublished" datetime="2019-07-03T00:00:00+08:00">2019-07-03</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:07" itemprop="dateModified" datetime="2021-01-16T11:49:07+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="10-async-wait-with-latch"><a href="#10-async-wait-with-latch" class="headerlink" title="10.async-wait-with-latch"></a>10.async-wait-with-latch</h1><p>利用CountLatch异步等待</p>
-<blockquote>
-<p>摘自JavaFx源码</p>
-<p>com.sun.javafx.application.LauncherImpl#launchApplication(java.lang.Class&lt;? extends javafx.application.Application&gt;, java.lang.Class&lt;? extends javafx.application.Preloader&gt;, java.lang.String[])</p>
-</blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 接收异常</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">volatile</span> RuntimeException launchException = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">final</span> CountDownLatch launchLatch = <span class="keyword">new</span> CountDownLatch(<span class="number">1</span>);</span><br><span class="line">Thread launcherThread = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        launchApplication1(appClass, preloaderClass, args);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RuntimeException rte) &#123;</span><br><span class="line">        launchException = rte;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">        launchException =</span><br><span class="line">            <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Application launch exception&quot;</span>, ex);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Error err) &#123;</span><br><span class="line">        launchException =</span><br><span class="line">            <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Application launch error&quot;</span>, err);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="comment">// countDown</span></span><br><span class="line">        launchLatch.countDown();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line">launcherThread.setName(<span class="string">&quot;JavaFX-Launcher&quot;</span>);</span><br><span class="line">launcherThread.start();</span><br><span class="line"><span class="comment">// 异步线程启动</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Wait for FX launcher thread to finish before returning to user</span></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    launchLatch.await();</span><br><span class="line">&#125; <span class="keyword">catch</span> (InterruptedException ex) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Unexpected exception: &quot;</span>, ex);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (launchException != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> launchException;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/09.JStack/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2341,7 +2075,7 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:07" itemprop="dateModified" datetime="2021-01-16T11:49:07+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:27" itemprop="dateModified" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -2526,6 +2260,82 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-config-dynamic/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-config-dynamic/" class="post-title-link" itemprop="url">Flink/Storm 动态更新配置实现方案</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-06-09 00:00:00" itemprop="dateCreated datePublished" datetime="2019-06-09T00:00:00+08:00">2019-06-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>实时计算处理无限数据流，对系统可用性十分敏感，然而业务需求具有必然的更新需求，动态更新实时计算的配置是常见的需求，比如动态增加用户白名单、业务数据在线 debug、新增广告位统计等等。然而，实现并不简单，Apache Strom 和 Apache Storm 具有不同的架构，实现方式也不尽相同。</p>
+<p>Apache Strom(这里不包括 Trident)，所有的计算逻辑都是通过实现spout 和 bolt，运行在 task节点上，因此与业务逻辑相关的状态管理、配置管理以及输入输出的控制等均可以定义在 bolt 中，如定时一分钟轮询配置变化、定时 checkpoint 近似数据集等。此外，配置同样可以通过控制流的方式与数据流 uion 到一起，在计算节点检测判断控制流的关键字来实现配置更新的目的。</p>
+<p>Apache Flink 的函数式 API 封装要比 Storm 要完善，而灵活性不比 Strom。实现配置动态更新有两种方式，一是在算子中定时轮询拉取配置信息，二是利用广播状态和控制流。</p>
+<h1 id="asyncIO"><a href="#asyncIO" class="headerlink" title="asyncIO"></a>asyncIO</h1><h1 id="stateBroadcast"><a href="#stateBroadcast" class="headerlink" title="stateBroadcast"></a>stateBroadcast</h1>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
@@ -2595,7 +2405,7 @@ Z    Defunct (&quot;zombie&quot;) process, terminated but not reaped by its pare
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">227</span>
+          <span class="site-state-item-count">226</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

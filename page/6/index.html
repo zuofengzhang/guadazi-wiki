@@ -183,217 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/00.Flink-outline/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/00.Flink-outline/" class="post-title-link" itemprop="url">Flink-outline</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="00-Flink-outline"><a href="#00-Flink-outline" class="headerlink" title="00.Flink-outline"></a>00.Flink-outline</h1><h1 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h1><ul>
-<li><a target="_blank" rel="noopener" href="https://github.com/crestofwave1/oneFlink">Flink官方文档翻译</a></li>
-</ul>
-<h1 id="todo"><a href="#todo" class="headerlink" title="todo"></a>todo</h1><h2 id="checkpoint与savepoint区别"><a href="#checkpoint与savepoint区别" class="headerlink" title="checkpoint与savepoint区别"></a>checkpoint与savepoint区别</h2><h2 id="flink-report"><a href="#flink-report" class="headerlink" title="flink report"></a>flink report</h2><h2 id="storm-trident"><a href="#storm-trident" class="headerlink" title="storm trident"></a>storm trident</h2><p>微批</p>
-<p>barrier对齐</p>
-<p><img src="_v_images/20190826164001201_1759200368.png" alt="flink-rm"></p>
-<h2 id="算子"><a href="#算子" class="headerlink" title="算子"></a>算子</h2><h3 id="Reduce在流计算的应用"><a href="#Reduce在流计算的应用" class="headerlink" title="Reduce在流计算的应用"></a>Reduce在流计算的应用</h3><p>org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor$LoggingHandler:140 -<br>Timestamp monotony violated: 1568772496000 &lt; 1568772500000</p>
-<p>ToDo list</p>
-<h1 id="avro-与-kryo-序列化的区别"><a href="#avro-与-kryo-序列化的区别" class="headerlink" title="avro 与 kryo 序列化的区别"></a>avro 与 kryo 序列化的区别</h1><p>使用场景</p>
-<h2 id="storm-allGrouping-元素广播"><a href="#storm-allGrouping-元素广播" class="headerlink" title="storm allGrouping 元素广播"></a>storm allGrouping 元素广播</h2><p>flink broadcast how to use </p>
-<p>broadcast vaiable value can not be modified</p>
-<p>用法<br>1：初始化数据<br>DataSet<Integer> toBroadcast = env.fromElements(1, 2, 3)<br>2：广播数据<br>.withBroadcastSet(toBroadcast, “broadcastSetName”);<br>3：获取数据<br>Collection<Integer> broadcastSet = getRuntimeContext().getBroadcastVariable(“broadcastSetName”);</p>
-<ul>
-<li>广播变量不能太大</li>
-<li>不能修改，保证数据一致性</li>
-</ul>
-<h1 id="Accumulators-amp-Counters"><a href="#Accumulators-amp-Counters" class="headerlink" title="Accumulators &amp; Counters"></a>Accumulators &amp; Counters</h1><p>累加器与计数器</p>
-<h2 id="spark-accumulate"><a href="#spark-accumulate" class="headerlink" title="spark accumulate"></a>spark accumulate</h2><p>用法<br>1：创建累加器<br>private IntCounter numLines = new IntCounter();<br>2：注册累加器<br>getRuntimeContext().addAccumulator(“num-lines”, this.numLines);<br>3：使用累加器<br>this.numLines.add(1);<br>4：获取累加器的结果<br>myJobExecutionResult.getAccumulatorResult(“num-lines”)</p>
-<h1 id="Distributed-Cache"><a href="#Distributed-Cache" class="headerlink" title="Distributed Cache"></a>Distributed Cache</h1><blockquote>
-<p>Spark 分布式缓存如何使用</p>
-</blockquote>
-<p>Flink提供了一个分布式缓存，类似于hadoop，可以使用户在并行函数中很方便的读取本地文件<br>此缓存的工作机制如下：程序注册一个文件或者目录(本地或者远程文件系统，例如hdfs或者s3)，通过ExecutionEnvironment注册缓存文件并为它起一个名称。当程序执行，Flink自动将文件或者目录复制到所有taskmanager节点的本地文件系统，用户可以通过这个指定的名称查找文件或者目录，然后从taskmanager节点的本地文件系统访问它<br>用法<br>1：注册一个文件<br>env.registerCachedFile(“hdfs:///path/to/your/file”, “hdfsFile”)<br>2：访问数据<br>File myFile = getRuntimeContext().getDistributedCache().getFile(“hdfsFile”);</p>
-<h1 id="at-least-once-amp-exactly-once"><a href="#at-least-once-amp-exactly-once" class="headerlink" title="at least once &amp; exactly once"></a>at least once &amp; exactly once</h1><p>从容错和消息处理的语义上(at least once, exactly once)，Flink引入了state和checkpoint。</p>
-<h1 id="state"><a href="#state" class="headerlink" title="state"></a>state</h1><p>默认保存在java堆中<br>checkpoint: 把state持久化存储，全局快照<br>blink做的优化</p>
-<p>失败恢复机制 </p>
-<p>状态分为原始状态和托管状态</p>
-<p>托管状态是由Flink框架管理的状态<br>而原始状态，由用户自行管理状态具体的数据结构，框架在做checkpoint的时候，使用byte[]来读写状态内容，对其内部数据结构一无所知。<br>通常在DataStream上的状态推荐使用托管的状态，当实现一个用户自定义的operator时，会使用到原始状态。</p>
-<blockquote>
-<p>ReducingState 如何使用</p>
-</blockquote>
-<h1 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h1><p>Flink的checkpoint机制可以与(stream和state)的持久化存储交互的前提：<br>持久化的source，它需要支持在一定时间内重放事件。这种sources的典型例子是持久化的消息队列（比如Apache Kafka，RabbitMQ等）或文件系统（比如HDFS，S3，GFS等）<br>用于state的持久化存储，例如分布式文件系统（比如HDFS，S3，GFS等）</p>
-<p>Checkpoint是Flink实现容错机制最核心的功能，它能够根据配置周期性地基于Stream中各个Operator/task的状态来生成快照，从而将这些状态数据定期持久化存储下来，当Flink程序一旦意外崩溃时，重新运行程序时可以有选择地从这些快照进行恢复，从而修正因为故障带来的程序数据异常</p>
-<p>checkpoint开启之后，默认的checkPointMode是Exactly-once<br>checkpoint的checkPointMode有两种，Exactly-once和At-least-once<br>Exactly-once对于大多数应用来说是最合适的。At-least-once可能用在某些延迟超低的应用程序（始终延迟为几毫秒）</p>
-<p>ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION:表示一旦Flink处理程序被cancel后，会保留Checkpoint数据，以便根据实际需要恢复到指定的Checkpoint<br>ExternalizedCheckpointCleanup.DELETE_ON_CANCELLATION: 表示一旦Flink处理程序被cancel后，会删除Checkpoint数据，只有job执行失败的时候才会保存checkpoint</p>
-<h1 id="state-backend"><a href="#state-backend" class="headerlink" title="state backend"></a>state backend</h1><p>默认情况下，state会保存在taskmanager的内存中，checkpoint会存储在JobManager的内存中。<br>state 的store和checkpoint的位置取决于State Backend的配置<br>env.setStateBackend(…)<br>一共有三种State Backend<br>MemoryStateBackend<br>FsStateBackend<br>RocksDBStateBackend</p>
-<p>MemoryStateBackend<br>state数据保存在java堆内存中，执行checkpoint的时候，会把state的快照数据保存到jobmanager的内存中<br>基于内存的state backend在生产环境下不建议使用<br>FsStateBackend<br>state数据保存在taskmanager的内存中，执行checkpoint的时候，会把state的快照数据保存到配置的文件系统中<br>可以使用hdfs等分布式文件系统<br>RocksDBStateBackend<br>RocksDB跟上面的都略有不同，它会在本地文件系统中维护状态，state会直接写入本地rocksdb中。同时它需要配置一个远端的filesystem uri（一般是HDFS），在做checkpoint的时候，会把本地的数据直接复制到filesystem中。fail over的时候从filesystem中恢复到本地<br>RocksDB克服了state受内存限制的缺点，同时又能够持久化到远端文件系统中，比较适合在生产中使用</p>
-<p>修改State Backend的两种方式<br>第一种：单任务调整<br>修改当前任务代码<br>env.setStateBackend(new FsStateBackend(“hdfs://namenode:9000/flink/checkpoints”));<br>或者new MemoryStateBackend()<br>或者new RocksDBStateBackend(filebackend, true);【需要添加第三方依赖】<br>第二种：全局调整<br>修改flink-conf.yaml<br>state.backend: filesystem<br>state.checkpoints.dir: hdfs://namenode:9000/flink/checkpoints<br>注意：state.backend的值可以是下面几种：jobmanager(MemoryStateBackend), filesystem(FsStateBackend), rocksdb(RocksDBStateBackend)</p>
-<h1 id="Restart-Strategies-重启策略"><a href="#Restart-Strategies-重启策略" class="headerlink" title="Restart Strategies(重启策略)"></a>Restart Strategies(重启策略)</h1><p>默认重启策略通过 flink-conf.yaml 指定</p>
-<p>常用的重启策略<br>固定间隔 (Fixed delay)<br>失败率 (Failure rate)<br>无重启 (No restart)<br>如果没有启用 checkpointing，则使用无重启 (no restart) 策略。<br>如果启用了 checkpointing，但没有配置重启策略，则使用固定间隔 (fixed-delay) 策略，其中 Integer.MAX_VALUE 参数是尝试重启次数<br>重启策略可以在flink-conf.yaml中配置，表示全局的配置。也可以在应用代码中动态指定，会覆盖全局配置</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">第一种：全局配置 flink-conf.yaml</span><br><span class="line">restart-strategy: fixed-delay</span><br><span class="line">restart-strategy.fixed-delay.attempts: <span class="number">3</span></span><br><span class="line">restart-strategy.fixed-delay.delay: <span class="number">10</span> s</span><br><span class="line">第二种：应用代码设置</span><br><span class="line">env.setRestartStrategy(RestartStrategies.fixedDelayRestart(</span><br><span class="line">  <span class="number">3</span>, <span class="comment">// 尝试重启的次数</span></span><br><span class="line">  Time.of(<span class="number">10</span>, TimeUnit.SECONDS) <span class="comment">// 间隔</span></span><br><span class="line">));</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-<h2 id="Flink-table"><a href="#Flink-table" class="headerlink" title="Flink table"></a>Flink table</h2><h3 id="over-window"><a href="#over-window" class="headerlink" title="over window"></a>over window</h3><h1 id="TODO"><a href="#TODO" class="headerlink" title="TODO"></a>TODO</h1><ul>
-<li><input disabled="" type="checkbox"> Flink Table API office</li>
-<li><input disabled="" type="checkbox"> 自定义窗口</li>
-<li><input disabled="" type="checkbox"> cogroup、connect与 join</li>
-<li><input disabled="" type="checkbox"> CDC</li>
-<li><input disabled="" type="checkbox"> flink流测试工具</li>
-</ul>
-<p>#【亿级流量 秒级统计】</p>
-<p>AI、ML、DL、ANN、CNN 蛰伏数十年，就为这个大数据时代。</p>
-<p>AI正以前所未有的速度改变世界，影响着我们生活的方方面面，AI走进人们的生活将成为未来的新常态。 而大数据和计算能力像水和氧气一样支撑着AI，我们的数据从手机端、服务器日志</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/01.Release/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/01.Release/" class="post-title-link" itemprop="url">Flink-release</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="10-12-0"><a href="#10-12-0" class="headerlink" title="10.12.0"></a>10.12.0</h1><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_44904816/article/details/111027068">reference</a></p>
-<ul>
-<li>在 DataStream API 上添加了高效的批执行模式的支持。这是批处理和流处理实现真正统一的运行时的一个重要里程碑。</li>
-<li>实现了基于Kubernetes的高可用性（HA）方案，作为生产环境中，ZooKeeper方案之外的另外一种选择。</li>
-<li>扩展了 Kafka SQL connector，使其可以在 upsert 模式下工作，并且支持在 SQL DDL 中处理 connector 的 metadata。现在，时态表 Join 可以完全用 SQL 来表示，不再依赖于 Table API 了。</li>
-<li>PyFlink 中添加了对于 DataStream API 的支持，将 PyFlink 扩展到了更复杂的场景，比如需要对状态或者定时器 timer 进行细粒度控制的场景。除此之外，现在原生支持将 PyFlink 作业部署到 Kubernetes上。</li>
-</ul>
-<h2 id="DataStream-API支持批量"><a href="#DataStream-API支持批量" class="headerlink" title="DataStream API支持批量"></a>DataStream API支持批量</h2><p>可复用性：作业可以在流和批这两种执行模式之间自由地切换，而无需重写任何代码。因此，用户可以复用同一个作业，来处理实时数据和历史数据。</p>
-<p>维护简单：统一的 API 意味着流和批可以共用同一组 connector，维护同一套代码，并能够轻松地实现流批混合执行，例如 backfilling 之类的场景。</p>
-<h2 id="Data-Sink-API"><a href="#Data-Sink-API" class="headerlink" title="Data Sink API"></a>Data Sink API</h2><h2 id="Sort-Merge-Shuffle"><a href="#Sort-Merge-Shuffle" class="headerlink" title="Sort-Merge Shuffle"></a>Sort-Merge Shuffle</h2><h2 id="SQL-中-支持-Temporal-Table-Join"><a href="#SQL-中-支持-Temporal-Table-Join" class="headerlink" title="SQL 中 支持 Temporal Table Join"></a>SQL 中 支持 Temporal Table Join</h2>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/00.Keynote/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -425,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -499,7 +288,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -523,6 +312,88 @@
 
       
           <h1 id="01"><a href="#01" class="headerlink" title="01"></a>01</h1>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/01.Release/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/01.Release/" class="post-title-link" itemprop="url">Flink-release</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="10-12-0"><a href="#10-12-0" class="headerlink" title="10.12.0"></a>10.12.0</h1><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_44904816/article/details/111027068">reference</a></p>
+<ul>
+<li>在 DataStream API 上添加了高效的批执行模式的支持。这是批处理和流处理实现真正统一的运行时的一个重要里程碑。</li>
+<li>实现了基于Kubernetes的高可用性（HA）方案，作为生产环境中，ZooKeeper方案之外的另外一种选择。</li>
+<li>扩展了 Kafka SQL connector，使其可以在 upsert 模式下工作，并且支持在 SQL DDL 中处理 connector 的 metadata。现在，时态表 Join 可以完全用 SQL 来表示，不再依赖于 Table API 了。</li>
+<li>PyFlink 中添加了对于 DataStream API 的支持，将 PyFlink 扩展到了更复杂的场景，比如需要对状态或者定时器 timer 进行细粒度控制的场景。除此之外，现在原生支持将 PyFlink 作业部署到 Kubernetes上。</li>
+</ul>
+<h2 id="DataStream-API支持批量"><a href="#DataStream-API支持批量" class="headerlink" title="DataStream API支持批量"></a>DataStream API支持批量</h2><p>可复用性：作业可以在流和批这两种执行模式之间自由地切换，而无需重写任何代码。因此，用户可以复用同一个作业，来处理实时数据和历史数据。</p>
+<p>维护简单：统一的 API 意味着流和批可以共用同一组 connector，维护同一套代码，并能够轻松地实现流批混合执行，例如 backfilling 之类的场景。</p>
+<h2 id="Data-Sink-API"><a href="#Data-Sink-API" class="headerlink" title="Data Sink API"></a>Data Sink API</h2><h2 id="Sort-Merge-Shuffle"><a href="#Sort-Merge-Shuffle" class="headerlink" title="Sort-Merge Shuffle"></a>Sort-Merge Shuffle</h2><h2 id="SQL-中-支持-Temporal-Table-Join"><a href="#SQL-中-支持-Temporal-Table-Join" class="headerlink" title="SQL 中 支持 Temporal Table Join"></a>SQL 中 支持 Temporal Table Join</h2>
       
     </div>
 
@@ -572,7 +443,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -646,7 +517,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -719,7 +590,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -800,7 +671,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -873,7 +744,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -951,7 +822,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 11:49:08" itemprop="dateModified" datetime="2021-01-16T11:49:08+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -980,6 +851,83 @@
 <p>用户可以定义CoGroupFunction函数, 可以实现在窗口内，任意组合，如笛卡尔积</p>
 <p>举例说明:</p>
 <h2 id="Connect"><a href="#Connect" class="headerlink" title="Connect"></a>Connect</h2><h2 id="Join"><a href="#Join" class="headerlink" title="Join"></a>Join</h2><h2 id="broadcast-join"><a href="#broadcast-join" class="headerlink" title="broadcast join"></a>broadcast join</h2>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-runtime/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-runtime/" class="post-title-link" itemprop="url">Flink runtime</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-runtime运行时"><a href="#Flink-runtime运行时" class="headerlink" title="Flink-runtime运行时"></a>Flink-runtime运行时</h1><p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.infoq.cn/article/RWTM9o0SHHV3Xr8o8giT">Apache Flink进阶一: Runtime核心机制剖析</a></li>
+</ol>
+
       
     </div>
 
@@ -1063,7 +1011,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">227</span>
+          <span class="site-state-item-count">226</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
