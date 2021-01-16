@@ -183,721 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/upsert/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/upsert/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-16 14:28:27" itemprop="dateCreated datePublished" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="upsert-on-duplicate-key-update"><a href="#upsert-on-duplicate-key-update" class="headerlink" title="upsert: on duplicate key update"></a>upsert: on duplicate key update</h1><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/better-farther-world2099/articles/11737376.html">MySQL upsert语法</a></p>
-<h2 id="不能加where条件"><a href="#不能加where条件" class="headerlink" title="不能加where条件"></a>不能加where条件</h2><p>因为这是个插入语句，所以不能加where条件。</p>
-<h2 id="影响的行数"><a href="#影响的行数" class="headerlink" title="影响的行数"></a>影响的行数</h2><ul>
-<li>如果是插入操作，受到影响行的值为1；</li>
-<li>如果更新操作，受到影响行的值为2；</li>
-<li>如果更新的数据和已有的数据一样（就相当于没变，所有值保持不变），受到影响的行的值为0。</li>
-</ul>
-<h2 id="样例一"><a href="#样例一" class="headerlink" title="样例一"></a>样例一</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&gt;</span> <span class="keyword">desc</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">-------+------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> Field <span class="operator">|</span> Type <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Key <span class="operator">|</span> <span class="keyword">Default</span> <span class="operator">|</span> Extra          <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------+------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> f1    <span class="operator">|</span> <span class="type">int</span>  <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span> PRI <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>  <span class="operator">|</span> auto_increment <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> f2    <span class="operator">|</span> <span class="type">int</span>  <span class="operator">|</span> YES  <span class="operator">|</span>     <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>  <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> f3    <span class="operator">|</span> <span class="type">int</span>  <span class="operator">|</span> YES  <span class="operator">|</span>     <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>  <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------+------+------+-----+---------+----------------+</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2     <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t1(f1,f3) <span class="keyword">values</span> (<span class="number">1</span>,<span class="number">3</span>),(<span class="number">2</span>,<span class="number">7</span>) <span class="keyword">on</span> duplicate key <span class="keyword">update</span> f3<span class="operator">=</span>f3<span class="operator">+</span><span class="number">1</span>;</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected</span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2     <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">7</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t1(f1,f3) <span class="keyword">values</span> (<span class="number">1</span>,<span class="number">3</span>),(<span class="number">2</span>,<span class="number">7</span>) <span class="keyword">on</span> duplicate key <span class="keyword">update</span> f3<span class="operator">=</span>f3<span class="operator">+</span><span class="number">1</span>;</span><br><span class="line">Query OK, <span class="number">4</span> <span class="keyword">rows</span> affected</span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2     <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">8</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t1(f1,f3) <span class="keyword">values</span> (<span class="number">1</span>,<span class="number">3</span>),(<span class="number">1</span>,<span class="number">7</span>) <span class="keyword">on</span> duplicate key <span class="keyword">update</span> f3<span class="operator">=</span>f3<span class="operator">+</span><span class="number">1</span>;</span><br><span class="line"><span class="comment">-- 同一行冲突两次，会执行两次更新语句</span></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2     <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">6</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">8</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2     <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">6</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">8</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h2 id="VALUES引用"><a href="#VALUES引用" class="headerlink" title="VALUES引用"></a>VALUES引用</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&gt;</span> <span class="keyword">truncate</span> t1;</span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1,f2,f3) <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>),(<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>)  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> f3<span class="operator">=</span><span class="keyword">VALUES</span>(f1)<span class="operator">+</span><span class="keyword">VALUES</span>(f2);</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected</span><br><span class="line"><span class="type">Time</span>: <span class="number">0.003</span>s</span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="comment">-- 没有出现冲突，直接赋值</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span> <span class="number">5</span>  <span class="operator">|</span> <span class="number">6</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"><span class="type">Time</span>: <span class="number">0.008</span>s</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 再执行一次，冲突了.执行冲突后的处理语句</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1,f2,f3) <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>),(<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>)  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> f3<span class="operator">=</span><span class="keyword">VALUES</span>(f1)<span class="operator">+</span><span class="keyword">VALUES</span>(f2);</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected</span><br><span class="line"><span class="type">Time</span>: <span class="number">0.002</span>s</span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span> <span class="number">5</span>  <span class="operator">|</span> <span class="number">9</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"><span class="type">Time</span>: <span class="number">0.008</span>s</span><br></pre></td></tr></table></figure>
-<h2 id="ALAIS引用"><a href="#ALAIS引用" class="headerlink" title="ALAIS引用"></a>ALAIS引用</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&gt;</span> <span class="keyword">truncate</span> <span class="keyword">table</span> t1;</span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1,f2,f3) <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>),(<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>) <span class="keyword">AS</span> <span class="keyword">new</span>  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> f3 <span class="operator">=</span> new.f1<span class="operator">+</span>new.f2;</span><br><span class="line"><span class="comment">-- 空表没有冲突，直接添加了</span></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span> <span class="number">5</span>  <span class="operator">|</span> <span class="number">6</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"><span class="type">Time</span>: <span class="number">0.008</span>s</span><br><span class="line"><span class="comment">-- 再来</span></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1,f2,f3) <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>),(<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>) <span class="keyword">AS</span> <span class="keyword">new</span>  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> f3 <span class="operator">=</span> new.f1<span class="operator">+</span>new.f2;</span><br><span class="line"><span class="comment">-- 出现冲突了, 两行更新</span></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span> <span class="number">5</span>  <span class="operator">|</span> <span class="number">9</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br></pre></td></tr></table></figure>
-<p>等价写法</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1,f2,f3) <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>),(<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>) <span class="keyword">AS</span> <span class="keyword">new</span>(m,n,p)</span><br><span class="line">  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> c <span class="operator">=</span> m<span class="operator">+</span>n;</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 <span class="keyword">SET</span> f1<span class="operator">=</span><span class="number">1</span>,f2<span class="operator">=</span><span class="number">2</span>,f3<span class="operator">=</span><span class="number">3</span> <span class="keyword">AS</span> <span class="keyword">new</span></span><br><span class="line">  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> c <span class="operator">=</span> new.a<span class="operator">+</span>new.b;</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 <span class="keyword">SET</span> f1<span class="operator">=</span><span class="number">1</span>,f2<span class="operator">=</span><span class="number">2</span>,f3<span class="operator">=</span><span class="number">3</span> <span class="keyword">AS</span> <span class="keyword">new</span>(m,n,p)</span><br><span class="line">  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> c <span class="operator">=</span> m<span class="operator">+</span>n;</span><br></pre></td></tr></table></figure>
-<h2 id="UNION引用"><a href="#UNION引用" class="headerlink" title="UNION引用"></a>UNION引用</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1, f2)</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span></span><br><span class="line">  (<span class="keyword">SELECT</span> c, d <span class="keyword">FROM</span> t2</span><br><span class="line">   <span class="keyword">UNION</span></span><br><span class="line">   <span class="keyword">SELECT</span> e, f <span class="keyword">FROM</span> t3) <span class="keyword">AS</span> dt</span><br><span class="line"><span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> f2 <span class="operator">=</span> f2 <span class="operator">+</span> f3;</span><br></pre></td></tr></table></figure>
-
-<h2 id="key自增情况"><a href="#key自增情况" class="headerlink" title="key自增情况"></a>key自增情况</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&gt;</span> <span class="keyword">truncate</span> <span class="keyword">table</span> t1;</span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t1(f2,f3) <span class="keyword">values</span> (<span class="number">1</span>,<span class="number">3</span>),(<span class="number">1</span>,<span class="number">7</span>) <span class="keyword">on</span> duplicate key <span class="keyword">update</span> f3<span class="operator">=</span>f2<span class="operator">+</span>f3;</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected</span><br><span class="line"><span class="type">Time</span>: <span class="number">0.002</span>s</span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t1(f2,f3) <span class="keyword">values</span> (<span class="number">1</span>,<span class="number">3</span>),(<span class="number">1</span>,<span class="number">7</span>) <span class="keyword">on</span> duplicate key <span class="keyword">update</span> f3<span class="operator">=</span>f2<span class="operator">+</span>f3;</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected</span><br><span class="line"><span class="type">Time</span>: <span class="number">0.002</span>s</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 不存在主键冲突，连续可以插入两次</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">7</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">7</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="number">4</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/%E6%85%A2%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/%E6%85%A2%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-16 14:28:27" itemprop="dateCreated datePublished" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="慢查询优化"><a href="#慢查询优化" class="headerlink" title="慢查询优化"></a>慢查询优化</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqldumpslow -s t -t 10  ~/Downloads/慢日志/mysql-slow.log</span><br></pre></td></tr></table></figure>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">Count: <span class="number">2</span>  <span class="type">Time</span><span class="operator">=</span><span class="number">1238.48</span>s (<span class="number">2476</span>s)  Lock<span class="operator">=</span><span class="number">0.00</span>s (<span class="number">0</span>s)  <span class="keyword">Rows</span><span class="operator">=</span><span class="number">90750.0</span> (<span class="number">181500</span>), cdw[cdw]<span class="variable">@2hosts</span></span><br><span class="line">  <span class="keyword">select</span> t3.PRODUCT_CHANNEL_CODE,t3.MAIN_PROJECT_NAME ,</span><br><span class="line">  t3.MAIN_PROJECT_CODE ,t3.SUB_PROJECT_NAME,t3.SUB_PROJECT_CODE,</span><br><span class="line">  t3.CHANNEL_TYPE,t3.CHANNEL_NAME,t3.CHANNEL_ID,t3.CHANNEL_SUB_CODE,</span><br><span class="line">  t3.CHANNEL_SUB_TYPE,</span><br><span class="line">  t4.FRIST_CHANNEL,</span><br><span class="line">  t4.SECOND_CHANNEL,</span><br><span class="line">  t4.thrid_channel</span><br><span class="line">  <span class="keyword">from</span> (<span class="keyword">SELECT</span> t1.PRODUCT_CHANNEL_CODE,t1.MAIN_PROJECT_NAME ,</span><br><span class="line">  t1.MAIN_PROJECT_CODE ,t1.SUB_PROJECT_NAME,t1.SUB_PROJECT_CODE,</span><br><span class="line">  t1.CHANNEL_TYPE,t1.CHANNEL_NAME,t1.CHANNEL_ID,t2.CHANNEL_SUB_CODE,</span><br><span class="line">  t2.CHANNEL_SUB_TYPE <span class="keyword">FROM</span> qd_dz_db.qd_prochannel t1 <span class="keyword">left</span> <span class="keyword">join</span> qd_channel t2</span><br><span class="line">  <span class="keyword">on</span> t1.CHANNEL_ID<span class="operator">=</span>t2.CHANNEL_ID ) t3 <span class="keyword">join</span></span><br><span class="line">  (</span><br><span class="line">  <span class="keyword">SELECT</span></span><br><span class="line">  a.PRODUCT_CHANNEL_CODE,</span><br><span class="line">  b.FRIST_CHANNEL,</span><br><span class="line">  b.SECOND_CHANNEL,</span><br><span class="line">  b.THIRD_CHANNEL <span class="keyword">AS</span> thrid_channel</span><br><span class="line">  <span class="keyword">FROM</span></span><br><span class="line">  qd_dz_db.qd_prochannel a</span><br><span class="line">  <span class="keyword">JOIN</span></span><br><span class="line">  qd_dz_db.qd_channel b <span class="keyword">ON</span> a.CHANNEL_ID <span class="operator">=</span> b.CHANNEL_ID</span><br><span class="line">  )t4 <span class="keyword">on</span> t3.PRODUCT_CHANNEL_CODE<span class="operator">=</span>t4.PRODUCT_CHANNEL_CODE</span><br></pre></td></tr></table></figure>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">explain</span><br><span class="line"><span class="keyword">select</span></span><br><span class="line">    t3.PRODUCT_CHANNEL_CODE,</span><br><span class="line">    t3.MAIN_PROJECT_NAME ,</span><br><span class="line">    t3.MAIN_PROJECT_CODE ,</span><br><span class="line">    t3.SUB_PROJECT_NAME,</span><br><span class="line">    t3.SUB_PROJECT_CODE,</span><br><span class="line">    t3.CHANNEL_TYPE,</span><br><span class="line">    t3.CHANNEL_NAME,</span><br><span class="line">    t3.CHANNEL_ID,</span><br><span class="line">    t3.CHANNEL_SUB_CODE,</span><br><span class="line">    t3.CHANNEL_SUB_TYPE,</span><br><span class="line">    t4.FRIST_CHANNEL,</span><br><span class="line">    t4.SECOND_CHANNEL,</span><br><span class="line">    t4.thrid_channel</span><br><span class="line">  <span class="keyword">from</span> (</span><br><span class="line">      <span class="keyword">SELECT</span></span><br><span class="line">          t1.PRODUCT_CHANNEL_CODE,</span><br><span class="line">          t1.MAIN_PROJECT_NAME ,</span><br><span class="line">          t1.MAIN_PROJECT_CODE ,</span><br><span class="line">          t1.SUB_PROJECT_NAME,</span><br><span class="line">          t1.SUB_PROJECT_CODE,</span><br><span class="line">          t1.CHANNEL_TYPE,</span><br><span class="line">          t1.CHANNEL_NAME,</span><br><span class="line">          t1.CHANNEL_ID,</span><br><span class="line">          t2.CHANNEL_SUB_CODE,</span><br><span class="line">          t2.CHANNEL_SUB_TYPE</span><br><span class="line">      <span class="keyword">FROM</span></span><br><span class="line">          qd_dz_db.qd_prochannel t1</span><br><span class="line">      <span class="keyword">left</span> <span class="keyword">join</span></span><br><span class="line">          qd_channel t2</span><br><span class="line">      <span class="keyword">on</span> t1.CHANNEL_ID<span class="operator">=</span>t2.CHANNEL_ID</span><br><span class="line">  ) t3</span><br><span class="line">  <span class="keyword">join</span></span><br><span class="line">  (</span><br><span class="line">      <span class="keyword">SELECT</span></span><br><span class="line">          a.PRODUCT_CHANNEL_CODE,</span><br><span class="line">          b.FRIST_CHANNEL,</span><br><span class="line">          b.SECOND_CHANNEL,</span><br><span class="line">          b.THIRD_CHANNEL <span class="keyword">AS</span> thrid_channel</span><br><span class="line">      <span class="keyword">FROM</span></span><br><span class="line">          qd_dz_db.qd_prochannel a</span><br><span class="line">      <span class="keyword">JOIN</span></span><br><span class="line">          qd_dz_db.qd_channel b</span><br><span class="line">      <span class="keyword">ON</span> a.CHANNEL_ID <span class="operator">=</span> b.CHANNEL_ID</span><br><span class="line">  )t4</span><br><span class="line">  <span class="keyword">on</span> t3.PRODUCT_CHANNEL_CODE<span class="operator">=</span>t4.PRODUCT_CHANNEL_CODE</span><br></pre></td></tr></table></figure>
-<table>
-<thead>
-<tr>
-<th>id</th>
-<th>select_type</th>
-<th>table</th>
-<th>partitions</th>
-<th>type</th>
-<th>possible_keys</th>
-<th>key</th>
-<th>key_len</th>
-<th>ref</th>
-<th>rows</th>
-<th>filtered</th>
-<th>Extra</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1</td>
-<td>SIMPLE</td>
-<td>b</td>
-<td>null</td>
-<td>ALL</td>
-<td>PRIMARY,index_qd_channel</td>
-<td>null</td>
-<td>null</td>
-<td>null</td>
-<td>212</td>
-<td>100.0</td>
-<td>null</td>
-</tr>
-<tr>
-<td>1</td>
-<td>SIMPLE</td>
-<td>a</td>
-<td>null</td>
-<td>ref</td>
-<td>index_qd_prochannel</td>
-<td>index_qd_prochannel</td>
-<td>4</td>
-<td>qd_dz_db.b.CHANNEL_ID</td>
-<td>43</td>
-<td>100.0</td>
-<td>null</td>
-</tr>
-<tr>
-<td>1</td>
-<td>SIMPLE</td>
-<td>t1</td>
-<td>null</td>
-<td>ALL</td>
-<td>null</td>
-<td>null</td>
-<td>null</td>
-<td>null</td>
-<td>56367</td>
-<td>10.0</td>
-<td>Using where; Using join buffer (Block Nested Loop)</td>
-</tr>
-<tr>
-<td>1</td>
-<td>SIMPLE</td>
-<td>t2</td>
-<td>null</td>
-<td>eq_ref</td>
-<td>PRIMARY,index_qd_channel</td>
-<td>PRIMARY</td>
-<td>4</td>
-<td>qd_dz_db.t1.CHANNEL_ID</td>
-<td>1</td>
-<td>100.0</td>
-<td>null</td>
-</tr>
-</tbody></table>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> qd_prochannel</span><br></pre></td></tr></table></figure>
-<table>
-<thead>
-<tr>
-<th>Table</th>
-<th>Non_unique</th>
-<th>Key_name</th>
-<th>Seq_in_index</th>
-<th>Column_name</th>
-<th>Collation</th>
-<th>Cardinality</th>
-<th>Sub_part</th>
-<th>Packed</th>
-<th>Null</th>
-<th>Index_type</th>
-<th>CommentIndex_comment</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>qd_prochannel</td>
-<td>0</td>
-<td>PRIMARY</td>
-<td>1</td>
-<td>PR_CHANNEL_ID</td>
-<td>A</td>
-<td>56367</td>
-<td>null</td>
-<td>null</td>
-<td></td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_prochannel</td>
-<td>1</td>
-<td>index_qd_prochannel</td>
-<td>1</td>
-<td>CHANNEL_ID</td>
-<td>A</td>
-<td>1311</td>
-<td>null</td>
-<td>null</td>
-<td></td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_prochannel</td>
-<td>1</td>
-<td>index_qd_prochannel</td>
-<td>2</td>
-<td>MAIN_PROJECT_CODE</td>
-<td>A</td>
-<td>3316</td>
-<td>null</td>
-<td>null</td>
-<td>YES</td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_prochannel</td>
-<td>1</td>
-<td>index_qd_prochannel</td>
-<td>3</td>
-<td>CREATE_TIME</td>
-<td>A</td>
-<td>14092</td>
-<td>null</td>
-<td>null</td>
-<td>YES</td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_prochannel</td>
-<td>1</td>
-<td>index_qd_prochannel_MAIN_PROJECT_CODE</td>
-<td>1</td>
-<td>MAIN_PROJECT_CODE</td>
-<td>A</td>
-<td>613</td>
-<td>null</td>
-<td>null</td>
-<td>YES</td>
-<td>BTREE</td>
-<td></td>
-</tr>
-</tbody></table>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> qd_channel</span><br></pre></td></tr></table></figure>
-<table>
-<thead>
-<tr>
-<th>Table</th>
-<th>Non_unique</th>
-<th>Key_name</th>
-<th>Seq_in_index</th>
-<th>Column_name</th>
-<th>Collation</th>
-<th>Cardinality</th>
-<th>Sub_part</th>
-<th>Packed</th>
-<th>Null</th>
-<th>Index_type</th>
-<th>Comment Index_comment</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>qd_channel</td>
-<td>0</td>
-<td>PRIMARY</td>
-<td>1</td>
-<td>CHANNEL_ID</td>
-<td>A</td>
-<td>212</td>
-<td>null</td>
-<td>null</td>
-<td></td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_channel</td>
-<td>1</td>
-<td>index_qd_channel</td>
-<td>1</td>
-<td>CHANNEL_ID</td>
-<td>A</td>
-<td>212</td>
-<td>null</td>
-<td>null</td>
-<td></td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_channel</td>
-<td>1</td>
-<td>index_qd_channel</td>
-<td>2</td>
-<td>CHANNEL_CODE</td>
-<td>A</td>
-<td>212</td>
-<td>null</td>
-<td>null</td>
-<td>YES</td>
-<td>BTREE</td>
-<td></td>
-</tr>
-</tbody></table>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/JavaFx-3D/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/tool/JavaFx-3D/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-16 14:28:27" itemprop="dateCreated datePublished" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="JavaFX-3D"><a href="#JavaFX-3D" class="headerlink" title="JavaFX 3D"></a>JavaFX 3D</h1><p><a target="_blank" rel="noopener" href="https://www.genuinecoder.com/javafx-3d-transform-objects-with-keyboard-input/">JavaFX 3D Tutorial</a></p>
-<p><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=TRJ0GqDBDac&list=PLhs1urmduZ295Ryetga7CNOqDymN_rhB_&index=12">more surface detail with bump mapping</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/String.split/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/String.split/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-16 14:28:27" itemprop="dateCreated datePublished" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="String-split"><a href="#String-split" class="headerlink" title="String.split"></a>String.split</h1><h2 id="正则表达式分割字符串"><a href="#正则表达式分割字符串" class="headerlink" title="正则表达式分割字符串"></a>正则表达式分割字符串</h2><h3 id="保留末尾空格与空字符串情形"><a href="#保留末尾空格与空字符串情形" class="headerlink" title="保留末尾空格与空字符串情形"></a>保留末尾空格与空字符串情形</h3><p><code>split(delimiter)</code> 默认会从结果数组中去掉空字符串. 要关闭这个机制，将重载方法 <code>split(delimiter, limit)</code> 的 <code>limit</code> 设置为负值，如</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String[] split = data.split(<span class="string">&quot;\\|&quot;</span>, -<span class="number">1</span>);</span><br></pre></td></tr></table></figure>
-
-<p>更详细的介绍:</p>
-<p><code>split(regex)</code> 内部是调用<code>split(regex, 0)</code>的返回结果，参考官方文档 <a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html#split-java.lang.String-int-">documentation</a> 有这个方法的详细介绍</p>
-<blockquote>
-<p><code>limit</code>参数控制应用pattern的次数，因此会影响所得数组的长度。<br>如果限制<code>n</code><strong>大于零</strong>，则将最多应用<code>n-1</code>次该pattern，该数组的长度将不大于n，并且该数组的最后一个条目将包含除最后一个匹配的定界符之外的所有输入。<br>如果<code>n</code>为<strong>非正数</strong>，则该pattern将被尽可能多地应用，并且数组可以具有任何长度。<br>如果<code>n</code>为<strong>零</strong>，则该pattern将被尽可能多地应用，该数组可以具有任何长度，并且<strong>尾随的空字符串将被丢弃</strong>。</p>
-</blockquote>
-<p><strong>Exception</strong>:</p>
-<p><strong>空字符串分拆的情况</strong></p>
-<p>值得一提的是，只有在拆分机制创建了空字符串，删除尾随的空字符串才有意义。 因此，对于空字符串的分拆<code>&quot;&quot;.split(任何东西)</code>，因为我们无法进一步拆分<code>&quot;&quot;</code>，所以我们将得到结果<code>[&quot;&quot;]</code>数组。发生这种情况是因为此处未发生拆分，因此尽管存在空白，但<code>&quot;&quot;</code>还是尾随表示原始字符串，而不是拆分过程创建的空字符串。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"> ~ jshell</span><br><span class="line">|  欢迎使用 JShell -- 版本 <span class="number">15</span></span><br><span class="line">|  要大致了解该版本, 请键入: /help intro</span><br><span class="line"></span><br><span class="line">jshell&gt; String demo=<span class="string">&quot;&quot;</span>;</span><br><span class="line">demo ==&gt; <span class="string">&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">jshell&gt; String[] demoSplit = demo.split(<span class="string">&quot;[,;]&quot;</span>);</span><br><span class="line">demoSplit ==&gt; String[<span class="number">1</span>] &#123; <span class="string">&quot;&quot;</span> &#125;</span><br></pre></td></tr></table></figure>
-
-<h3 id="踢掉空格"><a href="#踢掉空格" class="headerlink" title="踢掉空格"></a>踢掉空格</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; list = Splitter.on(pattern).omitEmptyStrings().splitToList(<span class="string">&quot;&quot;</span>);</span><br><span class="line">System.out.println(list.size());  <span class="comment">// 0</span></span><br></pre></td></tr></table></figure>
-<h3 id="StringUtils-split"><a href="#StringUtils-split" class="headerlink" title="StringUtils.split"></a>StringUtils.split</h3><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">org.apache.commons.lang.StringUtils#splitByWholeSeparator(java.lang.String, java.lang.String, int)</span><br></pre></td></tr></table></figure>
-<p>分割字符串，正则表达式作为普通字符串</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D%E4%B8%8ETLAB/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/metric/%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D%E4%B8%8ETLAB/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-16 14:28:27" itemprop="dateCreated datePublished" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="栈上分配与TLAB"><a href="#栈上分配与TLAB" class="headerlink" title="栈上分配与TLAB"></a>栈上分配与TLAB</h1><h2 id="逃逸分析-Escape-Analysis"><a href="#逃逸分析-Escape-Analysis" class="headerlink" title="逃逸分析(Escape Analysis)"></a>逃逸分析(Escape Analysis)</h2><h2 id="栈上分配"><a href="#栈上分配" class="headerlink" title="栈上分配"></a>栈上分配</h2><p>针对那些作用域不会逃逸出方法的对象，在分配内存时不再将对象分配在堆内存中，而是将对象属性打散后分配在栈（线程私有的，属于栈内存）上，这样，随着方法的调用结束，栈空间的回收就会随着将栈上分配的打散后的对象回收掉，不再给gc增加额外的无用负担，从而提升应用程序整体的性能</p>
-<p>优点：</p>
-<p>　　　　1）可以在函数调用结束后自行销毁对象，不需要垃圾回收器的介入，有效避免垃圾回收带来的负面影响</p>
-<p>　　　　2）栈上分配速度快，提高系统性能</p>
-<p>线程私有变量，大对象虚拟机会分配到TLAB中，<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/a7414c0ebb17">TLAB（Thread Local Allocation Buffer）要不要了解下？</a></p>
-<p>在栈上分配该对象的内存,当栈帧从Java虚拟机栈中弹出，就自动销毁这个对象。减小垃圾回收器压力。</p>
-<h2 id="TLAB"><a href="#TLAB" class="headerlink" title="TLAB"></a>TLAB</h2><p>TLAB全称ThreadLocalAllocBuffer，是线程的一块私有内存，如果设置了虚拟机参数 -XX:UseTLAB，在线程初始化时，同时也会申请一块指定大小的内存，只给当前线程使用，这样每个线程都单独拥有一个Buffer，如果需要分配内存，就在自己的Buffer上分配，这样就不存在竞争的情况，可以大大提升分配效率，当Buffer容量不够的时候，再重新从Eden区域申请一块继续使用，这个申请动作还是需要原子操作的。</p>
-<p>TLAB的目的是在为新对象分配内存空间时，让每个Java应用线程能使用自己专属的分配指针来分配空间，均摊对GC堆（eden区）里共享的分配指针做更新而带来的同步开销。</p>
-<p>TLAB只是让每个线程有私有的分配指针，但底下存对象的内存空间还是给所有线程访问的，只是其它线程无法在这个区域分配而已。当一个TLAB用满（分配指针top撞上分配极限end了），就新申请一个TLAB，而在老TLAB里的对象还留在原地什么都不用管——它们无法感知自己是否是曾经从TLAB分配出来的，而只关心自己是在eden里分配的。</p>
-<table>
-<thead>
-<tr>
-<th>启动参数</th>
-<th>JVM内存分配模式</th>
-<th>Eden区</th>
-<th>YoungGC</th>
-<th>耗时</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>-XX:+DoEscapeAnalysis（开逃逸分析）-XX:+UseTLAB （开启TLAB）</td>
-<td>虚拟机栈上分配模式(小对象)</td>
-<td>较少使用</td>
-<td>较少使用</td>
-<td>很低</td>
-</tr>
-<tr>
-<td>-XX:-DoEscapeAnalysis（关闭逃逸分析）-XX:+UseTLAB（开启TLAB）</td>
-<td>TLAB区分配模式</td>
-<td>大量使用</td>
-<td>大量使用</td>
-<td>较高</td>
-</tr>
-<tr>
-<td>-XX:-DoEscapeAnalysis（关闭逃逸分析）-XX:-UseTLAB（关闭TLAB）</td>
-<td>Eden区分配模式</td>
-<td>大量使用</td>
-<td>大量使用</td>
-<td>特别高</td>
-</tr>
-</tbody></table>
-<p>在学习Java的过程中，一般认为new出来的对象都是被分配在堆上的，其实这个结论不完全正确，因为是大部分new出来的对象被分配在堆上，而不是全部。通过对Java对象分配的过程分析，可以知道有另外两个地方也是可以存放对象的。这两个地方分别栈 （涉及逃逸分析相关知识）和TLAB（Thread Local Allocation Buffer）。我们首先对这两者进行介绍，而后对Java对象分配过程进行介绍。</p>
-<h3 id="栈上分配-1"><a href="#栈上分配-1" class="headerlink" title="栈上分配"></a><strong>栈上分配</strong></h3><p>在JVM中，堆是线程共享的，因此堆上的对象对于各个线程都是共享和可见的，只要持有对象的引用，就可以访问堆中存储的对象数据。虚拟机的垃圾收集系统可以回收堆中不再使用的对象，但对于垃圾收集器来说，无论筛选可回收对象，还是回收和整理内存都需要耗费时间。</p>
-<p>如果确定一个对象的作用域不会逃逸出方法之外，那可以将这个对象分配在栈上，这样，对象所占用的内存空间就可以随栈帧出栈而销毁。在一般应用中，不会逃逸的局部对象所占的比例很大，如果能使用栈上分配，那大量的对象就会随着方法的结束而自动销毁了，无须通过垃圾收集器回收，可以减小垃圾收集器的负载。</p>
-<p>JVM允许将线程私有的对象打散分配在栈上，而不是分配在堆上。分配在栈上的好处是可以在函数调用结束后自行销毁，而不需要垃圾回收器的介入，从而提高系统性能。<br><strong>栈上分配的技术基础：</strong><br><strong>一是逃逸分析：</strong>逃逸分析的目的是判断对象的作用域是否有可能逃逸出函数体。关于逃逸分析的问题可以看我另一篇文章：</p>
-<p><strong>二是标量替换：</strong>允许将对象打散分配在栈上，比如若一个对象拥有两个字段，会将这两个字段视作局部变量进行分配。</p>
-<p>只能在server模式下才能启用逃逸分析，参数-XX:DoEscapeAnalysis启用逃逸分析，参数-XX:+EliminateAllocations开启标量替换（默认打开）。Java SE 6u23版本之后，HotSpot中默认就开启了逃逸分析，可以通过选项-XX:+PrintEscapeAnalysis查看逃逸分析的筛选结果。</p>
-<h3 id="TLAB-1"><a href="#TLAB-1" class="headerlink" title="TLAB"></a><strong>TLAB</strong></h3><p>TLAB的全称是Thread Local Allocation Buffer，即线程本地分配缓存区，这是一个线程专用的内存分配区域。<br>由于对象一般会分配在堆上，而堆是全局共享的。因此在同一时间，可能会有多个线程在堆上申请空间。因此，每次对象分配都必须要进行同步（虚拟机采用CAS配上失败重试的方式保证更新操作的原子性），而在竞争激烈的场合分配的效率又会进一步下降。JVM使用TLAB来避免多线程冲突，在给对象分配内存时，每个线程使用自己的TLAB，这样可以避免线程同步，提高了对象分配的效率。  </p>
-<p>TLAB本身占用eEden区空间，在开启TLAB的情况下，虚拟机会为<strong>每个Java线程分配一块TLAB空间</strong>。参数-XX:+UseTLAB开启TLAB，默认是开启的。TLAB空间的内存非常小，缺省情况下仅占有整个Eden空间的1%，当然可以通过选项-XX:TLABWasteTargetPercent设置TLAB空间所占用Eden空间的百分比大小。<br>由于TLAB空间一般不会很大，因此大对象无法在TLAB上进行分配，总是会直接分配在堆上。TLAB空间由于比较小，因此很容易装满。比如，一个100K的空间，已经使用了80KB，当需要再分配一个30KB的对象时，肯定就无能为力了。这时虚拟机会有两种选择，第一，废弃当前TLAB，这样就会浪费20KB空间；第二，将这30KB的对象直接分配在堆上，保留当前的TLAB，这样可以希望将来有小于20KB的对象分配请求可以直接使用这块空间。实际上虚拟机内部会维护一个叫作refill_waste的值，当请求对象大于refill_waste时，会选择在堆中分配，若小于该值，则会废弃当前TLAB，新建TLAB来分配对象。这个阈值可以使用TLABRefillWasteFraction来调整，它表示TLAB中允许产生这种浪费的比例。默认值为64，即表示使用约为1/64的TLAB空间作为refill_waste。默认情况下，TLAB和refill_waste都会在运行时不断调整的，使系统的运行状态达到最优。如果想要禁用自动调整TLAB的大小，可以使用-XX:-ResizeTLAB禁用ResizeTLAB，并使用-XX:TLABSize手工指定一个TLAB的大小。<br>-XX:+PrintTLAB可以跟踪TLAB的使用情况。一般不建议手工修改TLAB相关参数，推荐使用虚拟机默认行为。</p>
-<h3 id="对象内存分配的两种方法"><a href="#对象内存分配的两种方法" class="headerlink" title="对象内存分配的两种方法"></a><strong>对象内存分配的两种方法</strong></h3><p>为对象分配空间的任务等同于把一块确定大小的内存从Java堆中划分出来。</p>
-<p>指针碰撞(Serial、ParNew等带Compact过程的收集器)<br>假设Java堆中内存是绝对规整的，所有用过的内存都放在一边，空闲的内存放在另一边，中间放着一个指针作为分界点的指示器，那所分配内存就仅仅是把那个指针向空闲空间那边挪动一段与对象大小相等的距离，这种分配方式称为“指针碰撞”（Bump the Pointer）。<br>空闲列表(CMS这种基于Mark-Sweep算法的收集器)<br>如果Java堆中的内存并不是规整的，已使用的内存和空闲的内存相互交错，那就没有办法简单地进行指针碰撞了，虚拟机就必须维护一个列表，记录上哪些内存块是可用的，在分配的时候从列表中找到一块足够大的空间划分给对象实例，并更新列表上的记录，这种分配方式称为“空闲列表”（Free List）。  
-  </p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h3><p><strong>总体流程</strong><br><img src="_v_images/20200818211412253_811602284" alt="这里写图片描述"></p>
-<p><strong>对象分配流程</strong><br><img src="_v_images/20200818211412147_1281640355" alt="这里写图片描述"><br>如果开启栈上分配，JVM会先进行栈上分配，如果没有开启栈上分配或则不符合条件的则会进行TLAB分配，如果TLAB分配不成功，再尝试在eden区分配，如果对象满足了直接进入老年代的条件，那就直接分配在老年代。</p>
-<p><strong>对象在内存的引用方式</strong><br><img src="_v_images/20200818211411943_2105805507" alt="这里写图片描述"></p>
-<p><strong>对象在内存中的结构</strong><br><img src="_v_images/20200818211411726_1562017878" alt="这里写图片描述"></p>
-<p><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000004606059">参考</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/MAT/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/metric/MAT/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-16 14:28:27" itemprop="dateCreated datePublished" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="MAT"><a href="#MAT" class="headerlink" title="MAT"></a>MAT</h1><p>为了演示MAT的使用方法，本文采用jamp生成了一个Java继承的dump文件。</p>
-<h2 id="4-1-Overview选项"><a href="#4-1-Overview选项" class="headerlink" title="4.1 Overview选项"></a>4.1 Overview选项</h2><p>当成功启动MAT后，通过菜单选项“File-&gt;Open heap dump…”打开指定的dump文件后，将会生成Overview选项，如下所示：</p>
-<p><img src="_v_images/20201115133304752_1908958530">  </p>
-<pre><code>在Overview选项中，以饼状图的形式列举出了程序内存消耗的一些基本信息，其中每一种不同颜色的饼块都代表了不同比例的内存消耗情况。</code></pre>
-<h3 id="4-2-Dominator-Tree"><a href="#4-2-Dominator-Tree" class="headerlink" title="4.2 Dominator Tree"></a>4.2 Dominator Tree</h3><p>如果说需要定位内存泄露的代码点，我们可以通过Dominator Tree菜单选项来进行排查。Dominator Tree提供了一个列表。<br>Dominator Tree：对象之间dominator关系树。如果从GC Root到达Y的的所有path都经过X，那么我们称X dominates Y，或者X是Y的Dominator 。<br>Dominator Tree由系统中复杂的对象图计算而来。从MAT的dominator tree中可以看到占用内存最大的对象以及每个对象的dominator，如下所示：</p>
-<p> <img src="_v_images/20201115133304642_1953557219"></p>
-<p>点开“+”符号，可以进一步查看内层应用情况，同时还可以看到对应类对象的属性值，如下所示：</p>
-<p><img src="_v_images/20201115133304535_2038220777">  </p>
-<h3 id=""><a href="#" class="headerlink" title=""></a></h3><h3 id="4-3-Histogram选项"><a href="#4-3-Histogram选项" class="headerlink" title="4.3 Histogram选项"></a>4.3 Histogram选项</h3><p>进一步，可以通过Histogram分析，Histogram列出了每个类的实例数量，点击Action下的Histogram，得到以下结果：</p>
-<p><img src="_v_images/20201115133304326_712812495">  </p>
-<p>如果需要查询特性的某个类，我们可以在第一行输入类名或者关键词进行正则匹配查找，如查找“netty”：</p>
-<p><img src="_v_images/20201115133304118_1508343283">  </p>
-<p>可以看出，查找“netty”输出的结果列表是无序的，如果匹配到的结果很多，查找起来比较困难，因此，我们可以对结果进行排序：选中结果列表的任意一行，鼠标右键-》Colums-&gt;Sort By-&gt;如Class Name，结果如下：</p>
-<p><img src="_v_images/20201115133303913_1472138606">  </p>
-<pre><code>当我们找到疑似存在泄漏的类之后，我们可以进行进一步分析。比较重要的一点，选中疑似类，右键出来选中List Objects,得到的结果再右键选中&quot;Paths to GC Roots&quot;,我们可以通过它快速找到GC ROOT，如果存在GC ROOT，它就不会被回收。</code></pre>
-<h3 id="-1"><a href="#-1" class="headerlink" title=""></a></h3><h3 id="4-4-Path-to-GC-Roots"><a href="#4-4-Path-to-GC-Roots" class="headerlink" title="4.4 Path to GC Roots"></a>4.4 Path to GC Roots</h3><pre><code>查看一个对象到RC Roots的引用链  
-
-通常在排查内存泄漏的时候，我们会选择exclude all phantom/weak/soft etc.references，意思是查看排除虚引用/弱引用/软引用等的引用链，因为被虚引用/弱引用/软引用的对象可以直接被GC给回收，我们要看的就是某个对象否还存在Strong 引用链（在导出HeapDump之前要手动出发GC来保证），如果有，则说明存在内存泄漏，然后再去排查具体引用。 </code></pre>
-<p><img src="_v_images/20201115133303706_1037916552">  </p>
-<p><strong>其它重要选项：</strong></p>
-<p>1. List objects ：<br>with incoming references 引用到该对象的对象<br>with outcoming references 被该对象引用的对象</p>
-<p>2. Show objects by class ：<br>incoming references 引用到该对象的对象<br>outcoming references 被该对象引用的对象 </p>
-<h3 id="-2"><a href="#-2" class="headerlink" title=""></a></h3><p>4.5 OQL(Object Query Language)</p>
-<p>类似SQL查询语言<br>Classes：Table<br>Objects：Rows<br>Fileds： Cols</p>
-<p><code>select  *  from com.example.mat.Listener</code></p>
-<p><strong>查找size＝0并且未使用过的ArrayList</strong><br><code>select  *  from java.util.ArrayList  where size=0  and modCount=0</code></p>
-<p><strong>查找所有的Activity</strong><br>select * from instanceof android.app.Activity</p>
-<h3 id="4-6-利用Histogram和Dominator-Tree分析内存泄露"><a href="#4-6-利用Histogram和Dominator-Tree分析内存泄露" class="headerlink" title="4.6  利用Histogram和Dominator Tree分析内存泄露"></a>4.6  利用Histogram和Dominator Tree分析内存泄露</h3><pre><code>在分析内存泄露时，必须要掌握粒度，所谓粒度就是你此刻dump的hprof文件究竟是分析谁的泄露，如果你在开始前心中没有个目标，最后取出来的hprof也分析不出什么原因。粒度越小，对你分析问题也就越有利，当你把一个个小粒度问题解决后，整个App的泄露就迎刃而解了。也许这么说，大家心中有点迷糊。下面就举例来说吧：
-
-假如现在有个项目包含Module几十个，每个Module包含的Activity数以百计，现在让你分析它是否内存泄露，如果你只是胡乱抓个hprof根本分析不出什么。假如你就针对某个Activity分析这样问题就简单多了。比如你现在分析ActivityA的内存泄露问题，你可以参考如下步骤：
-
-Step1：进入ActivityA之前，你先dump个hprof文件HprofA；
-
-Step2：进入ActivityA操作一会，再退出ActivityA后dump个hprof文件HprofB；
-
-Step3：采用Histogram和Dominator Tree对比分析这两个Hprof文件，即可得出ActivityA是否泄露</code></pre>
-<p>现在以分析TestActivity为例，按上述步骤实战分析，先抓取进入TestActivity前后的hprof文件，按如下步骤对比两个hprof的异同，如下图1,2：</p>
-<p><img src="_v_images/20201115133303497_195864697">  </p>
-<p>图1 选择所需比较的hprof  </p>
-<p><img src="_v_images/20201115133303286_1803136553">  </p>
-<p>图2 比较两个hprof  </p>
-<pre><code>正如图2所示，易知在执行进出TestActivity后，多出了个TestActivity对象，按理论上来说在进入Activity后会创建个Activity，但是按Back键返回后这个Activity就会被销毁进而从Task栈上被移除，也就是说这个操作前后不应该会多出个Activity，因此可以断定TestActivity存在泄漏。
-
-TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需要找到为何泄漏，为什么本该销毁的Activity却没有被销毁？如知真相如何，请看下图3-4</code></pre>
-<p><img src="_v_images/20201115133303070_1797820935">  </p>
-<p>图3 获取TestActivity的Reference chain  </p>
-<p><img src="_v_images/20201115133302509_954891646">  </p>
-<p>图4 TestActivity的引用关系  </p>
-<pre><code>从图4易知TestActivity没有被释放就是因为GC Root(TestActivity$1)引用着TestActivity，到此原因也一目了然。找到了只是开始，解决才是关键。这时让我们查看下TestActivity代码：  </code></pre>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TestActivity</span> <span class="keyword">extends</span> <span class="title">Activity</span> </span>&#123;       <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Object mLock = <span class="keyword">new</span> Object();     <span class="meta">@Override</span>    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onCreate</span><span class="params">(Bundle savedInstanceState)</span> </span>&#123;                <span class="keyword">super</span>.onCreate(savedInstanceState);        DebugUtil.StrictModeDebug();        setContentView(R.layout.test_main);           <span class="keyword">new</span> Thread()&#123;<span class="comment">//匿名线程            public void run() &#123;                synchronized (mLock) &#123;                    try &#123;                        mLock.wait();                    &#125; catch (InterruptedException e) &#123;                        // TODO Auto-generated catch block                        e.printStackTrace();                    &#125;                &#125;            &#125;        &#125;.start();    &#125;&#125;</span></span><br></pre></td></tr></table></figure>
-<pre><code>从代码上可以发现TestActivity里存在个匿名线程，且一直处于等待状态，直到退出TestActivity仍未被唤醒，进而导致该线程就一直没有结束，它所持有的TestActivity也就无法被释放了（可能大家听到此处会很疑惑，线程没有结束可以理解，但是它并没有持有TestActivity呀？我只能说是隐含this，如还不明白，请自行参阅java内部类相关内容），如要解决此泄露，只需在Activity的onDestory里将线程唤醒让其可以正常结束就OK了。</code></pre>
-<p><strong>优化建议</strong></p>
-<ol>
-<li>使用线程时，一定要确保线程在周期性对象（如Activity）销毁时能正常结束，如能正常结束，但是Activity销毁后还需执行一段时间，也可能造成泄露，此时可采用WeakReference方法来解决，另外在使用Handler的时候，如存在Delay操作，也可以采用WeakReference；</li>
-<li>使用Handler + HandlerThread时，记住在周期性对象销毁时调用looper.quit()方法；</li>
-<li>建议少使用匿名类或内部类，可考虑使用嵌套类（带static那种类），减少对周期性对象的隐性持有；</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/jvm/GraalVm/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -922,7 +207,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-16 14:28:27" itemprop="dateCreated datePublished" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
+              <time title="Created: 2021-01-16 14:42:38" itemprop="dateCreated datePublished" datetime="2021-01-16T14:42:38+08:00">2021-01-16</time>
             </span>
 
           
@@ -981,7 +266,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-16 14:28:27" itemprop="dateCreated datePublished" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
+              <time title="Created: 2021-01-16 14:42:38" itemprop="dateCreated datePublished" datetime="2021-01-16T14:42:38+08:00">2021-01-16</time>
             </span>
 
           
@@ -1044,7 +329,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-16 14:28:27" itemprop="dateCreated datePublished" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
+              <time title="Created: 2021-01-16 14:42:37" itemprop="dateCreated datePublished" datetime="2021-01-16T14:42:37+08:00">2021-01-16</time>
             </span>
 
           
@@ -1218,7 +503,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1298,6 +583,463 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
 <p>AI、ML、DL、ANN、CNN 蛰伏数十年，就为这个大数据时代。</p>
 <p>AI正以前所未有的速度改变世界，影响着我们生活的方方面面，AI走进人们的生活将成为未来的新常态。 而大数据和计算能力像水和氧气一样支撑着AI，我们的数据从手机端、服务器日志</p>
 
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/01.Release/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/01.Release/" class="post-title-link" itemprop="url">Flink-release</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="10-12-0"><a href="#10-12-0" class="headerlink" title="10.12.0"></a>10.12.0</h1><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_44904816/article/details/111027068">reference</a></p>
+<ul>
+<li>在 DataStream API 上添加了高效的批执行模式的支持。这是批处理和流处理实现真正统一的运行时的一个重要里程碑。</li>
+<li>实现了基于Kubernetes的高可用性（HA）方案，作为生产环境中，ZooKeeper方案之外的另外一种选择。</li>
+<li>扩展了 Kafka SQL connector，使其可以在 upsert 模式下工作，并且支持在 SQL DDL 中处理 connector 的 metadata。现在，时态表 Join 可以完全用 SQL 来表示，不再依赖于 Table API 了。</li>
+<li>PyFlink 中添加了对于 DataStream API 的支持，将 PyFlink 扩展到了更复杂的场景，比如需要对状态或者定时器 timer 进行细粒度控制的场景。除此之外，现在原生支持将 PyFlink 作业部署到 Kubernetes上。</li>
+</ul>
+<h2 id="DataStream-API支持批量"><a href="#DataStream-API支持批量" class="headerlink" title="DataStream API支持批量"></a>DataStream API支持批量</h2><p>可复用性：作业可以在流和批这两种执行模式之间自由地切换，而无需重写任何代码。因此，用户可以复用同一个作业，来处理实时数据和历史数据。</p>
+<p>维护简单：统一的 API 意味着流和批可以共用同一组 connector，维护同一套代码，并能够轻松地实现流批混合执行，例如 backfilling 之类的场景。</p>
+<h2 id="Data-Sink-API"><a href="#Data-Sink-API" class="headerlink" title="Data Sink API"></a>Data Sink API</h2><h2 id="Sort-Merge-Shuffle"><a href="#Sort-Merge-Shuffle" class="headerlink" title="Sort-Merge Shuffle"></a>Sort-Merge Shuffle</h2><h2 id="SQL-中-支持-Temporal-Table-Join"><a href="#SQL-中-支持-Temporal-Table-Join" class="headerlink" title="SQL 中 支持 Temporal Table Join"></a>SQL 中 支持 Temporal Table Join</h2>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/00.Keynote/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/00.Keynote/" class="post-title-link" itemprop="url">Flink-keynote</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="00-Keynote"><a href="#00-Keynote" class="headerlink" title="00.Keynote"></a>00.Keynote</h1><p>event_time小于watermark的数据都会落入window</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/02.%E7%AE%A1%E6%8E%A7%E7%B3%BB%E7%BB%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/02.%E7%AE%A1%E6%8E%A7%E7%B3%BB%E7%BB%9F/" class="post-title-link" itemprop="url">Flink-管控系统</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="01"><a href="#01" class="headerlink" title="01"></a>01</h1>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL-syntactic-sugar/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-SQL-syntactic-sugar/" class="post-title-link" itemprop="url">Flink-语法糖</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-SQL语法"><a href="#Flink-SQL语法" class="headerlink" title="Flink-SQL语法"></a>Flink-SQL语法</h1><h2 id="TopN"><a href="#TopN" class="headerlink" title="TopN"></a>TopN</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/wangpei1949/article/details/105471974">SQL实时TopN</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-checkpoint%E8%AF%8A%E6%96%AD/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-checkpoint%E8%AF%8A%E6%96%AD/" class="post-title-link" itemprop="url">Flink-checkpoint诊断</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-checkpoint诊断"><a href="#Flink-checkpoint诊断" class="headerlink" title="Flink-checkpoint诊断"></a>Flink-checkpoint诊断</h1>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-connector-hippo/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-connector-hippo/" class="post-title-link" itemprop="url">Flink connector hippo</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-connector-hippo"><a href="#Flink-connector-hippo" class="headerlink" title="Flink-connector-hippo"></a>Flink-connector-hippo</h1><h2 id="broker分拆"><a href="#broker分拆" class="headerlink" title="broker分拆"></a>broker分拆</h2><p>获取子任务的index</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> taskId = <span class="keyword">this</span>.getRuntimeContext().getIndexOfThisSubtask();</span><br></pre></td></tr></table></figure>
+<h2 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h2><p>实现CheckpointedFunction</p>
+<p>在ListState中保存每个broker的偏移量 </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ListState&lt;Tuple2&lt;String, String&gt;&gt; offsetState;</span><br></pre></td></tr></table></figure>
+
+<h2 id="watermark生成"><a href="#watermark生成" class="headerlink" title="watermark生成"></a>watermark生成</h2><h2 id="hippo-pullConsumer"><a href="#hippo-pullConsumer" class="headerlink" title="hippo pullConsumer"></a>hippo pullConsumer</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ConsumerConfig config =</span><br><span class="line">                <span class="keyword">new</span> ConsumerConfig(masterAddress, consumerGroup);</span><br><span class="line"><span class="keyword">if</span> (!isRestored &amp;&amp; bootstrapFromMax) &#123;</span><br><span class="line">    config.setConsumeFromMax(<span class="keyword">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">messagePullConsumer = <span class="keyword">new</span> PullMessageConsumer(config);</span><br></pre></td></tr></table></figure>
+<h2 id="子任务的checkpointLock"><a href="#子任务的checkpointLock" class="headerlink" title="子任务的checkpointLock"></a>子任务的checkpointLock</h2><p>往下游放入消息必须加锁</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SourceContext&lt;<span class="keyword">byte</span>[]&gt;.getCheckpointLock()</span><br></pre></td></tr></table></figure>
       
     </div>
 

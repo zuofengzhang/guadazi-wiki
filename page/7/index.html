@@ -183,7 +183,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-syncIO/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-join/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-syncIO/" class="post-title-link" itemprop="url">Flink asyncIO</a>
+            <a href="/bigdata/Spark/Spark-join/" class="post-title-link" itemprop="url">Spark join</a>
         </h2>
 
         <div class="post-meta">
@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -237,65 +237,37 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-asyncIO"><a href="#Flink-asyncIO" class="headerlink" title="Flink-asyncIO"></a>Flink-asyncIO</h1><p> <img src="_v_images/20201207210251979_867932479.png"></p>
-<p>阿里贡献给flink的，优点就不说了嘛，官网上都有，就是写库不会阻塞性能更好</p>
-<p>然后来看一下， Flink 中异步io主要分为两种</p>
-<p>　　一种是有序Ordered</p>
-<p>　　一种是无序UNordered</p>
-<p>主要区别是往下游output的顺序（注意这里顺序不是写库的顺序既然都异步了写库的顺序自然是无法保证的），有序的会按接收的顺序继续往下游output发送，无序就是谁先处理完谁就先往下游发送</p>
-<p>两张图了解这两种模式的实现</p>
-<p> <img src="_v_images/20201207210251873_2096107056.png"></p>
-<p>有序：record数据会通过异步线程写库，Emitter是一个守护进程，会不停的拉取queue头部的数据，如果头部的数据异步写库完成，Emitter将头数据往下游发送，如果头元素还没有异步写库完成，柱塞 <img src="_v_images/20201207210251766_1309898873.png">     </p>
-<p>无序：record数据会通过异步线程写库，这里有两个queue,一开始放在uncompleteedQueue，当哪个record异步写库成功后就直接放到completedQueue中，Emitter是一个守护进程，completedQueue只要有数据，会不停的拉取queue数据往下游发送 </p>
-<p>可以看到原理还是很简单的，两句话就总结完了，就是利用queue和java的异步线程，现在来看下源码</p>
-<p>这里AsyncIO在Flink中被设计成operator中的一种，自然去OneInputStreamOperator的实现类中去找</p>
-<p>于是来看一下AsyncWaitOperator.java</p>
-<p>　　<img src="_v_images/20201207210251559_1488153726.png"></p>
-<p>看到它的open方法（open方法会在taskmanager启动job的时候全部统一调用，可以翻一下以前的文章）</p>
-<p>这里启动了一个守护线程Emitter,来看下线程具体做了什么</p>
-<p> <img src="_v_images/20201207210251351_312304785.png"></p>
-<p> 1处拉取数据，2处就是常规的将拉取到的数据往下游emit，Emitter拉取数据，这里先不讲因为分为有序的和无序的</p>
-<p> 这里已经知道了这个Emitter的作用是循环的拉取数据往下游发送</p>
-<p> 回到AsyncWaitOperator.java在它的open方法初始化了Emitter,那它是如何处理接收到的数据的呢，看它的ProcessElement（）方法</p>
-<p> <img src="_v_images/20201207210251144_1378849400.png"></p>
-<pre><code>![](_v_images/20201207210250637_60325951.png)</code></pre>
-<p> <img src="_v_images/20201207210250031_255901575.png"></p>
-<p> 其实主要就是三个个方法</p>
-<p>先是！！！将record封装成了一个包装类StreamRecordQueueEntry，主要是这个包装类的构造方法中,创建了一个CompleteableFuture(这个的complete方法其实会等到用户代码执行的时候用户自己决定什么时候完成）</p>
-<p>1处主要就是讲元素加入到了对应的queue,这里也分为两种有序和无序的</p>
-<p> <img src="_v_images/20201207210249826_218236941.png"></p>
-<p>这里也先不讲这两种模式加入数据的区别</p>
-<p>接着2处就是调用用户的代码了，来看看官网的异步io的例子</p>
-<p> <img src="_v_images/20201207210249221_1218191589.png"></p>
-<p> 给了一个Future作为参数，用户自己起了一个线程（这里思考一下就知道了为什么要新起一个异步线程去执行，因为如果不起线程的话，那processElement方法就柱塞了，无法异步了）去写库读库等，然后调用了这个参数的complete方法（也就是前面那个包装类中的CompleteableFuture）并且传入了一个结果</p>
-<p>看下complete方法源码</p>
-<p> <img src="_v_images/20201207210248614_1185315462.png"></p>
-<p> 这个resultFuture是每个record的包装类StreamRecordQueueEntry的其中一个属性是一个CompletableFuture</p>
-<p> 那现在就清楚了，用户代码在自己新起的线程中当自己的逻辑执行完以后会使这个异步线程结束，并输入一个结果</p>
-<p> 那这个干嘛用的呢</p>
-<p>最开始的图中看到有序和无序实现原理，有序用一个queue,无序用两个queue分别就对应了</p>
-<p>OrderedStreamElementQueue类中</p>
-<p> <img src="_v_images/20201207210248409_107213650.png"></p>
-<p> UnorderedStreamElementQueue类中</p>
-<p> <img src="_v_images/20201207210248304_1712699416.png"></p>
-<p>回到前面有两个地方没有细讲，一是两种模式的Emitter是如何拉取数据的，二是两种模式下数据是如何加入OrderedStreamElementQueue的</p>
-<p>有序模式：</p>
-<p>1.先来看一下有序模式的，Emitter的数据拉取，和数据的加入</p>
-<p>　　　　其tryPut（）方法</p>
-<p>　　　　  <img src="_v_images/20201207210248099_682570540.png"></p>
-<p> 　　　  <img src="_v_images/20201207210247594_534665308.png"></p>
-<p> 　　　　<em>onComplete**方法</em></p>
-<p>　　　　　　　<em><img src="_v_images/20201207210247288_2059500658.png"></em></p>
-<pre><code>   onCompleteHandler方法</code></pre>
-<p>　　　　  　<img src="_v_images/20201207210247082_286767362.png">　</p>
-<p>　　这里比较绕，先将接收的数据加入queue中，然后onComplete()中当上一个异步线程getFuture() 其实就是每个元素包装类里面的那个CompletableFuture,当他结束时（会在用户方法用户调用complete时结束）异步调用传入的对象的 accept方法，accept方法中调用了onCompleteHandler（）方法，onCompleteHandler方法中会判断queue是否为空，以及queue的头元素是否完成了用户的异步方法，当完成的时候，就会将headIsCompleted这个对象signalAll（）唤醒</p>
-<p>2.接着看有序模式Emitter的拉取数据</p>
-<pre><code>   ![](_v_images/20201207210246482_1132368562.png)</code></pre>
-<p>   这里有序方式拉取数据的逻辑很清晰，如果为空或者头元素没有完成用户的异步方法，headIsCompleted这个对象会wait住（上面可以知道，当加入元素的到queue且头元素完成异步方法的时候会signalAll（））然后将头数据返回，往下游发送</p>
-<p>这样就实现了有序发送，因为Emitter只拉取头元素且已经完成用户异步方法的头元素</p>
-<p>无序模式： </p>
-<p>　　这里和有序模式就大同小异了，只是变成了,接收数据后直接加入uncompletedQueue，当数据完成异步方法的时候就，放到completedQueue里面去并signalAll（），只要completedqueue里面有数据，Emitter就拉取往下发</p>
-<p>这样就实现了无序模式，也就是异步写入谁先处理完就直接放到完成队列里面去，然后往下发，不用管接收数据的顺序</p>
+          <h1 id="Spark-Join"><a href="#Spark-Join" class="headerlink" title="Spark-Join"></a>Spark-Join</h1><h2 id="shuffle-join-VS-map-join"><a href="#shuffle-join-VS-map-join" class="headerlink" title="shuffle join VS map join"></a>shuffle join VS map join</h2><p>在对大表与大表之间进行连接操作时，通常都会触发 <code>Shuffle Join</code>，两表的所有分区节点会进行 <code>All-to-All</code> 的通讯，这种查询通常比较昂贵，会对网络 IO 会造成比较大的负担。</p>
+<p><img src="_v_images/20201009194634406_1569670303.png" alt="https://github.com/heibaiying"></p>
+<p>而对于大表和小表的连接操作，Spark 会在一定程度上进行优化，如果小表的数据量小于 Worker Node 的内存空间，Spark 会考虑将小表的数据广播到每一个 Worker Node，在每个工作节点内部执行连接计算，这可以降低网络的 IO，但会加大每个 Worker Node 的 CPU 负担。</p>
+<p><img src="_v_images/20201009194633499_170639920"></p>
+<p>是否采用广播方式进行 <code>Join</code> 取决于程序内部对小表的判断，如果想明确使用广播方式进行 <code>Join</code>，则可以在 DataFrame API 中使用 <code>broadcast</code> 方法指定需要广播的小表：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">empDF.join(broadcast(deptDF), joinExpression).show()</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+
+<p>作者：heibaiying<br>链接：<a target="_blank" rel="noopener" href="https://juejin.im/post/6844903950349500430">https://juejin.im/post/6844903950349500430</a><br>来源：掘金<br>著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。</p>
+<h2 id="map-join小表误判"><a href="#map-join小表误判" class="headerlink" title="map-join小表误判"></a>map-join小表误判</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> a是一个几亿行的大表，b是一个只有几十行的小表。a和b都是由hive创建的表</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">where</span> id <span class="keyword">not</span> <span class="keyword">in</span> (<span class="keyword">select</span> id <span class="keyword">from</span> b)</span><br></pre></td></tr></table></figure>
+<p>在spark ui中看到了该sql的执行计划，该sql语句执行了Map-side Join操作，但是spark把a表当成了小表，准备把a表broadcast到其他的节点，然后就是一直卡在这步broadcast操作上。 造成上述问题的原因就是spark认为a表是一个小表，但是在spark ui上明显可以看到a表读了很多的行。但是为什么spark还会认为a表是一个小表呢？原因是spark判断一个hive表的大小会用hive的metastore数据来判断，因为我们的a表没有执行过ANALYZE TABLE，自然a表的metastore里面的数据就不准确了。</p>
+<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><ol>
+<li><p>设置<code>spark.sql.statistics.fallBackToHdfs=True</code><br>该参数能让spark直接读取hdfs的文件大小来判断一个表达大小，从而代替从metastore里面的获取的关于表的信息。这样spark自然能正确的判断出表的大小，从而使用b表来进行broadcast。</p>
+</li>
+<li><p>使用hint<br>在使用sql语句执行的时候在sql语句里面加上mapjoin的注释，也能够达到相应的效果，比如把上述的sql语句改成:</p>
+</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="comment">/*+ BROADCAST (b) */</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">where</span> id <span class="keyword">not</span> <span class="keyword">in</span> (<span class="keyword">select</span> id <span class="keyword">from</span> b)</span><br></pre></td></tr></table></figure>
+<p>这样spark也会使用b表来进行broadcast。</p>
+<ol start="3">
+<li>使用spark代码的方式<br>使用broadcast函数就能达到此效果：</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pyspark.sql.functions import broadcast</span><br><span class="line">broadcast(spark.table(&quot;b&quot;)).<span class="keyword">join</span>(spark.table(&quot;a&quot;), &quot;id&quot;).<span class="keyword">show</span>()</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>备注</li>
+</ol>
+<ul>
+<li><p>只有当要进行join的表的大小小于spark.sql.autoBroadcastJoinThreshold（默认是10M）的时候，才会进行mapjoin。</p>
+</li>
+<li><p>Impala通过hint和执行表的位置调整也能够优化join操作，通过explain也可以查看sql的执行计划，然后再进行优化。</p>
+</li>
+</ul>
 
       
     </div>
@@ -315,7 +287,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-temporal-table-join/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-task_split_block/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -329,7 +301,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-temporal-table-join/" class="post-title-link" itemprop="url">Flink-temporal-table-join</a>
+            <a href="/bigdata/Spark/Spark-task_split_block/" class="post-title-link" itemprop="url">Spark task split block</a>
         </h2>
 
         <div class="post-meta">
@@ -346,7 +318,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -369,128 +341,163 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-temporal-table-join"><a href="#Flink-temporal-table-join" class="headerlink" title="Flink-temporal-table-join"></a>Flink-temporal-table-join</h1><p>Temporal Table记录了表历史上任何时间点所有的数据改动</p>
-<h2 id="ANSI-SQL-2011-Temporal-Table示例"><a href="#ANSI-SQL-2011-Temporal-Table示例" class="headerlink" title="ANSI-SQL 2011 Temporal Table示例"></a>ANSI-SQL 2011 Temporal Table示例</h2><p>我们以一个DDL和一套DML示例说明Temporal Table的原理，DDL定义PK是可选的，下面的示例我们以不定义PK的为例进行说明：</p>
-<ul>
-<li>  DDL 示例</li>
-</ul>
-<p>CREATE TABLE Emp<br>ENo INTEGER,<br>Sys_start TIMESTAMP(12) GENERATED<br>ALWAYS AS ROW START,<br>Sys_end TIMESTAMP(12) GENERATED<br>ALWAYS AS ROW END,<br>EName VARCHAR(30),<br>PERIOD FOR SYSTEM_TIME (Sys_start,Sys_end)<br>) WITH SYSTEM VERSIONING</p>
-<ul>
-<li>DML 示例<ul>
-<li>  INSERT</li>
-</ul>
-</li>
-</ul>
-<p>INSERT INTO Emp (ENo, EName) VALUES (22217, ‘Joe’)</p>
-<p><a target="_blank" rel="noopener" href="https://img.colabug.com/2018/06/5ed5fa9fbdc39f3a26b3dec9816bf691.png" title="Blink 漫谈系列 - Temporal Table JOIN"><img src="vx_images/3323646810742.png"></a></p>
-<p>说明: 其中Sys_Start和Sys_End是数据库系统默认填充的。</p>
-<ul>
-<li><ul>
-<li>  UPDATE</li>
-</ul>
-</li>
-</ul>
-<p>UPDATE Emp SET EName = ‘Tom’ WHERE ENo = 22217</p>
-<p><a target="_blank" rel="noopener" href="https://img.colabug.com/2018/06/a7750b4fe6d6d7a9aa6f826a2e2c91e9.png" title="Blink 漫谈系列 - Temporal Table JOIN"><img src="vx_images/3312923484991.png"></a></p>
-<p>说明: 假设是在 <code>2012-02-03 10:00:00</code> 执行的UPDATE，执行之后上一个值 <code>&quot;Joe&quot;</code> 的Sys_End值由 <code>9999-12-31 23:59:59</code> 变成了 <code>2012-02-03 10:00:00</code> , 也就是下一个值 <code>&quot;Tom&quot;</code> 生效的开始时间。可见我们执行的是UPDATE但是数据库里面会存在两条数据，数据值和有效期不同，也就是版本不同 。</p>
-<ul>
-<li>  DELETE (假设执行DELETE之前的表内容如下)</li>
-</ul>
-<p><a target="_blank" rel="noopener" href="https://img.colabug.com/2018/06/d4524993a5a38ee8e41362845e9cab04.png" title="Blink 漫谈系列 - Temporal Table JOIN"><img src="vx_images/3301614695899.png"></a></p>
-<p>DELETE FROM Emp WHERE ENo = 22217</p>
-<p><a target="_blank" rel="noopener" href="https://img.colabug.com/2018/06/f8cd8a5d23000609cbc13cbb17508e84.png" title="Blink 漫谈系列 - Temporal Table JOIN"><img src="vx_images/3291132138376.png"></a></p>
-<p>说明: 假设我们是在 <code>2012-06-01 00:00:00</code> 执行的DELETE，则Sys_End值由 <code>9999-12-31 23:59:59</code> 变成了 <code>2012-06-01 00:00:00</code> , 也就是在执行DELETE时候没有真正的删除符合条件的行，而是系统将符合条件的行的Sys_end修改为执行DELETE的事物时间。标识数据的有效期到DELETE执行那一刻为止。</p>
-<ul>
-<li>  SELECT</li>
-</ul>
-<p>SELECT ENo,EName,Sys_Start,Sys_End FROM Emp<br>FOR SYSTEM_TIME AS OF TIMESTAMP ‘2011-01-02 00:00:00’</p>
-<p>说明: 这个查询会返回所有 <code>Sys_start &lt;= 2011-01-02 00:00:00</code> 并且 <code>Sys_end &gt; 2011-01-02 00:00:00</code> 的记录。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-window/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/Flink-window/" class="post-title-link" itemprop="url">Flink-window</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Flink-window"><a href="#Flink-window" class="headerlink" title="Flink-window"></a>Flink-window</h1><h2 id="窗口的触发"><a href="#窗口的触发" class="headerlink" title="窗口的触发"></a>窗口的触发</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line">SingleOutputStreamOperator&lt;ItemEntity&gt; streamOperator = env</span><br><span class="line">        .socketTextStream(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">9091</span>)</span><br><span class="line">        .map(<span class="keyword">new</span> MapFunction&lt;String, ItemEntity&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> ItemEntity <span class="title">map</span><span class="params">(String s)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                String[] split = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (s.isEmpty() || (split = s.split(<span class="string">&quot;,&quot;</span>)).length != <span class="number">2</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                ItemEntity itemEntity = ItemEntity.builder().timestamp(split[<span class="number">0</span>])</span><br><span class="line">                        .eventId(split[<span class="number">1</span>])</span><br><span class="line">                        .build();</span><br><span class="line">                <span class="keyword">return</span> itemEntity;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;)</span><br><span class="line">        .filter(Objects::nonNull)</span><br><span class="line">        .assignTimestampsAndWatermarks(<span class="keyword">new</span> AscendingTimestampExtractor&lt;ItemEntity&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">extractAscendingTimestamp</span><span class="params">(ItemEntity itemEntity)</span> </span>&#123;</span><br><span class="line">                <span class="keyword">long</span> timestamp = itemEntity.getTimestamp();</span><br><span class="line">                <span class="keyword">return</span> timestamp;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">streamOperator</span><br><span class="line">        .keyBy(<span class="keyword">new</span> KeySelector&lt;ItemEntity, String&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> String <span class="title">getKey</span><span class="params">(ItemEntity itemEntity)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                String eventId = itemEntity.getEventId();</span><br><span class="line">                <span class="keyword">return</span> eventId;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;)</span><br><span class="line">        .window(TumblingEventTimeWindows.of(Time.seconds(<span class="number">5</span>)))</span><br><span class="line">        .process(</span><br><span class="line">                <span class="keyword">new</span> ProcessWindowFunction&lt;ItemEntity, Tuple2&lt;String, String&gt;, String, TimeWindow&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(String s, Context context,</span></span></span><br><span class="line"><span class="function"><span class="params">                            Iterable&lt;ItemEntity&gt; iterable,</span></span></span><br><span class="line"><span class="function"><span class="params">                            Collector&lt;Tuple2&lt;String, String&gt;&gt; collector)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                        <span class="keyword">for</span> (ItemEntity itemEntity : iterable) &#123;</span><br><span class="line">                            <span class="keyword">long</span> timestamp = itemEntity.getTimestamp();</span><br><span class="line">                            Date date = <span class="keyword">new</span> Date(timestamp);</span><br><span class="line">                            SimpleDateFormat simpleDateFormat = <span class="keyword">new</span> SimpleDateFormat(</span><br><span class="line">                                    <span class="string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);</span><br><span class="line">                            collector.collect(Tuple2.of(itemEntity.getEventId(),</span><br><span class="line">                                    timestamp + <span class="string">&quot;-&gt;&quot;</span> + simpleDateFormat.format(date)));</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;)</span><br><span class="line">        .print();</span><br><span class="line">env.execute(<span class="string">&quot;test-window&quot;</span>);</span><br></pre></td></tr></table></figure>
-<p>5秒的窗口</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">2020-04-01 00:01:00,1</span><br><span class="line">2020-04-01 00:01:00,1</span><br><span class="line">2020-04-01 00:01:06,1 # 触发计算</span><br><span class="line">(1,1585670460000-&gt;2020-04-01 00:01:00)</span><br><span class="line">(1,1585670460000-&gt;2020-04-01 00:01:00)</span><br><span class="line">2020-04-01 00:01:00,1 # 窗口已经关闭，旧数据</span><br><span class="line"><span class="meta">#</span><span class="bash"> WARN  org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor [] - Timestamp monotony violated: 1585670460000 &lt; 1585670466000</span></span><br><span class="line">2020-04-01 00:01:06,1</span><br><span class="line">2020-04-01 00:01:07,1</span><br><span class="line">2020-04-01 00:01:11,1 # 触发计算</span><br><span class="line">(1,1585670466000-&gt;2020-04-01 00:01:06)</span><br><span class="line">(1,1585670466000-&gt;2020-04-01 00:01:06)</span><br><span class="line">(1,1585670467000-&gt;2020-04-01 00:01:07)</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="window的抽象概念"><a href="#window的抽象概念" class="headerlink" title="window的抽象概念"></a>window的抽象概念</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">Keyed Windows</span><br><span class="line"></span><br><span class="line">stream</span><br><span class="line">       .keyBy(...)               &lt;-  keyed versus non-keyed windows</span><br><span class="line">       .window(...)              &lt;-  required: &quot;assigner&quot;</span><br><span class="line">      [.trigger(...)]            &lt;-  optional: &quot;trigger&quot; (else default trigger)</span><br><span class="line">      [.evictor(...)]            &lt;-  optional: &quot;evictor&quot; (else no evictor)</span><br><span class="line">      [.allowedLateness(...)]    &lt;-  optional: &quot;lateness&quot; (else zero)</span><br><span class="line">      [.sideOutputLateData(...)] &lt;-  optional: &quot;output tag&quot; (else no side output for late data)</span><br><span class="line">       .reduce&#x2F;aggregate&#x2F;fold&#x2F;apply()      &lt;-  required: &quot;function&quot;</span><br><span class="line">      [.getSideOutput(...)]      &lt;-  optional: &quot;output tag&quot;</span><br><span class="line">Non-Keyed Windows</span><br><span class="line"></span><br><span class="line">stream</span><br><span class="line">       .windowAll(...)           &lt;-  required: &quot;assigner&quot;</span><br><span class="line">      [.trigger(...)]            &lt;-  optional: &quot;trigger&quot; (else default trigger)</span><br><span class="line">      [.evictor(...)]            &lt;-  optional: &quot;evictor&quot; (else no evictor)</span><br><span class="line">      [.allowedLateness(...)]    &lt;-  optional: &quot;lateness&quot; (else zero)</span><br><span class="line">      [.sideOutputLateData(...)] &lt;-  optional: &quot;output tag&quot; (else no side output for late data)</span><br><span class="line">       .reduce&#x2F;aggregate&#x2F;fold&#x2F;apply()      &lt;-  required: &quot;function&quot;</span><br><span class="line">      [.getSideOutput(...)]      &lt;-  optional: &quot;output tag&quot;</span><br></pre></td></tr></table></figure>
-<h3 id="window-assigner"><a href="#window-assigner" class="headerlink" title="window assigner"></a>window assigner</h3><h3 id="window-trigger"><a href="#window-trigger" class="headerlink" title="window trigger"></a>window trigger</h3><h3 id="window-evictor"><a href="#window-evictor" class="headerlink" title="window evictor"></a>window evictor</h3><h2 id="windowOperator工作流程"><a href="#windowOperator工作流程" class="headerlink" title="windowOperator工作流程"></a>windowOperator工作流程</h2><p><img src="_v_images/20201206173044901_44534749.png"></p>
-<h3 id="window-state"><a href="#window-state" class="headerlink" title="window state"></a>window state</h3><p><img src="_v_images/20201206173354630_1171217287.png"></p>
-<p>【参考文献】</p>
+          <h1 id="Spark-task-split-block"><a href="#Spark-task-split-block" class="headerlink" title="Spark-task_split_block"></a>Spark-task_split_block</h1><p>梳理一下Spark中关于并发度涉及的几个概念File，Block，Split，Task，Partition，RDD以及节点数、Executor数、core数目的关系。</p>
+<p><img src="_v_images/20201015163856847_762442646.jpg"></p>
 <ol>
-<li><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2016/05/25/flink-internals-window-mechanism/">flink原理与实现: window机制</a></li>
-<li><a target="_blank" rel="noopener" href="https://xie.infoq.cn/article/0d5038bc42862b3db79c571bd">flink窗口应用与实现</a></li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/a1240466196/article/details/108334436">Flink原理: 窗口原理详解</a></li>
+<li>用户设置了numSplit，那么goalSize=totalSize/numSplit</li>
+<li>minSize=max(1,minSplitSize)</li>
+<li>splitSize=max(minSplitSize, min(goalSize,blockSize))</li>
+<li>task个数=totalSize除以splitSize</li>
+</ol>
+<p>输入可能以多个文件的形式存储在HDFS上，每个File都包含了很多块，称为<strong>Block</strong>。<br>当Spark读取这些文件作为输入时，会根据具体数据格式对应的InputFormat进行解析，一般是将若干个Block合并成一个输入分片，称为<strong>InputSplit</strong>，注意InputSplit不能跨越文件。<br>随后将为这些输入分片生成具体的<strong>Task</strong>。InputSplit与Task是<strong>一一对应</strong>的关系。<br>随后这些具体的Task每个都会被分配到集群上的某个节点的某个<strong>Executor</strong>去执行。</p>
+<ul>
+<li>每个节点可以起一个或多个Executor。</li>
+<li>每个Executor由若干<strong>core</strong>组成，每个Executor的每个core<strong>一次只能执行一个</strong>Task。</li>
+<li>每个Task执行的结果就是生成了目标<strong>RDD</strong>的一个<strong>partiton</strong>。</li>
+</ul>
+<p><strong>注意:</strong> 这里的core是虚拟的core而不是机器的物理CPU核，可以理解为就是Executor的一个工作线程。</p>
+<p>而 Task被执行的并发度 = Executor数目 * 每个Executor核数。</p>
+<p>至于partition的数目：</p>
+<ul>
+<li>对于数据读入阶段，例如sc.textFile，输入文件被划分为多少InputSplit就会需要多少初始Task。</li>
+<li>在Map阶段partition数目保持不变。</li>
+<li>在Reduce阶段，RDD的聚合会触发shuffle操作，聚合后的RDD的partition数目跟具体操作有关，例如repartition操作会聚合成指定分区数，还有一些算子是可配置的。</li>
+</ul>
+<h3 id="1，Application"><a href="#1，Application" class="headerlink" title="1，Application"></a>1，Application</h3><p>application（应用）其实就是用spark-submit提交的程序。比方说spark examples中的计算pi的SparkPi。一个application通常包含三部分：从数据源（比方说HDFS）取数据形成RDD，通过RDD的transformation和action进行计算，将结果输出到console或者外部存储（比方说collect收集输出到console）。</p>
+<h3 id="2，Driver"><a href="#2，Driver" class="headerlink" title="2，Driver"></a>2，Driver</h3><p> Spark中的driver感觉其实和yarn中Application Master的功能相类似。主要完成任务的调度以及和executor和cluster manager进行协调。有client和cluster联众模式。client模式driver在任务提交的机器上运行，而cluster模式会随机选择机器中的一台机器启动driver。从spark官网截图的一张图可以大致了解driver的功能。</p>
+<p><img src="_v_images/20201015163856640_926148743.png"></p>
+<h3 id="3，Job"><a href="#3，Job" class="headerlink" title="3，Job"></a>3，Job</h3><p> Spark中的Job和MR中Job不一样不一样。MR中Job主要是Map或者Reduce Job。而Spark的Job其实很好区别，一个action算子就算一个Job，比方说count，first等。</p>
+<h3 id="4-Task"><a href="#4-Task" class="headerlink" title="4, Task"></a>4, Task</h3><p>Task是Spark中最新的执行单元。RDD一般是带有partitions的，每个partition的在一个executor上的执行可以任务是一个Task。 </p>
+<h3 id="5-Stage"><a href="#5-Stage" class="headerlink" title="5, Stage"></a>5, Stage</h3><p>Stage概念是spark中独有的。一般而言一个Job会切换成一定数量的stage。各个stage之间按照顺序执行。至于stage是怎么切分的，首选得知道spark论文中提到的narrow dependency(窄依赖)和wide dependency（ 宽依赖）的概念。其实很好区分，看一下父RDD中的数据是否进入不同的子RDD，如果只进入到一个子RDD则是窄依赖，否则就是宽依赖。宽依赖和窄依赖的边界就是stage的划分点</p>
+<p><img src="_v_images/20201015163856436_1360238478.png"></p>
+<p><img src="_v_images/20201015163856129_654594465.png"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark%E8%B5%84%E6%BA%90%E8%AF%84%E4%BC%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Spark/Spark%E8%B5%84%E6%BA%90%E8%AF%84%E4%BC%B0/" class="post-title-link" itemprop="url">Spark资源评估</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Spark资源评估"><a href="#Spark资源评估" class="headerlink" title="Spark资源评估"></a>Spark资源评估</h1><table>
+<thead>
+<tr>
+<th>机器机型</th>
+<th>内存</th>
+<th>硬盘</th>
+<th>核数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>M10</td>
+<td>128G</td>
+<td>3.6T</td>
+<td>48</td>
+</tr>
+<tr>
+<td>BX1</td>
+<td>16G×16 256G</td>
+<td>4T×12=48T</td>
+<td>80</td>
+</tr>
+<tr>
+<td>CG3</td>
+<td>256G</td>
+<td>3.6T</td>
+<td>96</td>
+</tr>
+</tbody></table>
+<h2 id="Spark-On-Yarn-内存计算"><a href="#Spark-On-Yarn-内存计算" class="headerlink" title="Spark On Yarn 内存计算"></a>Spark On Yarn 内存计算</h2><p>在介绍了，spark任务在yarn运行时需要的Continer数量，以及内存大小之后，我们再来看spark on yarn的时候整体任务在yarn中占用资源大小。</p>
+<p>Core： yarn中Core指的是Continer数量，所以Core = ContinerNum</p>
+<p>而内存的计算则较为复杂了，设单个Continer向集群申请的资源经我们上面公式算出来的需要申请的内存大小为：excutorTotalMemory ，则该Continer在yarn集群上占用的最终资源为continerMemory。<br>minContiner = yarn.scheduler.minimum-allocation-mb（continer分配资源的最小值，目前是128）<br>Increment = yarn.scheduler.increment-allocation-mb（yarn分配资源的增量，也叫规整化参数，默认值为1024 mb）<br>resultMemory的计算方式如下所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">If（totalMemory&lt;=minContiner）&#123;</span><br><span class="line">	continerMemory = minContiner</span><br><span class="line">&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">	continerMemory = minContiner + Math.ceil（(excutorTotalMemory - minContiner)/increment） * increment</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>总结</strong></p>
+<p>例如某个spark任务的提交参数为，driverMemory=2G，executorMemory=2G，executorNum = 1<br>minContiner=512m<br>Increment =1024m<br>则该任务<br>executorContinerMemory计算过程如下</p>
+<pre><code>申请资源数：executor = Max(executorMemory*0.1，384M)+executorMemory=2432M
+ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
+<p>driverContinerMemory计算过程同上：2.5G<br>最终该任务在yarn消耗资源为5G<br>可以看出来，spark任务最终消耗资源并非为初始化资源数。</p>
+<p>需要join 75张表，每张表的主键分布不同：</p>
+<ul>
+<li>直接join会造成数据倾斜，某个节点撑爆</li>
+<li>所有的表都shuffle，会造成shuffle数据量太多，撑爆硬盘</li>
+</ul>
+<p>申请的资源:</p>
+<p><img src="_v_images/20201012172033562_1858655038.png"></p>
+<p>策略一:</p>
+<ul>
+<li>join后的表，每隔join20次则repartition一次</li>
+<li>待join的子表，partition个数超过30，或行数超过1.5亿，则repartition一次</li>
+</ul>
+<p><img src="_v_images/20201012170200410_989497495.png"></p>
+<p>宽表数据量:<br><img src="_v_images/20201012190000429_1118094404.png"></p>
+<p><img src="_v_images/20201012204407377_1330736778.png"></p>
+<h2 id="问题点"><a href="#问题点" class="headerlink" title="问题点"></a>问题点</h2><ol>
+<li>dag排布的规则是什么？</li>
 </ol>
 
       
@@ -511,7 +518,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Uber-AthenaX/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-streaming-runtime/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -525,7 +532,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Uber-AthenaX/" class="post-title-link" itemprop="url">Uber-AthenaX</a>
+            <a href="/bigdata/Spark/Spark-streaming-runtime/" class="post-title-link" itemprop="url">Spark streaming runtime</a>
         </h2>
 
         <div class="post-meta">
@@ -542,7 +549,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -565,7 +572,300 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Uber-AthenaX"><a href="#Uber-AthenaX" class="headerlink" title="Uber-AthenaX"></a>Uber-AthenaX</h1>
+          <h1 id="Spark-streaming-runtime"><a href="#Spark-streaming-runtime" class="headerlink" title="Spark-streaming-runtime"></a>Spark-streaming-runtime</h1><p><img src="_v_images/20210113163649916_346932316.jpg"></p>
+<p> <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/159041276">https://zhuanlan.zhihu.com/p/159041276</a></p>
+<p><strong>spark vs storm</strong></p>
+<p><img src="_v_images/20210113163812387_1035142961.png"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-State-TTL/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-State-TTL/" class="post-title-link" itemprop="url">Flink-state-ttl</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="简析Flink状态生存时间（State-TTL）机制的底层实现"><a href="#简析Flink状态生存时间（State-TTL）机制的底层实现" class="headerlink" title="简析Flink状态生存时间（State TTL）机制的底层实现"></a>简析Flink状态生存时间（State TTL）机制的底层实现</h1><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/nazeniwaresakini/article/details/106094778">简析Flink状态生存时间（State TTL）机制的底层实现</a></p>
+<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>从Flink 1.6版本开始，社区为状态引入了TTL（time-to-live，生存时间）机制，支持Keyed State的自动过期，有效解决了状态数据在无干预情况下无限增长导致OOM的问题。State TTL的用法很简单，<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.10/dev/stream/state/state.html#state-time-to-live-ttll">官方文档</a>中给出的示例代码如下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">StateTtlConfig ttlConfig =</span><br><span class="line"> StateTtlConfig</span><br><span class="line"> .newBuilder(Time.seconds(<span class="number">1</span>))</span><br><span class="line"> .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)</span><br><span class="line"> .setStateVisibility(StateTtlConfig.StateVisibility.NeverReturnExpired)</span><br><span class="line"> .build();</span><br><span class="line">ValueStateDescriptor&lt;String&gt; stateDescriptor = <span class="keyword">new</span> ValueStateDescriptor&lt;&gt;(<span class="string">&quot;text state&quot;</span>, String.class);</span><br><span class="line">stateDescriptor.enableTimeToLive(ttlConfig);</span><br></pre></td></tr></table></figure>
+<p>那么State TTL的背后又隐藏着什么样的思路呢？下面就从设置类StateTtlConfig入手开始研究（Flink代码版本为1.9.3）。</p>
+<h3 id="StateTtlConfig"><a href="#StateTtlConfig" class="headerlink" title="StateTtlConfig"></a>StateTtlConfig</h3><p>该类中有5个成员属性，它们就是用户需要指定的全部参数了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> UpdateType updateType</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> StateVisibility stateVisibility</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> TtlTimeCharacteristic ttlTimeCharacteristic</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Time ttl</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> CleanupStrategies cleanupStrategies</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>其中，ttl参数表示用户设定的状态生存时间。而UpdateType、StateVisibility和TtlTimeCharacteristic都是枚举，分别代表状态时间戳的更新方式、过期状态数据的可见性，以及对应的时间特征。它们的含义在注释中已经解释得很清楚了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * This option value configures when to update last access timestamp which prolongs state TTL. </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">UpdateType</span> </span>&#123;    </span><br><span class="line"><span class="comment">/** TTL is disabled. State does not expire. */</span>    </span><br><span class="line">  Disabled,    </span><br><span class="line"><span class="comment">/** Last access timestamp is initialised when state is created and updated on every write operation. </span></span><br><span class="line"><span class="comment">当每次写操作时，更新时间戳</span></span><br><span class="line"><span class="comment"> */</span>    </span><br><span class="line">  OnCreateAndWrite,    </span><br><span class="line"><span class="comment">/** The same as &lt;code&gt;OnCreateAndWrite&lt;/code&gt; but also updated on read.</span></span><br><span class="line"><span class="comment">当每次读写操作时，更新时间戳</span></span><br><span class="line"><span class="comment"> */</span>    </span><br><span class="line">  OnReadAndWrite</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/** * This option configures whether expired user value can be returned or not. */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">StateVisibility</span> </span>&#123;    </span><br><span class="line">  <span class="comment">/** Return expired user value if it is not cleaned up yet. */</span>    </span><br><span class="line">  ReturnExpiredIfNotCleanedUp,    </span><br><span class="line">  <span class="comment">/** Never return expired user value. */</span>    </span><br><span class="line">  NeverReturnExpired</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/** * This option configures time scale to use for ttl. */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">TtlTimeCharacteristic</span> </span>&#123;    </span><br><span class="line">  <span class="comment">/** Processing time, see also &lt;code&gt;org.apache.flink.streaming.api.TimeCharacteristic.ProcessingTime&lt;/code&gt;. */</span>    </span><br><span class="line">  ProcessingTime</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Flink目前仅支持基于处理时间的State TTL，事件时间会在不久的将来支持。</p>
+<p>CleanupStrategies内部类则用来规定过期状态的特殊清理策略，用户在构造StateTtlConfig时，可以通过调用以下方法之一指定。</p>
+<ul>
+<li><strong><code>cleanupFullSnapshot()</code></strong><br>  当对状态做全量快照时清理过期数据，对开启了增量检查点（incremental checkpoint）的RocksDB状态后端无效，对应源码中的EmptyCleanupStrategy。<br>  为什么叫做“空的”清理策略呢？因为该选项只能保证状态持久化时不包含过期数据，但TaskManager本地的过期状态则不作任何处理，所以无法从根本上解决OOM的问题，需要定期重启作业。</li>
+<li><strong><code>cleanupIncrementally(int cleanupSize, boolean runCleanupForEveryRecord)</code></strong><br>  增量清理过期数据，默认在每次访问状态时进行清理，将runCleanupForEveryRecord设为true可以附加在每次写入/删除时清理。cleanupSize指定每次触发清理时检查的状态条数。<br>  仅对基于堆的状态后端有效，对应源码中的IncrementalCleanupStrategy。</li>
+<li><strong><code>cleanupInRocksdbCompactFilter(long queryTimeAfterNumEntries)</code></strong><br>  当RocksDB做compaction操作时，通过Flink定制的过滤器（FlinkCompactionFilter）过滤掉过期状态数据。参数queryTimeAfterNumEntries用于指定在写入多少条状态数据后，通过状态时间戳来判断是否过期。<br>  该策略仅对RocksDB状态后端有效，对应源码中的RocksdbCompactFilterCleanupStrategy。CompactionFilter是RocksDB原生提供的机制，其说明可见<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://github.com/facebook/rocksdb/wiki/Compaction-Filter">这里</a>。</li>
+</ul>
+<p>如果不调用上述方法，则采用默认的后台清理策略，下文有讲。</p>
+<h3 id="TtlStateFactory、TtlStateContext"><a href="#TtlStateFactory、TtlStateContext" class="headerlink" title="TtlStateFactory、TtlStateContext"></a>TtlStateFactory、TtlStateContext</h3><p>在所有Keyed State状态后端的抽象基类AbstractKeyedStateBackend中，创建并记录一个状态实例的方法如下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="keyword">public</span> &lt;N, S extends State, V&gt; <span class="function">S <span class="title">getOrCreateKeyedState</span><span class="params">( </span></span></span><br><span class="line"><span class="function"><span class="params">   <span class="keyword">final</span> TypeSerializer&lt;N&gt; namespaceSerializer, StateDescriptor&lt;S, V&gt; stateDescriptor)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  checkNotNull(namespaceSerializer, <span class="string">&quot;Namespace serializer&quot;</span>);</span><br><span class="line">  checkNotNull(keySerializer, <span class="string">&quot;State key serializer has not been configured in the config. &quot;</span> +</span><br><span class="line">  <span class="string">&quot;This operation cannot use partitioned state.&quot;</span>);</span><br><span class="line">  InternalKvState&lt;K, ?, ?&gt; kvState = keyValueStatesByName.get(stateDescriptor.getName());</span><br><span class="line">  <span class="keyword">if</span> (kvState == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!stateDescriptor.isSerializerInitialized()) &#123;</span><br><span class="line">      stateDescriptor.initializeSerializerUnlessSet(executionConfig);</span><br><span class="line">    &#125;</span><br><span class="line">    kvState = TtlStateFactory.createStateAndWrapWithTtlIfEnabled( namespaceSerializer, stateDescriptor, <span class="keyword">this</span>, ttlTimeProvider);</span><br><span class="line">    keyValueStatesByName.put(stateDescriptor.getName(), kvState);</span><br><span class="line">    publishQueryableStateIfEnabled(stateDescriptor, kvState);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> (S) kvState;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可见是调用了TtlStateFactory.createStateAndWrapWithTtlIfEnabled()方法来真正创建。顾名思义，TtlStateFactory是产生TTL状态的工厂类。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;K, N, SV, TTLSV, S extends State, IS extends S&gt; <span class="function">IS <span class="title">createStateAndWrapWithTtlIfEnabled</span><span class="params">( </span></span></span><br><span class="line"><span class="function"><span class="params">    TypeSerializer&lt;N&gt; namespaceSerializer, </span></span></span><br><span class="line"><span class="function"><span class="params">    StateDescriptor&lt;S, SV&gt; stateDesc, </span></span></span><br><span class="line"><span class="function"><span class="params">    KeyedStateBackend&lt;K&gt; stateBackend, </span></span></span><br><span class="line"><span class="function"><span class="params">    TtlTimeProvider timeProvider</span></span></span><br><span class="line"><span class="function"><span class="params">    )</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  Preconditions.checkNotNull(namespaceSerializer);</span><br><span class="line">  Preconditions.checkNotNull(stateDesc);</span><br><span class="line">  Preconditions.checkNotNull(stateBackend);</span><br><span class="line">  Preconditions.checkNotNull(timeProvider);</span><br><span class="line">  <span class="keyword">return</span> stateDesc.getTtlConfig().isEnabled() ? <span class="keyword">new</span> TtlStateFactory&lt;K, N, SV, TTLSV, S, IS&gt;( namespaceSerializer, stateDesc, stateBackend, timeProvider) .createState() : stateBackend.createInternalState(namespaceSerializer, stateDesc);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由上可知，如果我们为状态描述符StateDescriptor加入了TTL，那么就会调用TtlStateFactory.createState()方法创建一个带有TTL的状态实例；否则，就调用StateBackend.createInternalState()创建一个普通的状态实例。TtlStateFactory.createState()的代码如下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> IS <span class="title">createState</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  SupplierWithException&lt;IS, Exception&gt; stateFactory = stateFactories.get(stateDesc.getClass());</span><br><span class="line">  <span class="keyword">if</span> (stateFactory == <span class="keyword">null</span>) &#123;</span><br><span class="line">    String message = String.format(<span class="string">&quot;State %s is not supported by %s&quot;</span>, stateDesc.getClass(), TtlStateFactory.class);</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> FlinkRuntimeException(message);</span><br><span class="line">  &#125;</span><br><span class="line">  IS state = stateFactory.get();</span><br><span class="line">  <span class="keyword">if</span> (incrementalCleanup != <span class="keyword">null</span>) &#123;</span><br><span class="line">    incrementalCleanup.setTtlState((AbstractTtlState&lt;K, N, ?, TTLSV, ?&gt;) state);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> state;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中，stateFactories是一个Map结构，维护了各种状态描述符与对应产生该种状态对象的工厂方法映射。所有的工厂方法都被包装成了Supplier（Java 8提供的函数式接口），所以在上述createState()方法中，可以通过Supplier.get()方法来实际执行createTtl.State()工厂方法，并获得新的状态实例。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.stateFactories = createStateFactories();</span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;deprecation&quot;)</span></span><br><span class="line"><span class="keyword">private</span> Map&lt;Class&lt;? extends StateDescriptor&gt;, SupplierWithException&lt;IS, Exception&gt;&gt; createStateFactories() &#123;</span><br><span class="line">  <span class="keyword">return</span> Stream.of(</span><br><span class="line">    Tuple2.of(ValueStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createValueState),</span><br><span class="line">    Tuple2.of(ListStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createListState),</span><br><span class="line">    Tuple2.of(MapStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createMapState),</span><br><span class="line">    Tuple2.of(ReducingStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createReducingState),</span><br><span class="line">    Tuple2.of(AggregatingStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createAggregatingState),</span><br><span class="line">    Tuple2.of(FoldingStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createFoldingState)</span><br><span class="line">  ).collect(Collectors.toMap(t -&gt; t.f0, t -&gt; t.f1));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> IS <span class="title">createValueState</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  ValueStateDescriptor&lt;TtlValue&lt;SV&gt;&gt; ttlDescriptor = <span class="keyword">new</span> ValueStateDescriptor&lt;&gt;(</span><br><span class="line">      stateDesc.getName(), </span><br><span class="line">      <span class="keyword">new</span> TtlSerializer&lt;&gt;(LongSerializer.INSTANCE, stateDesc.getSerializer())</span><br><span class="line">  );</span><br><span class="line">  <span class="keyword">return</span> (IS) <span class="keyword">new</span> TtlValueState&lt;&gt;(createTtlStateContext(ttlDescriptor));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="keyword">private</span> &lt;T&gt; <span class="function">IS <span class="title">createListState</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  ListStateDescriptor&lt;T&gt; listStateDesc = (ListStateDescriptor&lt;T&gt;) stateDesc;</span><br><span class="line">  ListStateDescriptor&lt;TtlValue&lt;T&gt;&gt; ttlDescriptor = <span class="keyword">new</span> ListStateDescriptor&lt;&gt;(</span><br><span class="line">      stateDesc.getName(), </span><br><span class="line">      <span class="keyword">new</span> TtlSerializer&lt;&gt;(LongSerializer.INSTANCE, listStateDesc.getElementSerializer())</span><br><span class="line">  );</span><br><span class="line">  <span class="keyword">return</span> (IS) <span class="keyword">new</span> TtlListState&lt;&gt;(createTtlStateContext(ttlDescriptor));</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 以下略去...</span></span><br></pre></td></tr></table></figure>
+<p>可见，带有TTL的状态类名其实就是普通状态类名加上Ttl前缀，只是没有公开给用户而已。并且在生成<code>Ttl$State</code>时，还会通过createTtlStateContext()方法生成TTL状态的上下文。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="keyword">private</span> &lt;OIS extends State, TTLS extends State, V, TTLV&gt; TtlStateContext&lt;OIS, V&gt;</span><br><span class="line">createTtlStateContext(StateDescriptor&lt;TTLS, TTLV&gt; ttlDescriptor) <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    ttlDescriptor.enableTimeToLive(stateDesc.getTtlConfig()); </span><br><span class="line">    <span class="comment">// also used by RocksDB backend for TTL compaction filter config</span></span><br><span class="line">    OIS originalState = (OIS) stateBackend.createInternalState(</span><br><span class="line">        namespaceSerializer, </span><br><span class="line">        ttlDescriptor, </span><br><span class="line">        getSnapshotTransformFactory()</span><br><span class="line">    );</span><br><span class="line"><span class="keyword">return</span> <span class="keyword">new</span> TtlStateContext&lt;&gt;(</span><br><span class="line">        originalState, </span><br><span class="line">        ttlConfig, </span><br><span class="line">        timeProvider, </span><br><span class="line">        (TypeSerializer&lt;V&gt;) stateDesc.getSerializer(),</span><br><span class="line">        registerTtlIncrementalCleanupCallback((InternalKvState&lt;?, ?, ?&gt;) originalState)</span><br><span class="line">    );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>TtlStateContext的本质是对以下几个实例做了封装。</p>
+<ul>
+<li>原始State（通过StateBackend.createInternalState()方法创建）及其序列化器（通过StateDescriptor.getSerializer()方法取得）；</li>
+<li>StateTtlConfig，前文已经讲过；</li>
+<li>TtlTimeProvider，用来提供判断状态过期标准的时间戳。当前只是简单地代理了System.currentTimeMillis()，没有任何其他代码；</li>
+<li>一个Runnable类型的回调方法，通过registerTtlIncrementalCleanupCallback()方法产生，用于状态数据的增量清理，后面会看到它的用途。</li>
+</ul>
+<p>接下来就具体看看TTL状态是如何实现的。</p>
+<h3 id="AbstractTtlState、AbstractTtlDecorator"><a href="#AbstractTtlState、AbstractTtlDecorator" class="headerlink" title="AbstractTtlState、AbstractTtlDecorator"></a>AbstractTtlState、AbstractTtlDecorator</h3><p>在解说之前，先放一幅类图。</p>
+<p><img src="_v_images/20200917142252357_1752793097"></p>
+<p>所有Ttl.State都是AbstractTtlState的子类，而AbstractTtlState又是装饰器AbstractTtlDecorator的子类。AbstractTtlDecorator提供了最基本的TTL逻辑，代码不长，全部抄录如下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractTtlDecorator</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">  <span class="comment">/** Wrapped original state handler. */</span></span><br><span class="line">  <span class="keyword">final</span> T original;</span><br><span class="line">  <span class="keyword">final</span> StateTtlConfig config;</span><br><span class="line">  <span class="keyword">final</span> TtlTimeProvider timeProvider;</span><br><span class="line">  <span class="comment">/** Whether to renew expiration timestamp on state read access. */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">boolean</span> updateTsOnRead;</span><br><span class="line">  <span class="comment">/** Whether to renew expiration timestamp on state read access. */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">boolean</span> returnExpired;</span><br><span class="line">  <span class="comment">/** State value time to live in milliseconds. */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">long</span> ttl;</span><br><span class="line">  AbstractTtlDecorator( T original, StateTtlConfig config, TtlTimeProvider timeProvider) &#123;</span><br><span class="line">  <span class="comment">// ......</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 查到已过期数据，返回null</span></span><br><span class="line">  &lt;V&gt; <span class="function">V <span class="title">getUnexpired</span><span class="params">(TtlValue&lt;V&gt; ttlValue)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> ttlValue == <span class="keyword">null</span> || (expired(ttlValue) &amp;&amp; !returnExpired) ? <span class="keyword">null</span> : ttlValue.getUserValue();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 过期掉数据</span></span><br><span class="line">  &lt;V&gt; <span class="function"><span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(TtlValue&lt;V&gt; ttlValue)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> TtlUtils.expired(ttlValue, ttl, timeProvider);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 包装数据</span></span><br><span class="line">  &lt;V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">wrapWithTs</span><span class="params">(V value)</span> </span>&#123;</span><br><span class="line">   <span class="keyword">return</span> TtlUtils.wrapWithTs(value, timeProvider.currentTimestamp());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 重新包装数据</span></span><br><span class="line">  &lt;V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">rewrapWithNewTs</span><span class="params">(TtlValue&lt;V&gt; ttlValue)</span> </span>&#123;</span><br><span class="line">   <span class="keyword">return</span> wrapWithTs(ttlValue.getUserValue());</span><br><span class="line">  &#125;</span><br><span class="line">  &lt;SE extends Throwable, CE extends Throwable, CLE extends Throwable, V&gt; <span class="function">V <span class="title">getWithTtlCheckAndUpdate</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      SupplierWithException&lt;TtlValue&lt;V&gt;, SE&gt; getter,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingConsumer&lt;TtlValue&lt;V&gt;, CE&gt; updater,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingRunnable&lt;CLE&gt; stateClear</span></span></span><br><span class="line"><span class="function"><span class="params">  )</span> <span class="keyword">throws</span> SE, CE, CLE </span>&#123;</span><br><span class="line">    TtlValue&lt;V&gt; ttlValue = getWrappedWithTtlCheckAndUpdate(getter, updater, stateClear);</span><br><span class="line">    <span class="keyword">return</span> ttlValue == <span class="keyword">null</span> ? <span class="keyword">null</span> : ttlValue.getUserValue();</span><br><span class="line">  &#125;</span><br><span class="line">  &lt;SE extends Throwable, CE extends Throwable, CLE extends Throwable, V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">getWrappedWithTtlCheckAndUpdate</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      SupplierWithException&lt;TtlValue&lt;V&gt;, SE&gt; getter,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingConsumer&lt;TtlValue&lt;V&gt;, CE&gt; updater,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingRunnable&lt;CLE&gt; stateClear</span></span></span><br><span class="line"><span class="function"><span class="params">  )</span> <span class="keyword">throws</span> SE, CE, CLE </span>&#123;</span><br><span class="line">      TtlValue&lt;V&gt; ttlValue = getter.get();</span><br><span class="line">      <span class="keyword">if</span> (ttlValue == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (expired(ttlValue)) &#123;</span><br><span class="line">        stateClear.run();</span><br><span class="line">        <span class="keyword">if</span> (!returnExpired) &#123;</span><br><span class="line">          <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (updateTsOnRead) &#123;</span><br><span class="line">          updater.accept(rewrapWithNewTs(ttlValue));</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> ttlValue;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>它的成员属性比较容易理解，例如，updateTsOnRead表示在读取状态值时也更新时间戳（即UpdateType.OnReadAndWrite），returnExpired表示即使状态过期，在被真正删除之前也返回它的值（即StateVisibility.ReturnExpiredIfNotCleanedUp）。</p>
+<p>状态值与TTL的包装（成为TtlValue）以及过期检测都由工具类TtlUtils来负责，思路很简单，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TtlUtils</span> </span>&#123;</span><br><span class="line">  <span class="keyword">static</span> &lt;V&gt; <span class="function"><span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="meta">@Nullable</span> TtlValue&lt;V&gt; ttlValue, <span class="keyword">long</span> ttl, TtlTimeProvider timeProvider)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> expired(ttlValue, ttl, timeProvider.currentTimestamp());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">static</span> &lt;V&gt; <span class="function"><span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="meta">@Nullable</span> TtlValue&lt;V&gt; ttlValue, <span class="keyword">long</span> ttl, <span class="keyword">long</span> currentTimestamp)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> ttlValue != <span class="keyword">null</span> &amp;&amp; expired(ttlValue.getLastAccessTimestamp(), ttl, currentTimestamp);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="keyword">long</span> ts, <span class="keyword">long</span> ttl, TtlTimeProvider timeProvider)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> expired(ts, ttl, timeProvider.currentTimestamp());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="keyword">long</span> ts, <span class="keyword">long</span> ttl, <span class="keyword">long</span> currentTimestamp)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> getExpirationTimestamp(ts, ttl) &lt;= currentTimestamp;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getExpirationTimestamp</span><span class="params">(<span class="keyword">long</span> ts, <span class="keyword">long</span> ttl)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> ttlWithoutOverflow = ts &gt; <span class="number">0</span> ? Math.min(Long.MAX_VALUE - ts, ttl) : ttl;</span><br><span class="line">    <span class="keyword">return</span> ts + ttlWithoutOverflow;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">static</span> &lt;V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">wrapWithTs</span><span class="params">(V value, <span class="keyword">long</span> ts)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> TtlValue&lt;&gt;(value, ts);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>TtlValue的属性只有两个：状态值和时间戳，代码略去。</p>
+<p>AbstractTtlDecorator核心方法是获取状态值的getWrappedWithTtlCheckAndUpdate()，它接受三个参数：</p>
+<ul>
+<li>getter：一个可抛出异常的Supplier，用于获取状态值；</li>
+<li>updater：一个可抛出异常的Consumer，用于更新状态的时间戳；</li>
+<li>stateClear：一个可抛出异常的Runnable，用于异步删除过期状态。</li>
+</ul>
+<p>可见，在默认情况下的后台清理策略是：<strong>只有状态值被读取时，才会做过期检测，并异步清除过期的状态</strong>。这种<strong>惰性清理</strong>的机制会导致<strong>那些实际已经过期但从未被再次访问过的状态无法被删除</strong>，需要特别注意。官方文档中也已有提示：</p>
+<blockquote>
+<p>By default, expired values are explicitly removed on read, such as ValueState#value, and periodically garbage collected in the background if supported by the configured state backend.</p>
+</blockquote>
+<p>当确认到状态过期时，会调用stateClear的逻辑进行删除；如果需要在读取时顺便更新状态的时间戳，会调用updater的逻辑重新包装一个TtlValue。</p>
+<p>AbstractTtlState的代码更加简单，主要的方法列举如下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> Runnable accessCallback; &lt;SE extends Throwable, CE extends Throwable, T&gt; <span class="function">T <span class="title">getWithTtlCheckAndUpdate</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  SupplierWithException&lt;TtlValue&lt;T&gt;, SE&gt; getter,</span></span></span><br><span class="line"><span class="function"><span class="params">  ThrowingConsumer&lt;TtlValue&lt;T&gt;, CE&gt; updater)</span> <span class="keyword">throws</span> SE, CE </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> getWithTtlCheckAndUpdate(getter, updater, original::clear);&#125; <span class="meta">@Overridepublic</span> <span class="function"><span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  original.clear();</span><br><span class="line">  accessCallback.run();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中，accessCallback就是TtlStateContext中注册的增量清理回调。</p>
+<p>下面以TtlMapState为例，看看具体的TTL状态如何利用上文所述的这些实现。</p>
+<h3 id="TtlMapState"><a href="#TtlMapState" class="headerlink" title="TtlMapState"></a>TtlMapState</h3><p>以下是部分代码。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TtlMapState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">UK</span>, <span class="title">UV</span>&gt;</span></span><br><span class="line"><span class="class"><span class="keyword">extends</span> <span class="title">AbstractTtlState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">Map</span>&lt;<span class="title">UK</span>, <span class="title">UV</span>&gt;, <span class="title">Map</span>&lt;<span class="title">UK</span>, <span class="title">TtlValue</span>&lt;<span class="title">UV</span>&gt;&gt;, <span class="title">InternalMapState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">UK</span>, <span class="title">TtlValue</span>&lt;<span class="title">UV</span>&gt;&gt;&gt;</span></span><br><span class="line"><span class="class"><span class="keyword">implements</span> <span class="title">InternalMapState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">UK</span>, <span class="title">UV</span>&gt; </span>&#123;</span><br><span class="line">    TtlMapState(TtlStateContext&lt;InternalMapState&lt;K, N, UK, TtlValue&lt;UV&gt;&gt;, Map&lt;UK, UV&gt;&gt; ttlStateContext) &#123;</span><br><span class="line">        <span class="keyword">super</span>(ttlStateContext);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> UV <span class="title">get</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        TtlValue&lt;UV&gt; ttlValue = getWrapped(key);</span><br><span class="line">        <span class="keyword">return</span> ttlValue == <span class="keyword">null</span> ? <span class="keyword">null</span> : ttlValue.getUserValue();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> TtlValue&lt;UV&gt; <span class="title">getWrapped</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        accessCallback.run();</span><br><span class="line">        <span class="keyword">return</span> getWrappedWithTtlCheckAndUpdate(() -&gt; original.get(key), v -&gt; original.put(key, v), () -&gt; original.remove(key));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(UK key, UV value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        accessCallback.run();</span><br><span class="line">        original.put(key, wrapWithTs(value));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putAll</span><span class="params">(Map&lt;UK, UV&gt; map)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        accessCallback.run();</span><br><span class="line">        <span class="keyword">if</span> (map == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        Map&lt;UK, TtlValue&lt;UV&gt;&gt; ttlMap = <span class="keyword">new</span> HashMap&lt;&gt;(map.size());</span><br><span class="line">        <span class="keyword">long</span> currentTimestamp = timeProvider.currentTimestamp();</span><br><span class="line">        <span class="keyword">for</span> (Map.Entry&lt;UK, UV&gt; entry : map.entrySet()) &#123;</span><br><span class="line">            UK key = entry.getKey();</span><br><span class="line">            ttlMap.put(key, TtlUtils.wrapWithTs(entry.getValue(), currentTimestamp));</span><br><span class="line">        &#125;</span><br><span class="line">        original.putAll(ttlMap);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    accessCallback.run();</span><br><span class="line">    original.remove(key);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">contains</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    TtlValue&lt;UV&gt; ttlValue = getWrapped(key);</span><br><span class="line">    <span class="keyword">return</span> ttlValue != <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">// ......</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可见，TtlMapState的增删改查操作都是在原MapState上进行，只是加上了TTL相关的逻辑，这也是装饰器模式的特点。例如，TtlMapState.get()方法调用了上述AbstractTtlDecorator.getWrappedWithTtlCheckAndUpdate()方法，传入的获取（getter）、插入（updater）和删除（stateClear）的逻辑就是原MapState的get()、put()和remove()方法。而TtlMapState.put()只是在调用原MapState的put()方法之前，将状态包装为TtlValue而已。</p>
+<h2 id="增量清理策略"><a href="#增量清理策略" class="headerlink" title="增量清理策略"></a>增量清理策略</h2><p>另外需要注意，所有增删改查操作之前都需要执行accessCallback.run()方法。如果启用了增量清理策略，该Runnable会通过在状态数据上维护一个全局迭代器向前清理过期数据。如果未启用增量清理策略，accessCallback为空。前文提到过的<code>TtlStateFactory.registerTtlIncrementalCleanupCallback()</code> 方法如下。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Runnable <span class="title">registerTtlIncrementalCleanupCallback</span><span class="params">(InternalKvState&lt;?, ?, ?&gt; originalState)</span> </span>&#123;</span><br><span class="line">    StateTtlConfig.IncrementalCleanupStrategy config =</span><br><span class="line">        ttlConfig.getCleanupStrategies().getIncrementalCleanupStrategy();</span><br><span class="line">    <span class="keyword">boolean</span> cleanupConfigured = config != <span class="keyword">null</span> &amp;&amp; incrementalCleanup != <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">boolean</span> isCleanupActive = cleanupConfigured &amp;&amp;</span><br><span class="line">        isStateIteratorSupported(originalState, incrementalCleanup.getCleanupSize());</span><br><span class="line">    Runnable callback = isCleanupActive ? incrementalCleanup::stateAccessed : () -&gt; &#123; &#125;;</span><br><span class="line">    <span class="keyword">if</span> (isCleanupActive &amp;&amp; config.runCleanupForEveryRecord()) &#123;</span><br><span class="line">        stateBackend.registerKeySelectionListener(stub -&gt; callback.run());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> callback;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>实际清理的代码则位于<code>TtlIncrementalCleanup</code>类中，stateIterator就是状态数据的迭代器。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">stateAccessed</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    initIteratorIfNot();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        runCleanup();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> FlinkRuntimeException(<span class="string">&quot;Failed to incrementally clean up state with TTL&quot;</span>, t);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">initIteratorIfNot</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (stateIterator == <span class="keyword">null</span> || !stateIterator.hasNext()) &#123;</span><br><span class="line">        stateIterator = ttlState.original.getStateIncrementalVisitor(cleanupSize);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">runCleanup</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> entryNum = <span class="number">0</span>;</span><br><span class="line">    Collection&lt;StateEntry&lt;K, N, S&gt;&gt; nextEntries;</span><br><span class="line">    <span class="keyword">while</span> (    entryNum &lt; cleanupSize &amp;&amp;</span><br><span class="line">    stateIterator.hasNext() &amp;&amp;    !(nextEntries = stateIterator.nextEntries()).isEmpty()) &#123;</span><br><span class="line">        <span class="keyword">for</span> (StateEntry&lt;K, N, S&gt; state : nextEntries) &#123;</span><br><span class="line">            S cleanState = ttlState.getUnexpiredOrNull(state.getState());</span><br><span class="line">            <span class="keyword">if</span> (cleanState == <span class="keyword">null</span>) &#123;</span><br><span class="line">                stateIterator.remove(state);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (cleanState != state.getState()) &#123;</span><br><span class="line">                stateIterator.update(state, cleanState);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        entryNum += nextEntries.size();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>RocksDB压缩过滤清理策略</p>
+<p>如果启用了该策略，Flink会通过维护一个<code>RocksDbTtlCompactFiltersManager</code>实例来管理<code>FlinkCompactionFilter</code>过滤器。<code>FlinkCompactionFilter</code>并不是在Flink工程中维护的，而是位于Data Artisans为Flink专门维护的FRocksDB库内。<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://issues.apache.org/jira/browse/FLINK-10471">FLINK-10471</a>实现了FlinkCompactionFilter及其附属逻辑，主要为C++代码，通过JNI调用。对应的commit详见<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://github.com/dataArtisans/frocksdb/commit/01dca02244522e405c9258000903fee81496f72c">GitHub</a>，这里就不班门弄斧了。关于RocksDB的compaction相关细节，笔者之前也写过<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/e89cd503c9ae">一篇长文</a>做了些分析。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/RealTimeSystem-backpress/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/RealTimeSystem-backpress/" class="post-title-link" itemprop="url">【转】实时流处理系统反压机制</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="实时流处理系统反压机制（BackPressure）综述-转"><a href="#实时流处理系统反压机制（BackPressure）综述-转" class="headerlink" title="实时流处理系统反压机制（BackPressure）综述[转]"></a>实时流处理系统反压机制（BackPressure）综述[转]</h1><p> 发表于 2018-11-15 |  更新于 2018-12-03 |  分类于 <a target="_blank" rel="noopener" href="http://ileaf.tech/category/#/BigData">BigData </a>|  阅读次数 333</p>
+<p>本文主要关于实时流处理系统反压机制，最近看到反压问题看到此文章很好，在此分享并mark一下。</p>
+<blockquote>
+<p>本文主要关于实时流处理系统反压机制，最近看到反压问题看到此文章很好，在此分享并mark一下。<br>(￢_￢)ﾉ最近菜叶子没自己写见谅。<br>本文转自 <a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">实时流处理系统反压机制（BackPressure）综述</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">https://blog.csdn.net/qq_21125183/article/details/80708142</a><br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/28fcd51d4edd">开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效</a></p>
+</blockquote>
+<p>反压机制（BackPressure）被广泛应用到实时流处理系统中，流处理系统需要能优雅地处理反压（backpressure）问题。<br>反压通常产生于这样的场景：短时负载高峰导致系统接收数据的速率远高于它处理数据的速率。<br>许多日常问题都会导致反压，例如，垃圾回收停顿可能会导致流入的数据快速堆积，或者遇到大促或秒杀活动导致流量陡增。<br>反压如果不能得到正确的处理，可能会导致资源耗尽甚至系统崩溃。反压机制就是指系统能够自己检测到被阻塞的Operator，然后系统自适应地降低源头或者上游的发送速率。</p>
+<p>目前主流的流处理系统 Apache Storm、JStorm、Spark Streaming、S4、Apache Flink、Twitter Heron都采用反压机制解决这个问题，不过他们的实现各自不同。</p>
+<p><img src="_v_images/20201030212807758_57452691.png" alt="实时流处理系统反压机制01"></p>
+<p>不同的组件可以不同的速度执行（并且每个组件中的处理速度随时间改变）。 例如，考虑一个工作流程，或由于数据倾斜或任务调度而导致数据被处理十分缓慢。<br>在这种情况下，如果上游阶段不减速，将导致缓冲区建立长队列(队列占用内存、硬盘空间，节点负载加重)，或导致系统丢弃元组。<br>如果元组在中途丢弃，那么效率可能会有损失，因为已经为这些元组产生的计算被浪费了。<br>并且在一些流处理系统中比如Strom，会将这些丢失的元组重新发送，这样会导致数据的一致性问题(at least once语义)，并且还会导致某些Operator状态叠加。<br>进而整个程序输出结果不准确。第二由于系统接收数据的速率是随着时间改变的，短时负载高峰导致系统接收数据的速率远高于它处理数据的速率的情况，也会导致Tuple在中途丢失。<br>所以实时流处理系统必须能够解决发送速率远大于系统能处理速率这个问题，大多数实时流处理系统采用反压（BackPressure）机制解决这个问题。</p>
+<p>下面我们就来介绍一下不同的实时流处理系统采用的反压机制：</p>
+<h1 id="Strom-反压机制"><a href="#Strom-反压机制" class="headerlink" title="Strom 反压机制"></a>Strom 反压机制</h1><h2 id="Storm-1-0-以前的反压机制"><a href="#Storm-1-0-以前的反压机制" class="headerlink" title="Storm 1.0 以前的反压机制"></a>Storm 1.0 以前的反压机制</h2><p>对于开启了acker机制的storm程序，可以通过设置conf.setMaxSpoutPending参数来实现反压效果，<strong>如果下游组件(bolt)处理速度跟不上导致spout发送的tuple没有及时确认的数超过了参数设定的值，spout会停止发送数据</strong>，这种方式的缺点是很难调优conf.setMaxSpoutPending参数的设置以达到最好的反压效果，设小了会导致吞吐上不去，设大了会导致worker OOM；有震荡，数据流会处于一个颠簸状态，效果不如逐级反压；另外对于关闭acker机制的程序无效；</p>
+<h2 id="Storm-Automatic-Backpressure"><a href="#Storm-Automatic-Backpressure" class="headerlink" title="Storm Automatic Backpressure"></a>Storm Automatic Backpressure</h2><p>新的storm自动反压机制(Automatic Back Pressure)通过监控bolt中的接收队列的情况，当超过高水位值时专门的线程会将反压信息写到 Zookeeper ，Zookeeper上的watch会通知该拓扑的所有Worker都进入反压状态，最后Spout降低tuple发送的速度。</p>
+<p><img src="_v_images/20201030212806451_178512803.png" alt="实时流处理系统反压机制02"></p>
+<p>每个Executor都有一个接受队列和发送队列用来接收Tuple和发送Spout或者Bolt生成的Tuple元组。每个Worker进程都有一个单的的接收线程监听接收端口。<br>它从每个网络上进来的消息发送到Executor的接收队列中。Executor接收队列存放Worker或者Worker内部其他Executor发过来的消息。<br>Executor工作线程从接收队列中拿出数据，然后调用execute方法，发送Tuple到Executor的发送队列。<br>Executor的发送线程从发送队列中获取消息，按照消息目的地址选择发送到Worker的传输队列中或者其他Executor的接收队列中。<br>最后Worker的发送线程从传输队列中读取消息，然后将Tuple元组发送到网络中。</p>
+<ol>
+<li>当Worker进程中的Executor线程发现自己的接收队列满了时，也就是接收队列达到<code>high watermark</code>的阈值后，因此它会发送通知消息到背压线程。</li>
+<li>背压线程将当前worker进程的信息注册到Zookeeper的Znode节点中。具体路径就是 <code>/Backpressure/topo1/wk1</code>下</li>
+<li>Zookeepre的Znode Watcher监视/Backpreesure/topo1下的节点目录变化情况，如果发现目录增加了znode节点说明或者其他变化。这就说明该Topo1需要反压控制，然后它会通知Topo1所有的Worker进入反压状态。</li>
+<li>最终Spout降低tuple发送的速度。</li>
+</ol>
+<h1 id="JStorm-反压机制"><a href="#JStorm-反压机制" class="headerlink" title="JStorm 反压机制"></a>JStorm 反压机制</h1><p>JStorm做了两级的反压，第一级和Jstorm类似，通过执行队列来监测，但是不会通过ZK来协调，而是通过Topology Master来协调。<br>在队列中会标记high water mark和low water mark，当执行队列超过high water mark时，就认为bolt来不及处理，则向TM发一条控制消息，上游开始减慢发送速率，直到下游低于low water mark时解除反压。</p>
+<p>此外，在Netty层也做了一级反压，由于每个Worker Task都有自己的发送和接收的缓冲区，可以对缓冲区设定限额、控制大小，如果spout数据量特别大，缓冲区填满会导致下游bolt的接收缓冲区填满，造成了反压。</p>
+<p><img src="_v_images/20201030212805000_1695102842.png" alt="实时流处理系统反压机制03"></p>
+<p>限流机制：jstorm的限流机制， 当下游bolt发生阻塞时， 并且阻塞task的比例超过某个比例时（现在默认设置为0.1），触发反压</p>
+<p>限流方式：计算阻塞Task的地方执行线程执行时间，Spout每发送一个tuple等待相应时间，然后讲这个时间发送给Spout， 于是， spout每发送一个tuple，就会等待这个执行时间。</p>
+<p>Task阻塞判断方式：在jstorm 连续4次采样周期中采样，队列情况，当队列超过80%（可以设置）时，即可认为该task处在阻塞状态。</p>
+<h1 id="SparkStreaming-反压机制"><a href="#SparkStreaming-反压机制" class="headerlink" title="SparkStreaming 反压机制"></a>SparkStreaming 反压机制</h1><h2 id="为什么引入反压机制Backpressure"><a href="#为什么引入反压机制Backpressure" class="headerlink" title="为什么引入反压机制Backpressure"></a>为什么引入反压机制Backpressure</h2><p>默认情况下，Spark Streaming通过Receiver以生产者生产数据的速率接收数据，计算过程中会出现<code>batch processing time &gt; batch interval</code>的情况，其中<code>batch processing time</code> 为实际计算一个批次花费时间， <code>batch interval</code>为Streaming应用设置的批处理间隔。<br>这意味着Spark Streaming的数据接收速率高于Spark从队列中移除数据的速率，也就是数据处理能力低，在设置间隔内不能完全处理当前接收速率接收的数据。如果这种情况持续过长的时间，会造成数据在内存中堆积，导致Receiver所在Executor内存溢出等问题（如果设置StorageLevel包含disk, 则内存存放不下的数据会溢写至disk, 加大延迟）。<br>Spark 1.5以前版本，用户如果要限制Receiver的数据接收速率，可以通过设置静态配制参数“<code>spark.streaming.receiver.maxRate</code>”的值来实现，此举虽然可以通过限制接收速率，来适配当前的处理能力，防止内存溢出，但也会引入其它问题。比如：producer数据生产高于maxRate，当前集群处理能力也高于maxRate，这就会造成资源利用率下降等问题。为了更好的协调数据接收速率与资源处理能力，Spark Streaming 从v1.5开始引入反压机制（back-pressure）,通过动态控制数据接收速率来适配集群数据处理能力。</p>
+<h2 id="反压机制Backpressure"><a href="#反压机制Backpressure" class="headerlink" title="反压机制Backpressure"></a>反压机制Backpressure</h2><p><code>Spark Streaming Backpressure</code>: 根据JobScheduler反馈作业的执行信息来动态调整Receiver数据接收率。通过属性“spark.streaming.backpressure.enabled”来控制是否启用backpressure机制，默认值false，即不启用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sparkConf.set(<span class="string">&quot;spark.streaming.backpressure.enabled&quot;</span>,”<span class="keyword">true</span>”)</span><br></pre></td></tr></table></figure>
+<p>SparkStreaming 架构图如下所示:</p>
+<p><img src="_v_images/20201030212803393_1135733829.png" alt="实时流处理系统反压机制04"></p>
+<p>SparkStreaming 反压过程执行如下图所示：</p>
+<p>在原架构的基础上加上一个新的组件RateController,这个组件负责监听“OnBatchCompleted”事件，然后从中抽取<code>processingDelay</code> 及<code>schedulingDelay</code>信息. <code>Estimator</code>依据这些信息估算出最大处理速度（rate），最后由基于<code>Receiver</code>的Input Stream将rate通过ReceiverTracker与ReceiverSupervisorImpl转发给BlockGenerator（继承自RateLimiter）.</p>
+<p><img src="_v_images/20201030212801986_428923565.png" alt="实时流处理系统反压机制05"></p>
+<h2 id="direct模式-BackPressure-此部分详细说明了direct模式接收：转自-开启Back-Pressure使生产环境的Spark-Streaming应用更稳定、有效"><a href="#direct模式-BackPressure-此部分详细说明了direct模式接收：转自-开启Back-Pressure使生产环境的Spark-Streaming应用更稳定、有效" class="headerlink" title="direct模式-BackPressure(此部分详细说明了direct模式接收：转自-开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效)"></a>direct模式-BackPressure(此部分详细说明了direct模式接收：转自-<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/28fcd51d4edd">开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效</a>)</h2><p>当Spark Streaming与Kafka使用Direct API集群时，我们可以很方便的去控制最大数据摄入量–通过一个被称作spark.streaming.kafka.maxRatePerPartition的参数。根据文档描述，他的含义是：Direct API读取每一个Kafka partition数据的最大速率（每秒读取的消息量）。<br>配置项spark.streaming.kafka.maxRatePerPartition，对防止流式应用在下边两种情况下出现流量过载时尤其重要：<br>1.Kafka Topic中有大量未处理的消息，并且我们设置是Kafka auto.offset.reset参数值为smallest，他可以防止第一个批次出现数据流量过载情况。<br>2.当Kafka 生产者突然飙升流量的时候，他可以防止批次处理出现数据流量过载情况。</p>
+<p>但是，配置Kafka每个partition每批次最大的摄入量是个静态值，也算是个缺点。随着时间的变化，在生产环境运行了一段时间的Spark Streaming应用，每批次每个Kafka partition摄入数据最大量的最优值也是变化的。有时候，是因为消息的大小会变，导致数据处理时间变化。有时候，是因为流计算所使用的多租户集群会变得非常繁忙，比如在白天时候，一些其他的数据应用（例如Impala/Hive/MR作业）竞争共享的系统资源时（CPU/内存/网络/磁盘IO）。<br>背压机制可以解决该问题。背压机制是呼声比较高的功能，他允许根据前一批次数据的处理情况，动态、自动的调整后续数据的摄入量，这样的反馈回路使得我们可以应对流式应用流量波动的问题。<br>Spark Streaming的背压机制是在Spark1.5版本引进的，我们可以添加如下代码启用改功能：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sparkConf.set(&quot;spark.streaming.backpressure.enabled&quot;,”true”)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>那应用启动后的第一个批次流量怎么控制呢？因为他没有前面批次的数据处理时间，所以没有参考的数据去评估这一批次最优的摄入量。在Spark官方文档中有个被称作spark.streaming.backpressure.initialRate的配置，看起来是控制开启背压机制时初始化的摄入量。其实不然，该参数只对receiver模式起作用，并不适用于direct模式。推荐的方法是使用spark.streaming.kafka.maxRatePerPartition控制背压机制起作用前的第一批次数据的最大摄入量。我通常建议设置spark.streaming.kafka.maxRatePerPartition的值为最优估计值的1.5到2倍，让背压机制的算法去调整后续的值。请注意，spark.streaming.kafka.maxRatePerPartition的值会一直控制最大的摄入量，所以背压机制的算法值不会超过他。<br>另一个需要注意的是，在第一个批次处理完成前，紧接着的批次都将使用spark.streaming.kafka.maxRatePerPartition的值作为摄入量。通过Spark UI可以看到，批次间隔为5s，当批次调度延迟31秒时候，前7个批次的摄入量是20条记录。直到第八个批次，背压机制起作用时，摄入量变为5条记录。</p>
+<h1 id="Heron-反压机制"><a href="#Heron-反压机制" class="headerlink" title="Heron 反压机制"></a>Heron 反压机制</h1><p><img src="_v_images/20201030212800445_1650579597.png" alt="实时流处理系统反压机制06"></p>
+<p>当下游处理速度跟不上上游发送速度时，一旦StreamManager 发现一个或多个Heron Instance 速度变慢，立刻对本地spout进行降级，降低本地Spout发送速度, 停止从这些spout读取数据。并且受影响的StreamManager 会发送一个特殊的start backpressure message 给其他的StreamManager ，要求他们对spout进行本地降级。 当其他StreamManager 接收到这个特殊消息时，他们通过不读取当地Spout中的Tuple来进行降级。一旦出问题的Heron Instance 恢复速度后，本地的SM 会发送stop backpressure message 解除降级。</p>
+<p>很多Socket Channel与应用程序级别的Buffer相关联，该缓冲区由high watermark 和low watermark组成。 当缓冲区大小达到high watermark时触发反压，并保持有效，直到缓冲区大小低于low watermark。 此设计的基本原理是防止拓扑在进入和退出背压缓解模式之间快速振荡。</p>
+<h1 id="Flink-反压机制"><a href="#Flink-反压机制" class="headerlink" title="Flink 反压机制"></a>Flink 反压机制</h1><p>Flink 没有使用任何复杂的机制来解决反压问题，因为根本不需要那样的方案！它利用自身作为纯数据流引擎的优势来优雅地响应反压问题。下面我们会深入分析 Flink 是如何在 Task 之间传输数据的，以及数据流如何实现自然降速的。 Flink 在运行时主要由 operators 和 streams 两大组件构成。每个 operator 会消费中间态的流，并在流上进行转换，然后生成新的流。对于 Flink 的网络机制一种形象的类比是，Flink 使用了高效有界的分布式阻塞队列，就像 Java 通用的阻塞队列（BlockingQueue）一样。还记得经典的线程间通信案例：生产者消费者模型吗？使用 BlockingQueue 的话，一个较慢的接受者会降低发送者的发送速率，因为一旦队列满了（有界队列）发送者会被阻塞。Flink 解决反压的方案就是这种感觉。 在 Flink 中，这些分布式阻塞队列就是这些逻辑流，而队列容量是通过缓冲池来（LocalBufferPool）实现的。每个被生产和被消费的流都会被分配一个缓冲池。缓冲池管理着一组缓冲(Buffer)，缓冲在被消费后可以被回收循环利用。这很好理解：你从池子中拿走一个缓冲，填上数据，在数据消费完之后，又把缓冲还给池子，之后你可以再次使用它。</p>
+<h2 id="Flink-网络传输中的内存管理"><a href="#Flink-网络传输中的内存管理" class="headerlink" title="Flink 网络传输中的内存管理"></a>Flink 网络传输中的内存管理</h2><p>如下图所示展示了 Flink 在网络传输场景下的内存管理。网络上传输的数据会写到 Task 的 InputGate（IG） 中，经过 Task 的处理后，再由 Task 写到 ResultPartition（RS） 中。每个 Task 都包括了输入和输入，输入和输出的数据存在 Buffer 中（都是字节数据）。Buffer 是 MemorySegment 的包装类。</p>
+<p><img src="_v_images/20201030212758832_1369878662.png" alt="实时流处理系统反压机制07"></p>
+<ol>
+<li>TaskManager（TM）在启动时，会先初始化NetworkEnvironment对象，TM 中所有与网络相关的东西都由该类来管理（如 Netty 连接），其中就包括NetworkBufferPool。根据配置，Flink 会在 NetworkBufferPool 中生成一定数量（默认2048个）的内存块 MemorySegment（关于 Flink 的内存管理，后续文章会详细谈到），内存块的总数量就代表了网络传输中所有可用的内存。NetworkEnvironment 和 NetworkBufferPool 是 Task 之间共享的，每个 TM 只会实例化一个。</li>
+<li>Task 线程启动时，会向 NetworkEnvironment 注册，NetworkEnvironment 会为 Task 的 InputGate（IG）和 ResultPartition（RP） 分别创建一个 LocalBufferPool（缓冲池）并设置可申请的 MemorySegment（内存块）数量。IG 对应的缓冲池初始的内存块数量与 IG 中 InputChannel 数量一致，RP 对应的缓冲池初始的内存块数量与 RP 中的 ResultSubpartition 数量一致。不过，每当创建或销毁缓冲池时，NetworkBufferPool 会计算剩余空闲的内存块数量，并平均分配给已创建的缓冲池。注意，这个过程只是指定了缓冲池所能使用的内存块数量，并没有真正分配内存块，只有当需要时才分配。为什么要动态地为缓冲池扩容呢？因为内存越多，意味着系统可以更轻松地应对瞬时压力（如GC），不会频繁地进入反压状态，所以我们要利用起那部分闲置的内存块。</li>
+<li>在 Task 线程执行过程中，当 Netty 接收端收到数据时，为了将 Netty 中的数据拷贝到 Task 中，InputChannel（实际是 RemoteInputChannel）会向其对应的缓冲池申请内存块（上图中的①）。如果缓冲池中也没有可用的内存块且已申请的数量还没到池子上限，则会向 NetworkBufferPool 申请内存块（上图中的②）并交给 InputChannel 填上数据（上图中的③和④）。如果缓冲池已申请的数量达到上限了呢？或者 NetworkBufferPool 也没有可用内存块了呢？这时候，Task 的 Netty Channel 会暂停读取，上游的发送端会立即响应停止发送，拓扑会进入反压状态。当 Task 线程写数据到 ResultPartition 时，也会向缓冲池请求内存块，如果没有可用内存块时，会阻塞在请求内存块的地方，达到暂停写入的目的。</li>
+<li>当一个内存块被消费完成之后（在输入端是指内存块中的字节被反序列化成对象了，在输出端是指内存块中的字节写入到 Netty Channel 了），会调用 Buffer.recycle() 方法，会将内存块还给 LocalBufferPool （上图中的⑤）。如果LocalBufferPool中当前申请的数量超过了池子容量（由于上文提到的动态容量，由于新注册的 Task 导致该池子容量变小），则LocalBufferPool会将该内存块回收给 NetworkBufferPool（上图中的⑥）。如果没超过池子容量，则会继续留在池子中，减少反复申请的开销。</li>
+</ol>
+<h2 id="Flink-反压机制-1"><a href="#Flink-反压机制-1" class="headerlink" title="Flink 反压机制"></a>Flink 反压机制</h2><p>下面这张图简单展示了两个 Task 之间的数据传输以及 Flink 如何感知到反压的：</p>
+<p><img src="_v_images/20201030212757424_78076714.png" alt="实时流处理系统反压机制08"></p>
+<ol>
+<li>记录“A”进入了 Flink 并且被 Task 1 处理。（这里省略了 Netty 接收、反序列化等过程）</li>
+<li>记录被序列化到 buffer 中。</li>
+<li>该 buffer 被发送到 Task 2，然后 Task 2 从这个 buffer 中读出记录。</li>
+</ol>
+<p><strong>不要忘了：记录能被 Flink 处理的前提是，必须有空闲可用的 Buffer。</strong></p>
+<p>结合上面两张图看：Task 1 在输出端有一个相关联的 LocalBufferPool（称缓冲池1），Task 2 在输入端也有一个相关联的 LocalBufferPool（称缓冲池2）。如果缓冲池1中有空闲可用的 buffer 来序列化记录 “A”，我们就序列化并发送该 buffer。</p>
+<p>这里我们需要注意两个场景：</p>
+<ul>
+<li>本地传输：如果 Task 1 和 Task 2 运行在同一个 worker 节点（TaskManager），该 buffer 可以直接交给下一个 Task。一旦 Task 2 消费了该 buffer，则该 buffer 会被缓冲池1回收。如果 Task 2 的速度比 1 慢，那么 buffer 回收的速度就会赶不上 Task 1 取 buffer 的速度，导致缓冲池1无可用的 buffer，Task 1 等待在可用的 buffer 上。最终形成 Task 1 的降速。</li>
+<li>远程传输：如果 Task 1 和 Task 2 运行在不同的 worker 节点上，那么 buffer 会在发送到网络（TCP Channel）后被回收。在接收端，会从 LocalBufferPool 中申请 buffer，然后拷贝网络中的数据到 buffer 中。如果没有可用的 buffer，会停止从 TCP 连接中读取数据。在输出端，通过 Netty 的水位值机制来保证不往网络中写入太多数据（后面会说）。如果网络中的数据（Netty输出缓冲中的字节数）超过了高水位值，我们会等到其降到低水位值以下才继续写入数据。这保证了网络中不会有太多的数据。如果接收端停止消费网络中的数据（由于接收端缓冲池没有可用 buffer），网络中的缓冲数据就会堆积，那么发送端也会暂停发送。另外，这会使得发送端的缓冲池得不到回收，writer 阻塞在向 LocalBufferPool 请求 buffer，阻塞了 writer 往 ResultSubPartition 写数据。</li>
+</ul>
+<p>这种固定大小缓冲池就像阻塞队列一样，保证了 Flink 有一套健壮的反压机制，使得 Task 生产数据的速度不会快于消费的速度。我们上面描述的这个方案可以从两个 Task 之间的数据传输自然地扩展到更复杂的 pipeline 中，保证反压机制可以扩散到整个 pipeline。</p>
+<h2 id="反压实验"><a href="#反压实验" class="headerlink" title="反压实验"></a>反压实验</h2><p>另外，官方博客中为了展示反压的效果，给出了一个简单的实验。下面这张图显示了：随着时间的改变，生产者（黄色线）和消费者（绿色线）每5秒的平均吞吐与最大吞吐（在单一JVM中每秒达到8百万条记录）的百分比。我们通过衡量task每5秒钟处理的记录数来衡量平均吞吐。该实验运行在单 JVM 中，不过使用了完整的 Flink 功能栈。</p>
+<p><img src="_v_images/20201030212755917_1236027751.png" alt="实时流处理系统反压机制09"></p>
+<p>首先，我们运行生产task到它最大生产速度的60%（我们通过Thread.sleep()来模拟降速）。消费者以同样的速度处理数据。然后，我们将消费task的速度降至其最高速度的30%。你就会看到背压问题产生了，正如我们所见，生产者的速度也自然降至其最高速度的30%。接着，停止消费task的人为降速，之后生产者和消费者task都达到了其最大的吞吐。接下来，我们再次将消费者的速度降至30%，pipeline给出了立即响应：生产者的速度也被自动降至30%。最后，我们再次停止限速，两个task也再次恢复100%的速度。总而言之，我们可以看到：生产者和消费者在 pipeline 中的处理都在跟随彼此的吞吐而进行适当的调整，这就是我们希望看到的反压的效果。</p>
+<h2 id="Flink-反压监控"><a href="#Flink-反压监控" class="headerlink" title="Flink 反压监控"></a>Flink 反压监控</h2><p>在 Storm/JStorm 中，只要监控到队列满了，就可以记录下拓扑进入反压了。但是 Flink 的反压太过于天然了，导致我们无法简单地通过监控队列来监控反压状态。Flink 在这里使用了一个 trick 来实现对反压的监控。如果一个 Task 因为反压而降速了，那么它会卡在向 LocalBufferPool 申请内存块上。那么这时候，该 Task 的 stack trace 就会长下面这样：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">java.lang.Object.wait(Native Method)</span><br><span class="line">o.a.f.[...].LocalBufferPool.requestBuffer(LocalBufferPool.java:<span class="number">163</span>)</span><br><span class="line">o.a.f.[...].LocalBufferPool.requestBufferBlocking(LocalBufferPool.java:<span class="number">133</span>) &lt;--- BLOCKING request</span><br><span class="line">[...]</span><br></pre></td></tr></table></figure>
+<p>那么事情就简单了。通过不断地采样每个 task 的 stack trace 就可以实现反压监控。</p>
+<p><img src="_v_images/20201030212753993_1098219801.png" alt="实时流处理系统反压机制10"></p>
+<p>Flink 的实现中，只有当 Web 页面切换到某个 Job 的 Backpressure 页面，才会对这个 Job 触发反压检测，因为反压检测还是挺昂贵的。JobManager 会通过 Akka 给每个 TaskManager 发送TriggerStackTraceSample消息。默认情况下，TaskManager 会触发100次 stack trace 采样，每次间隔 50ms（也就是说一次反压检测至少要等待5秒钟）。并将这 100 次采样的结果返回给 JobManager，由 JobManager 来计算反压比率（反压出现的次数/采样的次数），最终展现在 UI 上。UI 刷新的默认周期是一分钟，目的是不对 TaskManager 造成太大的负担。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>Flink不需要一种特殊的机制来处理反压，因为Flink 中的数据传输相当于已经提供了应对反压的机制。因此，Flink 所能获得的最大吞吐量由其 pipeline 中最慢的组件决定。相对于 Storm/JStorm 的实现，Flink 的实现更为简洁优雅，源码中也看不见与反压相关的代码，无需 Zookeeper/TopologyMaster 的参与也降低了系统的负载，也利于对反压更迅速的响应。</p>
+<blockquote>
+<p>本文转自 <a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">实时流处理系统反压机制（BackPressure）综述</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">https://blog.csdn.net/qq_21125183/article/details/80708142</a><br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/28fcd51d4edd">开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效</a></p>
+</blockquote>
+
       
     </div>
 
@@ -615,7 +915,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1137,295 +1437,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-State-TTL/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/Flink-State-TTL/" class="post-title-link" itemprop="url">Flink-state-ttl</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="简析Flink状态生存时间（State-TTL）机制的底层实现"><a href="#简析Flink状态生存时间（State-TTL）机制的底层实现" class="headerlink" title="简析Flink状态生存时间（State TTL）机制的底层实现"></a>简析Flink状态生存时间（State TTL）机制的底层实现</h1><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/nazeniwaresakini/article/details/106094778">简析Flink状态生存时间（State TTL）机制的底层实现</a></p>
-<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>从Flink 1.6版本开始，社区为状态引入了TTL（time-to-live，生存时间）机制，支持Keyed State的自动过期，有效解决了状态数据在无干预情况下无限增长导致OOM的问题。State TTL的用法很简单，<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.10/dev/stream/state/state.html#state-time-to-live-ttll">官方文档</a>中给出的示例代码如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">StateTtlConfig ttlConfig =</span><br><span class="line"> StateTtlConfig</span><br><span class="line"> .newBuilder(Time.seconds(<span class="number">1</span>))</span><br><span class="line"> .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)</span><br><span class="line"> .setStateVisibility(StateTtlConfig.StateVisibility.NeverReturnExpired)</span><br><span class="line"> .build();</span><br><span class="line">ValueStateDescriptor&lt;String&gt; stateDescriptor = <span class="keyword">new</span> ValueStateDescriptor&lt;&gt;(<span class="string">&quot;text state&quot;</span>, String.class);</span><br><span class="line">stateDescriptor.enableTimeToLive(ttlConfig);</span><br></pre></td></tr></table></figure>
-<p>那么State TTL的背后又隐藏着什么样的思路呢？下面就从设置类StateTtlConfig入手开始研究（Flink代码版本为1.9.3）。</p>
-<h3 id="StateTtlConfig"><a href="#StateTtlConfig" class="headerlink" title="StateTtlConfig"></a>StateTtlConfig</h3><p>该类中有5个成员属性，它们就是用户需要指定的全部参数了。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> UpdateType updateType</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> StateVisibility stateVisibility</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> TtlTimeCharacteristic ttlTimeCharacteristic</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Time ttl</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> CleanupStrategies cleanupStrategies</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>其中，ttl参数表示用户设定的状态生存时间。而UpdateType、StateVisibility和TtlTimeCharacteristic都是枚举，分别代表状态时间戳的更新方式、过期状态数据的可见性，以及对应的时间特征。它们的含义在注释中已经解释得很清楚了。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * This option value configures when to update last access timestamp which prolongs state TTL. </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">UpdateType</span> </span>&#123;    </span><br><span class="line"><span class="comment">/** TTL is disabled. State does not expire. */</span>    </span><br><span class="line">  Disabled,    </span><br><span class="line"><span class="comment">/** Last access timestamp is initialised when state is created and updated on every write operation. </span></span><br><span class="line"><span class="comment">当每次写操作时，更新时间戳</span></span><br><span class="line"><span class="comment"> */</span>    </span><br><span class="line">  OnCreateAndWrite,    </span><br><span class="line"><span class="comment">/** The same as &lt;code&gt;OnCreateAndWrite&lt;/code&gt; but also updated on read.</span></span><br><span class="line"><span class="comment">当每次读写操作时，更新时间戳</span></span><br><span class="line"><span class="comment"> */</span>    </span><br><span class="line">  OnReadAndWrite</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/** * This option configures whether expired user value can be returned or not. */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">StateVisibility</span> </span>&#123;    </span><br><span class="line">  <span class="comment">/** Return expired user value if it is not cleaned up yet. */</span>    </span><br><span class="line">  ReturnExpiredIfNotCleanedUp,    </span><br><span class="line">  <span class="comment">/** Never return expired user value. */</span>    </span><br><span class="line">  NeverReturnExpired</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/** * This option configures time scale to use for ttl. */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">TtlTimeCharacteristic</span> </span>&#123;    </span><br><span class="line">  <span class="comment">/** Processing time, see also &lt;code&gt;org.apache.flink.streaming.api.TimeCharacteristic.ProcessingTime&lt;/code&gt;. */</span>    </span><br><span class="line">  ProcessingTime</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Flink目前仅支持基于处理时间的State TTL，事件时间会在不久的将来支持。</p>
-<p>CleanupStrategies内部类则用来规定过期状态的特殊清理策略，用户在构造StateTtlConfig时，可以通过调用以下方法之一指定。</p>
-<ul>
-<li><strong><code>cleanupFullSnapshot()</code></strong><br>  当对状态做全量快照时清理过期数据，对开启了增量检查点（incremental checkpoint）的RocksDB状态后端无效，对应源码中的EmptyCleanupStrategy。<br>  为什么叫做“空的”清理策略呢？因为该选项只能保证状态持久化时不包含过期数据，但TaskManager本地的过期状态则不作任何处理，所以无法从根本上解决OOM的问题，需要定期重启作业。</li>
-<li><strong><code>cleanupIncrementally(int cleanupSize, boolean runCleanupForEveryRecord)</code></strong><br>  增量清理过期数据，默认在每次访问状态时进行清理，将runCleanupForEveryRecord设为true可以附加在每次写入/删除时清理。cleanupSize指定每次触发清理时检查的状态条数。<br>  仅对基于堆的状态后端有效，对应源码中的IncrementalCleanupStrategy。</li>
-<li><strong><code>cleanupInRocksdbCompactFilter(long queryTimeAfterNumEntries)</code></strong><br>  当RocksDB做compaction操作时，通过Flink定制的过滤器（FlinkCompactionFilter）过滤掉过期状态数据。参数queryTimeAfterNumEntries用于指定在写入多少条状态数据后，通过状态时间戳来判断是否过期。<br>  该策略仅对RocksDB状态后端有效，对应源码中的RocksdbCompactFilterCleanupStrategy。CompactionFilter是RocksDB原生提供的机制，其说明可见<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://github.com/facebook/rocksdb/wiki/Compaction-Filter">这里</a>。</li>
-</ul>
-<p>如果不调用上述方法，则采用默认的后台清理策略，下文有讲。</p>
-<h3 id="TtlStateFactory、TtlStateContext"><a href="#TtlStateFactory、TtlStateContext" class="headerlink" title="TtlStateFactory、TtlStateContext"></a>TtlStateFactory、TtlStateContext</h3><p>在所有Keyed State状态后端的抽象基类AbstractKeyedStateBackend中，创建并记录一个状态实例的方法如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="keyword">public</span> &lt;N, S extends State, V&gt; <span class="function">S <span class="title">getOrCreateKeyedState</span><span class="params">( </span></span></span><br><span class="line"><span class="function"><span class="params">   <span class="keyword">final</span> TypeSerializer&lt;N&gt; namespaceSerializer, StateDescriptor&lt;S, V&gt; stateDescriptor)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  checkNotNull(namespaceSerializer, <span class="string">&quot;Namespace serializer&quot;</span>);</span><br><span class="line">  checkNotNull(keySerializer, <span class="string">&quot;State key serializer has not been configured in the config. &quot;</span> +</span><br><span class="line">  <span class="string">&quot;This operation cannot use partitioned state.&quot;</span>);</span><br><span class="line">  InternalKvState&lt;K, ?, ?&gt; kvState = keyValueStatesByName.get(stateDescriptor.getName());</span><br><span class="line">  <span class="keyword">if</span> (kvState == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!stateDescriptor.isSerializerInitialized()) &#123;</span><br><span class="line">      stateDescriptor.initializeSerializerUnlessSet(executionConfig);</span><br><span class="line">    &#125;</span><br><span class="line">    kvState = TtlStateFactory.createStateAndWrapWithTtlIfEnabled( namespaceSerializer, stateDescriptor, <span class="keyword">this</span>, ttlTimeProvider);</span><br><span class="line">    keyValueStatesByName.put(stateDescriptor.getName(), kvState);</span><br><span class="line">    publishQueryableStateIfEnabled(stateDescriptor, kvState);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> (S) kvState;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可见是调用了TtlStateFactory.createStateAndWrapWithTtlIfEnabled()方法来真正创建。顾名思义，TtlStateFactory是产生TTL状态的工厂类。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;K, N, SV, TTLSV, S extends State, IS extends S&gt; <span class="function">IS <span class="title">createStateAndWrapWithTtlIfEnabled</span><span class="params">( </span></span></span><br><span class="line"><span class="function"><span class="params">    TypeSerializer&lt;N&gt; namespaceSerializer, </span></span></span><br><span class="line"><span class="function"><span class="params">    StateDescriptor&lt;S, SV&gt; stateDesc, </span></span></span><br><span class="line"><span class="function"><span class="params">    KeyedStateBackend&lt;K&gt; stateBackend, </span></span></span><br><span class="line"><span class="function"><span class="params">    TtlTimeProvider timeProvider</span></span></span><br><span class="line"><span class="function"><span class="params">    )</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  Preconditions.checkNotNull(namespaceSerializer);</span><br><span class="line">  Preconditions.checkNotNull(stateDesc);</span><br><span class="line">  Preconditions.checkNotNull(stateBackend);</span><br><span class="line">  Preconditions.checkNotNull(timeProvider);</span><br><span class="line">  <span class="keyword">return</span> stateDesc.getTtlConfig().isEnabled() ? <span class="keyword">new</span> TtlStateFactory&lt;K, N, SV, TTLSV, S, IS&gt;( namespaceSerializer, stateDesc, stateBackend, timeProvider) .createState() : stateBackend.createInternalState(namespaceSerializer, stateDesc);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>由上可知，如果我们为状态描述符StateDescriptor加入了TTL，那么就会调用TtlStateFactory.createState()方法创建一个带有TTL的状态实例；否则，就调用StateBackend.createInternalState()创建一个普通的状态实例。TtlStateFactory.createState()的代码如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> IS <span class="title">createState</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  SupplierWithException&lt;IS, Exception&gt; stateFactory = stateFactories.get(stateDesc.getClass());</span><br><span class="line">  <span class="keyword">if</span> (stateFactory == <span class="keyword">null</span>) &#123;</span><br><span class="line">    String message = String.format(<span class="string">&quot;State %s is not supported by %s&quot;</span>, stateDesc.getClass(), TtlStateFactory.class);</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> FlinkRuntimeException(message);</span><br><span class="line">  &#125;</span><br><span class="line">  IS state = stateFactory.get();</span><br><span class="line">  <span class="keyword">if</span> (incrementalCleanup != <span class="keyword">null</span>) &#123;</span><br><span class="line">    incrementalCleanup.setTtlState((AbstractTtlState&lt;K, N, ?, TTLSV, ?&gt;) state);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> state;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>其中，stateFactories是一个Map结构，维护了各种状态描述符与对应产生该种状态对象的工厂方法映射。所有的工厂方法都被包装成了Supplier（Java 8提供的函数式接口），所以在上述createState()方法中，可以通过Supplier.get()方法来实际执行createTtl.State()工厂方法，并获得新的状态实例。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.stateFactories = createStateFactories();</span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;deprecation&quot;)</span></span><br><span class="line"><span class="keyword">private</span> Map&lt;Class&lt;? extends StateDescriptor&gt;, SupplierWithException&lt;IS, Exception&gt;&gt; createStateFactories() &#123;</span><br><span class="line">  <span class="keyword">return</span> Stream.of(</span><br><span class="line">    Tuple2.of(ValueStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createValueState),</span><br><span class="line">    Tuple2.of(ListStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createListState),</span><br><span class="line">    Tuple2.of(MapStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createMapState),</span><br><span class="line">    Tuple2.of(ReducingStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createReducingState),</span><br><span class="line">    Tuple2.of(AggregatingStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createAggregatingState),</span><br><span class="line">    Tuple2.of(FoldingStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createFoldingState)</span><br><span class="line">  ).collect(Collectors.toMap(t -&gt; t.f0, t -&gt; t.f1));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> IS <span class="title">createValueState</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  ValueStateDescriptor&lt;TtlValue&lt;SV&gt;&gt; ttlDescriptor = <span class="keyword">new</span> ValueStateDescriptor&lt;&gt;(</span><br><span class="line">      stateDesc.getName(), </span><br><span class="line">      <span class="keyword">new</span> TtlSerializer&lt;&gt;(LongSerializer.INSTANCE, stateDesc.getSerializer())</span><br><span class="line">  );</span><br><span class="line">  <span class="keyword">return</span> (IS) <span class="keyword">new</span> TtlValueState&lt;&gt;(createTtlStateContext(ttlDescriptor));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="keyword">private</span> &lt;T&gt; <span class="function">IS <span class="title">createListState</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  ListStateDescriptor&lt;T&gt; listStateDesc = (ListStateDescriptor&lt;T&gt;) stateDesc;</span><br><span class="line">  ListStateDescriptor&lt;TtlValue&lt;T&gt;&gt; ttlDescriptor = <span class="keyword">new</span> ListStateDescriptor&lt;&gt;(</span><br><span class="line">      stateDesc.getName(), </span><br><span class="line">      <span class="keyword">new</span> TtlSerializer&lt;&gt;(LongSerializer.INSTANCE, listStateDesc.getElementSerializer())</span><br><span class="line">  );</span><br><span class="line">  <span class="keyword">return</span> (IS) <span class="keyword">new</span> TtlListState&lt;&gt;(createTtlStateContext(ttlDescriptor));</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 以下略去...</span></span><br></pre></td></tr></table></figure>
-<p>可见，带有TTL的状态类名其实就是普通状态类名加上Ttl前缀，只是没有公开给用户而已。并且在生成<code>Ttl$State</code>时，还会通过createTtlStateContext()方法生成TTL状态的上下文。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="keyword">private</span> &lt;OIS extends State, TTLS extends State, V, TTLV&gt; TtlStateContext&lt;OIS, V&gt;</span><br><span class="line">createTtlStateContext(StateDescriptor&lt;TTLS, TTLV&gt; ttlDescriptor) <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    ttlDescriptor.enableTimeToLive(stateDesc.getTtlConfig()); </span><br><span class="line">    <span class="comment">// also used by RocksDB backend for TTL compaction filter config</span></span><br><span class="line">    OIS originalState = (OIS) stateBackend.createInternalState(</span><br><span class="line">        namespaceSerializer, </span><br><span class="line">        ttlDescriptor, </span><br><span class="line">        getSnapshotTransformFactory()</span><br><span class="line">    );</span><br><span class="line"><span class="keyword">return</span> <span class="keyword">new</span> TtlStateContext&lt;&gt;(</span><br><span class="line">        originalState, </span><br><span class="line">        ttlConfig, </span><br><span class="line">        timeProvider, </span><br><span class="line">        (TypeSerializer&lt;V&gt;) stateDesc.getSerializer(),</span><br><span class="line">        registerTtlIncrementalCleanupCallback((InternalKvState&lt;?, ?, ?&gt;) originalState)</span><br><span class="line">    );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>TtlStateContext的本质是对以下几个实例做了封装。</p>
-<ul>
-<li>原始State（通过StateBackend.createInternalState()方法创建）及其序列化器（通过StateDescriptor.getSerializer()方法取得）；</li>
-<li>StateTtlConfig，前文已经讲过；</li>
-<li>TtlTimeProvider，用来提供判断状态过期标准的时间戳。当前只是简单地代理了System.currentTimeMillis()，没有任何其他代码；</li>
-<li>一个Runnable类型的回调方法，通过registerTtlIncrementalCleanupCallback()方法产生，用于状态数据的增量清理，后面会看到它的用途。</li>
-</ul>
-<p>接下来就具体看看TTL状态是如何实现的。</p>
-<h3 id="AbstractTtlState、AbstractTtlDecorator"><a href="#AbstractTtlState、AbstractTtlDecorator" class="headerlink" title="AbstractTtlState、AbstractTtlDecorator"></a>AbstractTtlState、AbstractTtlDecorator</h3><p>在解说之前，先放一幅类图。</p>
-<p><img src="_v_images/20200917142252357_1752793097"></p>
-<p>所有Ttl.State都是AbstractTtlState的子类，而AbstractTtlState又是装饰器AbstractTtlDecorator的子类。AbstractTtlDecorator提供了最基本的TTL逻辑，代码不长，全部抄录如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractTtlDecorator</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">  <span class="comment">/** Wrapped original state handler. */</span></span><br><span class="line">  <span class="keyword">final</span> T original;</span><br><span class="line">  <span class="keyword">final</span> StateTtlConfig config;</span><br><span class="line">  <span class="keyword">final</span> TtlTimeProvider timeProvider;</span><br><span class="line">  <span class="comment">/** Whether to renew expiration timestamp on state read access. */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">boolean</span> updateTsOnRead;</span><br><span class="line">  <span class="comment">/** Whether to renew expiration timestamp on state read access. */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">boolean</span> returnExpired;</span><br><span class="line">  <span class="comment">/** State value time to live in milliseconds. */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">long</span> ttl;</span><br><span class="line">  AbstractTtlDecorator( T original, StateTtlConfig config, TtlTimeProvider timeProvider) &#123;</span><br><span class="line">  <span class="comment">// ......</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 查到已过期数据，返回null</span></span><br><span class="line">  &lt;V&gt; <span class="function">V <span class="title">getUnexpired</span><span class="params">(TtlValue&lt;V&gt; ttlValue)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> ttlValue == <span class="keyword">null</span> || (expired(ttlValue) &amp;&amp; !returnExpired) ? <span class="keyword">null</span> : ttlValue.getUserValue();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 过期掉数据</span></span><br><span class="line">  &lt;V&gt; <span class="function"><span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(TtlValue&lt;V&gt; ttlValue)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> TtlUtils.expired(ttlValue, ttl, timeProvider);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 包装数据</span></span><br><span class="line">  &lt;V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">wrapWithTs</span><span class="params">(V value)</span> </span>&#123;</span><br><span class="line">   <span class="keyword">return</span> TtlUtils.wrapWithTs(value, timeProvider.currentTimestamp());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 重新包装数据</span></span><br><span class="line">  &lt;V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">rewrapWithNewTs</span><span class="params">(TtlValue&lt;V&gt; ttlValue)</span> </span>&#123;</span><br><span class="line">   <span class="keyword">return</span> wrapWithTs(ttlValue.getUserValue());</span><br><span class="line">  &#125;</span><br><span class="line">  &lt;SE extends Throwable, CE extends Throwable, CLE extends Throwable, V&gt; <span class="function">V <span class="title">getWithTtlCheckAndUpdate</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      SupplierWithException&lt;TtlValue&lt;V&gt;, SE&gt; getter,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingConsumer&lt;TtlValue&lt;V&gt;, CE&gt; updater,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingRunnable&lt;CLE&gt; stateClear</span></span></span><br><span class="line"><span class="function"><span class="params">  )</span> <span class="keyword">throws</span> SE, CE, CLE </span>&#123;</span><br><span class="line">    TtlValue&lt;V&gt; ttlValue = getWrappedWithTtlCheckAndUpdate(getter, updater, stateClear);</span><br><span class="line">    <span class="keyword">return</span> ttlValue == <span class="keyword">null</span> ? <span class="keyword">null</span> : ttlValue.getUserValue();</span><br><span class="line">  &#125;</span><br><span class="line">  &lt;SE extends Throwable, CE extends Throwable, CLE extends Throwable, V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">getWrappedWithTtlCheckAndUpdate</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      SupplierWithException&lt;TtlValue&lt;V&gt;, SE&gt; getter,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingConsumer&lt;TtlValue&lt;V&gt;, CE&gt; updater,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingRunnable&lt;CLE&gt; stateClear</span></span></span><br><span class="line"><span class="function"><span class="params">  )</span> <span class="keyword">throws</span> SE, CE, CLE </span>&#123;</span><br><span class="line">      TtlValue&lt;V&gt; ttlValue = getter.get();</span><br><span class="line">      <span class="keyword">if</span> (ttlValue == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (expired(ttlValue)) &#123;</span><br><span class="line">        stateClear.run();</span><br><span class="line">        <span class="keyword">if</span> (!returnExpired) &#123;</span><br><span class="line">          <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (updateTsOnRead) &#123;</span><br><span class="line">          updater.accept(rewrapWithNewTs(ttlValue));</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> ttlValue;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>它的成员属性比较容易理解，例如，updateTsOnRead表示在读取状态值时也更新时间戳（即UpdateType.OnReadAndWrite），returnExpired表示即使状态过期，在被真正删除之前也返回它的值（即StateVisibility.ReturnExpiredIfNotCleanedUp）。</p>
-<p>状态值与TTL的包装（成为TtlValue）以及过期检测都由工具类TtlUtils来负责，思路很简单，代码如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TtlUtils</span> </span>&#123;</span><br><span class="line">  <span class="keyword">static</span> &lt;V&gt; <span class="function"><span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="meta">@Nullable</span> TtlValue&lt;V&gt; ttlValue, <span class="keyword">long</span> ttl, TtlTimeProvider timeProvider)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> expired(ttlValue, ttl, timeProvider.currentTimestamp());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">static</span> &lt;V&gt; <span class="function"><span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="meta">@Nullable</span> TtlValue&lt;V&gt; ttlValue, <span class="keyword">long</span> ttl, <span class="keyword">long</span> currentTimestamp)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> ttlValue != <span class="keyword">null</span> &amp;&amp; expired(ttlValue.getLastAccessTimestamp(), ttl, currentTimestamp);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="keyword">long</span> ts, <span class="keyword">long</span> ttl, TtlTimeProvider timeProvider)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> expired(ts, ttl, timeProvider.currentTimestamp());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="keyword">long</span> ts, <span class="keyword">long</span> ttl, <span class="keyword">long</span> currentTimestamp)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> getExpirationTimestamp(ts, ttl) &lt;= currentTimestamp;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getExpirationTimestamp</span><span class="params">(<span class="keyword">long</span> ts, <span class="keyword">long</span> ttl)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> ttlWithoutOverflow = ts &gt; <span class="number">0</span> ? Math.min(Long.MAX_VALUE - ts, ttl) : ttl;</span><br><span class="line">    <span class="keyword">return</span> ts + ttlWithoutOverflow;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">static</span> &lt;V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">wrapWithTs</span><span class="params">(V value, <span class="keyword">long</span> ts)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> TtlValue&lt;&gt;(value, ts);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>TtlValue的属性只有两个：状态值和时间戳，代码略去。</p>
-<p>AbstractTtlDecorator核心方法是获取状态值的getWrappedWithTtlCheckAndUpdate()，它接受三个参数：</p>
-<ul>
-<li>getter：一个可抛出异常的Supplier，用于获取状态值；</li>
-<li>updater：一个可抛出异常的Consumer，用于更新状态的时间戳；</li>
-<li>stateClear：一个可抛出异常的Runnable，用于异步删除过期状态。</li>
-</ul>
-<p>可见，在默认情况下的后台清理策略是：<strong>只有状态值被读取时，才会做过期检测，并异步清除过期的状态</strong>。这种<strong>惰性清理</strong>的机制会导致<strong>那些实际已经过期但从未被再次访问过的状态无法被删除</strong>，需要特别注意。官方文档中也已有提示：</p>
-<blockquote>
-<p>By default, expired values are explicitly removed on read, such as ValueState#value, and periodically garbage collected in the background if supported by the configured state backend.</p>
-</blockquote>
-<p>当确认到状态过期时，会调用stateClear的逻辑进行删除；如果需要在读取时顺便更新状态的时间戳，会调用updater的逻辑重新包装一个TtlValue。</p>
-<p>AbstractTtlState的代码更加简单，主要的方法列举如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> Runnable accessCallback; &lt;SE extends Throwable, CE extends Throwable, T&gt; <span class="function">T <span class="title">getWithTtlCheckAndUpdate</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  SupplierWithException&lt;TtlValue&lt;T&gt;, SE&gt; getter,</span></span></span><br><span class="line"><span class="function"><span class="params">  ThrowingConsumer&lt;TtlValue&lt;T&gt;, CE&gt; updater)</span> <span class="keyword">throws</span> SE, CE </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> getWithTtlCheckAndUpdate(getter, updater, original::clear);&#125; <span class="meta">@Overridepublic</span> <span class="function"><span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  original.clear();</span><br><span class="line">  accessCallback.run();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>其中，accessCallback就是TtlStateContext中注册的增量清理回调。</p>
-<p>下面以TtlMapState为例，看看具体的TTL状态如何利用上文所述的这些实现。</p>
-<h3 id="TtlMapState"><a href="#TtlMapState" class="headerlink" title="TtlMapState"></a>TtlMapState</h3><p>以下是部分代码。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TtlMapState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">UK</span>, <span class="title">UV</span>&gt;</span></span><br><span class="line"><span class="class"><span class="keyword">extends</span> <span class="title">AbstractTtlState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">Map</span>&lt;<span class="title">UK</span>, <span class="title">UV</span>&gt;, <span class="title">Map</span>&lt;<span class="title">UK</span>, <span class="title">TtlValue</span>&lt;<span class="title">UV</span>&gt;&gt;, <span class="title">InternalMapState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">UK</span>, <span class="title">TtlValue</span>&lt;<span class="title">UV</span>&gt;&gt;&gt;</span></span><br><span class="line"><span class="class"><span class="keyword">implements</span> <span class="title">InternalMapState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">UK</span>, <span class="title">UV</span>&gt; </span>&#123;</span><br><span class="line">    TtlMapState(TtlStateContext&lt;InternalMapState&lt;K, N, UK, TtlValue&lt;UV&gt;&gt;, Map&lt;UK, UV&gt;&gt; ttlStateContext) &#123;</span><br><span class="line">        <span class="keyword">super</span>(ttlStateContext);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> UV <span class="title">get</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        TtlValue&lt;UV&gt; ttlValue = getWrapped(key);</span><br><span class="line">        <span class="keyword">return</span> ttlValue == <span class="keyword">null</span> ? <span class="keyword">null</span> : ttlValue.getUserValue();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> TtlValue&lt;UV&gt; <span class="title">getWrapped</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        accessCallback.run();</span><br><span class="line">        <span class="keyword">return</span> getWrappedWithTtlCheckAndUpdate(() -&gt; original.get(key), v -&gt; original.put(key, v), () -&gt; original.remove(key));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(UK key, UV value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        accessCallback.run();</span><br><span class="line">        original.put(key, wrapWithTs(value));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putAll</span><span class="params">(Map&lt;UK, UV&gt; map)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        accessCallback.run();</span><br><span class="line">        <span class="keyword">if</span> (map == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        Map&lt;UK, TtlValue&lt;UV&gt;&gt; ttlMap = <span class="keyword">new</span> HashMap&lt;&gt;(map.size());</span><br><span class="line">        <span class="keyword">long</span> currentTimestamp = timeProvider.currentTimestamp();</span><br><span class="line">        <span class="keyword">for</span> (Map.Entry&lt;UK, UV&gt; entry : map.entrySet()) &#123;</span><br><span class="line">            UK key = entry.getKey();</span><br><span class="line">            ttlMap.put(key, TtlUtils.wrapWithTs(entry.getValue(), currentTimestamp));</span><br><span class="line">        &#125;</span><br><span class="line">        original.putAll(ttlMap);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    accessCallback.run();</span><br><span class="line">    original.remove(key);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">contains</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    TtlValue&lt;UV&gt; ttlValue = getWrapped(key);</span><br><span class="line">    <span class="keyword">return</span> ttlValue != <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">// ......</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可见，TtlMapState的增删改查操作都是在原MapState上进行，只是加上了TTL相关的逻辑，这也是装饰器模式的特点。例如，TtlMapState.get()方法调用了上述AbstractTtlDecorator.getWrappedWithTtlCheckAndUpdate()方法，传入的获取（getter）、插入（updater）和删除（stateClear）的逻辑就是原MapState的get()、put()和remove()方法。而TtlMapState.put()只是在调用原MapState的put()方法之前，将状态包装为TtlValue而已。</p>
-<h2 id="增量清理策略"><a href="#增量清理策略" class="headerlink" title="增量清理策略"></a>增量清理策略</h2><p>另外需要注意，所有增删改查操作之前都需要执行accessCallback.run()方法。如果启用了增量清理策略，该Runnable会通过在状态数据上维护一个全局迭代器向前清理过期数据。如果未启用增量清理策略，accessCallback为空。前文提到过的<code>TtlStateFactory.registerTtlIncrementalCleanupCallback()</code> 方法如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Runnable <span class="title">registerTtlIncrementalCleanupCallback</span><span class="params">(InternalKvState&lt;?, ?, ?&gt; originalState)</span> </span>&#123;</span><br><span class="line">    StateTtlConfig.IncrementalCleanupStrategy config =</span><br><span class="line">        ttlConfig.getCleanupStrategies().getIncrementalCleanupStrategy();</span><br><span class="line">    <span class="keyword">boolean</span> cleanupConfigured = config != <span class="keyword">null</span> &amp;&amp; incrementalCleanup != <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">boolean</span> isCleanupActive = cleanupConfigured &amp;&amp;</span><br><span class="line">        isStateIteratorSupported(originalState, incrementalCleanup.getCleanupSize());</span><br><span class="line">    Runnable callback = isCleanupActive ? incrementalCleanup::stateAccessed : () -&gt; &#123; &#125;;</span><br><span class="line">    <span class="keyword">if</span> (isCleanupActive &amp;&amp; config.runCleanupForEveryRecord()) &#123;</span><br><span class="line">        stateBackend.registerKeySelectionListener(stub -&gt; callback.run());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> callback;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>实际清理的代码则位于<code>TtlIncrementalCleanup</code>类中，stateIterator就是状态数据的迭代器。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">stateAccessed</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    initIteratorIfNot();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        runCleanup();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> FlinkRuntimeException(<span class="string">&quot;Failed to incrementally clean up state with TTL&quot;</span>, t);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">initIteratorIfNot</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (stateIterator == <span class="keyword">null</span> || !stateIterator.hasNext()) &#123;</span><br><span class="line">        stateIterator = ttlState.original.getStateIncrementalVisitor(cleanupSize);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">runCleanup</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> entryNum = <span class="number">0</span>;</span><br><span class="line">    Collection&lt;StateEntry&lt;K, N, S&gt;&gt; nextEntries;</span><br><span class="line">    <span class="keyword">while</span> (    entryNum &lt; cleanupSize &amp;&amp;</span><br><span class="line">    stateIterator.hasNext() &amp;&amp;    !(nextEntries = stateIterator.nextEntries()).isEmpty()) &#123;</span><br><span class="line">        <span class="keyword">for</span> (StateEntry&lt;K, N, S&gt; state : nextEntries) &#123;</span><br><span class="line">            S cleanState = ttlState.getUnexpiredOrNull(state.getState());</span><br><span class="line">            <span class="keyword">if</span> (cleanState == <span class="keyword">null</span>) &#123;</span><br><span class="line">                stateIterator.remove(state);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (cleanState != state.getState()) &#123;</span><br><span class="line">                stateIterator.update(state, cleanState);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        entryNum += nextEntries.size();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>RocksDB压缩过滤清理策略</p>
-<p>如果启用了该策略，Flink会通过维护一个<code>RocksDbTtlCompactFiltersManager</code>实例来管理<code>FlinkCompactionFilter</code>过滤器。<code>FlinkCompactionFilter</code>并不是在Flink工程中维护的，而是位于Data Artisans为Flink专门维护的FRocksDB库内。<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://issues.apache.org/jira/browse/FLINK-10471">FLINK-10471</a>实现了FlinkCompactionFilter及其附属逻辑，主要为C++代码，通过JNI调用。对应的commit详见<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://github.com/dataArtisans/frocksdb/commit/01dca02244522e405c9258000903fee81496f72c">GitHub</a>，这里就不班门弄斧了。关于RocksDB的compaction相关细节，笔者之前也写过<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/e89cd503c9ae">一篇长文</a>做了些分析。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/RealTimeSystem-backpress/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/RealTimeSystem-backpress/" class="post-title-link" itemprop="url">【转】实时流处理系统反压机制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="实时流处理系统反压机制（BackPressure）综述-转"><a href="#实时流处理系统反压机制（BackPressure）综述-转" class="headerlink" title="实时流处理系统反压机制（BackPressure）综述[转]"></a>实时流处理系统反压机制（BackPressure）综述[转]</h1><p> 发表于 2018-11-15 |  更新于 2018-12-03 |  分类于 <a target="_blank" rel="noopener" href="http://ileaf.tech/category/#/BigData">BigData </a>|  阅读次数 333</p>
-<p>本文主要关于实时流处理系统反压机制，最近看到反压问题看到此文章很好，在此分享并mark一下。</p>
-<blockquote>
-<p>本文主要关于实时流处理系统反压机制，最近看到反压问题看到此文章很好，在此分享并mark一下。<br>(￢_￢)ﾉ最近菜叶子没自己写见谅。<br>本文转自 <a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">实时流处理系统反压机制（BackPressure）综述</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">https://blog.csdn.net/qq_21125183/article/details/80708142</a><br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/28fcd51d4edd">开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效</a></p>
-</blockquote>
-<p>反压机制（BackPressure）被广泛应用到实时流处理系统中，流处理系统需要能优雅地处理反压（backpressure）问题。<br>反压通常产生于这样的场景：短时负载高峰导致系统接收数据的速率远高于它处理数据的速率。<br>许多日常问题都会导致反压，例如，垃圾回收停顿可能会导致流入的数据快速堆积，或者遇到大促或秒杀活动导致流量陡增。<br>反压如果不能得到正确的处理，可能会导致资源耗尽甚至系统崩溃。反压机制就是指系统能够自己检测到被阻塞的Operator，然后系统自适应地降低源头或者上游的发送速率。</p>
-<p>目前主流的流处理系统 Apache Storm、JStorm、Spark Streaming、S4、Apache Flink、Twitter Heron都采用反压机制解决这个问题，不过他们的实现各自不同。</p>
-<p><img src="_v_images/20201030212807758_57452691.png" alt="实时流处理系统反压机制01"></p>
-<p>不同的组件可以不同的速度执行（并且每个组件中的处理速度随时间改变）。 例如，考虑一个工作流程，或由于数据倾斜或任务调度而导致数据被处理十分缓慢。<br>在这种情况下，如果上游阶段不减速，将导致缓冲区建立长队列(队列占用内存、硬盘空间，节点负载加重)，或导致系统丢弃元组。<br>如果元组在中途丢弃，那么效率可能会有损失，因为已经为这些元组产生的计算被浪费了。<br>并且在一些流处理系统中比如Strom，会将这些丢失的元组重新发送，这样会导致数据的一致性问题(at least once语义)，并且还会导致某些Operator状态叠加。<br>进而整个程序输出结果不准确。第二由于系统接收数据的速率是随着时间改变的，短时负载高峰导致系统接收数据的速率远高于它处理数据的速率的情况，也会导致Tuple在中途丢失。<br>所以实时流处理系统必须能够解决发送速率远大于系统能处理速率这个问题，大多数实时流处理系统采用反压（BackPressure）机制解决这个问题。</p>
-<p>下面我们就来介绍一下不同的实时流处理系统采用的反压机制：</p>
-<h1 id="Strom-反压机制"><a href="#Strom-反压机制" class="headerlink" title="Strom 反压机制"></a>Strom 反压机制</h1><h2 id="Storm-1-0-以前的反压机制"><a href="#Storm-1-0-以前的反压机制" class="headerlink" title="Storm 1.0 以前的反压机制"></a>Storm 1.0 以前的反压机制</h2><p>对于开启了acker机制的storm程序，可以通过设置conf.setMaxSpoutPending参数来实现反压效果，<strong>如果下游组件(bolt)处理速度跟不上导致spout发送的tuple没有及时确认的数超过了参数设定的值，spout会停止发送数据</strong>，这种方式的缺点是很难调优conf.setMaxSpoutPending参数的设置以达到最好的反压效果，设小了会导致吞吐上不去，设大了会导致worker OOM；有震荡，数据流会处于一个颠簸状态，效果不如逐级反压；另外对于关闭acker机制的程序无效；</p>
-<h2 id="Storm-Automatic-Backpressure"><a href="#Storm-Automatic-Backpressure" class="headerlink" title="Storm Automatic Backpressure"></a>Storm Automatic Backpressure</h2><p>新的storm自动反压机制(Automatic Back Pressure)通过监控bolt中的接收队列的情况，当超过高水位值时专门的线程会将反压信息写到 Zookeeper ，Zookeeper上的watch会通知该拓扑的所有Worker都进入反压状态，最后Spout降低tuple发送的速度。</p>
-<p><img src="_v_images/20201030212806451_178512803.png" alt="实时流处理系统反压机制02"></p>
-<p>每个Executor都有一个接受队列和发送队列用来接收Tuple和发送Spout或者Bolt生成的Tuple元组。每个Worker进程都有一个单的的接收线程监听接收端口。<br>它从每个网络上进来的消息发送到Executor的接收队列中。Executor接收队列存放Worker或者Worker内部其他Executor发过来的消息。<br>Executor工作线程从接收队列中拿出数据，然后调用execute方法，发送Tuple到Executor的发送队列。<br>Executor的发送线程从发送队列中获取消息，按照消息目的地址选择发送到Worker的传输队列中或者其他Executor的接收队列中。<br>最后Worker的发送线程从传输队列中读取消息，然后将Tuple元组发送到网络中。</p>
-<ol>
-<li>当Worker进程中的Executor线程发现自己的接收队列满了时，也就是接收队列达到<code>high watermark</code>的阈值后，因此它会发送通知消息到背压线程。</li>
-<li>背压线程将当前worker进程的信息注册到Zookeeper的Znode节点中。具体路径就是 <code>/Backpressure/topo1/wk1</code>下</li>
-<li>Zookeepre的Znode Watcher监视/Backpreesure/topo1下的节点目录变化情况，如果发现目录增加了znode节点说明或者其他变化。这就说明该Topo1需要反压控制，然后它会通知Topo1所有的Worker进入反压状态。</li>
-<li>最终Spout降低tuple发送的速度。</li>
-</ol>
-<h1 id="JStorm-反压机制"><a href="#JStorm-反压机制" class="headerlink" title="JStorm 反压机制"></a>JStorm 反压机制</h1><p>JStorm做了两级的反压，第一级和Jstorm类似，通过执行队列来监测，但是不会通过ZK来协调，而是通过Topology Master来协调。<br>在队列中会标记high water mark和low water mark，当执行队列超过high water mark时，就认为bolt来不及处理，则向TM发一条控制消息，上游开始减慢发送速率，直到下游低于low water mark时解除反压。</p>
-<p>此外，在Netty层也做了一级反压，由于每个Worker Task都有自己的发送和接收的缓冲区，可以对缓冲区设定限额、控制大小，如果spout数据量特别大，缓冲区填满会导致下游bolt的接收缓冲区填满，造成了反压。</p>
-<p><img src="_v_images/20201030212805000_1695102842.png" alt="实时流处理系统反压机制03"></p>
-<p>限流机制：jstorm的限流机制， 当下游bolt发生阻塞时， 并且阻塞task的比例超过某个比例时（现在默认设置为0.1），触发反压</p>
-<p>限流方式：计算阻塞Task的地方执行线程执行时间，Spout每发送一个tuple等待相应时间，然后讲这个时间发送给Spout， 于是， spout每发送一个tuple，就会等待这个执行时间。</p>
-<p>Task阻塞判断方式：在jstorm 连续4次采样周期中采样，队列情况，当队列超过80%（可以设置）时，即可认为该task处在阻塞状态。</p>
-<h1 id="SparkStreaming-反压机制"><a href="#SparkStreaming-反压机制" class="headerlink" title="SparkStreaming 反压机制"></a>SparkStreaming 反压机制</h1><h2 id="为什么引入反压机制Backpressure"><a href="#为什么引入反压机制Backpressure" class="headerlink" title="为什么引入反压机制Backpressure"></a>为什么引入反压机制Backpressure</h2><p>默认情况下，Spark Streaming通过Receiver以生产者生产数据的速率接收数据，计算过程中会出现<code>batch processing time &gt; batch interval</code>的情况，其中<code>batch processing time</code> 为实际计算一个批次花费时间， <code>batch interval</code>为Streaming应用设置的批处理间隔。<br>这意味着Spark Streaming的数据接收速率高于Spark从队列中移除数据的速率，也就是数据处理能力低，在设置间隔内不能完全处理当前接收速率接收的数据。如果这种情况持续过长的时间，会造成数据在内存中堆积，导致Receiver所在Executor内存溢出等问题（如果设置StorageLevel包含disk, 则内存存放不下的数据会溢写至disk, 加大延迟）。<br>Spark 1.5以前版本，用户如果要限制Receiver的数据接收速率，可以通过设置静态配制参数“<code>spark.streaming.receiver.maxRate</code>”的值来实现，此举虽然可以通过限制接收速率，来适配当前的处理能力，防止内存溢出，但也会引入其它问题。比如：producer数据生产高于maxRate，当前集群处理能力也高于maxRate，这就会造成资源利用率下降等问题。为了更好的协调数据接收速率与资源处理能力，Spark Streaming 从v1.5开始引入反压机制（back-pressure）,通过动态控制数据接收速率来适配集群数据处理能力。</p>
-<h2 id="反压机制Backpressure"><a href="#反压机制Backpressure" class="headerlink" title="反压机制Backpressure"></a>反压机制Backpressure</h2><p><code>Spark Streaming Backpressure</code>: 根据JobScheduler反馈作业的执行信息来动态调整Receiver数据接收率。通过属性“spark.streaming.backpressure.enabled”来控制是否启用backpressure机制，默认值false，即不启用。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sparkConf.set(<span class="string">&quot;spark.streaming.backpressure.enabled&quot;</span>,”<span class="keyword">true</span>”)</span><br></pre></td></tr></table></figure>
-<p>SparkStreaming 架构图如下所示:</p>
-<p><img src="_v_images/20201030212803393_1135733829.png" alt="实时流处理系统反压机制04"></p>
-<p>SparkStreaming 反压过程执行如下图所示：</p>
-<p>在原架构的基础上加上一个新的组件RateController,这个组件负责监听“OnBatchCompleted”事件，然后从中抽取<code>processingDelay</code> 及<code>schedulingDelay</code>信息. <code>Estimator</code>依据这些信息估算出最大处理速度（rate），最后由基于<code>Receiver</code>的Input Stream将rate通过ReceiverTracker与ReceiverSupervisorImpl转发给BlockGenerator（继承自RateLimiter）.</p>
-<p><img src="_v_images/20201030212801986_428923565.png" alt="实时流处理系统反压机制05"></p>
-<h2 id="direct模式-BackPressure-此部分详细说明了direct模式接收：转自-开启Back-Pressure使生产环境的Spark-Streaming应用更稳定、有效"><a href="#direct模式-BackPressure-此部分详细说明了direct模式接收：转自-开启Back-Pressure使生产环境的Spark-Streaming应用更稳定、有效" class="headerlink" title="direct模式-BackPressure(此部分详细说明了direct模式接收：转自-开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效)"></a>direct模式-BackPressure(此部分详细说明了direct模式接收：转自-<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/28fcd51d4edd">开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效</a>)</h2><p>当Spark Streaming与Kafka使用Direct API集群时，我们可以很方便的去控制最大数据摄入量–通过一个被称作spark.streaming.kafka.maxRatePerPartition的参数。根据文档描述，他的含义是：Direct API读取每一个Kafka partition数据的最大速率（每秒读取的消息量）。<br>配置项spark.streaming.kafka.maxRatePerPartition，对防止流式应用在下边两种情况下出现流量过载时尤其重要：<br>1.Kafka Topic中有大量未处理的消息，并且我们设置是Kafka auto.offset.reset参数值为smallest，他可以防止第一个批次出现数据流量过载情况。<br>2.当Kafka 生产者突然飙升流量的时候，他可以防止批次处理出现数据流量过载情况。</p>
-<p>但是，配置Kafka每个partition每批次最大的摄入量是个静态值，也算是个缺点。随着时间的变化，在生产环境运行了一段时间的Spark Streaming应用，每批次每个Kafka partition摄入数据最大量的最优值也是变化的。有时候，是因为消息的大小会变，导致数据处理时间变化。有时候，是因为流计算所使用的多租户集群会变得非常繁忙，比如在白天时候，一些其他的数据应用（例如Impala/Hive/MR作业）竞争共享的系统资源时（CPU/内存/网络/磁盘IO）。<br>背压机制可以解决该问题。背压机制是呼声比较高的功能，他允许根据前一批次数据的处理情况，动态、自动的调整后续数据的摄入量，这样的反馈回路使得我们可以应对流式应用流量波动的问题。<br>Spark Streaming的背压机制是在Spark1.5版本引进的，我们可以添加如下代码启用改功能：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sparkConf.set(&quot;spark.streaming.backpressure.enabled&quot;,”true”)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>那应用启动后的第一个批次流量怎么控制呢？因为他没有前面批次的数据处理时间，所以没有参考的数据去评估这一批次最优的摄入量。在Spark官方文档中有个被称作spark.streaming.backpressure.initialRate的配置，看起来是控制开启背压机制时初始化的摄入量。其实不然，该参数只对receiver模式起作用，并不适用于direct模式。推荐的方法是使用spark.streaming.kafka.maxRatePerPartition控制背压机制起作用前的第一批次数据的最大摄入量。我通常建议设置spark.streaming.kafka.maxRatePerPartition的值为最优估计值的1.5到2倍，让背压机制的算法去调整后续的值。请注意，spark.streaming.kafka.maxRatePerPartition的值会一直控制最大的摄入量，所以背压机制的算法值不会超过他。<br>另一个需要注意的是，在第一个批次处理完成前，紧接着的批次都将使用spark.streaming.kafka.maxRatePerPartition的值作为摄入量。通过Spark UI可以看到，批次间隔为5s，当批次调度延迟31秒时候，前7个批次的摄入量是20条记录。直到第八个批次，背压机制起作用时，摄入量变为5条记录。</p>
-<h1 id="Heron-反压机制"><a href="#Heron-反压机制" class="headerlink" title="Heron 反压机制"></a>Heron 反压机制</h1><p><img src="_v_images/20201030212800445_1650579597.png" alt="实时流处理系统反压机制06"></p>
-<p>当下游处理速度跟不上上游发送速度时，一旦StreamManager 发现一个或多个Heron Instance 速度变慢，立刻对本地spout进行降级，降低本地Spout发送速度, 停止从这些spout读取数据。并且受影响的StreamManager 会发送一个特殊的start backpressure message 给其他的StreamManager ，要求他们对spout进行本地降级。 当其他StreamManager 接收到这个特殊消息时，他们通过不读取当地Spout中的Tuple来进行降级。一旦出问题的Heron Instance 恢复速度后，本地的SM 会发送stop backpressure message 解除降级。</p>
-<p>很多Socket Channel与应用程序级别的Buffer相关联，该缓冲区由high watermark 和low watermark组成。 当缓冲区大小达到high watermark时触发反压，并保持有效，直到缓冲区大小低于low watermark。 此设计的基本原理是防止拓扑在进入和退出背压缓解模式之间快速振荡。</p>
-<h1 id="Flink-反压机制"><a href="#Flink-反压机制" class="headerlink" title="Flink 反压机制"></a>Flink 反压机制</h1><p>Flink 没有使用任何复杂的机制来解决反压问题，因为根本不需要那样的方案！它利用自身作为纯数据流引擎的优势来优雅地响应反压问题。下面我们会深入分析 Flink 是如何在 Task 之间传输数据的，以及数据流如何实现自然降速的。 Flink 在运行时主要由 operators 和 streams 两大组件构成。每个 operator 会消费中间态的流，并在流上进行转换，然后生成新的流。对于 Flink 的网络机制一种形象的类比是，Flink 使用了高效有界的分布式阻塞队列，就像 Java 通用的阻塞队列（BlockingQueue）一样。还记得经典的线程间通信案例：生产者消费者模型吗？使用 BlockingQueue 的话，一个较慢的接受者会降低发送者的发送速率，因为一旦队列满了（有界队列）发送者会被阻塞。Flink 解决反压的方案就是这种感觉。 在 Flink 中，这些分布式阻塞队列就是这些逻辑流，而队列容量是通过缓冲池来（LocalBufferPool）实现的。每个被生产和被消费的流都会被分配一个缓冲池。缓冲池管理着一组缓冲(Buffer)，缓冲在被消费后可以被回收循环利用。这很好理解：你从池子中拿走一个缓冲，填上数据，在数据消费完之后，又把缓冲还给池子，之后你可以再次使用它。</p>
-<h2 id="Flink-网络传输中的内存管理"><a href="#Flink-网络传输中的内存管理" class="headerlink" title="Flink 网络传输中的内存管理"></a>Flink 网络传输中的内存管理</h2><p>如下图所示展示了 Flink 在网络传输场景下的内存管理。网络上传输的数据会写到 Task 的 InputGate（IG） 中，经过 Task 的处理后，再由 Task 写到 ResultPartition（RS） 中。每个 Task 都包括了输入和输入，输入和输出的数据存在 Buffer 中（都是字节数据）。Buffer 是 MemorySegment 的包装类。</p>
-<p><img src="_v_images/20201030212758832_1369878662.png" alt="实时流处理系统反压机制07"></p>
-<ol>
-<li>TaskManager（TM）在启动时，会先初始化NetworkEnvironment对象，TM 中所有与网络相关的东西都由该类来管理（如 Netty 连接），其中就包括NetworkBufferPool。根据配置，Flink 会在 NetworkBufferPool 中生成一定数量（默认2048个）的内存块 MemorySegment（关于 Flink 的内存管理，后续文章会详细谈到），内存块的总数量就代表了网络传输中所有可用的内存。NetworkEnvironment 和 NetworkBufferPool 是 Task 之间共享的，每个 TM 只会实例化一个。</li>
-<li>Task 线程启动时，会向 NetworkEnvironment 注册，NetworkEnvironment 会为 Task 的 InputGate（IG）和 ResultPartition（RP） 分别创建一个 LocalBufferPool（缓冲池）并设置可申请的 MemorySegment（内存块）数量。IG 对应的缓冲池初始的内存块数量与 IG 中 InputChannel 数量一致，RP 对应的缓冲池初始的内存块数量与 RP 中的 ResultSubpartition 数量一致。不过，每当创建或销毁缓冲池时，NetworkBufferPool 会计算剩余空闲的内存块数量，并平均分配给已创建的缓冲池。注意，这个过程只是指定了缓冲池所能使用的内存块数量，并没有真正分配内存块，只有当需要时才分配。为什么要动态地为缓冲池扩容呢？因为内存越多，意味着系统可以更轻松地应对瞬时压力（如GC），不会频繁地进入反压状态，所以我们要利用起那部分闲置的内存块。</li>
-<li>在 Task 线程执行过程中，当 Netty 接收端收到数据时，为了将 Netty 中的数据拷贝到 Task 中，InputChannel（实际是 RemoteInputChannel）会向其对应的缓冲池申请内存块（上图中的①）。如果缓冲池中也没有可用的内存块且已申请的数量还没到池子上限，则会向 NetworkBufferPool 申请内存块（上图中的②）并交给 InputChannel 填上数据（上图中的③和④）。如果缓冲池已申请的数量达到上限了呢？或者 NetworkBufferPool 也没有可用内存块了呢？这时候，Task 的 Netty Channel 会暂停读取，上游的发送端会立即响应停止发送，拓扑会进入反压状态。当 Task 线程写数据到 ResultPartition 时，也会向缓冲池请求内存块，如果没有可用内存块时，会阻塞在请求内存块的地方，达到暂停写入的目的。</li>
-<li>当一个内存块被消费完成之后（在输入端是指内存块中的字节被反序列化成对象了，在输出端是指内存块中的字节写入到 Netty Channel 了），会调用 Buffer.recycle() 方法，会将内存块还给 LocalBufferPool （上图中的⑤）。如果LocalBufferPool中当前申请的数量超过了池子容量（由于上文提到的动态容量，由于新注册的 Task 导致该池子容量变小），则LocalBufferPool会将该内存块回收给 NetworkBufferPool（上图中的⑥）。如果没超过池子容量，则会继续留在池子中，减少反复申请的开销。</li>
-</ol>
-<h2 id="Flink-反压机制-1"><a href="#Flink-反压机制-1" class="headerlink" title="Flink 反压机制"></a>Flink 反压机制</h2><p>下面这张图简单展示了两个 Task 之间的数据传输以及 Flink 如何感知到反压的：</p>
-<p><img src="_v_images/20201030212757424_78076714.png" alt="实时流处理系统反压机制08"></p>
-<ol>
-<li>记录“A”进入了 Flink 并且被 Task 1 处理。（这里省略了 Netty 接收、反序列化等过程）</li>
-<li>记录被序列化到 buffer 中。</li>
-<li>该 buffer 被发送到 Task 2，然后 Task 2 从这个 buffer 中读出记录。</li>
-</ol>
-<p><strong>不要忘了：记录能被 Flink 处理的前提是，必须有空闲可用的 Buffer。</strong></p>
-<p>结合上面两张图看：Task 1 在输出端有一个相关联的 LocalBufferPool（称缓冲池1），Task 2 在输入端也有一个相关联的 LocalBufferPool（称缓冲池2）。如果缓冲池1中有空闲可用的 buffer 来序列化记录 “A”，我们就序列化并发送该 buffer。</p>
-<p>这里我们需要注意两个场景：</p>
-<ul>
-<li>本地传输：如果 Task 1 和 Task 2 运行在同一个 worker 节点（TaskManager），该 buffer 可以直接交给下一个 Task。一旦 Task 2 消费了该 buffer，则该 buffer 会被缓冲池1回收。如果 Task 2 的速度比 1 慢，那么 buffer 回收的速度就会赶不上 Task 1 取 buffer 的速度，导致缓冲池1无可用的 buffer，Task 1 等待在可用的 buffer 上。最终形成 Task 1 的降速。</li>
-<li>远程传输：如果 Task 1 和 Task 2 运行在不同的 worker 节点上，那么 buffer 会在发送到网络（TCP Channel）后被回收。在接收端，会从 LocalBufferPool 中申请 buffer，然后拷贝网络中的数据到 buffer 中。如果没有可用的 buffer，会停止从 TCP 连接中读取数据。在输出端，通过 Netty 的水位值机制来保证不往网络中写入太多数据（后面会说）。如果网络中的数据（Netty输出缓冲中的字节数）超过了高水位值，我们会等到其降到低水位值以下才继续写入数据。这保证了网络中不会有太多的数据。如果接收端停止消费网络中的数据（由于接收端缓冲池没有可用 buffer），网络中的缓冲数据就会堆积，那么发送端也会暂停发送。另外，这会使得发送端的缓冲池得不到回收，writer 阻塞在向 LocalBufferPool 请求 buffer，阻塞了 writer 往 ResultSubPartition 写数据。</li>
-</ul>
-<p>这种固定大小缓冲池就像阻塞队列一样，保证了 Flink 有一套健壮的反压机制，使得 Task 生产数据的速度不会快于消费的速度。我们上面描述的这个方案可以从两个 Task 之间的数据传输自然地扩展到更复杂的 pipeline 中，保证反压机制可以扩散到整个 pipeline。</p>
-<h2 id="反压实验"><a href="#反压实验" class="headerlink" title="反压实验"></a>反压实验</h2><p>另外，官方博客中为了展示反压的效果，给出了一个简单的实验。下面这张图显示了：随着时间的改变，生产者（黄色线）和消费者（绿色线）每5秒的平均吞吐与最大吞吐（在单一JVM中每秒达到8百万条记录）的百分比。我们通过衡量task每5秒钟处理的记录数来衡量平均吞吐。该实验运行在单 JVM 中，不过使用了完整的 Flink 功能栈。</p>
-<p><img src="_v_images/20201030212755917_1236027751.png" alt="实时流处理系统反压机制09"></p>
-<p>首先，我们运行生产task到它最大生产速度的60%（我们通过Thread.sleep()来模拟降速）。消费者以同样的速度处理数据。然后，我们将消费task的速度降至其最高速度的30%。你就会看到背压问题产生了，正如我们所见，生产者的速度也自然降至其最高速度的30%。接着，停止消费task的人为降速，之后生产者和消费者task都达到了其最大的吞吐。接下来，我们再次将消费者的速度降至30%，pipeline给出了立即响应：生产者的速度也被自动降至30%。最后，我们再次停止限速，两个task也再次恢复100%的速度。总而言之，我们可以看到：生产者和消费者在 pipeline 中的处理都在跟随彼此的吞吐而进行适当的调整，这就是我们希望看到的反压的效果。</p>
-<h2 id="Flink-反压监控"><a href="#Flink-反压监控" class="headerlink" title="Flink 反压监控"></a>Flink 反压监控</h2><p>在 Storm/JStorm 中，只要监控到队列满了，就可以记录下拓扑进入反压了。但是 Flink 的反压太过于天然了，导致我们无法简单地通过监控队列来监控反压状态。Flink 在这里使用了一个 trick 来实现对反压的监控。如果一个 Task 因为反压而降速了，那么它会卡在向 LocalBufferPool 申请内存块上。那么这时候，该 Task 的 stack trace 就会长下面这样：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">java.lang.Object.wait(Native Method)</span><br><span class="line">o.a.f.[...].LocalBufferPool.requestBuffer(LocalBufferPool.java:<span class="number">163</span>)</span><br><span class="line">o.a.f.[...].LocalBufferPool.requestBufferBlocking(LocalBufferPool.java:<span class="number">133</span>) &lt;--- BLOCKING request</span><br><span class="line">[...]</span><br></pre></td></tr></table></figure>
-<p>那么事情就简单了。通过不断地采样每个 task 的 stack trace 就可以实现反压监控。</p>
-<p><img src="_v_images/20201030212753993_1098219801.png" alt="实时流处理系统反压机制10"></p>
-<p>Flink 的实现中，只有当 Web 页面切换到某个 Job 的 Backpressure 页面，才会对这个 Job 触发反压检测，因为反压检测还是挺昂贵的。JobManager 会通过 Akka 给每个 TaskManager 发送TriggerStackTraceSample消息。默认情况下，TaskManager 会触发100次 stack trace 采样，每次间隔 50ms（也就是说一次反压检测至少要等待5秒钟）。并将这 100 次采样的结果返回给 JobManager，由 JobManager 来计算反压比率（反压出现的次数/采样的次数），最终展现在 UI 上。UI 刷新的默认周期是一分钟，目的是不对 TaskManager 造成太大的负担。</p>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>Flink不需要一种特殊的机制来处理反压，因为Flink 中的数据传输相当于已经提供了应对反压的机制。因此，Flink 所能获得的最大吞吐量由其 pipeline 中最慢的组件决定。相对于 Storm/JStorm 的实现，Flink 的实现更为简洁优雅，源码中也看不见与反压相关的代码，无需 Zookeeper/TopologyMaster 的参与也降低了系统的负载，也利于对反压更迅速的响应。</p>
-<blockquote>
-<p>本文转自 <a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">实时流处理系统反压机制（BackPressure）综述</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">https://blog.csdn.net/qq_21125183/article/details/80708142</a><br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/28fcd51d4edd">开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效</a></p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Kafka/kafka-base/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1457,7 +1468,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:29" itemprop="dateModified" datetime="2021-01-16T14:28:29+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:42:39" itemprop="dateModified" datetime="2021-01-16T14:42:39+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1556,7 +1567,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:27" itemprop="dateModified" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:42:38" itemprop="dateModified" datetime="2021-01-16T14:42:38+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1629,7 +1640,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-16 14:28:27" itemprop="dateModified" datetime="2021-01-16T14:28:27+08:00">2021-01-16</time>
+                <time title="Modified: 2021-01-16 14:42:38" itemprop="dateModified" datetime="2021-01-16T14:42:38+08:00">2021-01-16</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
