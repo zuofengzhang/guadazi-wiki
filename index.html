@@ -207,7 +207,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:05" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:09" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
             </span>
 
           
@@ -264,7 +264,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:05" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:09" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
             </span>
 
           
@@ -322,7 +322,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:05" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:09" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
             </span>
 
           
@@ -344,98 +344,6 @@
         <name>yarn.resourcemanager.principal</name>
         <value>gaiaadmin</value>
 </property>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/ORC-file/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Hadoop/ORC-file/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-18 22:05:05" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <hr>
-<p>title: orcfile<br>date: 2017-02-26 00:00:00<br>layout: post<br>category: Distributed<br>tags:</p>
-<ul>
-<li>Distributed</li>
-<li>Hadoop</li>
-<li>mapReducer</li>
-<li>hive</li>
-<li>orc</li>
-</ul>
-<h1 id="ORC-file"><a href="#ORC-file" class="headerlink" title="ORC file"></a>ORC file</h1><p>源码主要有core和mapreduce两个module，其中MapReduce module就是Hadoop的InputFormat和OutFormat，这个module下有两个包，mapred和MapReduce分别符合MapReduce的V1和V2的Input/Output Format.</p>
-<p>四个类：OrcInputFormat、OrcOutputFormat、OrcMapreduceRecordReader和OrcMapreduceRecordWriter</p>
-<h2 id="OrcInputFormat与OrcOutputFormat"><a href="#OrcInputFormat与OrcOutputFormat" class="headerlink" title="OrcInputFormat与OrcOutputFormat"></a>OrcInputFormat与OrcOutputFormat</h2><p>OrcInputFormat继承了FileInputFormat，getSplits用的就是FileInputFormat的实现，只是重写了createRecordReader方法。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> RecordReader&lt;NullWritable, V&gt;</span><br><span class="line">    createRecordReader(InputSplit inputSplit,</span><br><span class="line">                       TaskAttemptContext taskAttemptContext</span><br><span class="line">                       ) <span class="keyword">throws</span> IOException, InterruptedException &#123;</span><br><span class="line">  FileSplit split = (FileSplit) inputSplit;</span><br><span class="line">  Configuration conf = taskAttemptContext.getConfiguration();</span><br><span class="line">  Reader file = OrcFile.createReader(split.getPath(),</span><br><span class="line">      OrcFile.readerOptions(conf)</span><br><span class="line">          .maxLength(OrcConf.MAX_FILE_LENGTH.getLong(conf)));</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> OrcMapreduceRecordReader&lt;&gt;(file,</span><br><span class="line">      org.apache.orc.mapred.OrcInputFormat.buildOptions(conf,</span><br><span class="line">          file, split.getStart(), split.getLength()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里面用到了org.apache.orc.Reader和org.apache.orc.OrcFile. 模板里面的V通常会是OrcStruct，Orc中一个表的schema可以表示为一个OrcStruct。<br>同样滴，OrcOutputFormat当中也是重写了craeteRecordWriter方法：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> RecordWriter&lt;NullWritable, V&gt;</span><br><span class="line">     getRecordWriter(TaskAttemptContext taskAttemptContext</span><br><span class="line">                     ) <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">  Configuration conf = taskAttemptContext.getConfiguration();</span><br><span class="line">  Path filename = getDefaultWorkFile(taskAttemptContext, EXTENSION);</span><br><span class="line">  Writer writer = OrcFile.createWriter(filename,</span><br><span class="line">      org.apache.orc.mapred.OrcOutputFormat.buildOptions(conf));</span><br><span class="line">   <span class="keyword">return</span> <span class="keyword">new</span> OrcMapreduceRecordWriter&lt;V&gt;(writer);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里面用到了org.apache.orc.Writer和org.apache.orc.OrcFile.<br>以上用到的这三个类都是core module里的，之后再去读。</p>
-<h2 id="OrcMapreduceRecordReader"><a href="#OrcMapreduceRecordReader" class="headerlink" title="OrcMapreduceRecordReader"></a>OrcMapreduceRecordReader</h2><p>这个类里面其实复用了org.apache.orc.mapred包下面的一些Writable类，这些Writable类用来在MapReduce中支持Orc中的一些特殊数据类型，比如Map、List、Struct等等，可以将这些数据类型从DataInput中反序列化出来，也可以将数据序列化到DataOutput中去。</p>
-<p>从构造方法可以看到：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">OrcMapreduceRecordReader</span><span class="params">(Reader fileReader,</span></span></span><br><span class="line"><span class="function"><span class="params">                                Reader.Options options)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.batchReader = fileReader.rows(options);</span><br><span class="line">  <span class="keyword">if</span> (options.getSchema() == <span class="keyword">null</span>) &#123;</span><br><span class="line">    schema = fileReader.getSchema();</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    schema = options.getSchema();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.batch = schema.createRowBatch();</span><br><span class="line">  rowInBatch = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">this</span>.row = (V) OrcStruct.createValue(schema);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>其中batchReader是org.apache.orc.RecordReader类型的，这个RecordReader在core中。batch是真正有数据的地方。batch的类型是org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch，从java doc可以看出来它是干嘛用的：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * A VectorizedRowBatch is a set of rows, organized with each column</span></span><br><span class="line"><span class="comment"> * as a vector. It is the unit of query execution, organized to minimize</span></span><br><span class="line"><span class="comment"> * the cost per row and achieve high cycles-per-instruction.</span></span><br><span class="line"><span class="comment"> * The major fields are public by design to allow fast and convenient</span></span><br><span class="line"><span class="comment"> * access by the vectorized query execution code.</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure>
-<p>而schema是org.apache.orc.TypeDescription类型的，而TypeDescription其实是一个数据类型的描述，它有一个category，可以是INT、FLOAT等等，也可以是STRUCT。这里schema的category通常会是STRUCT。STRUCT和OrcStruct是对应的，是一个复合类型，其中可以包含其他类型的属性，用来表示一个表的schema。</p>
-<p>row就是batchReader从batch中读出来的一行记录。</p>
-<p>OrcMapreduceRecordReader中另外一个重要的方法是nextKeyValue：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">nextKeyValue</span><span class="params">()</span> <span class="keyword">throws</span> IOException, InterruptedException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!ensureBatch()) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (schema.getCategory() == TypeDescription.Category.STRUCT) &#123;</span><br><span class="line">    OrcStruct result = (OrcStruct) row;</span><br><span class="line">    List&lt;TypeDescription&gt; children = schema.getChildren();</span><br><span class="line">    <span class="keyword">int</span> numberOfChildren = children.size();</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i &lt; numberOfChildren; ++i) &#123;</span><br><span class="line">      result.setFieldValue(i, OrcMapredRecordReader.nextValue(batch.cols[i], rowInBatch,</span><br><span class="line">          children.get(i), result.getFieldValue(i)));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    OrcMapredRecordReader.nextValue(batch.cols[<span class="number">0</span>], rowInBatch, schema, row);</span><br><span class="line">  &#125;</span><br><span class="line">  rowInBatch += <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看出来，这个方法中，判断当schema是STRUCT的category时，将它看做一个表的schema，取出里面包含的children，即各个字段的TypeDescription，然后读取各个字段的值，存入row中。这其中复用了OrcMapredRecordReader.nextValue()方法.</p>
-<h2 id="OrcMapreduceRecordWriter"><a href="#OrcMapreduceRecordWriter" class="headerlink" title="OrcMapreduceRecordWriter"></a>OrcMapreduceRecordWriter</h2><p>OrcMapreduceRecordWriter和OrcMapreduceRecordReader类似，只不过其中的batchReader换成了org.apache.orc<br>.Writer类型的writer。构造方法如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">OrcMapreduceRecordWriter</span><span class="params">(Writer writer)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.writer = writer;</span><br><span class="line">  schema = writer.getSchema();</span><br><span class="line">  <span class="keyword">this</span>.batch = schema.createRowBatch();</span><br><span class="line">  isTopStruct = schema.getCategory() == TypeDescription.Category.STRUCT;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这个类的主要方法就是write方法：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(NullWritable nullWritable, V v)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="comment">// if the batch is full, write it out.</span></span><br><span class="line">  <span class="keyword">if</span> (batch.size == batch.getMaxSize()) &#123;</span><br><span class="line">    writer.addRowBatch(batch);</span><br><span class="line">    batch.reset();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// add the new row</span></span><br><span class="line">  <span class="keyword">int</span> row = batch.size++;</span><br><span class="line">  <span class="comment">// skip over the OrcKey or OrcValue</span></span><br><span class="line">  <span class="keyword">if</span> (v <span class="keyword">instanceof</span> OrcKey) &#123;</span><br><span class="line">    v = (V)((OrcKey) v).key;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (v <span class="keyword">instanceof</span> OrcValue) &#123;</span><br><span class="line">    v = (V)((OrcValue) v).value;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (isTopStruct) &#123;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> f=<span class="number">0</span>; f &lt; schema.getChildren().size(); ++f) &#123;</span><br><span class="line">      OrcMapredRecordWriter.setColumn(schema.getChildren().get(f),</span><br><span class="line">          batch.cols[f], row, ((OrcStruct) v).getFieldValue(f));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    OrcMapredRecordWriter.setColumn(schema, batch.cols[<span class="number">0</span>], row, v);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看出来，write先把V类型（通常是OrcStruct）的记录写入batch，如果batch写满了，就批量写入writer。</p>
-<p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/bhq2010/article/details/76213895">ORC源码阅读(1) - mapreduce module</a></li>
-</ol>
-
       
     </div>
 
@@ -478,7 +386,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:05" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:09" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
             </span>
 
           
@@ -535,7 +443,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:05" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:09" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
             </span>
 
           
@@ -634,7 +542,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:05" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:09" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
             </span>
 
           
@@ -706,7 +614,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:05" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:09" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
             </span>
 
           
@@ -769,7 +677,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:05" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:09" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
             </span>
 
           
@@ -1060,7 +968,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:05" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:09" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
             </span>
 
           
@@ -1133,6 +1041,64 @@
 </ul>
 <p>另外，平台对 SQL 有一些扩展。第三块是扩展的核心工作，将 SQL 树中扩展的子树转换为新的节点，然后将 SQL 的 DAG 提交到 Flink 上运<br>行。</p>
 <p><strong>作业测试</strong></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/00.prospect/rtc/%E5%AE%9E%E6%97%B6OLAP/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/00.prospect/rtc/%E5%AE%9E%E6%97%B6OLAP/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-19 09:17:09" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="实时OLAP"><a href="#实时OLAP" class="headerlink" title="实时OLAP"></a>实时OLAP</h1><h2 id="Apache-Pinot-Uber"><a href="#Apache-Pinot-Uber" class="headerlink" title="Apache Pinot (Uber)"></a>Apache Pinot (Uber)</h2><p>Pinot 是一个实时分布式的 OLAP 数据存储和分析系统。使用它实现低延迟可伸缩的实时分析。Pinot 从脱机数据源（包括 Hadoop 和各类文件）和在线数据源（如 Kafka）中获取数据进行分析。Pinot 被设计成可进行水平扩展。Pinot 特别适合这样的数据分析场景：查询具有大量维度和指标的时间序列数据、分析模型固定、数据只追加以及低延迟，以及分析结果可查询。</p>
 
       
     </div>
@@ -1230,7 +1196,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">106</span>
+        <span class="site-state-item-count">108</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

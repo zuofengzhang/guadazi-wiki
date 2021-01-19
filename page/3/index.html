@@ -183,98 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/00.prospect/SuperSQL-202009/SuperSQL/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/00.prospect/SuperSQL-202009/SuperSQL/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="SuperSQL"><a href="#SuperSQL" class="headerlink" title="SuperSQL"></a>SuperSQL</h1><h2 id="1-SuperSQL背景"><a href="#1-SuperSQL背景" class="headerlink" title="1. SuperSQL背景"></a>1. SuperSQL背景</h2><p>从雅虎开源Hadoop，大数据发展至今已有十多个年头，整个生态逐渐稳定。但随着系统的演进和数据的增长，新的问题和挑战逐渐涌现出来。</p>
-<ul>
-<li>  <strong>异构集群/数据源问题</strong>。不同数据系统擅长存储不同类型的数据，通常业务数据都会分散于多个数据源中，比如用户基本数据存储在关系型数据库，用户行为日志像浏览记录等存储在Hive，而一些半结构化或者非结构化数据存储在HBase。此外，由于Hadoop集群规模存在上限，加上业务发展和运维的需求，业务数据可能会分布在不同的集群或者IDC（数据中心）中。这些客观上造成了<strong>数据孤岛或者数据烟囱</strong>，增加了数据使用的壁垒。由于缺少统一的数据分析入口，用户在对分散在各处的数据做联合分析时，常见的做法是人工通过脚本或者ETL工具，把数据先搬迁到同一个地方，然后再做分析，整个过程非常麻烦，且费时费力。当数据规模比较大时，数据搬迁还会对集群/DC间的带宽造成很大压力，而DC间的带宽往往是瓶颈资源。这个问题不是腾讯大数据独有的，我们接触的外部用户，比如政企、运营商、银行等，他们的数据分散在省级和各个州市的数据中心中，每天需要将州市的数据同步到省数据中心去做分析。</li>
-</ul>
-<p><img src="vx_images/1992515831864.png"></p>
-<ul>
-<li>  <strong>SQL计算引擎问题</strong>。在大数据领域，没有一个万能的SQL执行引擎，不同的计算引擎擅长不同的任务。例如，Hive适合库表增删查改等DDL SQL，Spark适合报表生成和数据分析等Batch SQL，Presto适合数据采样或基于内存的快速交互查询。我们经常遇到的一个问题是，如何针对特定的SQL负载、类别或模板，<strong>智能选择对应最佳的计算引擎来执行</strong>？这个选择需要融合性能、资源、用户习惯等多个因素，同时需要自动化对用户透明。</li>
-</ul>
-<p><img src="vx_images/1971592506113.png"></p>
-<p>面对上面的问题和挑战，我们发现在大数据生态中当前缺少一款成熟稳定的解决方案。在这个背景下，SuperSQL项目应运而生。SuperSQL旨在满足跨DC、跨集群、跨数据源、跨计算引擎的数据联邦分析需求，实现以下三点的价值：</p>
-<ul>
-<li>  解决业务数据孤岛，最大化数据使用价值</li>
-<li>  执行引擎最优选择，提升业务使用数据效率</li>
-<li>  优化集群资源使用，解决业务资源使用瓶颈</li>
-</ul>
-<h2 id="2-SuperSQL定位"><a href="#2-SuperSQL定位" class="headerlink" title="2. SuperSQL定位"></a>2. SuperSQL定位</h2><p>SuperSQL在整个天穹图谱中负责连接端与存储。无论系统架构是私有云、公有云、还是混合云，存储无论是基于HDFS还是对象存储，端应用无论是报表生成、数据分析或是商业BI，SuperSQL作为统一的SQL引擎，提供统一的异构数据管理和分析入口。</p>
-<p><img src="vx_images/1940383717021.png"></p>
-<h2 id="3-SuperSQL解决方案"><a href="#3-SuperSQL解决方案" class="headerlink" title="3. SuperSQL解决方案"></a>3. SuperSQL解决方案</h2><p>SuperSQL的核心设计思路是“<strong>漂移计算</strong>“，就是将单一SQL中涉及不同DC数据源的子计算部分（子查询SQL），尽可能下推给对应的数据源本地执行；同时复用开源大数据SQL组件作为外部计算引擎，实现不同数据源子查询中间结果的联接与合并。因为计算引擎仅从各个数据源获取子查询下推后的中间结果，其相比原始数据表的数据量通常小很多，这就能够节省DC间有限的网络带宽资源。SuperSQL的技术架构图如下，逻辑上可以分为三部分：</p>
-<p>（1）<strong>客户端</strong>：对外提供多种标准接口。</p>
-<p>（2）<strong>Server</strong>：这是漂移计算的核心决策层，负责数据源元数据的管理，对SQL的解析验证，通过基于代价的SQL优化（CBO）等功能，决定了哪些SQL算子下推到对应的数据源计算、跨DC或集群时数据如何路由传输、汇总计算在哪（几）个DC/集群中的哪类计算引擎执行最适合。</p>
-<p>（3）<strong>计算引擎</strong>：从不同DC不同数据源获取下推计算的结果，完成最后的分布式汇总业务计算。</p>
-<p><img src="vx_images/1920001159498.png"></p>
-<h2 id="4-SuperSQL技术细节"><a href="#4-SuperSQL技术细节" class="headerlink" title="4. SuperSQL技术细节"></a>4. SuperSQL技术细节</h2><p>我们将推出一系列的SuperSQL技术文章，解密技术架构图中的各个技术模块。这篇文章只从宏观的角度来理清各个技术模块的逻辑关系以及在SuperSQL的作用，为后续的技术文章阅读提供指引。</p>
-<p>首先，介绍SuperSQL中几个重要的且贯穿始终的概念：</p>
-<ul>
-<li>  数据源：SuperSQL支持跨数据源的联合分析，一个数据源定义为一种数据库类型中的一个库（DB）。SuperSQL当前支持对接多种类型的RDBMS/NoSQL数据源，包括MySQL、PostgreSQL、TBase、Hive、TDW Hive（tHive）、Oracle、HBase（Phoenix）、ElasticSearch等，支持同时对接同一类数据源的不同版本（如Hive 1.2.1和Hive 2.3.5）。</li>
-<li>  计算下推：提取数据源相关的计算逻辑，通过数据源公开的API下推给数据源执行。SuperSQL支持常用SQL算子下推，具体包括Project、Filter、Aggregate、Join、Sort、Union、Limit、UDF等。</li>
-<li>  计算引擎：负责从各个数据源拉取下推计算后的结果，完成数据汇总计算。SuperSQL当前支持对接 Spark/Hive ThriftSever2 作为外部分布式计算引擎。SuperSQL灵活、易扩展的计算引擎框架支持快速开发插件对接其它类型的开源大数据SQL引擎，且不紧耦合于特定的引擎类型或版本。从外接并解耦计算引擎这个设计思路来看，SuperSQL也可以看作是一个聚焦跨源跨DC联邦查询优化与分发的一站式、高性能大数据中间件。</li>
-<li>  CBO（基于代价优化）：通过火山（Volcano）模型对SQL进行基于代价的优化，切分匹配规则集合分阶段变换逻辑查询计划，最终生成最优的物理执行计划。</li>
-<li>  跨DC CBO：对单DC CBO的扩展，当涉及跨多个DC数据访问时，决定计算在哪个DC完成，达到节省资源（尤其是DC间带宽）开销的目的。</li>
-</ul>
-<p>用户第一次使用SuperSQL时，需要先将数据源的信息注册到SuperSQL。元数据管理模块就是用于管理所有注册到SuperSQL的不同类型数据源的元数据（如连接信息、表列定义、CBO统计信息等）。为了方便数据源的共享和保证数据源的安全，SuperSQL支持用户认证和数据源授权/鉴权。当多用户访问时，SuperSQL通过Session管理模块来做到Session隔离（用户自定义配置等）。HA模块保证SuperSQL服务的高可用。SuperSQL通过JDBC将SQL下推到数据源以及拉取数据，同一类型数据源不同版本的JDBC驱动可能存在冲突的情况，数据源多版本管理模块负责解决这个问题。</p>
-<p>SuperSQL将数据源相关计算下推到数据源，计算引擎负责从各个数据源拉取下推计算完成的结果，完成数据汇总计算。如何从用户提交的SQL中抽离出需要下推的子SQL，然后合成新的等价SQL，再交给计算引擎，这些由计算下推模块完成。下推和数据拉取是通过JDBC完成，而JDBC在数据量大时会有性能问题，SuperSQL通过下推并发优化以及针对Hive数据源的特定优化来解决这个问题。</p>
-<p>CBO（基于代价优化）依赖于表列数据的统计信息。传统的统计信息收集方案，在计算统计信息时需要全量读取数据表，并且数据表微量更新时只能再次全量重新计算统计信息。SuperSQL采用数据采样、增量更新的新型统计信息采集方式，比传统的方案效率更高，更省资源。另一方面，现在流行的CBO模型是Volcano模型，即火山模型，但已有的开源实现框架，我们在使用过程中发现其存在很多缺陷，比如优化规则冗余、冲突，优化耗时比较长甚至长时间阻塞等问题。我们对开源Volcano模型框架进行了重构和改进，同时对CBO进行了扩展，支持根据SQL类型及其涉及的数据量智能地选择计算引擎，以及跨地域访问时支持选择最优DC进行计算来达到减少资源开销的目的。</p>
-<h2 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h2><p>SuperSQL完成了我们在大数据领域数据联邦分析方向上从0到1的突破，但路漫漫其修远兮，SuperSQL团队未来仍然会在这个方向上继续深耕、持续探索，为大数据技术的发展演进贡献自己的力量。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/00.prospect/Qconf-2019-beijing/keynote/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -299,7 +207,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -365,7 +273,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -559,7 +467,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -635,7 +543,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -759,7 +667,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -817,7 +725,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -888,7 +796,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -1172,7 +1080,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -1231,7 +1139,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -1261,6 +1169,120 @@
 <h3 id="踢掉空格"><a href="#踢掉空格" class="headerlink" title="踢掉空格"></a>踢掉空格</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; list = Splitter.on(pattern).omitEmptyStrings().splitToList(<span class="string">&quot;&quot;</span>);</span><br><span class="line">System.out.println(list.size());  <span class="comment">// 0</span></span><br></pre></td></tr></table></figure>
 <h3 id="StringUtils-split"><a href="#StringUtils-split" class="headerlink" title="StringUtils.split"></a>StringUtils.split</h3><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">org.apache.commons.lang.StringUtils#splitByWholeSeparator(java.lang.String, java.lang.String, int)</span><br></pre></td></tr></table></figure>
 <p>分割字符串，正则表达式作为普通字符串</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D%E4%B8%8ETLAB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/metric/%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D%E4%B8%8ETLAB/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="栈上分配与TLAB"><a href="#栈上分配与TLAB" class="headerlink" title="栈上分配与TLAB"></a>栈上分配与TLAB</h1><h2 id="逃逸分析-Escape-Analysis"><a href="#逃逸分析-Escape-Analysis" class="headerlink" title="逃逸分析(Escape Analysis)"></a>逃逸分析(Escape Analysis)</h2><h2 id="栈上分配"><a href="#栈上分配" class="headerlink" title="栈上分配"></a>栈上分配</h2><p>针对那些作用域不会逃逸出方法的对象，在分配内存时不再将对象分配在堆内存中，而是将对象属性打散后分配在栈（线程私有的，属于栈内存）上，这样，随着方法的调用结束，栈空间的回收就会随着将栈上分配的打散后的对象回收掉，不再给gc增加额外的无用负担，从而提升应用程序整体的性能</p>
+<p>优点：</p>
+<p>　　　　1）可以在函数调用结束后自行销毁对象，不需要垃圾回收器的介入，有效避免垃圾回收带来的负面影响</p>
+<p>　　　　2）栈上分配速度快，提高系统性能</p>
+<p>线程私有变量，大对象虚拟机会分配到TLAB中，<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/a7414c0ebb17">TLAB（Thread Local Allocation Buffer）要不要了解下？</a></p>
+<p>在栈上分配该对象的内存,当栈帧从Java虚拟机栈中弹出，就自动销毁这个对象。减小垃圾回收器压力。</p>
+<h2 id="TLAB"><a href="#TLAB" class="headerlink" title="TLAB"></a>TLAB</h2><p>TLAB全称ThreadLocalAllocBuffer，是线程的一块私有内存，如果设置了虚拟机参数 -XX:UseTLAB，在线程初始化时，同时也会申请一块指定大小的内存，只给当前线程使用，这样每个线程都单独拥有一个Buffer，如果需要分配内存，就在自己的Buffer上分配，这样就不存在竞争的情况，可以大大提升分配效率，当Buffer容量不够的时候，再重新从Eden区域申请一块继续使用，这个申请动作还是需要原子操作的。</p>
+<p>TLAB的目的是在为新对象分配内存空间时，让每个Java应用线程能使用自己专属的分配指针来分配空间，均摊对GC堆（eden区）里共享的分配指针做更新而带来的同步开销。</p>
+<p>TLAB只是让每个线程有私有的分配指针，但底下存对象的内存空间还是给所有线程访问的，只是其它线程无法在这个区域分配而已。当一个TLAB用满（分配指针top撞上分配极限end了），就新申请一个TLAB，而在老TLAB里的对象还留在原地什么都不用管——它们无法感知自己是否是曾经从TLAB分配出来的，而只关心自己是在eden里分配的。</p>
+<table>
+<thead>
+<tr>
+<th>启动参数</th>
+<th>JVM内存分配模式</th>
+<th>Eden区</th>
+<th>YoungGC</th>
+<th>耗时</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-XX:+DoEscapeAnalysis（开逃逸分析）-XX:+UseTLAB （开启TLAB）</td>
+<td>虚拟机栈上分配模式(小对象)</td>
+<td>较少使用</td>
+<td>较少使用</td>
+<td>很低</td>
+</tr>
+<tr>
+<td>-XX:-DoEscapeAnalysis（关闭逃逸分析）-XX:+UseTLAB（开启TLAB）</td>
+<td>TLAB区分配模式</td>
+<td>大量使用</td>
+<td>大量使用</td>
+<td>较高</td>
+</tr>
+<tr>
+<td>-XX:-DoEscapeAnalysis（关闭逃逸分析）-XX:-UseTLAB（关闭TLAB）</td>
+<td>Eden区分配模式</td>
+<td>大量使用</td>
+<td>大量使用</td>
+<td>特别高</td>
+</tr>
+</tbody></table>
+<p>在学习Java的过程中，一般认为new出来的对象都是被分配在堆上的，其实这个结论不完全正确，因为是大部分new出来的对象被分配在堆上，而不是全部。通过对Java对象分配的过程分析，可以知道有另外两个地方也是可以存放对象的。这两个地方分别栈 （涉及逃逸分析相关知识）和TLAB（Thread Local Allocation Buffer）。我们首先对这两者进行介绍，而后对Java对象分配过程进行介绍。</p>
+<h3 id="栈上分配-1"><a href="#栈上分配-1" class="headerlink" title="栈上分配"></a><strong>栈上分配</strong></h3><p>在JVM中，堆是线程共享的，因此堆上的对象对于各个线程都是共享和可见的，只要持有对象的引用，就可以访问堆中存储的对象数据。虚拟机的垃圾收集系统可以回收堆中不再使用的对象，但对于垃圾收集器来说，无论筛选可回收对象，还是回收和整理内存都需要耗费时间。</p>
+<p>如果确定一个对象的作用域不会逃逸出方法之外，那可以将这个对象分配在栈上，这样，对象所占用的内存空间就可以随栈帧出栈而销毁。在一般应用中，不会逃逸的局部对象所占的比例很大，如果能使用栈上分配，那大量的对象就会随着方法的结束而自动销毁了，无须通过垃圾收集器回收，可以减小垃圾收集器的负载。</p>
+<p>JVM允许将线程私有的对象打散分配在栈上，而不是分配在堆上。分配在栈上的好处是可以在函数调用结束后自行销毁，而不需要垃圾回收器的介入，从而提高系统性能。<br><strong>栈上分配的技术基础：</strong><br><strong>一是逃逸分析：</strong>逃逸分析的目的是判断对象的作用域是否有可能逃逸出函数体。关于逃逸分析的问题可以看我另一篇文章：</p>
+<p><strong>二是标量替换：</strong>允许将对象打散分配在栈上，比如若一个对象拥有两个字段，会将这两个字段视作局部变量进行分配。</p>
+<p>只能在server模式下才能启用逃逸分析，参数-XX:DoEscapeAnalysis启用逃逸分析，参数-XX:+EliminateAllocations开启标量替换（默认打开）。Java SE 6u23版本之后，HotSpot中默认就开启了逃逸分析，可以通过选项-XX:+PrintEscapeAnalysis查看逃逸分析的筛选结果。</p>
+<h3 id="TLAB-1"><a href="#TLAB-1" class="headerlink" title="TLAB"></a><strong>TLAB</strong></h3><p>TLAB的全称是Thread Local Allocation Buffer，即线程本地分配缓存区，这是一个线程专用的内存分配区域。<br>由于对象一般会分配在堆上，而堆是全局共享的。因此在同一时间，可能会有多个线程在堆上申请空间。因此，每次对象分配都必须要进行同步（虚拟机采用CAS配上失败重试的方式保证更新操作的原子性），而在竞争激烈的场合分配的效率又会进一步下降。JVM使用TLAB来避免多线程冲突，在给对象分配内存时，每个线程使用自己的TLAB，这样可以避免线程同步，提高了对象分配的效率。  </p>
+<p>TLAB本身占用eEden区空间，在开启TLAB的情况下，虚拟机会为<strong>每个Java线程分配一块TLAB空间</strong>。参数-XX:+UseTLAB开启TLAB，默认是开启的。TLAB空间的内存非常小，缺省情况下仅占有整个Eden空间的1%，当然可以通过选项-XX:TLABWasteTargetPercent设置TLAB空间所占用Eden空间的百分比大小。<br>由于TLAB空间一般不会很大，因此大对象无法在TLAB上进行分配，总是会直接分配在堆上。TLAB空间由于比较小，因此很容易装满。比如，一个100K的空间，已经使用了80KB，当需要再分配一个30KB的对象时，肯定就无能为力了。这时虚拟机会有两种选择，第一，废弃当前TLAB，这样就会浪费20KB空间；第二，将这30KB的对象直接分配在堆上，保留当前的TLAB，这样可以希望将来有小于20KB的对象分配请求可以直接使用这块空间。实际上虚拟机内部会维护一个叫作refill_waste的值，当请求对象大于refill_waste时，会选择在堆中分配，若小于该值，则会废弃当前TLAB，新建TLAB来分配对象。这个阈值可以使用TLABRefillWasteFraction来调整，它表示TLAB中允许产生这种浪费的比例。默认值为64，即表示使用约为1/64的TLAB空间作为refill_waste。默认情况下，TLAB和refill_waste都会在运行时不断调整的，使系统的运行状态达到最优。如果想要禁用自动调整TLAB的大小，可以使用-XX:-ResizeTLAB禁用ResizeTLAB，并使用-XX:TLABSize手工指定一个TLAB的大小。<br>-XX:+PrintTLAB可以跟踪TLAB的使用情况。一般不建议手工修改TLAB相关参数，推荐使用虚拟机默认行为。</p>
+<h3 id="对象内存分配的两种方法"><a href="#对象内存分配的两种方法" class="headerlink" title="对象内存分配的两种方法"></a><strong>对象内存分配的两种方法</strong></h3><p>为对象分配空间的任务等同于把一块确定大小的内存从Java堆中划分出来。</p>
+<p>指针碰撞(Serial、ParNew等带Compact过程的收集器)<br>假设Java堆中内存是绝对规整的，所有用过的内存都放在一边，空闲的内存放在另一边，中间放着一个指针作为分界点的指示器，那所分配内存就仅仅是把那个指针向空闲空间那边挪动一段与对象大小相等的距离，这种分配方式称为“指针碰撞”（Bump the Pointer）。<br>空闲列表(CMS这种基于Mark-Sweep算法的收集器)<br>如果Java堆中的内存并不是规整的，已使用的内存和空闲的内存相互交错，那就没有办法简单地进行指针碰撞了，虚拟机就必须维护一个列表，记录上哪些内存块是可用的，在分配的时候从列表中找到一块足够大的空间划分给对象实例，并更新列表上的记录，这种分配方式称为“空闲列表”（Free List）。  
+  </p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h3><p><strong>总体流程</strong><br><img src="_v_images/20200818211412253_811602284" alt="这里写图片描述"></p>
+<p><strong>对象分配流程</strong><br><img src="_v_images/20200818211412147_1281640355" alt="这里写图片描述"><br>如果开启栈上分配，JVM会先进行栈上分配，如果没有开启栈上分配或则不符合条件的则会进行TLAB分配，如果TLAB分配不成功，再尝试在eden区分配，如果对象满足了直接进入老年代的条件，那就直接分配在老年代。</p>
+<p><strong>对象在内存的引用方式</strong><br><img src="_v_images/20200818211411943_2105805507" alt="这里写图片描述"></p>
+<p><strong>对象在内存中的结构</strong><br><img src="_v_images/20200818211411726_1562017878" alt="这里写图片描述"></p>
+<p><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000004606059">参考</a></p>
 
       
     </div>
@@ -1358,7 +1380,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">106</span>
+        <span class="site-state-item-count">108</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

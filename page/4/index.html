@@ -183,120 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D%E4%B8%8ETLAB/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/metric/%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D%E4%B8%8ETLAB/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="栈上分配与TLAB"><a href="#栈上分配与TLAB" class="headerlink" title="栈上分配与TLAB"></a>栈上分配与TLAB</h1><h2 id="逃逸分析-Escape-Analysis"><a href="#逃逸分析-Escape-Analysis" class="headerlink" title="逃逸分析(Escape Analysis)"></a>逃逸分析(Escape Analysis)</h2><h2 id="栈上分配"><a href="#栈上分配" class="headerlink" title="栈上分配"></a>栈上分配</h2><p>针对那些作用域不会逃逸出方法的对象，在分配内存时不再将对象分配在堆内存中，而是将对象属性打散后分配在栈（线程私有的，属于栈内存）上，这样，随着方法的调用结束，栈空间的回收就会随着将栈上分配的打散后的对象回收掉，不再给gc增加额外的无用负担，从而提升应用程序整体的性能</p>
-<p>优点：</p>
-<p>　　　　1）可以在函数调用结束后自行销毁对象，不需要垃圾回收器的介入，有效避免垃圾回收带来的负面影响</p>
-<p>　　　　2）栈上分配速度快，提高系统性能</p>
-<p>线程私有变量，大对象虚拟机会分配到TLAB中，<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/a7414c0ebb17">TLAB（Thread Local Allocation Buffer）要不要了解下？</a></p>
-<p>在栈上分配该对象的内存,当栈帧从Java虚拟机栈中弹出，就自动销毁这个对象。减小垃圾回收器压力。</p>
-<h2 id="TLAB"><a href="#TLAB" class="headerlink" title="TLAB"></a>TLAB</h2><p>TLAB全称ThreadLocalAllocBuffer，是线程的一块私有内存，如果设置了虚拟机参数 -XX:UseTLAB，在线程初始化时，同时也会申请一块指定大小的内存，只给当前线程使用，这样每个线程都单独拥有一个Buffer，如果需要分配内存，就在自己的Buffer上分配，这样就不存在竞争的情况，可以大大提升分配效率，当Buffer容量不够的时候，再重新从Eden区域申请一块继续使用，这个申请动作还是需要原子操作的。</p>
-<p>TLAB的目的是在为新对象分配内存空间时，让每个Java应用线程能使用自己专属的分配指针来分配空间，均摊对GC堆（eden区）里共享的分配指针做更新而带来的同步开销。</p>
-<p>TLAB只是让每个线程有私有的分配指针，但底下存对象的内存空间还是给所有线程访问的，只是其它线程无法在这个区域分配而已。当一个TLAB用满（分配指针top撞上分配极限end了），就新申请一个TLAB，而在老TLAB里的对象还留在原地什么都不用管——它们无法感知自己是否是曾经从TLAB分配出来的，而只关心自己是在eden里分配的。</p>
-<table>
-<thead>
-<tr>
-<th>启动参数</th>
-<th>JVM内存分配模式</th>
-<th>Eden区</th>
-<th>YoungGC</th>
-<th>耗时</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>-XX:+DoEscapeAnalysis（开逃逸分析）-XX:+UseTLAB （开启TLAB）</td>
-<td>虚拟机栈上分配模式(小对象)</td>
-<td>较少使用</td>
-<td>较少使用</td>
-<td>很低</td>
-</tr>
-<tr>
-<td>-XX:-DoEscapeAnalysis（关闭逃逸分析）-XX:+UseTLAB（开启TLAB）</td>
-<td>TLAB区分配模式</td>
-<td>大量使用</td>
-<td>大量使用</td>
-<td>较高</td>
-</tr>
-<tr>
-<td>-XX:-DoEscapeAnalysis（关闭逃逸分析）-XX:-UseTLAB（关闭TLAB）</td>
-<td>Eden区分配模式</td>
-<td>大量使用</td>
-<td>大量使用</td>
-<td>特别高</td>
-</tr>
-</tbody></table>
-<p>在学习Java的过程中，一般认为new出来的对象都是被分配在堆上的，其实这个结论不完全正确，因为是大部分new出来的对象被分配在堆上，而不是全部。通过对Java对象分配的过程分析，可以知道有另外两个地方也是可以存放对象的。这两个地方分别栈 （涉及逃逸分析相关知识）和TLAB（Thread Local Allocation Buffer）。我们首先对这两者进行介绍，而后对Java对象分配过程进行介绍。</p>
-<h3 id="栈上分配-1"><a href="#栈上分配-1" class="headerlink" title="栈上分配"></a><strong>栈上分配</strong></h3><p>在JVM中，堆是线程共享的，因此堆上的对象对于各个线程都是共享和可见的，只要持有对象的引用，就可以访问堆中存储的对象数据。虚拟机的垃圾收集系统可以回收堆中不再使用的对象，但对于垃圾收集器来说，无论筛选可回收对象，还是回收和整理内存都需要耗费时间。</p>
-<p>如果确定一个对象的作用域不会逃逸出方法之外，那可以将这个对象分配在栈上，这样，对象所占用的内存空间就可以随栈帧出栈而销毁。在一般应用中，不会逃逸的局部对象所占的比例很大，如果能使用栈上分配，那大量的对象就会随着方法的结束而自动销毁了，无须通过垃圾收集器回收，可以减小垃圾收集器的负载。</p>
-<p>JVM允许将线程私有的对象打散分配在栈上，而不是分配在堆上。分配在栈上的好处是可以在函数调用结束后自行销毁，而不需要垃圾回收器的介入，从而提高系统性能。<br><strong>栈上分配的技术基础：</strong><br><strong>一是逃逸分析：</strong>逃逸分析的目的是判断对象的作用域是否有可能逃逸出函数体。关于逃逸分析的问题可以看我另一篇文章：</p>
-<p><strong>二是标量替换：</strong>允许将对象打散分配在栈上，比如若一个对象拥有两个字段，会将这两个字段视作局部变量进行分配。</p>
-<p>只能在server模式下才能启用逃逸分析，参数-XX:DoEscapeAnalysis启用逃逸分析，参数-XX:+EliminateAllocations开启标量替换（默认打开）。Java SE 6u23版本之后，HotSpot中默认就开启了逃逸分析，可以通过选项-XX:+PrintEscapeAnalysis查看逃逸分析的筛选结果。</p>
-<h3 id="TLAB-1"><a href="#TLAB-1" class="headerlink" title="TLAB"></a><strong>TLAB</strong></h3><p>TLAB的全称是Thread Local Allocation Buffer，即线程本地分配缓存区，这是一个线程专用的内存分配区域。<br>由于对象一般会分配在堆上，而堆是全局共享的。因此在同一时间，可能会有多个线程在堆上申请空间。因此，每次对象分配都必须要进行同步（虚拟机采用CAS配上失败重试的方式保证更新操作的原子性），而在竞争激烈的场合分配的效率又会进一步下降。JVM使用TLAB来避免多线程冲突，在给对象分配内存时，每个线程使用自己的TLAB，这样可以避免线程同步，提高了对象分配的效率。  </p>
-<p>TLAB本身占用eEden区空间，在开启TLAB的情况下，虚拟机会为<strong>每个Java线程分配一块TLAB空间</strong>。参数-XX:+UseTLAB开启TLAB，默认是开启的。TLAB空间的内存非常小，缺省情况下仅占有整个Eden空间的1%，当然可以通过选项-XX:TLABWasteTargetPercent设置TLAB空间所占用Eden空间的百分比大小。<br>由于TLAB空间一般不会很大，因此大对象无法在TLAB上进行分配，总是会直接分配在堆上。TLAB空间由于比较小，因此很容易装满。比如，一个100K的空间，已经使用了80KB，当需要再分配一个30KB的对象时，肯定就无能为力了。这时虚拟机会有两种选择，第一，废弃当前TLAB，这样就会浪费20KB空间；第二，将这30KB的对象直接分配在堆上，保留当前的TLAB，这样可以希望将来有小于20KB的对象分配请求可以直接使用这块空间。实际上虚拟机内部会维护一个叫作refill_waste的值，当请求对象大于refill_waste时，会选择在堆中分配，若小于该值，则会废弃当前TLAB，新建TLAB来分配对象。这个阈值可以使用TLABRefillWasteFraction来调整，它表示TLAB中允许产生这种浪费的比例。默认值为64，即表示使用约为1/64的TLAB空间作为refill_waste。默认情况下，TLAB和refill_waste都会在运行时不断调整的，使系统的运行状态达到最优。如果想要禁用自动调整TLAB的大小，可以使用-XX:-ResizeTLAB禁用ResizeTLAB，并使用-XX:TLABSize手工指定一个TLAB的大小。<br>-XX:+PrintTLAB可以跟踪TLAB的使用情况。一般不建议手工修改TLAB相关参数，推荐使用虚拟机默认行为。</p>
-<h3 id="对象内存分配的两种方法"><a href="#对象内存分配的两种方法" class="headerlink" title="对象内存分配的两种方法"></a><strong>对象内存分配的两种方法</strong></h3><p>为对象分配空间的任务等同于把一块确定大小的内存从Java堆中划分出来。</p>
-<p>指针碰撞(Serial、ParNew等带Compact过程的收集器)<br>假设Java堆中内存是绝对规整的，所有用过的内存都放在一边，空闲的内存放在另一边，中间放着一个指针作为分界点的指示器，那所分配内存就仅仅是把那个指针向空闲空间那边挪动一段与对象大小相等的距离，这种分配方式称为“指针碰撞”（Bump the Pointer）。<br>空闲列表(CMS这种基于Mark-Sweep算法的收集器)<br>如果Java堆中的内存并不是规整的，已使用的内存和空闲的内存相互交错，那就没有办法简单地进行指针碰撞了，虚拟机就必须维护一个列表，记录上哪些内存块是可用的，在分配的时候从列表中找到一块足够大的空间划分给对象实例，并更新列表上的记录，这种分配方式称为“空闲列表”（Free List）。  
-  </p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h3><p><strong>总体流程</strong><br><img src="_v_images/20200818211412253_811602284" alt="这里写图片描述"></p>
-<p><strong>对象分配流程</strong><br><img src="_v_images/20200818211412147_1281640355" alt="这里写图片描述"><br>如果开启栈上分配，JVM会先进行栈上分配，如果没有开启栈上分配或则不符合条件的则会进行TLAB分配，如果TLAB分配不成功，再尝试在eden区分配，如果对象满足了直接进入老年代的条件，那就直接分配在老年代。</p>
-<p><strong>对象在内存的引用方式</strong><br><img src="_v_images/20200818211411943_2105805507" alt="这里写图片描述"></p>
-<p><strong>对象在内存中的结构</strong><br><img src="_v_images/20200818211411726_1562017878" alt="这里写图片描述"></p>
-<p><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000004606059">参考</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/MAT/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -321,7 +207,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -435,7 +321,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -494,7 +380,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:04" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:04+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -557,7 +443,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-18 22:05:03" itemprop="dateCreated datePublished" datetime="2021-01-18T22:05:03+08:00">2021-01-18</time>
+              <time title="Created: 2021-01-19 09:17:08" itemprop="dateCreated datePublished" datetime="2021-01-19T09:17:08+08:00">2021-01-19</time>
             </span>
 
           
@@ -731,7 +617,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-18 22:05:05" itemprop="dateModified" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+                <time title="Modified: 2021-01-19 09:17:09" itemprop="dateModified" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -860,7 +746,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-18 22:05:05" itemprop="dateModified" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+                <time title="Modified: 2021-01-19 09:17:09" itemprop="dateModified" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -934,7 +820,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-18 22:05:05" itemprop="dateModified" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+                <time title="Modified: 2021-01-19 09:17:09" itemprop="dateModified" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1016,7 +902,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-18 22:05:05" itemprop="dateModified" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+                <time title="Modified: 2021-01-19 09:17:09" itemprop="dateModified" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1089,7 +975,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-18 22:05:05" itemprop="dateModified" datetime="2021-01-18T22:05:05+08:00">2021-01-18</time>
+                <time title="Modified: 2021-01-19 09:17:09" itemprop="dateModified" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1114,6 +1000,79 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
       
           <h1 id="Flink-SQL语法"><a href="#Flink-SQL语法" class="headerlink" title="Flink-SQL语法"></a>Flink-SQL语法</h1><h2 id="TopN"><a href="#TopN" class="headerlink" title="TopN"></a>TopN</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/wangpei1949/article/details/105471974">SQL实时TopN</a></p>
 
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-checkpoint%E8%AF%8A%E6%96%AD/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-checkpoint%E8%AF%8A%E6%96%AD/" class="post-title-link" itemprop="url">Flink-checkpoint诊断</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-19 09:17:09" itemprop="dateModified" datetime="2021-01-19T09:17:09+08:00">2021-01-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-checkpoint诊断"><a href="#Flink-checkpoint诊断" class="headerlink" title="Flink-checkpoint诊断"></a>Flink-checkpoint诊断</h1>
       
     </div>
 
@@ -1210,7 +1169,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">106</span>
+        <span class="site-state-item-count">108</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
