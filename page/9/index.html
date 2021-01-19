@@ -183,7 +183,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/typesafe.config/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-usage/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java/tool/typesafe.config/" class="post-title-link" itemprop="url">typesafe.config与HOCON</a>
+            <a href="/bigdata/Spark/Spark-usage/" class="post-title-link" itemprop="url">Spark 使用</a>
         </h2>
 
         <div class="post-meta">
@@ -214,218 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:18:35" itemprop="dateModified" datetime="2021-01-19T09:18:35+08:00">2021-01-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="typesafe-config"><a href="#typesafe-config" class="headerlink" title="typesafe.config"></a>typesafe.config</h1><h1 id="Typesafe-Config介绍"><a href="#Typesafe-Config介绍" class="headerlink" title="Typesafe Config介绍"></a>Typesafe Config介绍</h1><h3 id="Why-Typesafe-Config"><a href="#Why-Typesafe-Config" class="headerlink" title="Why Typesafe Config"></a>Why Typesafe Config</h3><p><strong>THE config library</strong> 非常好用的API，用过之后不会再想使用其他配置工具</p>
-<ul>
-<li>纯java实现，无任何依赖</li>
-<li>支持各种格式配置的融合: Java properties, JSON, and a human-friendly JSON superset</li>
-<li>可以通过文件、urls、classpath加载配置</li>
-<li>支持多层嵌套的配置方式：树形配置</li>
-<li>识别Java system properties, 如java -Dmyapp.foo.bar=10</li>
-<li>可以转换时间，大小等单位。如 “512k”、”10 seconds”</li>
-<li>类型转换，比如yes可以转换为true，数字之间也可以在内部做转换</li>
-<li>JSON superset features:<ul>
-<li>comments</li>
-<li>includes</li>
-<li>substitutions (“foo” : ${bar}, “foo” : Hello ${who})</li>
-<li>properties-like notation (a.b=c)</li>
-<li>less noisy, more lenient syntax</li>
-<li>substitute environment variables (logdir=${HOME}/logs)</li>
-</ul>
-</li>
-<li>基于不可变对象，不用担心多线程问题</li>
-</ul>
-<h4 id="获取"><a href="#获取" class="headerlink" title="获取"></a>获取</h4><p>使用gradle</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">compile &#39;com.typesafe:config:1.2.1&#39;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h3 id="HOCON-Human-Optimized-Config-Object-Notation"><a href="#HOCON-Human-Optimized-Config-Object-Notation" class="headerlink" title="HOCON (Human-Optimized Config Object Notation)"></a>HOCON (Human-Optimized Config Object Notation)</h3><p>config使用的是HOCON的文件格式，这种文件格式类似于json，很灵活但没有歧义，能引用，能替换，能注释，能兼容老的properties等格式</p>
-<p>The following features are desirable, to support human usage:</p>
-<ul>
-<li>less noisy / less pedantic syntax</li>
-<li>ability to refer to another part of the configuration (set a value to another value)</li>
-<li>import/include another configuration file into the current file</li>
-<li>a mapping to a flat properties list such as Java’s system properties</li>
-<li>ability to get values from environment variables</li>
-<li>ability to write comments</li>
-</ul>
-<p>约束：utf8编码</p>
-<h4 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 单行注释</span><br><span class="line">a &#x3D; 1 &#x2F;&#x2F; 单行注释</span><br><span class="line">b &#x3D; 2 # 单行注释</span><br><span class="line">c &#x3D; [3, # 行内注释 # 4]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h4 id="赋值与嵌套"><a href="#赋值与嵌套" class="headerlink" title="赋值与嵌套"></a>赋值与嵌套</h4><h5 id="普通赋值"><a href="#普通赋值" class="headerlink" title="普通赋值"></a>普通赋值</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">a : 1</span><br><span class="line">a &#x3D; 1</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h5 id="（对象）嵌套赋值"><a href="#（对象）嵌套赋值" class="headerlink" title="（对象）嵌套赋值"></a>（对象）嵌套赋值</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;foo&quot; : &#123; &quot;a&quot; : 42 &#125;,</span><br><span class="line">    &quot;foo&quot; : &#123; &quot;b&quot; : 43 &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">    &quot;foo&quot; : &#123; &quot;a&quot; : 42, &quot;b&quot; : 43 &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">foo.bar : 42</span><br><span class="line">foo &#123; bar : 42 &#125;</span><br><span class="line"></span><br><span class="line">foo.bar.baz : 42</span><br><span class="line">foo &#123; bar &#123; baz : 42 &#125; &#125;</span><br><span class="line"></span><br><span class="line">a.x : 42, a.y : 43</span><br><span class="line">a &#123; x : 42, y : 43 &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h5 id="多种格式"><a href="#多种格式" class="headerlink" title="多种格式"></a>多种格式</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;foo&quot; : &#123;</span><br><span class="line">        &quot;bar&quot; : 10,</span><br><span class="line">        &quot;baz&quot; : 12</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">foo : &#123;</span><br><span class="line">    bar : 10,</span><br><span class="line">    baz : 12</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">foo &#123;</span><br><span class="line">    bar &#x3D; 10</span><br><span class="line">    baz &#x3D; 12</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">foo.bar&#x3D;10</span><br><span class="line">foo.baz&#x3D;12</span><br><span class="line"></span><br><span class="line">foo.bar&#x3D;10, foo.baz&#x3D;12</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h5 id="多行赋值"><a href="#多行赋值" class="headerlink" title="多行赋值"></a>多行赋值</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">logo &#x3D; &quot;&quot;&quot;hello</span><br><span class="line">world&quot;&quot;&quot;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h5 id="数组与对象合并"><a href="#数组与对象合并" class="headerlink" title="数组与对象合并"></a>数组与对象合并</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; one object</span><br><span class="line">a : &#123; b : 1, c : 2 &#125;</span><br><span class="line">&#x2F;&#x2F; two objects that are merged via concatenation rules</span><br><span class="line">a : &#123; b : 1 &#125; &#123; c : 2 &#125;</span><br><span class="line">&#x2F;&#x2F; two fields that are merged</span><br><span class="line">a : &#123; b : 1 &#125;</span><br><span class="line">a : &#123; c : 2 &#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; one array</span><br><span class="line">a : [ 1, 2, 3, 4 ]</span><br><span class="line">&#x2F;&#x2F; two arrays that are concatenated</span><br><span class="line">a : [ 1, 2 ] [ 3, 4 ]</span><br><span class="line">&#x2F;&#x2F; a later definition referring to an earlier</span><br><span class="line">&#x2F;&#x2F; (see &quot;self-referential substitutions&quot; below)</span><br><span class="line">a : [ 1, 2 ]</span><br><span class="line">a : $&#123;a&#125; [ 3, 4 ]</span><br><span class="line"></span><br><span class="line">path &#x3D; [ &#x2F;bin ]</span><br><span class="line">path &#x3D; $&#123;path&#125; [ &#x2F;usr&#x2F;bin ]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h5 id="对象的继承"><a href="#对象的继承" class="headerlink" title="对象的继承"></a>对象的继承</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">data-center-generic &#x3D; &#123; cluster-size &#x3D; 6 &#125;</span><br><span class="line">data-center-east &#x3D; $&#123;data-center-generic&#125; &#123; name &#x3D; &quot;east&quot; &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h5 id="合并还是覆盖"><a href="#合并还是覆盖" class="headerlink" title="合并还是覆盖"></a>合并还是覆盖</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#123; a : &#123; x : 1 &#125; &#125; (first priority)</span><br><span class="line">&#123; a : 42 &#125; (fallback)</span><br><span class="line">&#123; a : &#123; y : 2 &#125; &#125; (another fallback)</span><br><span class="line"># result in &#123; a : &#123; x : 1 &#125; &#125;</span><br><span class="line"></span><br><span class="line">&#123; a : &#123; x : 1 &#125; &#125; (first priority)</span><br><span class="line">&#123; a : &#123; y : 2 &#125; &#125; (fallback)</span><br><span class="line">&#123; a : 42 &#125; (another fallback)</span><br><span class="line"># result in &#123; a : &#123; x : 1, y : 2 &#125; &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h4 id="替换"><a href="#替换" class="headerlink" title="替换"></a>替换</h4><p>使用这样的语法 <code>$&#123;pathexpression&#125; or $&#123;?pathexpression&#125;</code></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">animal.favorite &#x3D; dog</span><br><span class="line">key : $&#123;animal.favorite&#125; is my favorite animal</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p><code>pathexpression</code>是绝对路径，替换是config对象构建的最后一步。</p>
-<h4 id="Include"><a href="#Include" class="headerlink" title="Include"></a>Include</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">include &quot;foo&quot;</span><br><span class="line"></span><br><span class="line">include &quot;foo.properties&quot;</span><br><span class="line">include &quot;foo.json&quot;</span><br><span class="line">include &quot;foo.conf&quot;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h4 id="内置转换API"><a href="#内置转换API" class="headerlink" title="内置转换API"></a>内置转换API</h4><p>自动转换，<a target="_blank" rel="noopener" href="https://github.com/typesafehub/config/blob/master/HOCON.md#duration-format">时间单位</a>（ns、ms、s、m、h etc），<a target="_blank" rel="noopener" href="https://github.com/typesafehub/config/blob/master/HOCON.md#size-in-bytes-format">文件大小</a>（kB、MB etc）</p>
-<h3 id="文件载入顺序"><a href="#文件载入顺序" class="headerlink" title="文件载入顺序"></a>文件载入顺序</h3><p>依次载入合并</p>
-<ul>
-<li>引用 jar 包中的 reference.conf 库引用配置</li>
-<li>引用 jar 包中的 application.{conf,json,properties} 应用配置</li>
-<li>本地 reference.conf 库引用配置</li>
-<li>本地 application.{conf,json,properties} 应用配置</li>
-<li>system properties</li>
-</ul>
-<h3 id="在java代码中使用"><a href="#在java代码中使用" class="headerlink" title="在java代码中使用"></a>在java代码中使用</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"># 配置内容</span><br><span class="line">foo&#x3D;42</span><br><span class="line">dev.foo&#x3D;57</span><br><span class="line">prod.foo&#x3D;10</span><br><span class="line"></span><br><span class="line">import com.typesafe.config.ConfigFactory</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 载入根配置</span><br><span class="line">Config conf &#x3D; ConfigFactory.load();</span><br><span class="line">int foo1 &#x3D; conf.getInt(&quot;dev.foo&quot;);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 载入某个对象</span><br><span class="line">Config prod &#x3D; conf.getConfig(&quot;prod&quot;);</span><br><span class="line">int foo2 &#x3D; foo.getInt(&quot;foo&quot;);</span><br><span class="line"></span><br><span class="line">Config devConfig &#x3D; conf</span><br><span class="line">                     .getConfig(&quot;dev&quot;)</span><br><span class="line">                     .withFallback(originalConfig)</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; handle default</span><br><span class="line">&#x2F;&#x2F; boolean getBoolean(String path, boolean fallback)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><p>使用下面的方法，会把最终所有的配置信息打印出来</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">logger.debug(myConfig.root().render())</span><br></pre></td></tr></table></figure>
-<p>输出结果中包含所有载入的配置，如果使用了conf文件，会将对应文件的行信息也打印出来：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    # system properties</span><br><span class="line">    &quot;awt&quot; : &#123;</span><br><span class="line">        # system properties</span><br><span class="line">        &quot;toolkit&quot; : &quot;sun.awt.windows.WToolkit&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    # complex1.conf: 2</span><br><span class="line">    # these are our own config values defined by the app</span><br><span class="line">    &quot;complex-app&quot; : &#123;</span><br><span class="line">        # complex1.conf: 3</span><br><span class="line">        &quot;something&quot; : &quot;This value comes from complex-app&#39;s complex1.conf&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h3 id="源代码"><a href="#源代码" class="headerlink" title="源代码"></a>源代码</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://github.com/typesafehub/config">https://github.com/typesafehub/config</a></li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/%E5%8A%A0%E5%AF%86%E4%B8%8E%E8%A7%A3%E5%AF%86/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/tool/%E5%8A%A0%E5%AF%86%E4%B8%8E%E8%A7%A3%E5%AF%86/" class="post-title-link" itemprop="url">Java中优雅的加解密</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:18:35" itemprop="dateModified" datetime="2021-01-19T09:18:35+08:00">2021-01-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="加密与解密"><a href="#加密与解密" class="headerlink" title="加密与解密"></a>加密与解密</h1><h2 id="AES"><a href="#AES" class="headerlink" title="AES"></a>AES</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.io.UnsupportedEncodingException;</span><br><span class="line"><span class="keyword">import</span> java.security.InvalidKeyException;</span><br><span class="line"><span class="keyword">import</span> java.security.NoSuchAlgorithmException;</span><br><span class="line"><span class="keyword">import</span> java.security.SecureRandom;</span><br><span class="line"><span class="keyword">import</span> java.util.Base64;</span><br><span class="line"><span class="keyword">import</span> java.util.Scanner;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.crypto.BadPaddingException;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.Cipher;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.IllegalBlockSizeException;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.KeyGenerator;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.NoSuchPaddingException;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.SecretKey;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.spec.SecretKeySpec;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> sun.misc.BASE64Decoder;</span><br><span class="line"><span class="keyword">import</span> sun.misc.BASE64Encoder;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * AES对称加密和解密</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SymmetricEncoder</span> </span>&#123;</span><br><span class="line">  <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * 加密</span></span><br><span class="line"><span class="comment">   * 1.构造密钥生成器</span></span><br><span class="line"><span class="comment">   * 2.根据ecnodeRules规则初始化密钥生成器</span></span><br><span class="line"><span class="comment">   * 3.产生密钥</span></span><br><span class="line"><span class="comment">   * 4.创建和初始化密码器</span></span><br><span class="line"><span class="comment">   * 5.内容加密</span></span><br><span class="line"><span class="comment">   * 6.返回字符串</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">AESEncode</span><span class="params">(String encodeRules,String content)</span></span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//1.构造密钥生成器，指定为AES算法,不区分大小写</span></span><br><span class="line">            KeyGenerator keygen=KeyGenerator.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">            <span class="comment">//2.根据ecnodeRules规则初始化密钥生成器</span></span><br><span class="line">            <span class="comment">//生成一个128位的随机源,根据传入的字节数组</span></span><br><span class="line">            keygen.init(<span class="number">128</span>, <span class="keyword">new</span> SecureRandom(encodeRules.getBytes()));</span><br><span class="line">              <span class="comment">//3.产生原始对称密钥</span></span><br><span class="line">            SecretKey original_key=keygen.generateKey();</span><br><span class="line">              <span class="comment">//4.获得原始对称密钥的字节数组</span></span><br><span class="line">            <span class="keyword">byte</span> [] raw=original_key.getEncoded();</span><br><span class="line">            <span class="comment">//5.根据字节数组生成AES密钥</span></span><br><span class="line">            SecretKey key=<span class="keyword">new</span> SecretKeySpec(raw, <span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//6.根据指定算法AES自成密码器</span></span><br><span class="line">            Cipher cipher=Cipher.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//7.初始化密码器，第一个参数为加密(Encrypt_mode)或者解密解密(Decrypt_mode)操作，第二个参数为使用的KEY</span></span><br><span class="line">            cipher.init(Cipher.ENCRYPT_MODE, key);</span><br><span class="line">            <span class="comment">//8.获取加密内容的字节数组(这里要设置为utf-8)不然内容中如果有中文和英文混合中文就会解密为乱码</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_encode=content.getBytes(<span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">            <span class="comment">//9.根据密码器的初始化方式--加密：将数据加密</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_AES=cipher.doFinal(byte_encode);</span><br><span class="line">          <span class="comment">//10.将加密后的数据转换为字符串</span></span><br><span class="line">            <span class="comment">//这里用Base64Encoder中会找不到包</span></span><br><span class="line">            <span class="comment">//解决办法：</span></span><br><span class="line">            <span class="comment">//在项目的Build path中先移除JRE System Library，再添加库JRE System Library，重新编译后就一切正常了。</span></span><br><span class="line">            String AES_encode=<span class="keyword">new</span> String(<span class="keyword">new</span> BASE64Encoder().encode(byte_AES));</span><br><span class="line">          <span class="comment">//11.将字符串返回</span></span><br><span class="line">            <span class="keyword">return</span> AES_encode;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InvalidKeyException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IllegalBlockSizeException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (BadPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (UnsupportedEncodingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//如果有错就返加nulll</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * 解密</span></span><br><span class="line"><span class="comment">     * 解密过程：</span></span><br><span class="line"><span class="comment">     * 1.同加密1-4步</span></span><br><span class="line"><span class="comment">     * 2.将加密后的字符串反纺成byte[]数组</span></span><br><span class="line"><span class="comment">     * 3.将加密内容解密</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">AESDncode</span><span class="params">(String encodeRules,String content)</span></span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//1.构造密钥生成器，指定为AES算法,不区分大小写</span></span><br><span class="line">            KeyGenerator keygen=KeyGenerator.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">            <span class="comment">//2.根据ecnodeRules规则初始化密钥生成器</span></span><br><span class="line">            <span class="comment">//生成一个128位的随机源,根据传入的字节数组</span></span><br><span class="line">            keygen.init(<span class="number">128</span>, <span class="keyword">new</span> SecureRandom(encodeRules.getBytes()));</span><br><span class="line">              <span class="comment">//3.产生原始对称密钥</span></span><br><span class="line">            SecretKey original_key=keygen.generateKey();</span><br><span class="line">              <span class="comment">//4.获得原始对称密钥的字节数组</span></span><br><span class="line">            <span class="keyword">byte</span> [] raw=original_key.getEncoded();</span><br><span class="line">            <span class="comment">//5.根据字节数组生成AES密钥</span></span><br><span class="line">            SecretKey key=<span class="keyword">new</span> SecretKeySpec(raw, <span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//6.根据指定算法AES自成密码器</span></span><br><span class="line">            Cipher cipher=Cipher.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//7.初始化密码器，第一个参数为加密(Encrypt_mode)或者解密(Decrypt_mode)操作，第二个参数为使用的KEY</span></span><br><span class="line">            cipher.init(Cipher.DECRYPT_MODE, key);</span><br><span class="line">            <span class="comment">//8.将加密并编码后的内容解码成字节数组</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_content= <span class="keyword">new</span> BASE64Decoder().decodeBuffer(content);</span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * 解密</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_decode=cipher.doFinal(byte_content);</span><br><span class="line">            String AES_decode=<span class="keyword">new</span> String(byte_decode,<span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span> AES_decode;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InvalidKeyException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IllegalBlockSizeException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (BadPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//如果有错就返加nulll</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SymmetricEncoder se=<span class="keyword">new</span> SymmetricEncoder();</span><br><span class="line">        Scanner scanner=<span class="keyword">new</span> Scanner(System.in);</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 加密</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        System.out.println(<span class="string">&quot;使用AES对称加密，请输入加密的规则&quot;</span>);</span><br><span class="line">        String encodeRules=scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;请输入要加密的内容:&quot;</span>);</span><br><span class="line">        String content = scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;根据输入的规则&quot;</span>+encodeRules+<span class="string">&quot;加密后的密文是:&quot;</span>+se.AESEncode(encodeRules, content));</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 解密</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        System.out.println(<span class="string">&quot;使用AES对称解密，请输入加密的规则：(须与加密相同)&quot;</span>);</span><br><span class="line">         encodeRules=scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;请输入要解密的内容（密文）:&quot;</span>);</span><br><span class="line">         content = scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;根据输入的规则&quot;</span>+encodeRules+<span class="string">&quot;解密后的明文是:&quot;</span>+se.AESDncode(encodeRules, content));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="Apache-commons-codec"><a href="#Apache-commons-codec" class="headerlink" title="Apache commons codec"></a>Apache commons codec</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-codec<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-codec<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">version</span>&gt;</span>1.9<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//1、MD5加密</span></span><br><span class="line">String md5Str = DigestUtils.md5Hex(str);</span><br><span class="line">System.out.println(<span class="string">&quot;MD5--&gt;&quot;</span> + md5Str);</span><br><span class="line"></span><br><span class="line"><span class="comment">//SHA1加密</span></span><br><span class="line">String sha1Str = DigestUtils.sha1Hex(str);</span><br><span class="line">System.out.println(<span class="string">&quot;SHA1--&gt;&quot;</span> + sha1Str);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Base64加密</span></span><br><span class="line">String base64Str = Base64.encodeBase64String(str.getBytes());</span><br><span class="line">System.out.println(<span class="string">&quot;base64加密--&gt;&quot;</span> + base64Str);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Base64解密</span></span><br><span class="line">String base64DecodeStr = <span class="keyword">new</span> String(Base64.decodeBase64(base64Str));</span><br><span class="line">System.out.println(<span class="string">&quot;base64解密--&gt;&quot;</span> + base64DecodeStr);</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Impala/01.Impala/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Impala/01.Impala/" class="post-title-link" itemprop="url">Impala基础与痛点</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:18:36" itemprop="dateModified" datetime="2021-01-19T09:18:36+08:00">2021-01-19</time>
+                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -448,27 +237,127 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="01-Impala"><a href="#01-Impala" class="headerlink" title="01.Impala"></a>01.Impala</h1><h2 id="components"><a href="#components" class="headerlink" title="components"></a>components</h2><p><a target="_blank" rel="noopener" href="https://impala.apache.org/docs/build/html/topics/impala_components.html">impala components</a></p>
-<h3 id="impalad的部署"><a href="#impalad的部署" class="headerlink" title="impalad的部署"></a>impalad的部署</h3><p>Impala daemons can be deployed in one of the following ways:</p>
+          <h1 id="Spark-使用"><a href="#Spark-使用" class="headerlink" title="Spark 使用"></a>Spark 使用</h1><h2 id="copy-file"><a href="#copy-file" class="headerlink" title="copy file"></a>copy file</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.apache.hadoop.fs.&#123;<span class="type">FileAlreadyExistsException</span>, <span class="type">FileSystem</span>, <span class="type">FileUtil</span>, <span class="type">Path</span>&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">val</span> srcFileSystem: <span class="type">FileSystem</span> = <span class="type">FileSystemUtil</span></span><br><span class="line">      .apply(spark.sparkContext.hadoopConfiguration)</span><br><span class="line">      .getFileSystem(sourceFile)</span><br><span class="line">    <span class="keyword">val</span> dstFileSystem: <span class="type">FileSystem</span> = <span class="type">FileSystemUtil</span></span><br><span class="line">      .apply(spark.sparkContext.hadoopConfiguration)</span><br><span class="line">      .getFileSystem(sourceFile)</span><br><span class="line"></span><br><span class="line">    <span class="type">FileUtil</span>.copy(</span><br><span class="line">      srcFileSystem,</span><br><span class="line">      <span class="keyword">new</span> <span class="type">Path</span>(<span class="keyword">new</span> <span class="type">URI</span>(sourceFile)),</span><br><span class="line">      dstFileSystem,</span><br><span class="line">      <span class="keyword">new</span> <span class="type">Path</span>(<span class="keyword">new</span> <span class="type">URI</span>(targetFile)),</span><br><span class="line">      <span class="literal">true</span>,</span><br><span class="line">      spark.sparkContext.hadoopConfiguration)</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Spark/Spark-%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5/" class="post-title-link" itemprop="url">Spark开发集锦</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Spark"><a href="#Spark" class="headerlink" title="Spark"></a>Spark</h1><p><a target="_blank" rel="noopener" href="https://spark-reference-doc-cn.readthedocs.io/zh_CN/latest/programming-guide/rdd-guide.html">Spark 2.2.x中文文档</a><br>spark两个重要概念</p>
 <ul>
-<li>HDFS and Impala are co-located, and each Impala daemon runs on the same host as a DataNode.</li>
-<li>Impala is deployed separately in a compute cluster and reads remotely from HDFS, S3, ADLS, etc.</li>
+<li>RDD</li>
+<li>共享变量</li>
 </ul>
-<h3 id="hive连接表需要刷新impalad"><a href="#hive连接表需要刷新impalad" class="headerlink" title="hive连接表需要刷新impalad"></a>hive连接表需要刷新impalad</h3><p>The catalog service avoids the need to issue REFRESH and INVALIDATE METADATA statements when the metadata changes are performed by statements issued through Impala. When you create a table, load data, and so on through Hive, you do need to issue REFRESH or INVALIDATE METADATA on an Impala daemon before executing a query there.</p>
-<p>impala 自己执行修改元数据的请求时，不需要刷新和重载元数据，当通过hive创建表和加载数据时，在执行查询之前，需要在Impala守护进程上发出REFRESH或INVALIDATE元数据。</p>
-<p>The REFRESH and INVALIDATE METADATA statements are not needed when the CREATE TABLE, INSERT, or other table-changing or data-changing operation is performed through Impala. These statements are still needed if such operations are done through Hive or by manipulating data files directly in HDFS, but in those cases the statements only need to be issued on one Impala daemon rather than on all daemons. </p>
-<p>当通过Impala执行创建表、插入或其他表更改或数据更改操作时，不需要刷新和无效元数据语句。<br>如果通过Hive或直接在HDFS中操作数据文件，仍然需要，但是在这种情况下，只需要在一个Impala守护进程上发出这些语句，而不是在所有守护进程上。</p>
-<h3 id="元数据加载与对查询的影响"><a href="#元数据加载与对查询的影响" class="headerlink" title="元数据加载与对查询的影响"></a>元数据加载与对查询的影响</h3><p><code>‑‑load_catalog_in_background</code> option to control when the metadata of a table is loaded.<br>If set to false, the metadata of a table is loaded when it is referenced for the first time. This means that the first run of a particular query can be slower than subsequent runs. Starting in Impala 2.2, the default for ‑‑load_catalog_in_background is false.</p>
-<p>表的元数据在第一次引用时加载。这意味着特定查询的第一次运行可能比后续运行慢</p>
-<p>If set to true, the catalog service attempts to load metadata for a table even if no query needed that metadata. So metadata will possibly be already loaded when the first query that would need it is run. However, for the following reasons, we recommend not to set the option to true.</p>
-<p>catalogd尝试加载表的元数据，即使没有查询需要该元数据。因此，在运行第一个需要元数据的查询时，元数据可能已经被加载</p>
-<p>Background load can interfere with query-specific metadata loading. This can happen on startup or after invalidating metadata, with a duration depending on the amount of metadata, and can lead to a seemingly random long running queries that are difficult to diagnose.</p>
-<p>后台加载可能会干扰特定查询的元数据加载。这种情况可能在启动时发生，也可能在元数据失效后发生，持续时间取决于元数据的数量，并可能导致看似随机的长时间运行查询，而这些查询很难诊断。</p>
-<p>Impala may load metadata for tables that are possibly never used, potentially increasing catalog size and consequently memory usage for both catalog service and Impala Daemon.</p>
-<p>Impala可以为可能从未使用过的表加载元数据，这可能会增加目录大小，从而增加目录服务和Impala守护进程的内存使用量。</p>
-<h3 id="元数据刷新耗时"><a href="#元数据刷新耗时" class="headerlink" title="元数据刷新耗时"></a>元数据刷新耗时</h3><p>For tables with a large volume of data and/or many partitions, retrieving all the metadata for a table can be time-consuming, taking minutes in some cases. Thus, each Impala node caches all of this metadata to reuse for future queries against the same table.<br>对于具有大量数据和/或许多分区的表，检索表的所有元数据可能很耗时，在某些情况下会花费几分钟。<br>因此，每个Impala节点都会缓存所有这些元数据，以供将来针对同一表的查询重用。</p>
-<p>If the table definition or the data in the table is updated, all other Impala daemons in the cluster must receive the latest metadata, replacing the obsolete cached metadata, before issuing a query against that table</p>
-<p>For DDL and DML issued through Hive, or changes made manually to files in HDFS, you still use the REFRESH statement (when new data files are added to existing tables) or the INVALIDATE METADATA statement (for entirely new tables, or after dropping a table, performing an HDFS rebalance operation, or deleting data files). Issuing INVALIDATE METADATA by itself retrieves metadata for all the tables tracked by the metastore. If you know that only specific tables have been changed outside of Impala, you can issue REFRESH table_name for each affected table to only retrieve the latest metadata for those tables.</p>
+<h2 id="共享变量"><a href="#共享变量" class="headerlink" title="共享变量"></a>共享变量</h2><h3 id="广播变量"><a href="#广播变量" class="headerlink" title="广播变量"></a>广播变量</h3><h3 id="累加器"><a href="#累加器" class="headerlink" title="累加器"></a>累加器</h3><h2 id="dev"><a href="#dev" class="headerlink" title="dev"></a>dev</h2><h3 id="依赖"><a href="#依赖" class="headerlink" title="依赖"></a>依赖</h3><p>spark core依赖</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.spark<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spark-core_2.11<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.3.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>hdfs client</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.hadoop<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hadoop-hdfs-client<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.2.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">scope</span>&gt;</span>provided<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>导包</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.apache.spark.<span class="type">SparkContext</span></span><br><span class="line"><span class="keyword">import</span> org.apache.spark.<span class="type">SparkConf</span></span><br></pre></td></tr></table></figure>
+<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><p>每个JVM进程中，只能有一个活跃（active）的 SparkContext 对象。如果你非要再新建一个，那首先必须将之前那个活跃的 SparkContext 对象stop()掉。</p>
+<blockquote>
+<p>如何保证SparkContext是单例</p>
+</blockquote>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> conf = <span class="keyword">new</span> <span class="type">SparkConf</span>().setAppName(appName).setMaster(master)</span><br><span class="line"><span class="keyword">val</span> sc = <span class="keyword">new</span> <span class="type">SparkContext</span>(conf)</span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spark-shell –help 可以查看完整的选项列表</span><br></pre></td></tr></table></figure>
+<h2 id="RDD-弹性分布式数据集"><a href="#RDD-弹性分布式数据集" class="headerlink" title="RDD: 弹性分布式数据集"></a>RDD: 弹性分布式数据集</h2><p>可容错、可并行操作的分布式元素集合</p>
+<p>有两种方法可以创建 RDD 对象：由驱动程序中的集合对象通过并行化操作创建，或者从外部存储系统中数据集加载（如：共享文件系统、HDFS、HBase或者其他Hadoop支持的数据源）。</p>
+<h3 id="并行集合"><a href="#并行集合" class="headerlink" title="并行集合"></a>并行集合</h3><h2 id="Spark-SQL-partition个数与宽窄依赖"><a href="#Spark-SQL-partition个数与宽窄依赖" class="headerlink" title="Spark SQL partition个数与宽窄依赖"></a>Spark SQL partition个数与宽窄依赖</h2><h3 id="groupByKey"><a href="#groupByKey" class="headerlink" title="groupByKey"></a>groupByKey</h3><h4 id="默认值"><a href="#默认值" class="headerlink" title="默认值"></a>默认值</h4><ol>
+<li>不指定partition大小</li>
+</ol>
+<p>默认的 Spark SQL 会使用 <code>spark.sql.shuffle.partitions</code> 的数量来进行 <code>aggregation</code> 和 <code>join</code>，默认值为 200。这会导致 partition 膨胀的问题，200个 partition 都需要执行，无论大小，尽管有些 partition 是没有数据的。</p>
+<ol start="2">
+<li>通过repartition设定大小后，再groupByKey</li>
+</ol>
+<p>仍然是200</p>
+<ol start="3">
+<li><p>Using repartition Operator With Explicit Number of Partitions</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">repartition(numPartitions: <span class="type">Int</span>, partitionExprs: <span class="type">Column</span>*): <span class="type">Dataset</span>[<span class="type">T</span>]</span><br></pre></td></tr></table></figure>
+<p>指定partitionExprs，则可以实现指定的分区数</p>
+</li>
+</ol>
+<h2 id="RDD"><a href="#RDD" class="headerlink" title="RDD"></a>RDD</h2><p>rdd的几个基本方法:</p>
+<p>getPartitions()</p>
+<p>compute()</p>
+<h2 id="Hadoop-split-Hadoop分片"><a href="#Hadoop-split-Hadoop分片" class="headerlink" title="Hadoop split: Hadoop分片"></a>Hadoop split: Hadoop分片</h2><p>hdfs dfs blockSize</p>
+<p>hdfs-site.xml中修改dfs.blockSize, spark 2.7.x 默认值为128M</p>
+<p><img src="_v_images/20200728185752151_2000769439.png"></p>
+<h2 id="spark-3-0-读取-orcfile"><a href="#spark-3-0-读取-orcfile" class="headerlink" title="spark 3.0 读取 orcfile"></a>spark 3.0 读取 orcfile</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> path=<span class="string">&quot;/data/sample.orc&quot;</span></span><br><span class="line"><span class="keyword">val</span> orcRdd: <span class="type">RDD</span>[(<span class="type">NullWritable</span>, <span class="type">OrcStruct</span>)] =</span><br><span class="line">  sc.hadoopFile(</span><br><span class="line">    path,</span><br><span class="line">    classOf[<span class="type">OrcInputFormat</span>],</span><br><span class="line">    classOf[<span class="type">NullWritable</span>],</span><br><span class="line">    classOf[<span class="type">OrcStruct</span>],</span><br><span class="line">    <span class="number">10</span>)</span><br><span class="line"><span class="keyword">val</span> result= orcRdd.map((line: (<span class="type">NullWritable</span>, <span class="type">OrcStruct</span>)) =&gt; &#123;</span><br><span class="line">  line._2.getNumFields</span><br><span class="line">&#125;).collect()</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="TODO"><a href="#TODO" class="headerlink" title="TODO"></a>TODO</h2><p>toDebugString</p>
+<p>参考文献:</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/52328286">Number of Partitions for groupBy Aggregation</a></li>
+</ol>
 
       
     </div>
@@ -519,7 +408,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:18:36" itemprop="dateModified" datetime="2021-01-19T09:18:36+08:00">2021-01-19</time>
+                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -602,7 +491,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:18:36" itemprop="dateModified" datetime="2021-01-19T09:18:36+08:00">2021-01-19</time>
+                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -747,7 +636,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:18:36" itemprop="dateModified" datetime="2021-01-19T09:18:36+08:00">2021-01-19</time>
+                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -820,7 +709,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:18:36" itemprop="dateModified" datetime="2021-01-19T09:18:36+08:00">2021-01-19</time>
+                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1114,7 +1003,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:18:36" itemprop="dateModified" datetime="2021-01-19T09:18:36+08:00">2021-01-19</time>
+                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1202,7 +1091,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:18:36" itemprop="dateModified" datetime="2021-01-19T09:18:36+08:00">2021-01-19</time>
+                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1372,7 +1261,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:18:36" itemprop="dateModified" datetime="2021-01-19T09:18:36+08:00">2021-01-19</time>
+                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1454,6 +1343,90 @@
 <li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/103519313">Flink时间系列-EventTime下数据延迟处理</a></li>
 <li><a target="_blank" rel="noopener" href="https://www.infoq.cn/article/zvc15xotpp5x5brxhwuz">Flink: 时间属性深度解析</a></li>
 </ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/HBaseConnectors/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/HBaseConnectors/" class="post-title-link" itemprop="url">Flink:HBaseConnectors</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-HBase-connectors"><a href="#Flink-HBase-connectors" class="headerlink" title="Flink HBase connectors"></a>Flink HBase connectors</h1><h2 id="flighting"><a href="#flighting" class="headerlink" title="flighting"></a>flighting</h2><p>奇怪，没有依赖HBase-Client，而是依赖了HBase-server</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.hbase<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hbase-hadoop2-compat<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;hbase.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">type</span>&gt;</span>test-jar<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.hbase<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hbase-server<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;hbase.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="添加文件到ClassLoader的classpath"><a href="#添加文件到ClassLoader的classpath" class="headerlink" title="添加文件到ClassLoader的classpath"></a>添加文件到ClassLoader的classpath</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Get the classloader actually used by HBaseConfiguration</span></span><br><span class="line">ClassLoader classLoader = HBaseConfiguration.create().getClassLoader();</span><br><span class="line"><span class="keyword">if</span> (!(classLoader <span class="keyword">instanceof</span> URLClassLoader)) &#123;</span><br><span class="line">	fail(<span class="string">&quot;We should get a URLClassLoader&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Make the addURL method accessible</span></span><br><span class="line">Method method = URLClassLoader.class.getDeclaredMethod(<span class="string">&quot;addURL&quot;</span>, URL.class);</span><br><span class="line">method.setAccessible(<span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Add the directory where we put the hbase-site.xml to the classpath</span></span><br><span class="line">method.invoke(classLoader, directory.toURI().toURL());</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
 
       
     </div>
@@ -1551,7 +1524,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">108</span>
+        <span class="site-state-item-count">109</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
