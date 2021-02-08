@@ -183,6 +183,999 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/01.1.monitor-synchronized/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/multithread/01.1.monitor-synchronized/" class="post-title-link" itemprop="url">monitor和synchronized</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-03-20 00:00:00" itemprop="dateCreated datePublished" datetime="2019-03-20T00:00:00+08:00">2019-03-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-08 17:49:15" itemprop="dateModified" datetime="2021-02-08T17:49:15+08:00">2021-02-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>转载自<a target="_blank" rel="noopener" href="https://blog.csdn.net/javazejian/article/details/72828483#synchronized%E6%96%B9%E6%B3%95%E5%BA%95%E5%B1%82%E5%8E%9F%E7%90%86">深入理解Java并发之synchronized实现原理</a></p>
+<p>线程安全是并发编程中的重要关注点，应该注意到的是，造成线程安全问题的主要诱因有两点:</p>
+<p>一是存在共享数据(也称临界资源)，二是存在多条线程共同操作共享数据。</p>
+<p>因此为了解决这个问题，我们可能需要这样一个方案，当存在多个线程操作共享数据时，需要保证同一时刻有且只有一个线程在操作共享数据，其他线程必须等到该线程处理完数据后再进行，这种方式有个高尚的名称叫<strong>互斥锁</strong>，即能达到互斥访问目的的锁，也就是说当一个共享数据被当前正在访问的线程加上互斥锁后，在同一个时刻，其他线程只能处于等待的状态，直到当前线程处理完毕释放该锁。</p>
+<p>在 Java 中，关键字 synchronized可以保证在同一个时刻，只有一个线程可以执行某个方法或者某个代码块(主要是对方法或者代码块中存在共享数据的操作)，同时我们还应该注意到synchronized另外一个重要的作用，synchronized可保证一个线程的变化(主要是共享数据的变化)被其他线程所看到（保证可见性，完全可以替代Volatile功能），这点确实也是很重要的。</p>
+<h1 id="synchronized底层语义原理"><a href="#synchronized底层语义原理" class="headerlink" title="synchronized底层语义原理"></a>synchronized底层语义原理</h1><p>Java 虚拟机中的同步(Synchronization)基于进入和退出管程(Monitor)对象实现， 无论是显式同步(有明确的 <code>monitorenter</code> 和 <code>monitorexit</code> 指令,即同步代码块)还是隐式同步都是如此。同步用的最多的地方可能是被 <code>synchronized</code> 修饰的同步方法。同步方法 并不是由 <code>monitorenter</code> 和 <code>monitorexit</code> 指令来实现同步的，而是由方法调用指令读取运行时常量池中方法的 <code>ACC_SYNCHRONIZED</code> 标志来隐式实现的，先来了解一个概念Java对象头，这对深入理解synchronized实现原理非常关键。</p>
+<h2 id="理解Java对象头与Monitor"><a href="#理解Java对象头与Monitor" class="headerlink" title="理解Java对象头与Monitor"></a>理解Java对象头与Monitor</h2><p>在JVM中，对象在内存中的布局分为三块区域：对象头、实例数据和对齐填充。如下：</p>
+<p><img src="/images/java/multithread/monitor/object_struct_in_heap.png"></p>
+<p>实例变量：存放类的属性数据信息，包括父类的属性信息，如果是数组的实例部分还包括数组的长度，这部分内存按4字节对齐。</p>
+<p>填充数据：由于虚拟机要求对象起始地址必须是8字节的整数倍。填充数据不是必须存在的，仅仅是为了字节对齐，这点了解即可。</p>
+<p>而对于顶部，则是Java对象头，它实现<code>synchronized</code>的锁对象的基础，这点我们重点分析它，一般而言，<code>synchronized</code>使用的锁对象是存储在Java对象头里的，jvm中采用2个字来存储对象头(如果对象是数组则会分配3个字，多出来的1个字记录的是数组长度)，其主要结构是由<code>Mark Word</code> 和 <code>Class Metadata Address</code> 组成，其结构说明如下表：</p>
+<table>
+<thead>
+<tr>
+<th>虚拟机位数</th>
+<th>头对象结构</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>32/64bit</td>
+<td>Mark Word</td>
+<td>存储对象的hashCode、锁信息或分代年龄或GC标志等信息</td>
+</tr>
+<tr>
+<td>32/64bit</td>
+<td>Class Metadata Address</td>
+<td>类型指针指向对象的类元数据，JVM通过这个指针确定该对象是哪个类的实例。</td>
+</tr>
+</tbody></table>
+<p>其中Mark Word在默认情况下存储着对象的HashCode、分代年龄、锁标记位等</p>
+<p>以下是32位JVM的Mark Word默认存储结构</p>
+<table>
+<thead>
+<tr>
+<th>锁状态</th>
+<th>25bit</th>
+<th>4bit</th>
+<th>1bit是否是偏向锁</th>
+<th>2bit 锁标志位</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>无锁状态</td>
+<td>对象HashCode</td>
+<td>对象分代年龄</td>
+<td>0</td>
+<td>01</td>
+</tr>
+</tbody></table>
+<p>由于对象头的信息是与对象自身定义的数据没有关系的额外存储成本，因此考虑到JVM的空间效率，Mark Word 被设计成为一个非固定的数据结构，以便存储更多有效的数据，它会根据对象本身的状态复用自己的存储空间，如32位JVM下，除了上述列出的Mark Word默认存储结构外，还有如下可能变化的结构：</p>
+<p><img src="/images/java/multithread/monitor/object_mark_word.png"></p>
+<p>其中轻量级锁和偏向锁是Java 6 对 synchronized 锁进行优化后新增加的，重量级锁也就是通常说synchronized的对象锁，锁标识位为10，其中指针指向的是monitor对象（也称为管程或监视器锁）的起始地址。每个对象都存在着一个 monitor 与之关联，对象与其 monitor 之间的关系有存在多种实现方式，如monitor可以与对象一起创建销毁或当线程试图获取对象锁时自动生成，但当一个 monitor 被某个线程持有后，它便处于锁定状态。在Java虚拟机(HotSpot)中，monitor是由ObjectMonitor实现的，其主要数据结构如下（位于HotSpot虚拟机源码ObjectMonitor.hpp文件，C++实现的）</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">ObjectMonitor() &#123;</span><br><span class="line">    _header       = <span class="literal">NULL</span>;</span><br><span class="line">    _count        = <span class="number">0</span>; <span class="comment">//记录个数</span></span><br><span class="line">    _waiters      = <span class="number">0</span>,</span><br><span class="line">    _recursions   = <span class="number">0</span>;</span><br><span class="line">    _object       = <span class="literal">NULL</span>;</span><br><span class="line">    _owner        = <span class="literal">NULL</span>;</span><br><span class="line">    _WaitSet      = <span class="literal">NULL</span>; <span class="comment">//处于wait状态的线程，会被加入到_WaitSet</span></span><br><span class="line">    _WaitSetLock  = <span class="number">0</span> ;</span><br><span class="line">    _Responsible  = <span class="literal">NULL</span> ;</span><br><span class="line">    _succ         = <span class="literal">NULL</span> ;</span><br><span class="line">    _cxq          = <span class="literal">NULL</span> ;</span><br><span class="line">    FreeNext      = <span class="literal">NULL</span> ;</span><br><span class="line">    _EntryList    = <span class="literal">NULL</span> ; <span class="comment">//处于等待锁block状态的线程，会被加入到该列表</span></span><br><span class="line">    _SpinFreq     = <span class="number">0</span> ;</span><br><span class="line">    _SpinClock    = <span class="number">0</span> ;</span><br><span class="line">    OwnerIsThread = <span class="number">0</span> ;</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+<p>ObjectMonitor中有两个队列，<code>_WaitSet</code> 和 <code>_EntryList</code>，用来保存ObjectWaiter对象列表( 每个等待锁的线程都会被封装成ObjectWaiter对象)，<code>_owner</code>指向持有ObjectMonitor对象的线程</p>
+<ul>
+<li>当多个线程同时访问一段同步代码时，首先会进入 <code>_EntryList</code> 集合</li>
+<li>当线程获取到对象的<code>monitor</code> 后进入 <code>_Owner</code> 区域并把monitor中的owner变量设置为当前线程同时monitor中的计数器count加1</li>
+<li>若线程调用 <code>wait()</code> 方法，将释放当前持有的<code>monitor</code>，owner变量恢复为null，count自减1，同时该线程进入 <code>WaitSet</code>集合中等待被唤醒。若当前线程执行完毕也将释放monitor(锁)并复位变量的值，以便其他线程进入获取monitor(锁)。</li>
+</ul>
+<p><img src="/images/java/multithread/monitor/monitor_lock.png"></p>
+<p>monitor对象存在于每个Java对象的对象头中(存储的指针的指向)，<strong>synchronized锁便是通过这种方式获取锁的</strong>，也是为什么Java中任意对象可以作为锁的原因，同时也是notify/notifyAll/wait等方法存在于顶级对象Object中的原因</p>
+<h2 id="synchronized代码块底层原理"><a href="#synchronized代码块底层原理" class="headerlink" title="synchronized代码块底层原理"></a>synchronized代码块底层原理</h2><p>现在我们重新定义一个synchronized修饰的同步代码块，在代码块中操作共享变量i，如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SyncCodeBlock</span> </span>&#123;</span><br><span class="line">   <span class="keyword">public</span> <span class="keyword">int</span> i;</span><br><span class="line">   <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">syncTask</span><span class="params">()</span></span>&#123;</span><br><span class="line">       <span class="comment">//同步代码库</span></span><br><span class="line">       <span class="keyword">synchronized</span> (<span class="keyword">this</span>)&#123;</span><br><span class="line">           i++;</span><br><span class="line">       &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>编译上述代码并使用javap反编译后得到字节码如下(这里我们省略一部分没有必要的信息)：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">Classfile</span> /Users/zejian/Downloads/Java8_Action/src/main/java/com/zejian/concurrencys/SyncCodeBlock.class</span><br><span class="line">  Last modified <span class="number">2017</span>-<span class="number">6</span>-<span class="number">2</span><span class="comment">; size 426 bytes</span></span><br><span class="line">  MD5 checksum c80bc322c87b312de760942820b4fed5</span><br><span class="line">  Compiled from <span class="string">&quot;SyncCodeBlock.java&quot;</span></span><br><span class="line"><span class="symbol">public</span> class com.zejian.concurrencys.SyncCodeBlock</span><br><span class="line">  minor version: <span class="number">0</span></span><br><span class="line">  major version: <span class="number">52</span></span><br><span class="line"><span class="symbol">  flags:</span> ACC_PUBLIC, ACC_SUPER</span><br><span class="line"><span class="symbol">Constant</span> pool:</span><br><span class="line">  <span class="comment">//........省略常量池中数据</span></span><br><span class="line">  <span class="comment">//构造函数</span></span><br><span class="line">  public com.zejian.concurrencys.SyncCodeBlock()<span class="comment">;</span></span><br><span class="line"><span class="symbol">    descriptor:</span> ()V</span><br><span class="line"><span class="symbol">    flags:</span> ACC_PUBLIC</span><br><span class="line"><span class="symbol">    Code:</span></span><br><span class="line">      stack<span class="number">=1</span>, locals<span class="number">=1</span>, args_size<span class="number">=1</span></span><br><span class="line">         <span class="number">0</span>: aload_0</span><br><span class="line">         <span class="number">1</span>: invokespecial <span class="number">#1</span>                  <span class="comment">// Method java/lang/Object.&quot;&lt;init&gt;&quot;:()V</span></span><br><span class="line">         <span class="number">4</span>: return</span><br><span class="line"><span class="symbol">      LineNumberTable:</span></span><br><span class="line">        line <span class="number">7</span>: <span class="number">0</span></span><br><span class="line">  <span class="comment">//===========主要看看syncTask方法实现================</span></span><br><span class="line">  public void syncTask()<span class="comment">;</span></span><br><span class="line"><span class="symbol">    descriptor:</span> ()V</span><br><span class="line"><span class="symbol">    flags:</span> ACC_PUBLIC</span><br><span class="line"><span class="symbol">    Code:</span></span><br><span class="line">      stack<span class="number">=3</span>, locals<span class="number">=3</span>, args_size<span class="number">=1</span></span><br><span class="line">         <span class="number">0</span>: aload_0</span><br><span class="line">         <span class="number">1</span>: dup</span><br><span class="line">         <span class="number">2</span>: astore_1</span><br><span class="line">         <span class="number">3</span>: monitorenter  <span class="comment">//注意此处，进入同步方法</span></span><br><span class="line">         <span class="number">4</span>: aload_0</span><br><span class="line">         <span class="number">5</span>: dup</span><br><span class="line">         <span class="number">6</span>: getfield      <span class="number">#2</span>             <span class="comment">// Field i:I</span></span><br><span class="line">         <span class="number">9</span>: iconst_1</span><br><span class="line">        <span class="number">10</span>: iadd</span><br><span class="line">        <span class="number">11</span>: putfield      <span class="number">#2</span>            <span class="comment">// Field i:I</span></span><br><span class="line">        <span class="number">14</span>: aload_1</span><br><span class="line">        <span class="number">15</span>: monitorexit   <span class="comment">//注意此处，退出同步方法</span></span><br><span class="line">        <span class="number">16</span>: goto          <span class="number">24</span></span><br><span class="line">        <span class="number">19</span>: astore_2</span><br><span class="line">        <span class="number">20</span>: aload_1</span><br><span class="line">        <span class="number">21</span>: monitorexit <span class="comment">//注意此处，退出同步方法</span></span><br><span class="line">        <span class="number">22</span>: aload_2</span><br><span class="line">        <span class="number">23</span>: athrow</span><br><span class="line">        <span class="number">24</span>: return</span><br><span class="line">      Exception table:</span><br><span class="line">      <span class="comment">//省略其他字节码.......</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="symbol">SourceFile:</span> <span class="string">&quot;SyncCodeBlock.java&quot;</span></span><br></pre></td></tr></table></figure>
+<p>我们主要关注字节码中的如下代码</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">3</span>: monitorenter  <span class="comment">//进入同步方法</span></span><br><span class="line"><span class="comment">//..........省略其他  </span></span><br><span class="line"><span class="number">15</span>: monitorexit   <span class="comment">//退出同步方法</span></span><br><span class="line"><span class="number">16</span>: goto          <span class="number">24</span></span><br><span class="line"><span class="comment">//省略其他.......</span></span><br><span class="line"><span class="number">21</span>: monitorexit <span class="comment">//退出同步方法</span></span><br></pre></td></tr></table></figure>
+<p>从字节码中可知同步语句块的实现使用的是<code>monitorenter</code> 和 <code>monitorexit</code> 指令，其中<code>monitorenter</code>指令指向同步代码块的开始位置，<code>monitorexit</code>指令则指明同步代码块的结束位置，当执行<code>monitorenter</code>指令时，当前线程将试图获取 <code>objectref</code>(即对象锁) 所对应的 <code>monitor</code> 的持有权，当 <code>objectref</code> 的 <code>monitor</code> 的进入计数器为 0，那线程可以成功取得 <code>monitor</code>，并将计数器值设置为 1，取锁成功。如果当前线程已经拥有 <code>objectref</code> 的 <code>monitor</code> 的持有权，那它可以重入这个 <code>monitor</code> (关于重入性稍后会分析)，重入时计数器的值也会加 1。倘若其他线程已经拥有 <code>objectref</code> 的 <code>monitor</code> 的所有权，那当前线程将被阻塞，直到正在执行线程执行完毕，即<code>monitorexit</code>指令被执行，执行线程将释放 <code>monitor</code>(锁)并设置计数器值为0 ，其他线程将有机会持有 <code>monitor</code> 。</p>
+<p>值得注意的是编译器将会确保无论方法通过何种方式完成，方法中调用过的每条 <code>monitorenter</code> 指令都有执行其对应 <code>monitorexit</code> 指令，而无论这个方法是正常结束还是异常结束。为了保证在方法异常完成时 <code>monitorenter</code> 和 <code>monitorexit</code> 指令依然可以正确配对执行，编译器会自动产生一个异常处理器，这个异常处理器声明可处理所有的异常，它的目的就是用来执行 <code>monitorexit</code> 指令。从字节码中也可以看出多了一个<code>monitorexit</code>指令，它就是异常结束时被执行的释放monitor 的指令。</p>
+<h2 id="synchronized方法底层原理"><a href="#synchronized方法底层原理" class="headerlink" title="synchronized方法底层原理"></a>synchronized方法底层原理</h2><p>方法级的同步是隐式，即无需通过字节码指令来控制的，它实现在方法调用和返回操作之中。JVM可以从方法常量池中的<code>方法表结构</code>(method_info Structure) 中的 <code>ACC_SYNCHRONIZED</code> 访问标志区分一个方法是否同步方法。当方法调用时，调用指令将会 检查方法的 <code>ACC_SYNCHRONIZED</code> 访问标志是否被设置，如果设置了，执行线程将先持有 <code>monitor</code> （虚拟机规范中用的是管程一词）， 然后再执行方法，最后再方法完成(无论是正常完成还是非正常完成)时释放 <code>monitor</code> 。在方法执行期间，执行线程持有了 <code>monitor</code> ，其他任何线程都无法再获得同一个 <code>monitor</code> 。如果一个同步方法执行期间抛 出了异常，并且在方法内部无法处理此异常，那这个同步方法所持有的 <code>monitor</code> 将在异常抛到同步方法之外时自动释放。下面我们看看字节码层面如何实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SyncMethod</span> </span>&#123;</span><br><span class="line">   <span class="keyword">public</span> <span class="keyword">int</span> i;</span><br><span class="line">   <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">syncTask</span><span class="params">()</span></span>&#123;</span><br><span class="line">           i++;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用javap反编译后的字节码如下：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">Classfile</span> /Users/zejian/Downloads/Java8_Action/src/main/java/com/zejian/concurrencys/SyncMethod.class</span><br><span class="line">  Last modified <span class="number">2017</span>-<span class="number">6</span>-<span class="number">2</span><span class="comment">; size 308 bytes</span></span><br><span class="line">  MD5 checksum f34075a8c059ea65e4cc2fa610e0cd94</span><br><span class="line">  Compiled from <span class="string">&quot;SyncMethod.java&quot;</span></span><br><span class="line"><span class="symbol">public</span> class com.zejian.concurrencys.SyncMethod</span><br><span class="line">  minor version: <span class="number">0</span></span><br><span class="line">  major version: <span class="number">52</span></span><br><span class="line"><span class="symbol">  flags:</span> ACC_PUBLIC, ACC_SUPER</span><br><span class="line"><span class="symbol">Constant</span> pool<span class="comment">;</span></span><br><span class="line"></span><br><span class="line">   <span class="comment">//省略没必要的字节码</span></span><br><span class="line">  <span class="comment">//==================syncTask方法======================</span></span><br><span class="line">  public synchronized void syncTask()<span class="comment">;</span></span><br><span class="line"><span class="symbol">    descriptor:</span> ()V</span><br><span class="line">    <span class="comment">//方法标识ACC_PUBLIC代表public修饰，ACC_SYNCHRONIZED指明该方法为同步方法</span></span><br><span class="line"><span class="symbol">    flags:</span> ACC_PUBLIC, ACC_SYNCHRONIZED</span><br><span class="line"><span class="symbol">    Code:</span></span><br><span class="line">      stack<span class="number">=3</span>, locals<span class="number">=1</span>, args_size<span class="number">=1</span></span><br><span class="line">         <span class="number">0</span>: aload_0</span><br><span class="line">         <span class="number">1</span>: dup</span><br><span class="line">         <span class="number">2</span>: getfield      <span class="number">#2</span>                  <span class="comment">// Field i:I</span></span><br><span class="line">         <span class="number">5</span>: iconst_1</span><br><span class="line">         <span class="number">6</span>: iadd</span><br><span class="line">         <span class="number">7</span>: putfield      <span class="number">#2</span>                  <span class="comment">// Field i:I</span></span><br><span class="line">        <span class="number">10</span>: return</span><br><span class="line"><span class="symbol">      LineNumberTable:</span></span><br><span class="line">        line <span class="number">12</span>: <span class="number">0</span></span><br><span class="line">        line <span class="number">13</span>: <span class="number">10</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="symbol">SourceFile:</span> <span class="string">&quot;SyncMethod.java&quot;</span></span><br></pre></td></tr></table></figure>
+<p>从字节码中可以看出，synchronized修饰的方法并没有monitorenter指令和monitorexit指令，取得代之的确实是ACC_SYNCHRONIZED标识，该标识指明了该方法是一个同步方法，JVM通过该ACC_SYNCHRONIZED访问标志来辨别一个方法是否声明为同步方法，从而执行相应的同步调用。这便是synchronized锁在同步代码块和同步方法上实现的基本原理。</p>
+<p>同时我们还必须注意到的是在Java早期版本中，synchronized属于重量级锁，效率低下，因为监视器锁（monitor）是依赖于底层的操作系统的Mutex Lock来实现的，而操作系统实现线程之间的切换时需要从用户态转换到核心态，这个状态之间的转换需要相对比较长的时间，时间成本相对较高，这也是为什么早期的synchronized效率低的原因。庆幸的是在Java 6之后Java官方对从JVM层面对synchronized较大优化，所以现在的synchronized锁效率也优化得很不错了，Java 6之后，为了减少获得锁和释放锁所带来的性能消耗，引入了轻量级锁和偏向锁，接下来我们将简单了解一下Java官方在JVM层面对synchronized锁的优化。</p>
+<h2 id="Java虚拟机对synchronized的优化"><a href="#Java虚拟机对synchronized的优化" class="headerlink" title="Java虚拟机对synchronized的优化"></a>Java虚拟机对synchronized的优化</h2><p>锁的状态总共有四种，无锁状态、偏向锁、轻量级锁和重量级锁。<br>随着锁的竞争，锁可以从偏向锁升级到轻量级锁，再升级的重量级锁，但是锁的升级是单向的，也就是说只能从低到高升级，不会出现锁的降级，下面我们将介绍偏向锁和轻量级锁以及JVM的其他优化手段，阐述Java虚拟机所提供的每个锁的核心优化思想，毕竟涉及到具体过程比较繁琐，如需了解详细过程可以查阅《深入理解Java虚拟机原理》。</p>
+<h3 id="偏向锁"><a href="#偏向锁" class="headerlink" title="偏向锁"></a>偏向锁</h3><p>偏向锁是Java 6之后加入的新锁，它是一种针对加锁操作的优化手段，经过研究发现，<strong>在大多数情况下，锁不仅不存在多线程竞争，而且总是由同一线程多次获得</strong>，因此为了减少同一线程获取锁(会涉及到一些CAS操作,耗时)的代价而引入偏向锁。偏向锁的核心思想是，<strong>如果一个线程获得了锁，那么锁就进入偏向模式，此时Mark Word 的结构也变为偏向锁结构，当这个线程再次请求锁时，无需再做任何同步操作，即获取锁的过程，这样就省去了大量有关锁申请的操作，从而也就提高了程序的性能</strong>。所以，对于没有锁竞争的场合，偏向锁有很好的优化效果。但对于锁竞争比较激烈的场合，偏向锁就失效了，因为这样场合极有可能每次申请锁的线程都是不相同的，需要注意的是，偏向锁失败后，并不会立即膨胀为重量级锁，而是先升级为轻量级锁。下面我们接着了解轻量级锁。</p>
+<h3 id="轻量级锁"><a href="#轻量级锁" class="headerlink" title="轻量级锁"></a>轻量级锁</h3><p>倘若偏向锁失败，它还会尝试使用一种称为轻量级锁的优化手段(1.6之后加入的)，此时Mark Word 的结构也变为轻量级锁的结构。轻量级锁能够提升程序性能的依据是“<strong>对绝大部分的锁，在整个同步周期内都不存在竞争</strong>”，注意这是经验数据。需要了解的是，轻量级锁所适应的场景是线程交替执行同步块的场合，如果存在同一时间访问同一锁的场合，就会导致轻量级锁膨胀为重量级锁。</p>
+<h4 id="加锁过程"><a href="#加锁过程" class="headerlink" title="加锁过程"></a>加锁过程</h4><p>锁升级为轻量级锁之后，对象的 <code>Mark word</code> 也会进行相应的的变化。升级为轻量级锁的过程：</p>
+<ul>
+<li>线程在自己的栈桢中创建锁记录 LockRecord。</li>
+<li>将锁对象的对象头中的MarkWord复制到线程的刚刚创建的锁记录中。</li>
+<li>将锁记录中的 Owner 指针指向锁对象。</li>
+<li>将锁对象的对象头的 MarkWord替换为指向锁记录的指针。</li>
+</ul>
+<h4 id="通过自旋锁加锁"><a href="#通过自旋锁加锁" class="headerlink" title="通过自旋锁加锁"></a>通过自旋锁加锁</h4><p>轻量级锁失败后，<strong>虚拟机为了避免线程真实地在操作系统层面挂起</strong>，还会进行一项称为自旋锁的优化手段。这是基于在大多数情况下，<strong>线程持有锁的时间都不会太长</strong>，如果直接挂起操作系统层面的线程可能会得不偿失，毕竟操作系统实现线程之间的切换时需要从用户态转换到核心态，这个状态之间的转换需要相对比较长的时间，时间成本相对较高，因此自旋锁会假设在不久将来，当前的线程可以获得锁，因此虚拟机会让当前想要获取锁的线程做几个空循环(这也是称为自旋的原因)，一般不会太久，可能是50个循环或100循环，在经过若干次循环后，如果得到锁，就顺利进入临界区。如果还不能获得锁，那就会将线程在操作系统层面挂起，这就是自旋锁的优化方式，这种方式确实也是可以提升效率的。最后没办法也就只能升级为重量级锁了。</p>
+<p>轻量级锁在加锁过程中，用到了自旋锁所谓自旋，就是指当有另外一个线程来竞争锁时，这个线程会在原地循环等待，而不是把该线程给阻塞，直到那个获得锁的线程释放锁之后，这个线程就可以马上获得锁的。注意，锁在原地循环的时候，是会消耗 cpu 的，就相当于在执行一个啥也没有的 for 循环。所以，轻量级锁适用于那些同步代码块执行的很快的场景，这样，线程原地等待很短的时间就能够获得锁了。自旋锁的使用，其实也是有一定的概率背景，在大部分同步代码块执行的时间都是很短的。所以通过看似无异议的循环反而能提升锁的性能。但是自旋必要有一定的条件控制，否则如果一个线程执行同步代码块的时间很长，那么这个线程不断的循环反而会消耗 CPU 资源。默认情况下自旋的次数是 10 次，可以通过 preBlockSpin 来修改在 JDK1.6 之后，引入了自适应自旋锁，自适应意味着自旋的次数不是固定不变的，而是根据前一次在同一个锁上自旋的时间以及锁的拥有者的状态来决定。如果在同一个锁对象上，自旋等待刚刚成功获得过锁，并且持有锁的线程正在运行中，那么虚拟机就会认为这次自旋也是很有可能再次成功，进而它将允许自旋等待持续相对更长的时间。如果对于某个锁，自旋很少成功获得过，那在以后尝试获取这个锁时将可能省略掉自旋过程，直接阻塞线程，避免浪费处理器资源。</p>
+<h3 id="锁消除"><a href="#锁消除" class="headerlink" title="锁消除"></a>锁消除</h3><p>消除锁是虚拟机另外一种锁的优化，这种优化更彻底，Java虚拟机在JIT编译时(可以简单理解为当某段代码即将第一次被执行时进行编译，又称即时编译)，通过对运行上下文的扫描，去除不可能存在共享资源竞争的锁，通过这种方式消除没有必要的锁，可以节省毫无意义的请求锁时间，如下StringBuffer的append是一个同步方法，但是在add方法中的StringBuffer属于一个局部变量，并且不会被其他线程所使用，因此StringBuffer不可能存在共享资源竞争的情景，JVM会自动将其锁消除。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Created by zejian on 2017/6/4.</span></span><br><span class="line"><span class="comment"> * Blog : http://blog.csdn.net/javazejian [原文地址,请尊重原创]</span></span><br><span class="line"><span class="comment"> * 消除StringBuffer同步锁</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">StringBufferRemoveSync</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">(String str1, String str2)</span> </span>&#123;</span><br><span class="line">        <span class="comment">//StringBuffer是线程安全,由于sb只会在append方法中使用,不可能被其他线程引用</span></span><br><span class="line">        <span class="comment">//因此sb属于不可能共享的资源,JVM会自动消除内部的锁</span></span><br><span class="line">        StringBuffer sb = <span class="keyword">new</span> StringBuffer();</span><br><span class="line">        sb.append(str1).append(str2);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        StringBufferRemoveSync rmsync = <span class="keyword">new</span> StringBufferRemoveSync();</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000000</span>; i++) &#123;</span><br><span class="line">            rmsync.add(<span class="string">&quot;abc&quot;</span>, <span class="string">&quot;123&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="关于synchronized-可能需要了解的关键点"><a href="#关于synchronized-可能需要了解的关键点" class="headerlink" title="关于synchronized 可能需要了解的关键点"></a>关于synchronized 可能需要了解的关键点</h2><h3 id="synchronized的可重入性"><a href="#synchronized的可重入性" class="headerlink" title="synchronized的可重入性"></a>synchronized的可重入性</h3><p>从互斥锁的设计上来说，当一个线程试图操作一个由其他线程持有的对象锁的临界资源时，将会处于阻塞状态，但当一个线程再次请求自己持有对象锁的临界资源时，这种情况属于重入锁，请求将会成功，在java中synchronized是基于原子性的内部锁机制，是可重入的，因此在一个线程调用synchronized方法的同时在其方法体内部调用该对象另一个synchronized方法，也就是说一个线程得到一个对象锁后再次请求该对象锁，是允许的，这就是synchronized的可重入性。如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AccountingSync</span> <span class="keyword">implements</span> <span class="title">Runnable</span></span>&#123;</span><br><span class="line">    <span class="keyword">static</span> AccountingSync instance=<span class="keyword">new</span> AccountingSync();</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> i=<span class="number">0</span>;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">int</span> j=<span class="number">0</span>;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> j=<span class="number">0</span>;j&lt;<span class="number">1000000</span>;j++)&#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">//this,当前实例对象锁</span></span><br><span class="line">            <span class="keyword">synchronized</span>(<span class="keyword">this</span>)&#123;</span><br><span class="line">                i++;</span><br><span class="line">                increase();<span class="comment">//synchronized的可重入性</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">increase</span><span class="params">()</span></span>&#123;</span><br><span class="line">        j++;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        Thread t1=<span class="keyword">new</span> Thread(instance);</span><br><span class="line">        Thread t2=<span class="keyword">new</span> Thread(instance);</span><br><span class="line">        t1.start();t2.start();</span><br><span class="line">        t1.join();t2.join();</span><br><span class="line">        System.out.println(i);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在获取当前实例对象锁后进入synchronized代码块执行同步代码，并在代码块中调用了当前实例对象的另外一个synchronized方法，再次请求当前实例锁时，将被允许，进而执行方法体代码，这就是重入锁最直接的体现，需要特别注意另外一种情况，<strong>当子类继承父类时，子类也是可以通过可重入锁调用父类的同步方法</strong>。注意由于synchronized是基于monitor实现的，因此每次重入，monitor中的计数器仍会加1。</p>
+<h3 id="三种锁的对比"><a href="#三种锁的对比" class="headerlink" title="三种锁的对比"></a>三种锁的对比</h3><p><img src="/images/java/multithread/monitor/synchronized-3-locks.png" alt="三种锁对比"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/io/high-performance-network-programming/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/io/high-performance-network-programming/" class="post-title-link" itemprop="url">高性能网络编程IO模型与线程模型</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-03-19 17:28:00" itemprop="dateCreated datePublished" datetime="2019-03-19T17:28:00+08:00">2019-03-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-08 17:49:15" itemprop="dateModified" datetime="2021-02-08T17:49:15+08:00">2021-02-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="C10K问题"><a href="#C10K问题" class="headerlink" title="C10K问题"></a>C10K问题</h2><p><a target="_blank" rel="noopener" href="http://www.kegel.com/c10k.html">C10K问题</a>: 一万个客户端同时连接</p>
+<h3 id="常识一：文件句柄限制"><a href="#常识一：文件句柄限制" class="headerlink" title="常识一：文件句柄限制"></a>常识一：文件句柄限制</h3><p>在linux下每一个tcp连接都要占一个文件描述符，一旦文件描述符使用完了，新的连接到来返回给我们的错误是“Socket/File:Can’t open so many files”。</p>
+<p>操作系统可以打开的最大文件数的限制。</p>
+<h4 id="1-进程限制"><a href="#1-进程限制" class="headerlink" title="1 进程限制"></a>1 进程限制</h4><p>执行 <code>ulimit -n</code> 输出 <code>1024</code>，说明对于一个进程而言最多只能打开1024个文件，所以采用此配置最多可以并发上千个TCP连接。<br>临时修改：ulimit -n 1000000，但是这种临时修改只对当前登录用户目前的使用环境有效，系统重启或用户退出后就会失效。</p>
+<p>重启后失效的修改: （CentOS 6.5下测试，重启后未发现失效），编辑 <code>/etc/security/limits.conf</code> 文件， 修改后内容为：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">soft nofile 1000000</span><br><span class="line">hard nofile 1000000</span><br></pre></td></tr></table></figure>
+<p>永久修改：编辑/etc/rc.local，在其后添加如下内容：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ulimit -SHn 1000000</span><br></pre></td></tr></table></figure>
+<h4 id="2-全局限制"><a href="#2-全局限制" class="headerlink" title="2 全局限制"></a>2 全局限制</h4><p>执行<code>cat /proc/sys/fs/file-nr</code>输出<code>9344 0 592026</code>，分别为：</p>
+<ol>
+<li>已经分配的文件句柄数，</li>
+<li>已经分配但没有使用的文件句柄数，</li>
+<li>最大文件句柄数。</li>
+</ol>
+<p>但在kernel 2.6版本中第二项的值总为0，这并不是一个错误，它实际上意味着已经分配的文件描述符无一浪费的都已经被使用了。我们可以把这个数值改大些，用 root 权限修改 <code>/etc/sysctl.conf</code> 文件:</p>
+<ul>
+<li>fs.file-max = 1000000</li>
+<li>net.ipv4.ip_conntrack_max = 1000000</li>
+<li>net.ipv4.netfilter.ip_conntrack_max = 1000000</li>
+</ul>
+<h3 id="常识二：端口号范围限制？"><a href="#常识二：端口号范围限制？" class="headerlink" title="常识二：端口号范围限制？"></a>常识二：端口号范围限制？</h3><p>操作系统上端口号1024以下是系统保留的，从1024-65535是用户使用的。每个TCP连接都要占一个端口号, 但可以创建的最大并发连接不只60000个</p>
+<h4 id="如何标识一个TCP连接："><a href="#如何标识一个TCP连接：" class="headerlink" title="如何标识一个TCP连接："></a>如何标识一个TCP连接：</h4><p>系统用一个4四元组来唯一标识一个TCP连接：<code>&#123;local ip, local port,remote ip,remote port&#125;</code>。</p>
+<blockquote>
+<p>《UNIX网络编程：卷一》第四章中对accept的讲解，第二个参数cliaddr代表了客户端的ip地址和端口号。而服务端实际只使用了bind时这一个端口，说明端口号65535并不是并发量的限制。</p>
+</blockquote>
+<h4 id="server最大tcp连接数："><a href="#server最大tcp连接数：" class="headerlink" title="server最大tcp连接数："></a>server最大tcp连接数：</h4><p>server通常固定在某个本地端口上监听，等待client的连接请求。不考虑地址重用（unix的SO_REUSEADDR选项）的情况下，即使server端有多个ip，本地监听端口也是独占的，因此server端tcp连接4元组中只有remote ip（也就是client ip）和remote port（客户端port）是可变的，因此最大tcp连接为<code>客户端ip数×客户端port数</code>，对IPV4，不考虑ip地址分类等因素，最大tcp连接数约为<code>2的32次方（ip数）×2的16次方（port数）</code>，也就是server端单机最大tcp连接数约为<code>2的48次方</code>。</p>
+<h2 id="I-O-Model"><a href="#I-O-Model" class="headerlink" title="I/O Model"></a>I/O Model</h2><p>最初的服务器都是<strong>基于进程/线程模型</strong>的，一个TCP连接，就需要分配1个进程（或者线程）。而进程又是操作系统最昂贵的资源，一台机器无法创建很多进程。<br>如果是C10K就要创建1万个进程，那么单机而言操作系统是无法承受的（往往出现效率低下甚至完全瘫痪）。<br>如果是采用分布式系统，维持1亿用户在线需要10万台服务器，成本巨大，也只有Facebook、Google、雅虎等巨头才有财力购买如此多的服务器。</p>
+<p>传统的同步阻塞I/O模型都是一样的，处理的方式都是requests per second，并发10K和100的区别关键在于CPU。<br>创建的进程线程多了，<strong>数据拷贝频繁（缓存I/O、内核将数据拷贝到用户进程空间、阻塞）， 进程/线程上下文切换消耗大</strong>， 导致操作系统崩溃，这就是C10K问题的本质！</p>
+<h3 id="互联网服务端处理网络请求的原理"><a href="#互联网服务端处理网络请求的原理" class="headerlink" title="互联网服务端处理网络请求的原理"></a>互联网服务端处理网络请求的原理</h3><p>典型互联网服务端处理网络请求的典型过程：</p>
+<p>  <img src="http://www.52im.net/data/attachment/forum/201809/05/211858pgsyanbk1yffennv.jpeg" alt="高性能网络编程(五)：一文读懂高性能网络编程中的I/O模型_1.jpeg">    </p>
+<p>由上图可以看到，主要处理步骤包括： </p>
+<p> 1）获取请求数据，客户端与服务器建立连接发出请求，服务器接受请求（1-3）；<br> 2）构建响应，当服务器接收完请求，并在用户空间处理客户端的请求，直到构建响应完成（4）；<br> 3）返回数据，服务器将已构建好的响应再通过内核空间的网络 I/O 发还给客户端（5-7）。</p>
+<p>设计服务端并发模型时，主要有如下两个关键点： </p>
+<p> 1）服务器如何管理连接，获取输入数据；<br> 2）服务器如何处理请求。</p>
+<h3 id="“I-O-模型”的基本认识"><a href="#“I-O-模型”的基本认识" class="headerlink" title="“I/O 模型”的基本认识"></a>“I/O 模型”的基本认识</h3><h4 id="阻塞调用与非阻塞调用："><a href="#阻塞调用与非阻塞调用：" class="headerlink" title="阻塞调用与非阻塞调用："></a>阻塞调用与非阻塞调用：</h4><ul>
+<li>阻塞调用是指调用结果返回之前，当前线程会被挂起，调用线程只有在得到结果之后才会返回；</li>
+<li>非阻塞调用指在不能立刻得到结果之前，该调用不会阻塞当前线程。</li>
+</ul>
+<p>两者的最大区别在于被调用方在收到请求到返回结果之前的这段时间内，调用方是否一直在等待。<strong>阻塞</strong>是指调用方一直在等待而且别的事情什么都不做；<strong>非阻塞</strong>是指调用方先去忙别的事情。</p>
+<h4 id="同步处理与异步处理："><a href="#同步处理与异步处理：" class="headerlink" title="同步处理与异步处理："></a>同步处理与异步处理：</h4><p>同步处理是指被调用方得到最终结果之后才返回给调用方；异步处理是指被调用方先返回应答，然后再计算调用结果，计算完最终结果后再通知并返回给调用方。</p>
+<p>阻塞、非阻塞和同步、异步的区别（阻塞、非阻塞和同步、异步其实针对的对象是不一样的）：</p>
+<ul>
+<li>1）阻塞、非阻塞的讨论对象是调用者；</li>
+<li>2）同步、异步的讨论对象是被调用者。</li>
+</ul>
+<h4 id="recvfrom-函数："><a href="#recvfrom-函数：" class="headerlink" title="recvfrom 函数："></a>recvfrom 函数：</h4><p>// FIXME 究竟什么是Socket，操作系统套接字代表的是什么</p>
+<p>recvfrom 函数(经 <code>Socket</code> 接收数据)，这里把它视为系统调用。</p>
+<p>一个输入操作通常包括两个不同的阶段：</p>
+<ul>
+<li>1）等待数据准备好；</li>
+<li>2）从内核向进程复制数据。</li>
+</ul>
+<p>对于一个套接字上的输入操作，第一步通常涉及等待数据从网络中到达。当所等待分组到达时，它被复制到内核中的某个缓冲区。第二步就是把数据从内核缓冲区复制到应用进程缓冲区。</p>
+<p>实际应用程序在系统调用完成上面的 2 步操作时，调用方式的阻塞、非阻塞，操作系统在处理应用程序请求时，处理方式的同步、异步处理的不同，可以分为 5 种 I/O 模型（下面的章节将逐个展开介绍）。（参考《UNIX网络编程卷1》）</p>
+<h3 id="阻塞式-I-O-blocking-I-O）"><a href="#阻塞式-I-O-blocking-I-O）" class="headerlink" title="阻塞式 I/O(blocking I/O）"></a>阻塞式 I/O(blocking I/O）</h3><p>  <img src="http://www.52im.net/data/attachment/forum/201809/05/212717yp8iwt5z8j1niw8a.jpeg" alt="高性能网络编程(五)：一文读懂高性能网络编程中的I/O模型_2.jpeg">    </p>
+<p> 在阻塞式 I/O 模型中，应用程序在从调用 recvfrom 开始到它返回有数据报准备好这段时间是阻塞的，recvfrom 返回成功后，应用进程开始处理数据报。</p>
+<p><strong>比喻：</strong> 一个人在钓鱼，当没鱼上钩时，就坐在岸边一直等。</p>
+<p><strong>优点：</strong> 程序简单，在阻塞等待数据期间进程/线程挂起，基本不会占用 CPU 资源。</p>
+<p><strong>缺点：</strong> 每个连接需要独立的进程/线程单独处理，当并发请求量大时为了维护程序，内存、线程切换开销较大，这种模型在实际生产中很少使用。</p>
+<h3 id="非阻塞式-I-O-non-blocking-I-O）"><a href="#非阻塞式-I-O-non-blocking-I-O）" class="headerlink" title="非阻塞式 I/O (non-blocking I/O）"></a>非阻塞式 I/O (non-blocking I/O）</h3><p>  <img src="http://www.52im.net/data/attachment/forum/201809/05/212910wn44nrr6zp5siiuo.jpeg" alt="高性能网络编程(五)：一文读懂高性能网络编程中的I/O模型_3.jpeg"></p>
+<p> 应用程序把一个套接口设置为非阻塞，就是告诉内核，当所请求的 I/O 操作无法完成时，不要将进程睡眠。<br> 而是返回一个错误，应用程序基于 I/O 操作函数将不断的轮询数据是否已经准备好，如果没有准备好，继续轮询，直到数据准备好为止。</p>
+<p><strong>比喻：</strong> 边钓鱼边玩手机，隔会再看看有没有鱼上钩，有的话就迅速拉杆。</p>
+<p><strong>优点：</strong> 不会阻塞在内核的等待数据过程，每次发起的 I/O 请求可以立即返回，不用阻塞等待，实时性较好。</p>
+<p><strong>缺点：</strong> 轮询将会不断地询问内核，这将占用大量的 CPU 时间，系统资源利用率较低，所以一般 Web 服务器不使用这种 I/O 模型。</p>
+<h3 id="I-O-多路复用-I-O-multiplexing）"><a href="#I-O-多路复用-I-O-multiplexing）" class="headerlink" title="I/O 多路复用(I/O multiplexing）"></a>I/O 多路复用(I/O multiplexing）</h3><p><img src="http://www.52im.net/data/attachment/forum/201809/05/213041mtejdsoeojfjy7dd.jpeg" alt="高性能网络编程(五)：一文读懂高性能网络编程中的I/O模型_4.jpeg"></p>
+<p> 在 I/O 复用模型中，会用到 Select 或 Poll 函数或 Epoll 函数(Linux 2.6 以后的内核开始支持)，这两个函数也会使进程阻塞，但是和阻塞 I/O 有所不同。</p>
+<p> 这两个函数可以同时阻塞多个 I/O 操作，而且可以同时对多个读操作，多个写操作的 I/O 函数进行检测，直到有数据可读或可写时，才真正调用 I/O 操作函数。</p>
+<p><strong>比喻：</strong> 放了一堆鱼竿，在岸边一直守着这堆鱼竿，没鱼上钩就玩手机。</p>
+<p><strong>优点：</strong> 可以基于一个阻塞对象，同时在多个描述符上等待就绪，而不是使用多个线程(每个文件描述符一个线程)，这样可以大大节省系统资源。</p>
+<p><strong>缺点：</strong> 当连接数较少时效率相比多线程+阻塞 I/O 模型效率较低，可能延迟更大，因为单个连接处理需要 2 次系统调用，占用时间会有增加。</p>
+<p>众所周之，Nginx这样的高性能互联网反向代理服务器大获成功的关键就是得益于<code>Epoll</code>。</p>
+<h3 id="信号驱动式-I-O-（signal-driven-I-O"><a href="#信号驱动式-I-O-（signal-driven-I-O" class="headerlink" title="信号驱动式 I/O （signal-driven I/O)"></a>信号驱动式 I/O （signal-driven I/O)</h3><p>  <img src="http://www.52im.net/data/attachment/forum/201809/05/213143a7n3mnxb38ybgxy3.jpeg" alt="高性能网络编程(五)：一文读懂高性能网络编程中的I/O模型_5.jpeg"></p>
+<p> 在信号驱动式 I/O 模型中，应用程序使用套接口进行信号驱动 I/O，并安装一个信号处理函数，进程继续运行并不阻塞。<br> 当数据准备好时，进程会收到一个 SIGIO 信号，可以在信号处理函数中调用 I/O 操作函数处理数据。</p>
+<p><strong>比喻：</strong> 鱼竿上系了个铃铛，当铃铛响，就知道鱼上钩，然后可以专心玩手机。</p>
+<p><strong>优点：</strong> 线程并没有在等待数据时被阻塞，可以提高资源的利用率。</p>
+<p><strong>缺点：</strong> 信号 I/O 在大量 IO 操作时可能会因为信号队列溢出导致没法通知。</p>
+<p> 信号驱动 I/O 尽管对于处理 UDP 套接字来说有用，即这种信号通知意味着到达一个数据报，或者返回一个异步错误。</p>
+<p> 但是，对于 TCP 而言，信号驱动的 I/O 方式近乎无用，因为导致这种通知的条件为数众多，每一个来进行判别会消耗很大资源，与前几种方式相比优势尽失。</p>
+<h3 id="异步-I-O（即AIO，全称asynchronous-I-O）"><a href="#异步-I-O（即AIO，全称asynchronous-I-O）" class="headerlink" title="异步 I/O（即AIO，全称asynchronous I/O）"></a>异步 I/O（即AIO，全称asynchronous I/O）</h3><p><img src="http://www.52im.net/data/attachment/forum/201809/05/213218wbeovsvt6g7s4zsj.jpeg" alt="高性能网络编程(五)：一文读懂高性能网络编程中的I/O模型_6.jpeg"></p>
+<p> 由 POSIX 规范定义，应用程序告知内核启动某个操作，并让内核在整个操作（包括将数据从内核拷贝到应用程序的缓冲区）完成后通知应用程序。</p>
+<p> 这种模型与信号驱动模型的主要区别在于：信号驱动 I/O 是由内核通知应用程序何时启动一个 I/O 操作，而异步 I/O 模型是由内核通知应用程序 I/O 操作何时完成。</p>
+<p><strong>优点：</strong> 异步 I/O 能够充分利用 DMA 特性，让 I/O 操作与计算重叠。</p>
+<p><strong>缺点：</strong> 要实现真正的异步 I/O，操作系统需要做大量的工作。目前 Windows 下通过 IOCP 实现了真正的异步 I/O。</p>
+<p> 而在 Linux 系统下，Linux 2.6才引入，目前 AIO 并不完善，因此在 Linux 下实现高并发网络编程时都是以 IO 复用模型模式为主。</p>
+<p> 关于AOI的介绍，请见：《Java新一代网络编程模型AIO原理及Linux系统AIO介绍》。</p>
+<h3 id="5-种-I-O-模型总结"><a href="#5-种-I-O-模型总结" class="headerlink" title="5 种 I/O 模型总结"></a>5 种 I/O 模型总结</h3><p>  <img src="http://www.52im.net/data/attachment/forum/201809/05/213459mmmhohhgwom24uoj.jpeg" alt="高性能网络编程(五)：一文读懂高性能网络编程中的I/O模型_7.jpeg">    </p>
+<p> 从上图中我们可以看出，越往后，阻塞越少，理论上效率也是最优。</p>
+<p> 这五种 I/O 模型中，前四种属于同步 I/O，因为其中真正的 I/O 操作(recvfrom)将阻塞进程/线程，只有异步 I/O 模型才与 POSIX 定义的异步 I/O 相匹配。</p>
+<h2 id="高性能网络编程中的线程模型"><a href="#高性能网络编程中的线程模型" class="headerlink" title="高性能网络编程中的线程模型"></a>高性能网络编程中的线程模型</h2><h3 id="传统阻塞-I-O-服务模型"><a href="#传统阻塞-I-O-服务模型" class="headerlink" title="传统阻塞 I/O 服务模型"></a>传统阻塞 I/O 服务模型</h3><p><img src="http://www.52im.net/data/attachment/forum/201809/06/195333v2cj2o6y92d2zp5z.jpeg" alt="高性能网络编程(六)：一文读懂高性能网络编程中的线程模型_1.jpeg">    </p>
+<p><strong>特点：</strong></p>
+<p>1）采用阻塞式 I/O 模型获取输入数据；<br>2）每个连接都需要独立的线程完成数据输入，业务处理，数据返回的完整操作。</p>
+<p><strong>存在问题：</strong></p>
+<p>1）当并发数较大时，需要创建大量线程来处理连接，系统资源占用较大；<br>2）连接建立后，如果当前线程暂时没有数据可读，则线程就阻塞在 Read 操作上，造成线程资源浪费。</p>
+<h3 id="Reactor-模式"><a href="#Reactor-模式" class="headerlink" title="Reactor 模式"></a>Reactor 模式</h3><h4 id="基本介绍"><a href="#基本介绍" class="headerlink" title="基本介绍"></a>基本介绍</h4><p>针对传统阻塞 I/O 服务模型的 2 个缺点，比较常见的有如下解决方案： </p>
+<p> 1）基于 I/O 复用模型：多个连接共用一个阻塞对象，应用程序只需要在一个阻塞对象上等待，无需阻塞等待所有连接。当某条连接有新的数据可以处理时，操作系统通知应用程序，线程从阻塞状态返回，开始进行业务处理；<br> 2）基于线程池复用线程资源：不必再为每个连接创建线程，将连接完成后的业务处理任务分配给线程进行处理，一个线程可以处理多个连接的业务。</p>
+<p>I/O 复用结合线程池，这就是 Reactor 模式基本设计思想，如下图：</p>
+<p><img src="http://www.52im.net/data/attachment/forum/201809/06/195839s5hi3te5pxueq5ze.jpeg" alt="高性能网络编程(六)：一文读懂高性能网络编程中的线程模型_2.jpeg"></p>
+<p>Reactor 模式，是指通过一个或多个输入同时传递给服务处理器的服务请求的事件驱动处理模式。 </p>
+<p>服务端程序处理传入多路请求，并将它们同步分派给请求对应的处理线程，Reactor 模式也叫 Dispatcher 模式。即 I/O 多了复用统一监听事件，收到事件后分发(Dispatch 给某进程)，是编写高性能网络服务器的必备技术之一。</p>
+<p>Reactor 模式中有 2 个关键组成：</p>
+<p>1）Reactor：Reactor 在一个单独的线程中运行，负责监听和分发事件，分发给适当的处理程序来对 IO 事件做出反应。 它就像公司的电话接线员，它接听来自客户的电话并将线路转移到适当的联系人；<br>2）Handlers：处理程序执行 I/O 事件要完成的实际事件，类似于客户想要与之交谈的公司中的实际官员。Reactor 通过调度适当的处理程序来响应 I/O 事件，处理程序执行非阻塞操作。</p>
+<p>根据 Reactor 的数量和处理资源池线程的数量不同，有 3 种典型的实现：</p>
+<p>1）单 Reactor 单线程；<br>2）单 Reactor 多线程；<br>3）主从 Reactor 多线程。</p>
+<p>下面详细介绍这 3 种实现方式。</p>
+<h4 id="单-Reactor-单线程"><a href="#单-Reactor-单线程" class="headerlink" title="单 Reactor 单线程"></a>单 Reactor 单线程</h4><p><img src="http://www.52im.net/data/attachment/forum/201809/06/200048bgll2l41w72174ot.jpeg" alt="高性能网络编程(六)：一文读懂高性能网络编程中的线程模型_3.jpeg">    </p>
+<p>其中，Select 是前面 I/O 复用模型介绍的标准网络编程 API，可以实现应用程序通过一个阻塞对象监听多路连接请求，其他方案示意图类似。</p>
+<p>方案说明：</p>
+<p>1）Reactor 对象通过 Select 监控客户端请求事件，收到事件后通过 Dispatch 进行分发；<br>2）如果是建立连接请求事件，则由 Acceptor 通过 Accept 处理连接请求，然后创建一个 Handler 对象处理连接完成后的后续业务处理；<br>3）如果不是建立连接事件，则 Reactor 会分发调用连接对应的 Handler 来响应；<br>4）Handler 会完成 Read→业务处理→Send 的完整业务流程。</p>
+<p><strong>优点：</strong></p>
+<p>模型简单，没有多线程、进程通信、竞争的问题，全部都在一个线程中完成。</p>
+<p>缺点：</p>
+<p>性能问题，只有一个线程，无法完全发挥多核 CPU 的性能。Handler 在处理某个连接上的业务时，整个进程无法处理其他连接事件，很容易导致性能瓶颈。</p>
+<p> 可靠性问题，线程意外跑飞，或者进入死循环，会导致整个系统通信模块不可用，不能接收和处理外部消息，造成节点故障。</p>
+<p><strong>使用场景：</strong></p>
+<p>客户端的数量有限，业务处理非常快速，比如 Redis，业务处理的时间复杂度 O(1)。</p>
+<h4 id="单-Reactor-多线程"><a href="#单-Reactor-多线程" class="headerlink" title="单 Reactor 多线程"></a>单 Reactor 多线程</h4><p>  <img src="http://www.52im.net/data/attachment/forum/201809/06/200650wun9j9ghkgk7ngna.jpeg" alt="高性能网络编程(六)：一文读懂高性能网络编程中的线程模型_4.jpeg">    </p>
+<p>方案说明：</p>
+<ul>
+<li>1）Reactor 对象通过 Select 监控客户端请求事件，收到事件后通过 Dispatch 进行分发；</li>
+<li>2）如果是建立连接请求事件，则由 Acceptor 通过 Accept 处理连接请求，然后创建一个 Handler 对象处理连接完成后续的各种事件；</li>
+<li>3）如果不是建立连接事件，则 Reactor 会分发调用连接对应的 Handler 来响应；</li>
+<li>4）Handler 只负责响应事件，不做具体业务处理，通过 Read 读取数据后，会分发给后面的 Worker 线程池进行业务处理；</li>
+<li>5）Worker 线程池会分配独立的线程完成真正的业务处理，如何将响应结果发给 Handler 进行处理；</li>
+<li>6）Handler 收到响应结果后通过 Send 将响应结果返回给 Client。</li>
+</ul>
+<p>优点：</p>
+<p>可以充分利用多核 CPU 的处理能力。</p>
+<p>缺点：</p>
+<p>多线程数据共享和访问比较复杂；Reactor 承担所有事件的监听和响应，在单线程中运行，高并发场景下容易成为性能瓶颈。</p>
+<h4 id="主从-Reactor-多线程"><a href="#主从-Reactor-多线程" class="headerlink" title="主从 Reactor 多线程"></a>主从 Reactor 多线程</h4><p>  <img src="http://www.52im.net/data/attachment/forum/201809/06/200759gg777fr7v7wzcr7r.jpeg" alt="高性能网络编程(六)：一文读懂高性能网络编程中的线程模型_5.jpeg">    </p>
+<p> 针对单 Reactor 多线程模型中，Reactor 在单线程中运行，高并发场景下容易成为性能瓶颈，可以让 Reactor 在多线程中运行。</p>
+<p>方案说明：</p>
+<ul>
+<li>1）Reactor 主线程 MainReactor 对象通过 Select 监控建立连接事件，收到事件后通过 Acceptor 接收，处理建立连接事件；</li>
+<li>2）Acceptor 处理建立连接事件后，MainReactor 将连接分配 Reactor 子线程给 SubReactor 进行处理；</li>
+<li>3）SubReactor 将连接加入连接队列进行监听，并创建一个 Handler 用于处理各种连接事件；</li>
+<li>4）当有新的事件发生时，SubReactor 会调用连接对应的 Handler 进行响应；</li>
+<li>5）Handler 通过 Read 读取数据后，会分发给后面的 Worker 线程池进行业务处理；</li>
+<li>6）Worker 线程池会分配独立的线程完成真正的业务处理，如何将响应结果发给 Handler 进行处理；</li>
+<li>7）Handler 收到响应结果后通过 Send 将响应结果返回给 Client。</li>
+</ul>
+<p>优点：</p>
+<p>父线程与子线程的数据交互简单职责明确，父线程只需要接收新连接，子线程完成后续的业务处理。</p>
+<p> 父线程与子线程的数据交互简单，Reactor 主线程只需要把新连接传给子线程，子线程无需返回数据。</p>
+<p> 这种模型在许多项目中广泛使用，包括 Nginx 主从 Reactor 多进程模型，Memcached 主从多线程，Netty 主从多线程模型的支持。</p>
+<h4 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h4><p>3 种模式可以用个比喻来理解：</p>
+<p>（餐厅常常雇佣接待员负责迎接顾客，当顾客入坐后，侍应生专门为这张桌子服务）</p>
+<ul>
+<li>1）单 Reactor 单线程，接待员和侍应生是同一个人，全程为顾客服务；</li>
+<li>2）单 Reactor 多线程，1 个接待员，多个侍应生，接待员只负责接待；</li>
+<li>3）主从 Reactor 多线程，多个接待员，多个侍应生。</li>
+</ul>
+<p>Reactor 模式具有如下的优点：</p>
+<ul>
+<li>1）响应快，不必为单个同步时间所阻塞，虽然 Reactor 本身依然是同步的；</li>
+<li>2）编程相对简单，可以最大程度的避免复杂的多线程及同步问题，并且避免了多线程/进程的切换开销；</li>
+<li>3）可扩展性，可以方便的通过增加 Reactor 实例个数来充分利用 CPU 资源；</li>
+<li>4）可复用性，Reactor 模型本身与具体事件处理逻辑无关，具有很高的复用性。</li>
+</ul>
+<h3 id="Proactor-模型"><a href="#Proactor-模型" class="headerlink" title="Proactor 模型"></a>Proactor 模型</h3><p> 在 Reactor 模式中，Reactor 等待某个事件或者可应用或者操作的状态发生（比如文件描述符可读写，或者是 Socket 可读写）。 然后把这个事件传给事先注册的 Handler（事件处理函数或者回调函数），由后者来做实际的读写操作。其中的读写操作都需要应用程序同步操作，所以 Reactor 是非阻塞同步网络模型。</p>
+<p> 如果把 I/O 操作改为异步，即交给操作系统来完成就能进一步提升性能，这就是异步网络模型 Proactor。</p>
+<p>  <img src="http://www.52im.net/data/attachment/forum/201809/06/201251i0om3mro9wtcxrty.jpeg" alt="高性能网络编程(六)：一文读懂高性能网络编程中的线程模型_1.jpeg">    </p>
+<p>Proactor 是和异步 I/O 相关的，详细方案如下：</p>
+<p>1）Proactor Initiator 创建 Proactor 和 Handler 对象，并将 Proactor 和 Handler 都通过 AsyOptProcessor（Asynchronous Operation Processor）注册到内核；<br>2）AsyOptProcessor 处理注册请求，并处理 I/O 操作；<br>3）AsyOptProcessor 完成 I/O 操作后通知 Proactor；<br>4）Proactor 根据不同的事件类型回调不同的 Handler 进行业务处理；<br>5）Handler 完成业务处理。</p>
+<p>可以看出 Proactor 和 Reactor 的区别：</p>
+<p>1）Reactor 是在事件发生时就通知事先注册的事件（读写在应用程序线程中处理完成）；<br>2）Proactor 是在事件发生时基于异步 I/O 完成读写操作（由内核完成），待 I/O 操作完成后才回调应用程序的处理器来进行业务处理。</p>
+<p>理论上 Proactor 比 Reactor 效率更高，异步 I/O 更加充分发挥 DMA(Direct Memory Access，直接内存存取)的优势。</p>
+<p>但是Proactor有如下缺点：</p>
+<p>1）编程复杂性，由于异步操作流程的事件的初始化和事件完成在时间和空间上都是相互分离的，因此开发异步应用程序更加复杂。应用程序还可能因为反向的流控而变得更加难以 Debug；<br>2）内存使用，缓冲区在读或写操作的时间段内必须保持住，可能造成持续的不确定性，并且每个并发操作都要求有独立的缓存，相比 Reactor 模式，在 Socket 已经准备好读或写前，是不要求开辟缓存的；<br>3）操作系统支持，Windows 下通过 IOCP 实现了真正的异步 I/O，而在 Linux 系统下，Linux 2.6 才引入，目前异步 I/O 还不完善。</p>
+<p>因此在 Linux 下实现高并发网络编程都是以 Reactor 模型为主。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/03_G1_GC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/metric/03_G1_GC/" class="post-title-link" itemprop="url">Java G1 GC</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2018-08-12T00:00:00+08:00">2018-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-08 17:49:15" itemprop="dateModified" datetime="2021-02-08T17:49:15+08:00">2021-02-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-03-G1-GC"><a href="#1-03-G1-GC" class="headerlink" title="1. 03_G1_GC"></a>1. 03_G1_GC</h1><h2 id="1-1-堆内存分配"><a href="#1-1-堆内存分配" class="headerlink" title="1.1. 堆内存分配"></a>1.1. 堆内存分配</h2><p>整个堆分为若干的region，region的大小可以通过参数设置；</p>
+<p>Region可以分为Eden、Survivor、Old、Humongous(专门存储大对象的Region：单个对象超过Region大小的50%，就是大对象；</p>
+<p>如果大对象超过一个Region，则会继续申请连续的空间，作为Humongous区)和Free(空闲Region: Region的内存被释放后的分区)；Free Region后续可以作为Eden、Survivor、Old或Humongous分区；</p>
+<p>堆分为新生代+老年代；</p>
+<h2 id="1-2-两个Set"><a href="#1-2-两个Set" class="headerlink" title="1.2. 两个Set"></a>1.2. 两个Set</h2><ol>
+<li><p>CSet: collection set, 待回收的Region集合</p>
+</li>
+<li><p>RSet: remembered set,引用当前Region集合的其他集合</p>
+<p>引用当前Region的其他Region集合，是points-in的，每个 Region 都有一个 RSet；在 <code>JDK10</code> 中，只有部分 Region 才存在 RSet。</p>
+<ul>
+<li><strong>young gc</strong>：指向「Eden」和「Survivor」Region 的 「Old」和「Humongous」Region 集合，避免全堆扫描</li>
+<li><strong>mixed gc</strong>：确定「Old」Region 之间的相关引用，确定 Region 的回收价值</li>
+</ul>
+</li>
+</ol>
+<h2 id="1-3-垃圾回收过程"><a href="#1-3-垃圾回收过程" class="headerlink" title="1.3. 垃圾回收过程"></a>1.3. 垃圾回收过程</h2><ol>
+<li>young gc：标记-复制<ol>
+<li>「新生代」的垃圾回收</li>
+<li>CSet 中，只包含 Eden、Survivor</li>
+</ol>
+</li>
+<li>mixed gc：标记-复制<ol>
+<li>「新生代」和「部分老年代」的垃圾回收</li>
+<li>CSet 中，包含 Eden、Survivor、部分 Old、Humongous</li>
+</ol>
+</li>
+<li>full gc：<ol>
+<li>G1 gc 失败，退化为 Serial 方式</li>
+<li>单线程全堆扫描，对整个 Heap 进行垃圾回收，涵盖所有的「新生代」和「老年代」</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>G1 垃圾收集器，GC 都是针对 CSet 进行的</p>
+</blockquote>
+<h3 id="1-3-1-Young-GC"><a href="#1-3-1-Young-GC" class="headerlink" title="1.3.1. Young GC"></a>1.3.1. Young GC</h3><p>Young GC，关键细节：</p>
+<ul>
+<li>针对「<strong>年轻代</strong>」的 Eden、Survivor 分区，进行 GC</li>
+<li><strong>存活的对象</strong>，放置在 「新的 Survivor 分区」或「Old 分区」</li>
+<li><strong>触发的时机</strong>：Eden 分区空间不足，无法为普通对象分配存储空间（非大对象）</li>
+</ul>
+<p><strong>Young GC 的执行过程</strong>：就是「标记-复制」算法</p>
+<ol>
+<li><strong>根扫描</strong></li>
+<li><strong>确定</strong>「老年代」对「新生代」的<strong>引用</strong>，避免全堆扫描：<ol>
+<li>根据 card table，扫描 dirty 部分，更新 RSet</li>
+<li>新生代中，根据 RSet，确定 Old 对 Eden 和 Survivor 对象的引用</li>
+</ol>
+</li>
+<li><strong>标记复制</strong>：将存活对象，放入到 Survivor 区 或者 Old 区<ol>
+<li>新的 Survivor 区：是 Free Region 升级来的</li>
+<li>被释放的 Eden 和 Survivor 区：会标记为 Free Region 空白的可用分区</li>
+</ol>
+</li>
+</ol>
+<p>Tips：</p>
+<ul>
+<li>G1 在 Young GC 过程中，是串行？并行？并发？是否会暂停工作线程？<ul>
+<li>Re：可以多线程，就看怎么设置了，会暂停工作线程，不是并发的。</li>
+</ul>
+</li>
+</ul>
+<h3 id="1-3-2-Mixed-GC"><a href="#1-3-2-Mixed-GC" class="headerlink" title="1.3.2. Mixed GC"></a>1.3.2. Mixed GC</h3><p>Mixed GC，关键细节：</p>
+<ul>
+<li>针对「<strong>年轻代</strong>」和「<strong>部分老年代</strong>」的 GC，具体 Eden、Survivor、Old、Humongous Region</li>
+<li><strong>存活的对象</strong>，放置在「新的 Survivor 分区」或「Old 分区」</li>
+<li><strong>触发的时机</strong>：「并发标记周期」中，完成了最后的「<strong>筛选回收</strong>」阶段后，标记出了 X 的 Old Region 分区</li>
+</ul>
+<p>Mixed GC 的执行过程：就是「标记-复制」算法</p>
+<ol>
+<li><strong>并发标记周期</strong>：针对 <code>Old 分区</code>，进行标记<ol>
+<li><strong>初始标记</strong>：依赖 Young GC</li>
+<li><strong>扫描根分区</strong>：如果有 Young GC，则，Young GC block 阻塞等待</li>
+<li><strong>并发标记</strong>：<ol>
+<li>可以并发进行 Young GC</li>
+<li>结束后，并不会进入 Young GC 阶段</li>
+</ol>
+</li>
+<li><strong>重新标记</strong>：不能进行 Young GC</li>
+<li><strong>筛选回收</strong>：结束后，进入 mixed 阶段</li>
+</ol>
+</li>
+<li><strong>Mixed GC</strong>，<strong>本质</strong>就是对 <strong>CSet</strong> 中 Region 的回收<ol>
+<li><strong>CSet</strong>：在 mixed 模式下，其中涵盖了 Eden、Survivor、Old、Humongous Region</li>
+<li><strong>筛选回收阶段</strong>：针对 Old 分区<ol>
+<li><strong>完全可回收的 Region</strong>：不存在存活的对象，直接回收 Region，标记为 Free Region 可用分区</li>
+<li>存在<strong>部分存活的对象的 Region</strong>：标记分数后，追加在 C-Set 中</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p>实际上，可以认为是 2 条线：</p>
+<ul>
+<li><strong>Young GC</strong>：<ul>
+<li>基于 C-Set，进行 Region 回收，本质上，只针对「年轻代」进行回收；</li>
+<li>如果 C-Set 中，涵盖了标记为 X 的 Old Region，则，称为 Mixed GC，此时，既针对「年轻代」，也针对「部分老年代」Region 进行回收</li>
+</ul>
+</li>
+<li><strong>并发标记周期</strong>：标记出 Old Region，哪些需要回收，标记为 X<ul>
+<li>完成「并发标记阶段」后，Young GC，自动升级为 mixed 模式，即，Mixed GC</li>
+<li>Mixed GC：基于 C-Set，进行 Region 回收，只不过，此时，C-Set 中，涵盖了一部分 Old Region</li>
+</ul>
+</li>
+</ul>
+<p><img src="_v_images/20200716205954650_1089567156.png"></p>
+<p>1 个插图：并发标记周期的说明</p>
+<ul>
+<li><strong>并发标记周期</strong>：<ul>
+<li>触发时机：「老年代」分区的占比，达到阈值</li>
+<li>整个周期说明</li>
+</ul>
+</li>
+<li><strong>Mixed GC</strong>：模式生效点、失效点<ul>
+<li><strong>生效点</strong>：存在 X 状态的 Old Region，即，标记并发周期的「筛选回收」阶段结束后，再次触发的 GC，就是 Mixed GC</li>
+<li><strong>失效点</strong>：完成所有的 X 状态 Old Region 的清理后，会进入 Young GC 状态</li>
+</ul>
+</li>
+<li><strong>补充说明</strong>：<ul>
+<li>部分 X 状态的 Old Region：每次 Mixed GC，只有部分 X 状态的 Old Region 会被放入 C-Set</li>
+<li>完整 C-Set 都被回收：C-Set 中所有 Region，每次 GC 都会被回收</li>
+</ul>
+</li>
+</ul>
+<p><strong>特别说明</strong>：</p>
+<blockquote>
+<p>G1的收集都是STW的；</p>
+<p>但「年轻代」和「老年代」的 GC <strong>界限模糊</strong>，采用了混合(<code>mixed</code>)收集的方式。</p>
+<p><strong>Young GC</strong>，可能快速切换为 Mixed GC，只要 X 标记的 Old Region 存在和消失，就会自动升级 or 降级；</p>
+<p>这样，即使堆内存很大时，也可以限制<strong>收集 Region 的范围</strong>，从而<strong>降低停顿</strong>，达到设置的「暂停时间的目标」。</p>
+</blockquote>
+<h3 id="1-3-3-其他"><a href="#1-3-3-其他" class="headerlink" title="1.3.3. 其他"></a>1.3.3. 其他</h3><h4 id="1-3-3-1-启发式算法"><a href="#1-3-3-1-启发式算法" class="headerlink" title="1.3.3.1. 启发式算法"></a>1.3.3.1. 启发式算法</h4><p><strong>启发式算法</strong>：根据执行状态，动态调整</p>
+<ol>
+<li>设置了「暂停时间的目标」（默认 200ms），G1 会自动调整「年轻代」的空间大小</li>
+<li>如果显式设置「年轻代」的大小，则，用户设置的「暂停时间的目标」会自动失效</li>
+</ol>
+<h4 id="1-3-3-2-SATB，增量式的标记算法"><a href="#1-3-3-2-SATB，增量式的标记算法" class="headerlink" title="1.3.3.2. SATB，增量式的标记算法"></a>1.3.3.2. SATB，增量式的标记算法</h4><p>G1 垃圾收集器，采用了 <strong>SATB</strong>（Snapshot At The Beginning），初始快照，增量式的标记算法，具体：</p>
+<ol>
+<li><strong>标记开始时</strong>：Region 创建一个 Snapshot</li>
+<li><strong>存量标记</strong>：只针对 Snapshot 中存活的对象，进行标记</li>
+<li><strong>增量标记</strong>：Snapshot 之后，新生成的对象，都被标记为「存活对象」，此次不回收，下次标记再说</li>
+</ol>
+<h4 id="1-3-3-3-G1：适用场景"><a href="#1-3-3-3-G1：适用场景" class="headerlink" title="1.3.3.3. G1：适用场景"></a>1.3.3.3. G1：适用场景</h4><p>就目前而言、CMS还是默认首选的GC策略、可能在以下场景下G1更适合：</p>
+<ol>
+<li><strong>多核+大内存</strong>：服务端多核CPU、JVM内存占用较大的应用（至少大于4G）</li>
+<li><strong>业务多碎片</strong>：应用在运行过程中会产生大量内存碎片、需要经常压缩空间</li>
+<li><strong>防止高并发雪崩</strong>：想要更可控、可预期的GC停顿周期；防止高并发下应用雪崩现象</li>
+</ol>
+<h3 id="1-3-4-小结"><a href="#1-3-4-小结" class="headerlink" title="1.3.4. 小结"></a>1.3.4. 小结</h3><p>G1 垃圾收集器，围绕其 Young GC 和 Mixed GC，从整体宏观的角度上，跟之前所有的「串行」「并行」「并发」的垃圾收集器，存在本质的差异：</p>
+<ol>
+<li>之前的垃圾收集器，要实现 <strong>2 个基本步骤</strong>：<ol>
+<li><strong>步骤1</strong>：找到需要回收的对象</li>
+<li><strong>步骤2</strong>：回收</li>
+<li><strong>Note</strong>：上面两个步骤「步骤2」依赖「步骤1」，并且串行进行</li>
+</ol>
+</li>
+<li>G1 垃圾收集器，在「<strong>老年代</strong>」，把 2 个步骤「同时进行」：<ol>
+<li><strong>找到需要回收的对象</strong>：<ol>
+<li>在找到需要回收的 Old Region 过程中，仍然可以同时「回收对象」，即 GC</li>
+<li>找到需要回收的 Old Region 过程，称为「<strong>并发标记周期</strong>」</li>
+</ol>
+</li>
+<li><strong>回收对象</strong>：<ol>
+<li>在「找需要回收的对象」<strong>过程中</strong>，可以持续并发的进行 GC，称为 <code>Young GC</code>，只会收「新生代」</li>
+<li>「找需要回收的对象」<strong>过程结束后</strong>，再进行的 GC，称为 <code>Mixed GC</code>，会同时回收「新生代」和「部分老年代」</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p>参考示意图：</p>
+<p><img src="_v_images/20200716205954411_225227554.png"></p>
+<p><img src="_v_images/20200716125557055_1896049925.png"></p>
+<p>G1 回收过程如下。</p>
+<ol>
+<li>G1 的年轻代回收，采用复制算法，并行进行收集，收集过程会 STW。</li>
+<li>G1 的老年代回收时也同时会对年轻代进行回收。主要分为四个阶段：<ol>
+<li>依然是初始标记阶段完成对根对象的标记，这个过程是STW的；</li>
+<li>并发标记阶段，这个阶段是和用户线程并行执行的；</li>
+<li>最终标记阶段，完成三色标记周期；</li>
+<li>复制/清除阶段，这个阶段会优先对可回收空间较大的 Region 进行回收，即 garbage first，这也是 G1 名称的由来。</li>
+</ol>
+</li>
+</ol>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/zy1994hyq/article/details/102495471">GC算法之G1算法</a></li>
+<li><a target="_blank" rel="noopener" href="https://ningg.top/jvm-series-jvm-practice-jvm-gc-g1/">JVM 实践：G1 垃圾收集器</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-job-submit/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-job-submit/" class="post-title-link" itemprop="url">flink任务提交</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2018-08-12T00:00:00+08:00">2018-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-08 17:49:18" itemprop="dateModified" datetime="2021-02-08T17:49:18+08:00">2021-02-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-任务提交"><a href="#Flink-任务提交" class="headerlink" title="Flink-任务提交"></a>Flink-任务提交</h1><h2 id="flink-on-zeppelin"><a href="#flink-on-zeppelin" class="headerlink" title="flink on zeppelin"></a>flink on zeppelin</h2><p><code>org.apache.zeppelin.flink.FlinkScalaInterpreter</code></p>
+<h2 id="flink-on-yarn"><a href="#flink-on-yarn" class="headerlink" title="flink on yarn"></a>flink on yarn</h2><p>命令行提交方式</p>
+<p><img src="_v_images/20200713162403351_1965495978.png"></p>
+<h3 id="yarn-per-job"><a href="#yarn-per-job" class="headerlink" title="yarn per-job"></a>yarn per-job</h3><h4 id="单任务Attach模式"><a href="#单任务Attach模式" class="headerlink" title="单任务Attach模式"></a>单任务Attach模式</h4><p>默认是 Attach 模式，即客户端会一直等待直到程序结束才会退出。</p>
+<p>通过 -m yarn-cluster 指定 Yarn 模式</p>
+<p>Yarn 上显示名字为 Flink session cluster，这个 Batch 的 Wordcount 任务运行完会 FINISHED。</p>
+<h4 id="单任务Detached模式"><a href="#单任务Detached模式" class="headerlink" title="单任务Detached模式"></a>单任务Detached模式</h4><p>由于是 Detached 模式，客户端提交完任务就退出了</p>
+<p>Yarn 上显示为 Flink per-job cluster</p>
+<h3 id="yarn-session"><a href="#yarn-session" class="headerlink" title="yarn session"></a>yarn session</h3><p>也有attach和detached模式的区分</p>
+<p>Flink run 方式提交（推荐模式）</p>
+<p>yarn session需要先启动一个集群，然后在提交作业。<br>对于Flink run直接提交作业就相对比较简单，不需要额外的去启动一个集群，直接提交作业，即可完成Flink作业。<br>命令： bin/flink run -m yarn-cluster examples/batch/WordCount.jar，注意使用参数-m yarn-cluster提交到yarn集群。</p>
+<h3 id="application-mode"><a href="#application-mode" class="headerlink" title="application mode"></a>application mode</h3><p>应用程序的main方法在jobManager上运行，创建仅仅在特定应用程序的作业之间共享的会话集群，在应用程序完成时终止。</p>
+<h2 id="提交任务到yarn并监控任务运行情况"><a href="#提交任务到yarn并监控任务运行情况" class="headerlink" title="提交任务到yarn并监控任务运行情况"></a>提交任务到yarn并监控任务运行情况</h2><p>./flink run -m yarn-cluster -p 4 -yjm 1024m -ytm 1096m -ynm 1  ../examples/batch/WordCount.jar</p>
+<p>./flink run-application -t yarn-application ../examples/batch/WordCount.jar</p>
+<p>指定application name为1</p>
+<p>然后通过yarn-rest-api拿取任务信息</p>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/asker009/p/11327533.html">flink on yarn模式下两种提交job方式</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-timer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-timer/" class="post-title-link" itemprop="url">Flink Timer</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2018-08-12T00:00:00+08:00">2018-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-08 17:49:17" itemprop="dateModified" datetime="2021-02-08T17:49:17+08:00">2021-02-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Timer"><a href="#Timer" class="headerlink" title="Timer"></a>Timer</h1><p>TimerService</p>
+<h2 id="SystemProcessingTimeService"><a href="#SystemProcessingTimeService" class="headerlink" title="SystemProcessingTimeService"></a>SystemProcessingTimeService</h2><p>org.apache.flink.streaming.runtime.tasks.SystemProcessingTimeService</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/FlinkOutputTimely/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/FlinkOutputTimely/" class="post-title-link" itemprop="url">Flink定时输出</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2018-08-12T00:00:00+08:00">2018-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-08 17:49:18" itemprop="dateModified" datetime="2021-02-08T17:49:18+08:00">2021-02-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="FlinkOutputTimely"><a href="#FlinkOutputTimely" class="headerlink" title="FlinkOutputTimely"></a>FlinkOutputTimely</h1><p>定时批量输出</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">CommonSinkOperator</span>&lt;<span class="title">T</span> <span class="keyword">extends</span> <span class="title">Serializable</span>&gt; <span class="keyword">extends</span> <span class="title">AbstractStreamOperator</span>&lt;<span class="title">Object</span>&gt;</span></span><br><span class="line"><span class="class">        <span class="keyword">implements</span> <span class="title">ProcessingTimeCallback</span>,</span></span><br><span class="line"><span class="class">        <span class="title">OneInputStreamOperator</span>&lt;<span class="title">T</span>, <span class="title">Object</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> List&lt;T&gt; list;</span><br><span class="line">    <span class="keyword">private</span> ListState&lt;T&gt; listState;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> bathSize;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> interval;</span><br><span class="line">    <span class="keyword">private</span> ProcessingTimeService processingTimeService;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CommonSinkOperator</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">CommonSinkOperator</span><span class="params">(<span class="keyword">int</span> batchSize, <span class="keyword">long</span> interval)</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">this</span>.chainingStrategy = ChainingStrategy.ALWAYS;</span><br><span class="line">        <span class="keyword">this</span>.batchSize = batchSize;</span><br><span class="line">        <span class="keyword">this</span>.interval = interval;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">open</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.open();</span><br><span class="line">        <span class="keyword">if</span> (interval &gt; <span class="number">0</span> &amp;&amp; batchSize &gt; <span class="number">1</span>) &#123;</span><br><span class="line">            processingTimeService = getProcessingTimeService();</span><br><span class="line">            <span class="keyword">long</span> now = processingTimeService.getCurrentProcessingTime();</span><br><span class="line">            processingTimeService.registerTimer(now + interval, <span class="keyword">this</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">initializeState</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">            StateInitializationContext context)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">super</span>.initializeState(context);</span><br><span class="line">        <span class="keyword">this</span>.list = <span class="keyword">new</span> ArrayList&lt;T&gt;();</span><br><span class="line">        listState = context.getOperatorStateStore()</span><br><span class="line"></span><br><span class="line">                .getSerializableListState(<span class="string">&quot;batch-interval-sink&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (context.isRestored()) &#123;</span><br><span class="line">            listState.get().forEach(x -&gt; &#123;</span><br><span class="line">                list.add(x);</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">processElement</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">            StreamRecord&lt;T&gt; element)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">        list.add(element.getValue());</span><br><span class="line">        <span class="keyword">if</span> (list.size() &gt;= batchSize) &#123;</span><br><span class="line">            saveRecords(list);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">snapshotState</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params"></span></span></span><br><span class="line"><span class="function"><span class="params">            StateSnapshotContext context)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">super</span>.snapshotState(context);</span><br><span class="line">        <span class="keyword">if</span> (list.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            listState.clear();</span><br><span class="line">            listState.addAll(list);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onProcessingTime</span><span class="params">(<span class="keyword">long</span> timestamp)</span></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (list.size() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            saveRecords(list);</span><br><span class="line">            list.clear();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">long</span> now =processingTimeService.getCurrentProcessingTime();</span><br><span class="line">        processingTimeService.registerTimer(now + interval,<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">saveRecords</span><span class="params">(List&lt;T&gt; datas)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/tomcat/principle/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/tomcat/principle/" class="post-title-link" itemprop="url">Apache Tomcat 9 源码分析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-07-30 12:26:00" itemprop="dateCreated datePublished" datetime="2018-07-30T12:26:00+08:00">2018-07-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-08 17:49:17" itemprop="dateModified" datetime="2021-02-08T17:49:17+08:00">2021-02-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Apache tomcat 目前是最常用的免费开源的Java web应用容器(没有之一)，本文旨在分析<a target="_blank" rel="noopener" href="https://tomcat.apache.org/download-90.cgi">Apache Tomcat 9 源码</a>，分析Tomcat高性能的原理</p>
+<h2 id="Tomcat启动"><a href="#Tomcat启动" class="headerlink" title="Tomcat启动"></a>Tomcat启动</h2><h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><h2 id="快速数组扩容"><a href="#快速数组扩容" class="headerlink" title="快速数组扩容"></a>快速数组扩容</h2><h2 id="classLoader"><a href="#classLoader" class="headerlink" title="classLoader"></a>classLoader</h2><h2 id="参考文献"><a href="#参考文献" class="headerlink" title="[参考文献]"></a>[参考文献]</h2><ol>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/crazylqy/p/4706223.html">Tomcat服务器原理详解</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/java/j-lo-tomcat1/">Tomcat 系统架构与设计模式，第1部分 工作原理</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/java/j-lo-tomcat2">Tomcat 系统架构与设计模式，第2部分 设计模式分析</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/spider/webDriver_firefox_on_linux/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +1207,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
+                <time title="Modified: 2021-02-08 17:49:18" itemprop="dateModified" datetime="2021-02-08T17:49:18+08:00">2021-02-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -308,7 +1301,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:21:29" itemprop="dateModified" datetime="2021-01-19T09:21:29+08:00">2021-01-19</time>
+                <time title="Modified: 2021-02-08 17:49:15" itemprop="dateModified" datetime="2021-02-08T17:49:15+08:00">2021-02-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -524,7 +1517,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:21:29" itemprop="dateModified" datetime="2021-01-19T09:21:29+08:00">2021-01-19</time>
+                <time title="Modified: 2021-02-08 17:49:15" itemprop="dateModified" datetime="2021-02-08T17:49:15+08:00">2021-02-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -557,997 +1550,6 @@
 <li>Java web 获取 classes 目录</li>
 </ol>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String path = Thread.currentThread().getContextClassLoader().getResource(<span class="string">&quot;/&quot;</span>).toURI().getPath();</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/lib/Jpa/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/lib/Jpa/" class="post-title-link" itemprop="url">Java JPA</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-12T00:00:00+08:00">2017-08-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:21:29" itemprop="dateModified" datetime="2021-01-19T09:21:29+08:00">2021-01-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Jpa"><a href="#Jpa" class="headerlink" title="Jpa"></a>Jpa</h1><h2 id="创建时间-更新时间"><a href="#创建时间-更新时间" class="headerlink" title="创建时间 更新时间"></a>创建时间 更新时间</h2><p>1.实体类加注解</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * 创建时间</span><br><span class="line"> *&#x2F;</span><br><span class="line">@CreatedDate</span><br><span class="line">@Column(name &#x3D; &quot;create_time&quot;)</span><br><span class="line">private Date createTime;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 修改时间</span><br><span class="line"> *&#x2F;</span><br><span class="line">@LastModifiedDate</span><br><span class="line">@Column(name &#x3D; &quot;modify_time&quot;)</span><br><span class="line">private Date modifyTime;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>2.实体类头加注解</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@EntityListeners(AuditingEntityListener.class)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>3.SpringBoot启动类加注解</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@EnableJpaAuditing</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>另外数据库添加相应控制也可以：<br>createTime ： CURRENT_TIMESTAMP<br>modifyTime ： CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/Java-%E5%BE%AE%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/metric/Java-%E5%BE%AE%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">Java微基准测试</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-12T00:00:00+08:00">2017-08-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:21:29" itemprop="dateModified" datetime="2021-01-19T09:21:29+08:00">2021-01-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Stalker</p>
-<p><a target="_blank" rel="noopener" href="http://openjdk.java.net/projects/code-tools/jmh/">JMH</a> 是 Java Microbenchmark Harness（微基准测试</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/13.BlockingQueue/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/multithread/13.BlockingQueue/" class="post-title-link" itemprop="url">Java BlockingQueue</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-12T00:00:00+08:00">2017-08-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:21:29" itemprop="dateModified" datetime="2021-01-19T09:21:29+08:00">2021-01-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="1-BlockingQueue-简介"><a href="#1-BlockingQueue-简介" class="headerlink" title="1. BlockingQueue 简介"></a>1. BlockingQueue 简介</h1><p>在实际编程中，会经常使用到 JDK 中 Collection 集合框架中的各种容器类如实现 List,Map,Queue 接口的容器类，但是这些容器类基本上不是线程安全的，除了使用 Collections 可以将其转换为线程安全的容器，Doug Lea 大师为我们都准备了对应的线程安全的容器，如实现 List 接口的 CopyOnWriteArrayList（<a target="_blank" rel="noopener" href="https://juejin.im/post/5aeeb55f5188256715478c21">关于 CopyOnWriteArrayList 可以看这篇文章</a>），实现 Map 接口的 ConcurrentHashMap（<a target="_blank" rel="noopener" href="https://juejin.im/post/5aeeaba8f265da0b9d781d16">关于 ConcurrentHashMap 可以看这篇文章</a>），实现 Queue 接口的 ConcurrentLinkedQueue（<a target="_blank" rel="noopener" href="https://juejin.im/post/5aeeae756fb9a07ab11112af">关于 ConcurrentLinkedQueue 可以看这篇文章</a>）。</p>
-<p>最常用的”<strong>生产者-消费者</strong>“问题中，队列通常被视作线程间操作的数据容器，这样，可以对各个模块的业务功能进行解耦，生产者将“生产”出来的数据放置在数据容器中，而消费者仅仅只需要在“数据容器”中进行获取数据即可，这样生产者线程和消费者线程就能够进行解耦，只专注于自己的业务功能即可。阻塞队列（BlockingQueue）被广泛使用在“生产者-消费者”问题中，其原因是 BlockingQueue 提供了可阻塞的插入和移除的方法。<strong>当队列容器已满，生产者线程会被阻塞，直到队列未满；当队列容器为空时，消费者线程会被阻塞，直至队列非空时为止。</strong></p>
-<h1 id="2-基本操作"><a href="#2-基本操作" class="headerlink" title="2. 基本操作"></a>2. 基本操作</h1><p>BlockingQueue 基本操作总结如下（此图来源于 JAVA API 文档）：</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Throws exception</th>
-<th>Special value</th>
-<th>Blocks</th>
-<th>Times out</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Insert</td>
-<td>add(e)</td>
-<td>offser(e)</td>
-<td>put(e)</td>
-<td>offser(e,time,unit)</td>
-</tr>
-<tr>
-<td>Remove</td>
-<td>remove()</td>
-<td>poll()</td>
-<td>take()</td>
-<td>poll(time,unit)</td>
-</tr>
-<tr>
-<td>Examine</td>
-<td>element()</td>
-<td>peek()</td>
-<td>-</td>
-<td>-</td>
-</tr>
-</tbody></table>
-<p>BlockingQueue 继承于 Queue 接口，因此，对数据元素的基本操作有：</p>
-<blockquote>
-<p>插入元素</p>
-</blockquote>
-<ol>
-<li><code>add(E e)</code> ：往队列插入数据，当队列满时，插入元素时会抛出 <code>IllegalStateException</code> 异常；</li>
-<li><code>offer(E e)</code>：当往队列插入数据时，插入成功返回<code>true</code>，否则则返回<code>false</code>。当队列满时不会抛出异常；</li>
-</ol>
-<blockquote>
-<p>删除元素</p>
-</blockquote>
-<ol>
-<li><code>remove(Object o)</code>：从队列中删除数据，成功则返回<code>true</code>，否则为<code>false</code></li>
-<li><code>poll()</code>：删除数据，当队列为空时，返回 null；</li>
-</ol>
-<blockquote>
-<p>查看元素</p>
-</blockquote>
-<ol>
-<li><code>element()</code>：获取队头元素，如果队列为空时则抛出 <code>NoSuchElementException</code> 异常；</li>
-<li><code>peek()</code>：获取队头元素，如果队列为空则抛出 <code>NoSuchElementException</code> 异常</li>
-</ol>
-<p>BlockingQueue 具有的特殊操作：</p>
-<blockquote>
-<p>插入数据：</p>
-</blockquote>
-<ol>
-<li><code>put(E e)</code>：当阻塞队列容量已经满时，往阻塞队列插入数据的线程会被阻塞，直至阻塞队列已经有空余的容量可供使用；</li>
-<li><code>offer(E e, long timeout, TimeUnit unit)</code>：若阻塞队列已经满时，同样会阻塞插入数据的线程，直至阻塞队列已经有空余的地方，与 <code>put</code> 方法不同的是，该方法会有一个超时时间，若超过当前给定的超时时间，插入数据的线程会退出；</li>
-</ol>
-<blockquote>
-<p>删除数据</p>
-</blockquote>
-<ol>
-<li><code>take()</code>：当阻塞队列为空时，获取队头数据的线程会被阻塞；</li>
-<li><code>poll(long timeout, TimeUnit unit)</code>：当阻塞队列为空时，获取数据的线程会被阻塞，另外，如果被阻塞的线程超过了给定的时长，该线程会退出</li>
-</ol>
-<h1 id="3-常用的-BlockingQueue"><a href="#3-常用的-BlockingQueue" class="headerlink" title="3. 常用的 BlockingQueue"></a>3. 常用的 BlockingQueue</h1><p>实现 BlockingQueue 接口的有<code>ArrayBlockingQueue</code>, <code>DelayQueue</code>, <code>LinkedBlockingDeque</code>, <code>LinkedBlockingQueue</code>, <code>LinkedTransferQueue</code>, <code>PriorityBlockingQueue</code>, <code>SynchronousQueue</code>，而这几种常见的阻塞队列也是在实际编程中会常用的，下面对这几种常见的阻塞队列进行说明：</p>
-<blockquote>
-<p>1.<code>ArrayBlockingQueue</code></p>
-</blockquote>
-<p>**<code>ArrayBlockingQueue</code>**是由数组实现的有界阻塞队列。该队列命令元素 FIFO（先进先出）。因此，对头元素时队列中存在时间最长的数据元素，而对尾数据则是当前队列最新的数据元素。<code>ArrayBlockingQueue</code> 可作为“有界数据缓冲区”，生产者插入数据到队列容器中，并由消费者提取。<code>ArrayBlockingQueue</code> 一旦创建，容量不能改变。</p>
-<p>当队列容量满时，尝试将元素放入队列将导致操作阻塞;尝试从一个空队列中取一个元素也会同样阻塞。</p>
-<p><code>ArrayBlockingQueue</code> 默认情况下不能保证线程访问队列的公平性，所谓公平性是指严格按照线程等待的绝对时间顺序，即最先等待的线程能够最先访问到 <code>ArrayBlockingQueue</code>。而非公平性则是指访问 <code>ArrayBlockingQueue</code> 的顺序不是遵守严格的时间顺序，有可能存在，一旦 <code>ArrayBlockingQueue</code> 可以被访问时，长时间阻塞的线程依然无法访问到 <code>ArrayBlockingQueue</code>。<strong>如果保证公平性，通常会降低吞吐量</strong>。如果需要获得公平性的 <code>ArrayBlockingQueue</code>，可采用如下代码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> ArrayBlockingQueue&lt;Integer&gt; blockingQueue = <span class="keyword">new</span> ArrayBlockingQueue&lt;Integer&gt;(<span class="number">10</span>,<span class="keyword">true</span>);</span><br></pre></td></tr></table></figure>
-<p>关于 <code>ArrayBlockingQueue</code> 的实现原理，可以<a target="_blank" rel="noopener" href="https://juejin.im/post/5aeebdb26fb9a07aa83ea17e">看这篇文章</a>。</p>
-<blockquote>
-<p>2.<code>LinkedBlockingQueue</code></p>
-</blockquote>
-<p><code>LinkedBlockingQueue</code> 是用链表实现的有界阻塞队列，同样满足 FIFO 的特性，与 <code>ArrayBlockingQueue</code> 相比起来具有更高的吞吐量，为了防止 <code>LinkedBlockingQueue</code> 容量迅速增，损耗大量内存。通常在创建 <code>LinkedBlockingQueue</code> 对象时，会指定其大小，如果未指定，容量等于 <code>Integer.MAX_VALUE</code></p>
-<blockquote>
-<p>3.<code>PriorityBlockingQueue</code></p>
-</blockquote>
-<p><code>PriorityBlockingQueue</code> 是一个支持优先级的无界阻塞队列。默认情况下元素采用自然顺序进行排序，也可以通过自定义类实现 <code>compareTo()</code>方法来指定元素排序规则，或者初始化时通过构造器参数 <code>Comparator</code> 来指定排序规则。</p>
-<blockquote>
-<p>4.<code>SynchronousQueue</code></p>
-</blockquote>
-<p><code>SynchronousQueue</code> 每个插入操作必须等待另一个线程进行相应的删除操作，因此，<code>SynchronousQueue</code> 实际上没有存储任何数据元素，因为只有线程在删除数据时，其他线程才能插入数据，同样的，如果当前有线程在插入数据时，线程才能删除数据。<code>SynchronousQueue</code> 也可以通过构造器参数来为其指定公平性。</p>
-<blockquote>
-<p>5.<code>LinkedTransferQueue</code></p>
-</blockquote>
-<p><code>LinkedTransferQueue</code> 是一个由链表数据结构构成的无界阻塞队列，由于该队列实现了 <code>TransferQueue</code> 接口，与其他阻塞队列相比主要有以下不同的方法：</p>
-<p><strong><code>transfer(E e)</code></strong> 如果当前有线程（消费者）正在调用 <code>take()</code>方法或者可延时的 <code>poll()</code>方法进行消费数据时，生产者线程可以调用 <code>transfer</code> 方法将数据传递给消费者线程。如果当前没有消费者线程的话，生产者线程就会将数据插入到队尾，直到有消费者能够进行消费才能退出；</p>
-<p><strong><code>tryTransfer(E e)</code></strong> <code>tryTransfer</code> 方法如果当前有消费者线程（调用 <code>take</code> 方法或者具有超时特性的 <code>poll</code> 方法）正在消费数据的话，该方法可以将数据立即传送给消费者线程，如果当前没有消费者线程消费数据的话，就立即返回<code>false</code>。因此，与 <code>transfer</code> 方法相比，<code>transfer</code> 方法是必须等到有消费者线程消费数据时，生产者线程才能够返回。而 <code>tryTransfer</code> 方法能够立即返回结果退出。</p>
-<p><strong><code>tryTransfer(E e,long timeout,imeUnit unit)</code></strong><br>与 <code>transfer</code> 基本功能一样，只是增加了超时特性，如果数据才规定的超时时间内没有消费者进行消费的话，就返回<code>false</code>。</p>
-<blockquote>
-<p>6.<code>LinkedBlockingDeque</code></p>
-</blockquote>
-<p><code>LinkedBlockingDeque</code> 是基于链表数据结构的有界阻塞双端队列，如果在创建对象时为指定大小时，其默认大小为 <code>Integer.MAX_VALUE</code>。与 <code>LinkedBlockingQueue</code> 相比，主要的不同点在于，<code>LinkedBlockingDeque</code> 具有双端队列的特性。<code>LinkedBlockingDeque</code> 基本操作如下图所示（来源于 java 文档）</p>
-<p><img src="_v_images/20200721125024527_1529598628" alt="`LinkedBlockingDeque`的基本操作.png"></p>
-<p><code>LinkedBlockingDeque</code>的基本操作.png</p>
-<p>如上图所示，<code>LinkedBlockingDeque</code> 的基本操作可以分为四种类型：</p>
-<p>1.特殊情况，抛出异常；<br>2.特殊情况，返回特殊值如 null 或者 false；<br>3.当线程不满足操作条件时，线程会被阻塞直至条件满足；<br>4. 操作具有超时特性。</p>
-<p>另外，<code>LinkedBlockingDeque</code> 实现了 BlockingDueue 接口<br>而 <code>LinkedBlockingQueue</code> 实现的是 BlockingQueue，</p>
-<p>这两个接口的主要区别如下图所示（来源于 java 文档）：</p>
-<p><img src="_v_images/20200721125024023_871236957" alt="BlockingQueue和BlockingDeque的区别.png"></p>
-<p>BlockingQueue和BlockingDeque的区别</p>
-<p>从上图可以看出，两个接口的功能是可以等价使用的，比如 BlockingQueue 的 add 方法和 BlockingDeque 的 addLast 方法的功能是一样的。</p>
-<blockquote>
-<p>7.<code>DelayQueue</code></p>
-</blockquote>
-<p><code>DelayQueue</code> 是一个存放实现 <code>Delayed</code> 接口的数据的无界阻塞队列，只有当数据对象的延时时间达到时才能插入到队列进行存储。如果当前所有的数据都还没有达到创建时所指定的延时期，则队列没有队头，并且线程通过 <code>poll</code> 等方法获取数据元素则返回 <code>null</code>。所谓数据延时期满时，则是通过 <code>Delayed</code> 接口的<code>getDelay(TimeUnit.NANOSECONDS)</code>来进行判定，如果该方法返回的是小于等于 0 则说明该数据元素的延时期已满。</p>
-<h1 id="ArrayBlockingQueue-实现原理"><a href="#ArrayBlockingQueue-实现原理" class="headerlink" title="ArrayBlockingQueue 实现原理"></a>ArrayBlockingQueue 实现原理</h1><p>阻塞队列最核心的功能是，能够可阻塞式的插入和删除队列元素。当前队列为空时，会阻塞消费数据的线程，直至队列非空时，通知被阻塞的线程；当队列满时，会阻塞插入数据的线程，直至队列未满时，通知插入数据的线程（生产者线程）。那么，多线程中消息通知机制最常用的是 lock 的 condition 机制，关于 condition 可以<a target="_blank" rel="noopener" href="https://juejin.im/post/5aeea5e951882506a36c67f0">看这篇文章的详细介绍</a>。那么 ArrayBlockingQueue 的实现是不是也会采用 Condition 的通知机制呢？下面来看看。</p>
-<h2 id="2-1-ArrayBlockingQueue-的主要属性"><a href="#2-1-ArrayBlockingQueue-的主要属性" class="headerlink" title="2.1 ArrayBlockingQueue 的主要属性"></a><strong>2.1 ArrayBlockingQueue 的主要属性</strong></h2><p>ArrayBlockingQueue 的主要属性如下:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** The queued items */</span></span><br><span class="line"><span class="keyword">final</span> Object[] items;</span><br><span class="line"><span class="comment">/** items index for next take, poll, peek or remove */</span></span><br><span class="line"><span class="keyword">int</span> takeIndex;</span><br><span class="line"><span class="comment">/** items index for next put, offer, or add */</span></span><br><span class="line"><span class="keyword">int</span> putIndex;</span><br><span class="line"><span class="comment">/** Number of elements in the queue */</span></span><br><span class="line"><span class="keyword">int</span> count;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">Concurrency control uses the classic two-condition algorithm</span></span><br><span class="line"><span class="comment">found in any textbook.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/** Main lock guarding all access */</span></span><br><span class="line"><span class="keyword">final</span> ReentrantLock lock;</span><br><span class="line"><span class="comment">/** Condition for waiting takes */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Condition notEmpty;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>从源码中可以看出 ArrayBlockingQueue 内部是采用数组进行数据存储的（<code>属性items</code>），为了保证线程安全，采用的是<code>ReentrantLock lock</code>，为了保证可阻塞式的插入删除数据利用的是 Condition，当获取数据的消费者线程被阻塞时会将该线程放置到 notEmpty 等待队列中，当插入数据的生产者线程被阻塞时，会将该线程放置到 notFull 等待队列中。而 notEmpty 和 notFull 等中要属性在构造方法中进行创建：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">ArrayBlockingQueue</span><span class="params">(<span class="keyword">int</span> capacity, <span class="keyword">boolean</span> fair)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (capacity &lt;= <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException();</span><br><span class="line">    <span class="keyword">this</span>.items = <span class="keyword">new</span> Object[capacity];</span><br><span class="line">    lock = <span class="keyword">new</span> ReentrantLock(fair);</span><br><span class="line">    notEmpty = lock.newCondition();</span><br><span class="line">    notFull =  lock.newCondition();</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>接下来，主要看看可阻塞式的 put 和 take 方法是怎样实现的。</p>
-<h2 id="2-2-put-方法详解"><a href="#2-2-put-方法详解" class="headerlink" title="2.2 put 方法详解"></a><strong>2.2 put 方法详解</strong></h2><p><code>put(E e)</code>方法源码如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(E e)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    checkNotNull(e);</span><br><span class="line">    <span class="keyword">final</span> ReentrantLock lock = <span class="keyword">this</span>.lock;</span><br><span class="line">    lock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">//如果当前队列已满，将线程移入到notFull等待队列中</span></span><br><span class="line">        <span class="keyword">while</span> (count == items.length)</span><br><span class="line">            notFull.await();</span><br><span class="line">     <span class="comment">//满足插入数据的要求，直接进行入队操作</span></span><br><span class="line">        enqueue(e);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-<p>该方法的逻辑很简单，当队列已满时（<code>count == items.length</code>）将线程移入到 notFull 等待队列中，如果当前满足插入数据的条件，就可以直接调用<code>enqueue(e)</code>插入数据元素。enqueue 方法源码为：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">enqueue</span><span class="params">(E x)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// assert lock.getHoldCount() == 1;</span></span><br><span class="line">    <span class="comment">// assert items[putIndex] == null;</span></span><br><span class="line">    <span class="keyword">final</span> Object[] items = <span class="keyword">this</span>.items;</span><br><span class="line">   <span class="comment">//插入数据</span></span><br><span class="line">    items[putIndex] = x;</span><br><span class="line">    <span class="keyword">if</span> (++putIndex == items.length)</span><br><span class="line">        putIndex = <span class="number">0</span>;</span><br><span class="line">    count++;</span><br><span class="line">   <span class="comment">//通知消费者线程，当前队列中有数据可供消费</span></span><br><span class="line">    notEmpty.signal();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>enqueue 方法的逻辑同样也很简单，先完成插入数据，即往数组中添加数据（<code>items[putIndex] = x</code>），然后通知被阻塞的消费者线程，当前队列中有数据可供消费（<code>notEmpty.signal()</code>）。</p>
-<h2 id="2-3-take-方法详解"><a href="#2-3-take-方法详解" class="headerlink" title="2.3 take 方法详解"></a><strong>2.3 take 方法详解</strong></h2><p>take 方法源码如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> E <span class="title">take</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> ReentrantLock lock = <span class="keyword">this</span>.lock;</span><br><span class="line">    lock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="comment">//如果队列为空，没有数据，将消费者线程移入等待队列中</span></span><br><span class="line">        <span class="keyword">while</span> (count == <span class="number">0</span>)</span><br><span class="line">            notEmpty.await();</span><br><span class="line">		<span class="comment">//获取数据</span></span><br><span class="line">        <span class="keyword">return</span> dequeue();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>take 方法也主要做了两步：1. 如果当前队列为空的话，则将获取数据的消费者线程移入到等待队列中；2. 若队列不为空则获取数据，即完成出队操作<code>dequeue</code>。dequeue 方法源码为：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> E <span class="title">dequeue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// assert lock.getHoldCount() == 1;</span></span><br><span class="line">    <span class="comment">// assert items[takeIndex] != null;</span></span><br><span class="line">    <span class="keyword">final</span> Object[] items = <span class="keyword">this</span>.items;</span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">	<span class="comment">//获取数据</span></span><br><span class="line">    E x = (E) items[takeIndex];</span><br><span class="line">    items[takeIndex] = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (++takeIndex == items.length)</span><br><span class="line">        takeIndex = <span class="number">0</span>;</span><br><span class="line">    count--;</span><br><span class="line">    <span class="keyword">if</span> (itrs != <span class="keyword">null</span>)</span><br><span class="line">        itrs.elementDequeued();</span><br><span class="line">    <span class="comment">//通知被阻塞的生产者线程</span></span><br><span class="line">	notFull.signal();</span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>dequeue 方法也主要做了两件事情：1. 获取队列中的数据，即获取数组中的数据元素（<code>(E) items[takeIndex]</code>）；2. 通知 notFull 等待队列中的线程，使其由等待队列移入到同步队列中，使其能够有机会获得 lock，并执行完成功退出。</p>
-<p>从以上分析，可以看出 put 和 take 方法主要是通过 condition 的通知机制来完成可阻塞式的插入数据和获取数据。在理解 ArrayBlockingQueue 后再去理解 LinkedBlockingQueue 就很容易了。</p>
-<h1 id="3-LinkedBlockingQueue-实现原理"><a href="#3-LinkedBlockingQueue-实现原理" class="headerlink" title="3. LinkedBlockingQueue 实现原理"></a>3. LinkedBlockingQueue 实现原理</h1><p>LinkedBlockingQueue 是用链表实现的有界阻塞队列，当构造对象时为指定队列大小时，队列默认大小为<code>Integer.MAX_VALUE</code>。从它的构造方法可以看出：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">LinkedBlockingQueue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>(Integer.MAX_VALUE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="3-1-LinkedBlockingQueue-的主要属性"><a href="#3-1-LinkedBlockingQueue-的主要属性" class="headerlink" title="3.1 LinkedBlockingQueue 的主要属性"></a><strong>3.1 LinkedBlockingQueue 的主要属性</strong></h2><p>LinkedBlockingQueue 的主要属性有：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Current number of elements */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> AtomicInteger count = <span class="keyword">new</span> AtomicInteger();</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">Head of linked list.</span></span><br><span class="line"><span class="comment">Invariant: head.item == null</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">transient</span> Node&lt;E&gt; head;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">Tail of linked list.</span></span><br><span class="line"><span class="comment">Invariant: last.next == null</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">transient</span> Node&lt;E&gt; last;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** Lock held by take, poll, etc */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ReentrantLock takeLock = <span class="keyword">new</span> ReentrantLock();</span><br><span class="line"><span class="comment">/** Wait queue for waiting takes */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Condition notEmpty = takeLock.newCondition();</span><br><span class="line"><span class="comment">/** Lock held by put, offer, etc */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ReentrantLock putLock = <span class="keyword">new</span> ReentrantLock();</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-<p>可以看出与 ArrayBlockingQueue 主要的区别是，LinkedBlockingQueue 在插入数据和删除数据时分别是由两个不同的 lock（<code>takeLock</code>和<code>putLock</code>）来控制线程安全的，因此，也由这两个 lock 生成了两个对应的 condition（<code>notEmpty</code>和<code>notFull</code>）来实现可阻塞的插入和删除数据。并且，采用了链表的数据结构来实现队列，Node 结点的定义为：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Node</span>&lt;<span class="title">E</span>&gt; </span>&#123;</span><br><span class="line">    E item;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * One of:</span></span><br><span class="line"><span class="comment"> * - the real successor Node</span></span><br><span class="line"><span class="comment"> * - this Node, meaning the successor is head.next</span></span><br><span class="line"><span class="comment"> * - null, meaning there is no successor (this is the last node)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">Node&amp;lt;E&amp;gt; next;</span><br><span class="line"></span><br><span class="line">Node(E x) &#123; item = x; &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>接下来，我们也同样来看看 put 方法和 take 方法的实现。</p>
-<h2 id="3-2-put-方法详解"><a href="#3-2-put-方法详解" class="headerlink" title="3.2 put 方法详解"></a><strong>3.2 put 方法详解</strong></h2><p>put 方法源码为:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(E e)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (e == <span class="keyword">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException();</span><br><span class="line">    <span class="comment">// Note: convention in all put/take/etc is to preset local var</span></span><br><span class="line">    <span class="comment">// holding count negative to indicate failure unless set.</span></span><br><span class="line">    <span class="keyword">int</span> c = -<span class="number">1</span>;</span><br><span class="line">    Node&lt;E&gt; node = <span class="keyword">new</span> Node&lt;E&gt;(e);</span><br><span class="line">    <span class="keyword">final</span> ReentrantLock putLock = <span class="keyword">this</span>.putLock;</span><br><span class="line">    <span class="keyword">final</span> AtomicInteger count = <span class="keyword">this</span>.count;</span><br><span class="line">    putLock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * Note that count is used in wait guard even though it is</span></span><br><span class="line"><span class="comment">         * not protected by lock. This works because count can</span></span><br><span class="line"><span class="comment">         * only decrease at this point (all other puts are shut</span></span><br><span class="line"><span class="comment">         * out by lock), and we (or some other waiting put) are</span></span><br><span class="line"><span class="comment">         * signalled if it ever changes from capacity. Similarly</span></span><br><span class="line"><span class="comment">         * for all other uses of count in other wait guards.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">		<span class="comment">//如果队列已满，则阻塞当前线程，将其移入等待队列</span></span><br><span class="line">        <span class="keyword">while</span> (count.get() == capacity) &#123;</span><br><span class="line">            notFull.await();</span><br><span class="line">        &#125;</span><br><span class="line">		<span class="comment">//入队操作，插入数据</span></span><br><span class="line">        enqueue(node);</span><br><span class="line">        c = count.getAndIncrement();</span><br><span class="line">		<span class="comment">//若队列满足插入数据的条件，则通知被阻塞的生产者线程</span></span><br><span class="line">        <span class="keyword">if</span> (c + <span class="number">1</span> &lt; capacity)</span><br><span class="line">            notFull.signal();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        putLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (c == <span class="number">0</span>)</span><br><span class="line">        signalNotEmpty();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>put 方法的逻辑也同样很容易理解，可见注释。基本上和 ArrayBlockingQueue 的 put 方法一样。take 方法的源码如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> E <span class="title">take</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    E x;</span><br><span class="line">    <span class="keyword">int</span> c = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">final</span> AtomicInteger count = <span class="keyword">this</span>.count;</span><br><span class="line">    <span class="keyword">final</span> ReentrantLock takeLock = <span class="keyword">this</span>.takeLock;</span><br><span class="line">    takeLock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="comment">//当前队列为空，则阻塞当前线程，将其移入到等待队列中，直至满足条件</span></span><br><span class="line">        <span class="keyword">while</span> (count.get() == <span class="number">0</span>) &#123;</span><br><span class="line">            notEmpty.await();</span><br><span class="line">        &#125;</span><br><span class="line">		<span class="comment">//移除队头元素，获取数据</span></span><br><span class="line">        x = dequeue();</span><br><span class="line">        c = count.getAndDecrement();</span><br><span class="line">        <span class="comment">//如果当前满足移除元素的条件，则通知被阻塞的消费者线程</span></span><br><span class="line">		<span class="keyword">if</span> (c &gt; <span class="number">1</span>)</span><br><span class="line">            notEmpty.signal();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        takeLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (c == capacity)</span><br><span class="line">        signalNotFull();</span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>take 方法的主要逻辑请见于注释，也很容易理解。</p>
-<h1 id="4-ArrayBlockingQueue-与-LinkedBlockingQueue-的比较"><a href="#4-ArrayBlockingQueue-与-LinkedBlockingQueue-的比较" class="headerlink" title="4. ArrayBlockingQueue 与 LinkedBlockingQueue 的比较"></a>4. ArrayBlockingQueue 与 LinkedBlockingQueue 的比较</h1><p><strong>相同点</strong>：ArrayBlockingQueue 和 LinkedBlockingQueue 都是通过 condition 通知机制来实现可阻塞式插入和删除元素，并满足线程安全的特性；</p>
-<p><strong>不同点</strong>：1. ArrayBlockingQueue 底层是采用的数组进行实现，而 LinkedBlockingQueue 则是采用链表数据结构；</p>
-<ol start="2">
-<li>ArrayBlockingQueue 插入和删除数据，只采用了一个 lock，而 LinkedBlockingQueue 则是在插入和删除分别采用了<code>putLock</code>和<code>takeLock</code>，这样可以降低线程由于线程无法获取到 lock 而进入 WAITING 状态的可能性，从而提高了线程并发执行的效率。</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/transaction/distributed-transaction/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/transaction/distributed-transaction/" class="post-title-link" itemprop="url">分布式事务</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-07-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-07-23T00:00:00+08:00">2017-07-23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:21:29" itemprop="dateModified" datetime="2021-01-19T09:21:29+08:00">2021-01-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="事务简介"><a href="#事务简介" class="headerlink" title="事务简介"></a>事务简介</h1><p>事务的核心是锁和并发, 采用同步控制的方式保证并发的情况下性能尽可能高, 且容易理解. 这种方式的优势是方便理解; 它的劣势是性能比较低.</p>
-<p>计算机可以简单的理解为一个标准的打字机, 尽管看起来计算机可以并行处理很多事情, 但实际上每个CPU单位时间内只能做一件事, 要么读取数据、要么计算数据、要么写入数据, 所有的任务都可以看成这三件事的集合. 计算机的这种特性引出了一个问题：当多个人去读、算、写操作时, 如果不加访问控制, 系统势必会产生冲突. 而事务相当于在读、算、写操作之外增加了同步的模块, 进而保证只有一个线程进入事务当中, 而其他线程不会进入.</p>
-<h2 id="单个事务单元"><a href="#单个事务单元" class="headerlink" title="单个事务单元"></a>单个事务单元</h2><p>事务的四大特性分别是：原子型、一致性、隔离性和持久性.<br><code>原子性</code>指的是事务中包含的所有操作要么全做, 要么全不做;<br><code>一致性</code>是指在事务开始以前, 数据库处于一致性的状态, 事务结束后, 数据库也必须处于一致性的状态;<br><code>隔离性</code>要求系统必须保证事务不受其他并发执行的事务的影响;<br><code>持久性</code>是指一个事务一旦成功完成, 它对数据库的改变必须是永久的, 即使是在系统遇到故障的情况下也不会丢失, 数据的重要性决定了事务的持久性的重要.</p>
-<p><img src="/images/distributed/distributedTransaction/01.png"></p>
-<p>事务单元是通过<code>Begin-Traction</code>, 然后<code>Commit</code>(<code>Begin-Traction</code>、<code>Commit</code>和<code>Rollback</code>之间所有针对数据的写入、读取的操作都应该添加同步访问), <code>Begin</code>和<code>Commit</code>之间就是一个同步的事务单元. 例如, Bob给Smith 100块钱就是一个事务单元, 这个过程中有很多步操作, 具体如上图所示; 但对业务来说, 仅是一个转账的操作.</p>
-<h2 id="事务之间的关系"><a href="#事务之间的关系" class="headerlink" title="事务之间的关系"></a>事务之间的关系</h2><p>事务单元之间的happens-before关系: 《事务管理》</p>
-<ul>
-<li>读写</li>
-<li>写读</li>
-<li>写写</li>
-<li>读读</li>
-</ul>
-<p><code>amdahl定律</code>: 最快并行, 最慢串行</p>
-<p>最快的速度并保证逻辑顺序</p>
-<p>目标–提高系统的易用性而不损失系统的性能</p>
-<p><strong>数据库使用多线程的原因</strong></p>
-<p>事务问题的来源</p>
-<p>慢速设备：硬盘和网路 I/O PS过低,吞吐量很高</p>
-<p>快速设备：内存</p>
-<p><strong>一组事务单元</strong></p>
-<p><img src="/images/distributed/distributedTransaction/02.png"></p>
-<p>当三个账户都在进行转账操作时, 每个操作都涉及Smith账户, 所有的事务都会排队, 各自形成一组事务单元.</p>
-<p>事务单元之间的<code>Happen-Before</code>关系中的四种可能性：<code>读写</code>、<code>写读</code>、<code>读读</code>、<code>写写</code>.<br>所有事务之间的关系都可以抽象成这四种之一, 来对应现在所有的业务逻辑处理. 在此基础之上, 需要用最快的速度处理多个事务单元之间的关系, 同时还能保障这四种操作的逻辑顺序.</p>
-<p><strong>单个事务单元的其他例子</strong></p>
-<p>除了转账操作是事务单元外, 诸如商品要建立一个基于<code>GMT_Modified</code>的索引、从数据库中读取一行记录、向数据库中写入一行记录, 同时更新这行记录的所有索引、删除整张表等都是一个事务单元.</p>
-<p>也是一个事务单元:</p>
-<ol>
-<li>添加索引</li>
-<li>从数据库读一条数据</li>
-<li>向数据库写一条记录, 并更新索引</li>
-<li>删除整张表</li>
-</ol>
-<h2 id="事务单元的实现方式"><a href="#事务单元的实现方式" class="headerlink" title="事务单元的实现方式"></a>事务单元的实现方式</h2><p><img src="/images/distributed/distributedTransaction/03.png"></p>
-<p>Two Phase Lock(2PL)是数据库中非常重要的一个概念.<br><strong>数据库操作<code>Insert</code>、<code>Update</code>、<code>Delete</code>都是先读再写的操作</strong>, 例如<code>Insert</code>操作是先读取数据, 读取之后判读数据是否存在, 如果不存在, 则写入该数据, 如果数据存在, 则返回错误.<br>假设在该场景下没有读操作, 只是单纯写入数据, 则数据本身并没有事务操作, <code>Delete</code>、<code>Update</code>操作与之类似.<br><strong>数据库利用这些操作的特性, 在每一次查询过程中, 只要查到数据, 就会在该数据上加锁.理论上, 所有被读取的数据都已加锁, 不会再被其他人读到, 也就是说对数据进行的中间操作状态对所有人都不可见, 当所有中间状态完成后, 提交操作时, 解开锁, 此时数据对所有系统可见</strong> , 例如在转账过程中, 所有人只能看到两种状态：开始时, A有钱, B没钱; 结束时, B有钱, A没钱, 而中间A减掉钱, B尚未加上钱的状态被锁隐藏掉了, 这个操作就是数据库中处理事务的最标准的方式. 如上图所示：事务中的Trx2(JoeLock)与其他事务不相关, 因此可以并行执行; Trx1需要Lock两个数据Boblock和Smithlock, 而Trx3同样需要Lock这两个数据, 因此Trx3必须等待, 且等待在Boblock上; Joe事务会先结束, Trx3会等到Trx1完成后才会开始.</p>
-<p>两阶段提交协议(基础是2pl): 事务单元内, 从读数据开始, 将所读的行锁住, 直到事务提交才释放.</p>
-<h2 id="处理事务的常见方法"><a href="#处理事务的常见方法" class="headerlink" title="处理事务的常见方法"></a>处理事务的常见方法</h2><p>处理事务的常见方法有<code>排队法</code>、<code>排他锁</code>、<code>读写锁</code>、<code>MVCC</code>等方式, 下面来一一解析.</p>
-<h3 id="排队法"><a href="#排队法" class="headerlink" title="排队法"></a>排队法</h3><p><img src="/images/distributed/distributedTransaction/04.png"></p>
-<p>事务处理中最重要也是最简单的方案是排队法, 单线程地处理一堆数据. 在Redis中, 如果数据全部在内存中, 则单线程处理所有<code>Put</code>、<code>Get</code>操作效率最高.<br>这是因为多线程本质是CPU模拟多个线程, 这种模拟是以上下文切换为代价, 而对于内存的数据库来说, 没有上下文切换时效率最高. 因此, 单个CPU绑定一块内存的数据, 针对这块数据做多次读写操作时都是在单个CPU上完成的, 单线程处理方式在内存的情况是效率是最优的.</p>
-<p>那么什么时候事务需要用到多线程呢？这个问题的本质取决于下层所使用的存储, 如果是内存操作, 则可以动态地申请和销毁内存块; 而磁盘的IOPS很低, 但吞吐量很高. 如果一个场景涉及多次读写操作, 单线程可以很高的效率对于内存进行读写操作; 但是, 由于磁盘的IOPS仅为内存的几千分之一, 如果依旧用操作内存的方式操作磁盘, 那系统的整体性能将会很低, 这意味着必须将大量的读写操作聚合成一个<code>Batch</code>后再提交时才能达到较好的性能. 而将大量请求攒到一起的方式一是<code>异步</code>, 也就是请求本身和线程不绑定, 线程可以不Block(本质来说还是一种多线程的方式), 处理完一个线程后再处理其他线程. 这种做法的核心是将大量不同的请求提交到一个Buffer中, 再由该Buffer统一读取或者写入磁盘, 从而提高效率. 在慢速设备中, 多线程或异步非常常见, 在设计系统时, 面对磁盘、网络、SSD等慢速设备必须考虑使用多线程.</p>
-<h3 id="排他锁"><a href="#排他锁" class="headerlink" title="排他锁"></a>排他锁</h3><p><img src="/images/distributed/distributedTransaction/05.png"></p>
-<p>有些场景不适合用单线程操作, 可以利用排他锁的方式来快速隔离并发读写事务. 数据库中有一些事务单元是共享的, 如图中的事务单元1是共享的, 事务单元2/3共享数据; 针对事务单元2/3共享数据的所有读写Block住, 事务单元1单独用一个锁来控制, 用这种方式完成系统的访问控制.</p>
-<h3 id="读写锁"><a href="#读写锁" class="headerlink" title="读写锁"></a>读写锁</h3><p><img src="/images/distributed/distributedTransaction/06.png"></p>
-<p>如果是一个只读的事务, 例如只对数据进行查询操作, 在该过程中数据一定不被修改, 因此多个查询操作可以并行执行, 因此一种针对读读场景的优化自然而然产生——读写锁. 读写锁的核心是在多次读的操作中, 同时允许多个读者来访问共享资源, 提高并发性.</p>
-<h3 id="MVCC"><a href="#MVCC" class="headerlink" title="MVCC"></a>MVCC</h3><p><img src="/images/distributed/distributedTransaction/07.png"></p>
-<p>在最初的数据库事务实现中是不存在MVCC的, 它是Oracle在八十年代新加的功能, 本质是<code>Copy On Write</code>, 也就是每次写都是以重新开始一个新的版本的方式写入数据,<br>因此, 数据库中也就包含了之前的所有版本. 在数据读的过程中, 先申请一个版本号, 如果该版本号小于正在写入的版本号, 则数据一定可以查询到, 无需等到新版本完全写完即可返回查询结果. 这种方式可以在读读不阻塞的前提下, 实现读写/写读不阻塞, 尽可能保证所有的读操作并行, 而写操作串行.</p>
-<h2 id="事务的调优原则"><a href="#事务的调优原则" class="headerlink" title="事务的调优原则"></a>事务的调优原则</h2><p>事务的调优的思路是在不影响业务应用的前提下：</p>
-<p>第一. 尽可能减少锁的覆盖范围, 例如 <code>Myisam表锁</code>到<code>Innodb行锁</code>就是一个减少锁覆盖范围的过程; 对于<code>原位锁</code>(<code>排他锁</code>、<code>读写锁</code>等)可变为<code>MVCC</code>多版本(本质仍然是减少锁的范围).<br>第二. 增加锁上可并行的线程数, 例如读锁和写锁的分离, 允许并行读取数据.<br>第三. 选择正确锁类型, 其中悲观锁适合并发争抢比较严重的场景; 乐观锁适合并发争抢不太严重的场景.</p>
-<ul>
-<li><p><code>悲观锁</code> 适合并发争抢比较严重的场景<br><code>Collections.sychronizedList(new ArrayList());</code></p>
-</li>
-<li><p><code>乐观锁</code> 适合并发争抢不太严重的场景, 如<code>自旋锁</code></p>
-</li>
-</ul>
-<h1 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h1><h2 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h2><ul>
-<li>完整的事务支持<ul>
-<li>像传统单机事务一样的操作方式</li>
-<li>可按需无限扩展</li>
-</ul>
-</li>
-</ul>
-<p>容易理解的模型往往性能不好, 性能好的模型往往不容易理解—-这就是生活</p>
-<h2 id="分布式事务带来的问题"><a href="#分布式事务带来的问题" class="headerlink" title="分布式事务带来的问题"></a>分布式事务带来的问题</h2><ul>
-<li>网络带来的问题</li>
-<li>基于锁的事务实现中遇到的问题<ul>
-<li>从2PL到2PC</li>
-<li>分布式事务的异常处理</li>
-<li>分布式日志记录</li>
-<li>分布式事务延迟变大的问题</li>
-</ul>
-</li>
-<li>结合MVCC的事务实现中遇到的问题<ul>
-<li>分布式顺序问题</li>
-</ul>
-</li>
-</ul>
-<p>并行与并发区别</p>
-<h1 id="分布式事务-1"><a href="#分布式事务-1" class="headerlink" title="分布式事务"></a>分布式事务</h1><p>分布式事务服务(Distributed Transaction Service，DTS)</p>
-<p>由于在分布式系统中经常发生丢包、网络故障，分区容忍性是必须要满足的，同时为了兼顾高可用性，绝大部分系统都将强一致性需求转化成最终一致性的需求，并通过幂等机制保证了数据的最终一致性。</p>
-<p><strong>理解2PC和3PC协议</strong></p>
-<p>为了解决分布式一致性问题，前人在性能和数据一致性的反反复复权衡过程中总结了许多典型的协议和算法。其中比较著名的有二阶提交协议(2 Phase Commitment Protocol)，三阶提交协议(3 Phase Commitment Protocol)。</p>
-<p><strong>2PC</strong></p>
-<p>分布式事务最常用的解决方案就是二阶段提交。在分布式系统中，每个节点虽然可以知晓自己的操作时成功或者失败，却无法知道其他节点的操作的成功或失败。当一个事务跨越多个节点时，为了保持事务的ACID特性，需要引入一个作为协调者的组件来统一掌控所有参与者节点的操作结果并最终指示这些节点是否要把操作结果进行真正的提交。</p>
-<p>因此，二阶段提交的算法思路可以概括为：参与者将操作成败通知协调者，再由协调者根据所有参与者的反馈情报决定各参与者是否要提交操作还是中止操作。</p>
-<p>所谓的两个阶段是指：第一阶段：准备阶段(投票阶段)和第二阶段：提交阶段(执行阶段)。</p>
-<p><strong>第一阶段：投票阶段</strong></p>
-<p>该阶段的主要目的在于打探数据库集群中的各个参与者是否能够正常的执行事务，具体步骤如下：</p>
-<ol>
-<li>协调者向所有的参与者发送事务执行请求，并等待参与者反馈事务执行结果。</li>
-<li>事务参与者收到请求之后，执行事务，但不提交，并记录事务日志。</li>
-<li>参与者将自己事务执行情况反馈给协调者，同时阻塞等待协调者的后续指令。</li>
-</ol>
-<p><strong>第二阶段：事务提交阶段</strong></p>
-<p>在第一阶段协调者的询盘之后，各个参与者会回复自己事务的执行情况，这时候存在三种可能：</p>
-<ol>
-<li>所有的参与者回复能够正常执行事务。</li>
-<li>一个或多个参与者回复事务执行失败。</li>
-<li>协调者等待超时。</li>
-</ol>
-<p>对于第一种情况，协调者将向所有的参与者发出提交事务的通知，具体步骤如下：</p>
-<ol>
-<li>协调者向各个参与者发送commit通知，请求提交事务。</li>
-<li>参与者收到事务提交通知之后，执行commit操作，然后释放占有的资源。</li>
-<li>参与者向协调者返回事务commit结果信息。</li>
-</ol>
-<p><img src="/images/distributed/distributedTransaction/08.jpg"></p>
-<p>对于第二、三种情况，协调者均认为参与者无法正常成功执行事务，为了整个集群数据的一致性，所以要向各个参与者发送事务回滚通知，具体步骤如下：</p>
-<ol>
-<li>协调者向各个参与者发送事务rollback通知，请求回滚事务。</li>
-<li>参与者收到事务回滚通知之后，执行rollback操作，然后释放占有的资源。</li>
-<li>参与者向协调者返回事务rollback结果信息。</li>
-</ol>
-<p><img src="/images/distributed/distributedTransaction/09.jpg"></p>
-<p>两阶段提交协议解决的是分布式数据库数据强一致性问题，其原理简单，易于实现，但是缺点也是显而易见的，主要缺点如下：</p>
-<ul>
-<li>单点问题：协调者在整个两阶段提交过程中扮演着举足轻重的作用，一旦协调者所在服务器宕机，那么就会影响整个数据库集群的正常运行，比如在第二阶段中，如果协调者因为故障不能正常发送事务提交或回滚通知，那么参与者们将一直处于阻塞状态，整个数据库集群将无法提供服务。</li>
-<li>同步阻塞：两阶段提交执行过程中，所有的参与者都需要听从协调者的统一调度，期间处于阻塞状态而不能从事其他操作，这样效率及其低下。</li>
-<li>数据不一致性：两阶段提交协议虽然为分布式数据强一致性所设计，但仍然存在数据不一致性的可能，比如在第二阶段中，假设协调者发出了事务commit的通知，但是因为网络问题该通知仅被一部分参与者所收到并执行了commit操作，其余的参与者则因为没有收到通知一直处于阻塞状态，这时候就产生了数据的不一致性。</li>
-</ul>
-<p><strong>3PC</strong></p>
-<p>针对两阶段提交存在的问题，三阶段提交协议通过引入一个“预询盘”阶段，以及超时策略来减少整个集群的阻塞时间，提升系统性能。三阶段提交的三个阶段分别为：can_commit，pre_commit，do_commit。</p>
-<p><strong>第一阶段：can_commit</strong></p>
-<p>该阶段协调者会去询问各个参与者是否能够正常执行事务，参与者根据自身情况回复一个预估值，相对于真正的执行事务，这个过程是轻量的，具体步骤如下：</p>
-<ol>
-<li>协调者向各个参与者发送事务询问通知，询问是否可以执行事务操作，并等待回复。</li>
-<li>各个参与者依据自身状况回复一个预估值，如果预估自己能够正常执行事务就返回确定信息，并进入预备状态，否则返回否定信息。</li>
-</ol>
-<p><strong>第二阶段：pre_commit</strong></p>
-<p>本阶段协调者会根据第一阶段的询盘结果采取相应操作，询盘结果主要有三种：</p>
-<ol>
-<li>所有的参与者都返回确定信息。</li>
-<li>一个或多个参与者返回否定信息。</li>
-<li>协调者等待超时。</li>
-</ol>
-<p>针对第一种情况，协调者会向所有参与者发送事务执行请求，具体步骤如下：</p>
-<ol>
-<li>协调者向所有的事务参与者发送事务执行通知。</li>
-<li>参与者收到通知后，执行事务，但不提交。</li>
-<li>参与者将事务执行情况返回给客户端。</li>
-</ol>
-<p>在上面的步骤中，如果参与者等待超时，则会中断事务。 针对第二、三种情况，协调者认为事务无法正常执行，于是向各个参与者发出abort通知，请求退出预备状态，具体步骤如下：</p>
-<ol>
-<li>协调者向所有事务参与者发送abort通知</li>
-<li>参与者收到通知后，中断事务</li>
-</ol>
-<p><img src="/images/distributed/distributedTransaction/10.jpg"></p>
-<p><strong>第三阶段：do_commit</strong></p>
-<p>如果第二阶段事务未中断，那么本阶段协调者将会依据事务执行返回的结果来决定提交或回滚事务，分为三种情况：</p>
-<ol>
-<li>所有的参与者都能正常执行事务。</li>
-<li>一个或多个参与者执行事务失败。</li>
-<li>协调者等待超时。</li>
-</ol>
-<p>针对第一种情况，协调者向各个参与者发起事务提交请求，具体步骤如下：</p>
-<ol>
-<li>协调者向所有参与者发送事务commit通知。</li>
-<li>所有参与者在收到通知之后执行commit操作，并释放占有的资源。</li>
-<li>参与者向协调者反馈事务提交结果。</li>
-</ol>
-<p><img src="/images/distributed/distributedTransaction/11.jpg"></p>
-<p>针对第二、三种情况，协调者认为事务无法正常执行，于是向各个参与者发送事务回滚请求，具体步骤如下：</p>
-<ol>
-<li>协调者向所有参与者发送事务rollback通知。</li>
-<li>所有参与者在收到通知之后执行rollback操作，并释放占有的资源。</li>
-<li>参与者向协调者反馈事务提交结果。</li>
-</ol>
-<p><img src="/images/distributed/distributedTransaction/12.jpg"></p>
-<p>在本阶段如果因为协调者或网络问题，导致参与者迟迟不能收到来自协调者的commit或rollback请求，那么参与者将不会如两阶段提交中那样陷入阻塞，而是等待超时后继续commit。相对于两阶段提交虽然降低了同步阻塞，但仍然无法避免数据的不一致性。</p>
-<p>高吞吐 高性能 和单机事务一样易用</p>
-<p>ACID</p>
-<p>spandex</p>
-<p>xa</p>
-<p>java 协调器</p>
-<p>分布式日志记录</p>
-<p>隔离级别 事务的传递性</p>
-<p>幂等</p>
-<hr>
-<p>【相关文献】</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Kylin/01.kylin/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Kylin/01.kylin/" class="post-title-link" itemprop="url">Kylin权威指南</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-07-20 00:00:00" itemprop="dateCreated datePublished" datetime="2017-07-20T00:00:00+08:00">2017-07-20</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:21:30" itemprop="dateModified" datetime="2021-01-19T09:21:30+08:00">2021-01-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>apache Kylin 权威指南</p>
-<p>各式各样的”SQL on Hadoop”技术应运而生，其中以Hive为代表，Impala、Presto、Phoenix、Drill、SparkSQL等紧随其后。它们的主要技术是”大规模并行处理”（Massive Parallel Processing，MPP）和”列式存储”（Columnar Storage）。大规模并行处理可以调动多台机器一起进行并行计算，用线性增加的资源来换取计算时间的线性下降。列式存储则将记录按列存放，这样做不仅可以在访问时只读取需要的列，还可以利用存储设备擅长连续读取的特点，大大提高读取的速率。这两项关键技术使得Hadoop上的SQL查询速度从小时提高到了分钟。</p>
-<p>对于分析师来说，完备的、经过验证的数据模型比分析性能更加重要，直接访问纷繁复杂的原始数据并进行相关分析其实并不是很友好的体验，特别是在超大规模的数据集上，分析师将更多的精力花在了等待查询结果上，而不是在更加重要的建立领域模型上。</p>
-<p>“预计算”就是Kylin在”大规模并行处理”和”列式存储”之外，提供给大数据分析的第三个关键技术。</p>
-<p>Apache Kylin的工作原理本质上是MOLAP（Multidimensional Online Analytical Processing）Cube，也就是多维立方体分析。这是数据分析中相当经典的理论</p>
-<p>Cube理论</p>
-<p>星形模型（Star Schema）</p>
-<p>MDX（MultiDimensional eXpressions）作为接口。虽然MDX作为OLAP查询语言</p>
-<p>·大规模并行处理：可以通过增加机器的方式来扩容处理速度，在相同的时间里处理更多的数据。 ·列式存储：通过按列存储提高单位时间里数据的I/O吞吐率，还能跳过不需要访问的列。 ·索引：利用索引配合查询条件，可以迅速跳过不符合条件的数据块，仅扫描需要扫描的数据内容。 ·压缩：压缩数据然后存储，使得存储的密度更高，在有限的I/O速率下，在单位时间里读取更多的记录。</p>
-<p>所有这些方法都只是提高了单位时间内处理数据的能力，当大家都一致采用这些技术时，它们之间的区别将只停留在实现层面的代码细节上。最重要的是，这些技术都不会改变一个事实，那就是处理时间与数据量之间的正比例关系。当数据量翻倍时，MPP（在不扩容的前提下）需要翻倍的时间来完成计算；列式存储需要翻倍的存储空间；索引下符合条件的记录数也会翻倍；压缩后的数据大小也还是之前的两倍。因此查询速度也会随之变成之前的两倍。当数据量成十倍百倍地增长时，这些技术的查询速度就会成十倍百倍地下降，最终变得不能接受。</p>
-<p>Kylin对基数的计算方法采用的是HyperLogLog的近似算法</p>
-<p>衍生维度 ??</p>
-<h2 id="增量构建"><a href="#增量构建" class="headerlink" title="增量构建"></a>增量构建</h2><p>ETL</p>
-<p>-</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/other/meiwen/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/other/meiwen/" class="post-title-link" itemprop="url">时光荏苒，岁月如梭</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-07-12 00:00:00" itemprop="dateCreated datePublished" datetime="2017-07-12T00:00:00+08:00">2017-07-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:21:29" itemprop="dateModified" datetime="2021-01-19T09:21:29+08:00">2021-01-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/wiki/" itemprop="url" rel="index"><span itemprop="name">wiki</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>时光荏苒，岁月如梭。素什锦年，稍纵即逝，半载青春年华，似沙漏般，弹指间，流在昨天。苦涩与喜悦，都不再去回忆，依然埋在时光的烟尘里。只知青丝变白发，冥冥之中，注定青春与那寂寞有染。</p>
-<p>春去秋来，潮起潮落。往日里，天庭空旷，时光静谧；闲看云雾，静听风雨；可谓悠闲自得，其乐无穷。转眼，又至寂寞时节，秋风抚叶，泛成黄色，落了一地的沧桑；鸟落廊前，轻声一吟，留下几世的凄凉。如花美眷，敌不过似水流年。一切美好，都会悄然褪色，暗自凋零，最后落入尘埃。化作孤独，上了心头。</p>
-<p>繁华落尽，乱世成殇。人生似列车，几经周转，穿行了多少过往。世人都是过客，到了青春驿站，转身何去何从。亲人，已挥手离去；朋友，也渐行渐远。风无定人无常，聚散两茫茫，留下寂寞的你我来来往往。看遍了人间繁华，城市的余辉，再美也终将落幕。远方飘来忧伤的夜曲，难得此生相逢，怎料寂寞如歌。待到繁华落尽，在这乱世，成殇。</p>
-<p>寂寞流年，染泪红颜。 灯火阑珊，最难将息。下玄月，西风凉，此夜何人眠；别时易，见时难，相思系红颜。弱水三千，只取一瓢；梦有万千，只梦一朝。衣带渐宽，为得伊人憔悴；千年等待，只求揽你入怀。泪如烈酒，灼人心肺，谁知相思，已成灾。</p>
-<p>往事成烟，宿命依旧。青春染指流年，流年染指红颜。画地为牢，锁我几春秋，染予寂寞。无奈拾起青春的记忆，等一阵清风扑面，挥挥衣袖，又是潇洒一片。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/log/log4j/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/log/log4j/" class="post-title-link" itemprop="url">log4j</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-06-29 12:26:00" itemprop="dateCreated datePublished" datetime="2017-06-29T12:26:00+08:00">2017-06-29</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-19 09:21:29" itemprop="dateModified" datetime="2021-01-19T09:21:29+08:00">2021-01-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>log4j 是目前最常见的日志系统之一，本文主要总结log4j的使用和配置.</p>
-<h1 id="log4j的组件"><a href="#log4j的组件" class="headerlink" title="log4j的组件"></a>log4j的组件</h1><ul>
-<li>logger</li>
-<li>appender</li>
-<li>level</li>
-<li>layout</li>
-</ul>
-<h2 id="logger-记录器-打印事件"><a href="#logger-记录器-打印事件" class="headerlink" title="logger-记录器 打印事件"></a>logger-记录器 打印事件</h2><p>logger 可以理解为日志记录器，它有name、appender和level等属性.<br>当调用</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Logger logger = LoggerFactory.getLogger(AClass.class);</span><br></pre></td></tr></table></figure>
-<p>时，<code>logger</code>变量即为名称为<code>AClass</code>类的全名的logger.</p>
-<p>如果使用</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Logger logger = LoggerFactory.getLogger(<span class="string">&quot;myRedo&quot;</span>);</span><br></pre></td></tr></table></figure>
-<p>logger变量即为名称为myRedo的logger</p>
-<ol>
-<li>所有的logger的根都是rootLogger</li>
-<li>一般情况下，取类名作为logger的名称. 父子关系遵从Java package的方法</li>
-<li>子logger默认继承父logger的所有的配置. 子logger的配置会覆盖父logger的配置</li>
-<li>logger的名称可以为任意字符串</li>
-<li>log4j可以使用多种配置方式: properties文件、xml文件和Java代码</li>
-<li>使用Java代码配置时，可以指定为基本配置: <code>BasicConfigurator.configure();</code></li>
-<li>可以指定特定包的log<br>样例: 使用代码的方式配置特定包的logger<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">  Logger.getRootLogger().setLevel(Level.WARN);</span><br><span class="line">Logger.getLogger(<span class="string">&quot;cd.itcast.core&quot;</span>).setLevel(Level.DEBUG);</span><br></pre></td></tr></table></figure>
-
-</li>
-</ol>
-<h2 id="appender-打印目的地"><a href="#appender-打印目的地" class="headerlink" title="appender 打印目的地"></a>appender 打印目的地</h2><p>log4j定义了多种appender:</p>
-<ul>
-<li>org.apache.log4j.ConsoleAppender(控制台)</li>
-<li>org.apache.log4j.FileAppender(文件)</li>
-<li>org.apache.log4j.DailyRollingFileAppender(每天产生一个日志文件)</li>
-<li>org.apache.log4j.RollingFileAppender(文件大小到达指定尺寸的时候产生一个新的文件)</li>
-<li>org.apache.log4j.WriterAppender(将日志信息以流格式发送到任意指定的地方)</li>
-<li>org.apache.log4j.jdbc.JDBCAppender(将日志信息写入数据库)</li>
-</ul>
-<p>在properties文件中配置</p>
-<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">log4j.appender.&lt;appenderName&gt;</span> = <span class="string">fully.qualified.name.of.appender.class</span></span><br></pre></td></tr></table></figure>
-<p>Appender类的属性</p>
-<h3 id="ConsoleAppender"><a href="#ConsoleAppender" class="headerlink" title="ConsoleAppender"></a>ConsoleAppender</h3><p>   Threshold=DEBUG :指定日志消息的输出最低层次.<br>   ImmediateFlush=true :默认值是true,意谓着所有的消息都会被立即输出.<br>   Target=System.err :默认情况下是:System.out,指定输出控制台</p>
-<h3 id="FileAppender"><a href="#FileAppender" class="headerlink" title="FileAppender"></a>FileAppender</h3><p>   Threshold=DEBUF    :指定日志消息的输出最低层次.<br>   ImmediateFlush=true   :默认值是true,意谓着所有的消息都会被立即输出.<br>   File=mylog.txt   :指定消息输出到mylog.txt文件.<br>   Append=false   :默认值是true,即将消息增加到指定文件中，false指将消息覆盖指定的文件内容.</p>
-<h3 id="RollingFileAppender"><a href="#RollingFileAppender" class="headerlink" title="RollingFileAppender"></a>RollingFileAppender</h3><p>   Threshold=DEBUG    :指定日志消息的输出最低层次.<br>   ImmediateFlush=true    :默认值是true,意谓着所有的消息都会被立即输出.<br>   File=mylog.txt    :指定消息输出到mylog.txt文件.<br>   Append=false    :默认值是true,即将消息增加到指定文件中，false指将消息覆盖指定的文件内容.<br>   MaxFileSize=100KB    : 后缀可以是KB, MB 或者是 GB. 在日志文件到达该大小时，将会自动滚动，即将原来的内容移到mylog.log.1文件.<br>   MaxBackupIndex=2   :指定可以产生的滚动文件的最大数.<br>   log4j.appender.A1.layout.ConversionPattern=%-4r %-5p %d{yyyy-MM-dd HH:mm:ssS} %c %m%n</p>
-<h3 id="DailyRollingFileAppender"><a href="#DailyRollingFileAppender" class="headerlink" title="DailyRollingFileAppender"></a>DailyRollingFileAppender</h3><p>  DatePattern<br>  layout<br>  Encoding<br>  MaxBackupIndex</p>
-<h2 id="level-输出级别"><a href="#level-输出级别" class="headerlink" title="level 输出级别"></a>level 输出级别</h2><p>ERROR、WARN、INFO、DEBUG</p>
-<ul>
-<li>ERROR 为严重错误 主要是程序的错误</li>
-<li>WARN 为一般警告，比如session丢失</li>
-<li>INFO 为一般要显示的信息，比如登录登出</li>
-<li>DEBUG 为程序的调试信息</li>
-</ul>
-<h2 id="layout"><a href="#layout" class="headerlink" title="layout"></a>layout</h2><p>-X号: X信息输出时左对齐；</p>
-<p>%p: 输出日志信息优先级，即DEBUG，INFO，WARN，ERROR，FATAL,<br>%d: 输出日志时间点的日期或时间，默认格式为ISO8601，也可以在其后指定格式，比如:%d{yyy MMM dd HH:mm:ss,SSS}，输出类似:2002年10月18日 22:10:28，921<br>%r: 输出自应用启动到输出该log信息耗费的毫秒数<br>%c: 输出日志信息所属的类目，通常就是所在类的全名<br>%t: 输出产生该日志事件的线程名<br>%l: 输出日志事件的发生位置，相当于%C.%M(%F:%L)的组合,包括类目名、发生的线程，以及在代码中的行数. 举例:Testlog4.main (TestLog4.java:10)<br>%x: 输出和当前线程相关联的NDC(嵌套诊断环境),尤其用到像java servlets这样的多客户多线程的应用中.<br>%%: 输出一个”%”字符<br>%F: 输出日志消息产生时所在的文件名称<br>%L: 输出代码中的行号<br>%m: 输出代码中指定的消息,产生的日志具体信息<br>%n: 输出一个回车换行符，Windows平台为”/r/n”，Unix平台为”/n”输出日志信息换行</p>
-<p>日志信息格式中几个符号所代表的含义:<br>可以在%与模式字符之间加上修饰符来控制其最小宽度、最大宽度、和文本的对齐方式. 如:</p>
-<ol>
-<li>  %20c:指定输出category的名称，最小的宽度是20，如果category的名称小于20的话，默认的情况下右对齐.</li>
-<li>  %-20c:指定输出category的名称，最小的宽度是20，如果category的名称小于20的话，”-“号指定左对齐.</li>
-<li>  %.30c:指定输出category的名称，最大的宽度是30，如果category的名称大于30的话，就会将左边多出的字符截掉，但小于30的话也不会有空格.</li>
-<li>  %20.30c:如果category的名称小于20就补空格，并且右对齐，如果其名称长于30字符，就从左边较远输出的字符截掉.</li>
-</ol>
-<h2 id="log4j性能优化"><a href="#log4j性能优化" class="headerlink" title="log4j性能优化"></a>log4j性能优化</h2><ol>
-<li>为了避免多次打开文件引起资源的浪费，log4j当打开文件或连接数据库后，会始终保持着连接，直到引用关闭.<br>因此， 当引用运行过程中，删除文件. log4j不会再次创建该文件.</li>
-<li>logger文件是懒生成模式:当打印时，判断是否需要创建新文件</li>
-</ol>
-<h1 id="典型应用"><a href="#典型应用" class="headerlink" title="典型应用"></a>典型应用</h1><h2 id="配置非类名logger及代码获取logger的信息"><a href="#配置非类名logger及代码获取logger的信息" class="headerlink" title="配置非类名logger及代码获取logger的信息"></a>配置非类名logger及代码获取logger的信息</h2><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">###################</span></span><br><span class="line"><span class="comment"># rootLogger的级别为INFO，appender为terminal01和allToFile</span></span><br><span class="line"><span class="comment">###################</span></span><br><span class="line"><span class="meta">log4j.rootLogger</span>=<span class="string">INFO,terminal01,allToFile</span></span><br><span class="line"><span class="comment">###################</span></span><br><span class="line"><span class="comment"># Console Appender</span></span><br><span class="line"><span class="comment">###################</span></span><br><span class="line"><span class="meta">log4j.appender.terminal01</span>=<span class="string">org.apache.log4j.ConsoleAppender</span></span><br><span class="line"><span class="meta">log4j.appender.terminal01.Target</span>=<span class="string">System.out</span></span><br><span class="line"><span class="meta">log4j.appender.terminal01.layout</span>=<span class="string">org.apache.log4j.PatternLayout</span></span><br><span class="line"><span class="meta">log4j.appender.terminal01.layout.ConversionPattern</span>=<span class="string">%d&#123;yyyy-MM-dd HH:mm:ss.sss&#125;,%c,%-p,%m %n</span></span><br><span class="line"><span class="comment">########################</span></span><br><span class="line"><span class="comment"># Rolling File</span></span><br><span class="line"><span class="comment">########################</span></span><br><span class="line"><span class="meta">log4j.appender.allToFile</span>=<span class="string">org.apache.log4j.DailyRollingFileAppender</span></span><br><span class="line"><span class="meta">log4j.appender.allToFile.File</span>=<span class="string">/data/logs/blog-all.log</span></span><br><span class="line"><span class="meta">log4j.appender.allToFile.Append</span>=<span class="string">true</span></span><br><span class="line"><span class="meta">log4j.appender.allToFile.MaxFileSize</span>=<span class="string">100MB</span></span><br><span class="line"><span class="meta">log4j.appender.allToFile.MaxBackupIndex</span>=<span class="string">7</span></span><br><span class="line"><span class="meta">log4j.appender.allToFile.Encoding</span>=<span class="string">UTF-8  </span></span><br><span class="line"><span class="meta">log4j.appender.allToFile.layout</span>=<span class="string">org.apache.log4j.PatternLayout</span></span><br><span class="line"><span class="meta">log4j.appender.allToFile.layout.ConversionPattern</span>=<span class="string">%d&#123;yyyy-MM-dd HH:mm:ss.sss&#125;,%c,%-p,%m %n</span></span><br><span class="line"><span class="comment">########################</span></span><br><span class="line"><span class="comment"># 指定某个包的logger</span></span><br><span class="line"><span class="comment">########################</span></span><br><span class="line"><span class="meta">log4j.logger.com.abc.engin</span>=<span class="string">INFO,engin</span></span><br><span class="line"><span class="comment">########################</span></span><br><span class="line"><span class="comment"># appender engin</span></span><br><span class="line"><span class="comment">########################</span></span><br><span class="line"><span class="meta">log4j.additivity.engin</span>=<span class="string">false</span></span><br><span class="line"><span class="comment">## 是否追加到root appender中</span></span><br><span class="line"><span class="meta">log4j.appender.engin</span>=<span class="string">org.apache.log4j.DailyRollingFileAppender</span></span><br><span class="line"><span class="meta">log4j.appender.engin.File</span>=<span class="string">/data/logs/engin.log</span></span><br><span class="line"><span class="meta">log4j.appender.engin.Append</span>=<span class="string">true</span></span><br><span class="line"><span class="meta">log4j.appender.engin.MaxFileSize</span>=<span class="string">500MB</span></span><br><span class="line"><span class="meta">log4j.appender.engin.MaxBackupIndex</span>=<span class="string">7</span></span><br><span class="line"><span class="meta">log4j.appender.engin.Encoding</span>=<span class="string">UTF-8</span></span><br><span class="line"><span class="meta">log4j.appender.engin.layout</span>=<span class="string">org.apache.log4j.PatternLayout</span></span><br><span class="line"><span class="meta">log4j.appender.engin.layout.ConversionPattern</span>=<span class="string">%d&#123;yyyy-MM-dd HH:mm:ss.sss&#125;,%c,%-p,%m %n</span></span><br><span class="line"><span class="comment">########################</span></span><br><span class="line"><span class="comment"># 非类名logger</span></span><br><span class="line"><span class="comment">########################</span></span><br><span class="line"><span class="meta">log4j.logger.error</span>=<span class="string">ERROR,errorAppender</span></span><br><span class="line"><span class="comment">########################</span></span><br><span class="line"><span class="comment"># appender errorAppender</span></span><br><span class="line"><span class="comment">########################</span></span><br><span class="line"><span class="meta">log4j.appender.errorAppender</span>=<span class="string">org.apache.log4j.DailyRollingFileAppender</span></span><br><span class="line"><span class="meta">log4j.appender.errorAppender.File</span>=<span class="string">/data/logs/blog-error.log</span></span><br><span class="line"><span class="meta">log4j.appender.errorAppender.Append</span>=<span class="string">true</span></span><br><span class="line"><span class="meta">log4j.appender.errorAppender.MaxFileSize</span>=<span class="string">500MB</span></span><br><span class="line"><span class="meta">log4j.appender.errorAppender.MaxBackupIndex</span>=<span class="string">7</span></span><br><span class="line"><span class="meta">log4j.appender.errorAppender.Encoding</span>=<span class="string">UTF-8</span></span><br><span class="line"><span class="meta">log4j.appender.errorAppender.layout</span>=<span class="string">org.apache.log4j.PatternLayout</span></span><br><span class="line"><span class="meta">log4j.appender.errorAppender.layout.ConversionPattern</span>=<span class="string">%d&#123;yyyy-MM-dd HH:mm:ss.sss&#125;,%c,%-p,%m %n</span></span><br></pre></td></tr></table></figure>
-<h3 id="打印"><a href="#打印" class="headerlink" title="打印"></a>打印</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Logger logger = LoggerFactory.getLogger(AClass.class);</span><br><span class="line">logger.error(<span class="string">&quot;this is an error log&quot;</span>);</span><br><span class="line"><span class="comment">// 获取名称为error的logger</span></span><br><span class="line">Logger loggerError = LoggerFactory.getLogger(<span class="string">&quot;error&quot;</span>);</span><br><span class="line">loggerError.error(<span class="string">&quot;this is an error log&quot;</span>);</span><br></pre></td></tr></table></figure>
-<h3 id="从Java代码获取logger的配置信息"><a href="#从Java代码获取logger的配置信息" class="headerlink" title="从Java代码获取logger的配置信息"></a>从Java代码获取logger的配置信息</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">org.apache.log4j.Logger loggerError = org.apache.log4j.Logger.getLogger(<span class="string">&quot;error&quot;</span>);</span><br><span class="line">Appender appender = loggerError.getAppender(<span class="string">&quot;errorAppender&quot;</span>);</span><br><span class="line">DailyRollingFileAppender errorAppender = (DailyRollingFileAppender) appender;</span><br><span class="line">String fileName = errorAppender.getFile();</span><br><span class="line">String datePattern = errorAppender.getDatePattern();</span><br></pre></td></tr></table></figure>
-
-<h2 id="每个小时打印一个文件"><a href="#每个小时打印一个文件" class="headerlink" title="每个小时打印一个文件"></a>每个小时打印一个文件</h2><h3 id="配置文件的方式"><a href="#配置文件的方式" class="headerlink" title="配置文件的方式"></a>配置文件的方式</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">log4j.logger.redo</span>=<span class="string">ERROR,redoLogger</span></span><br><span class="line"><span class="comment"># appender for redo logger</span></span><br><span class="line"><span class="meta">log4j.appender.redoLogger</span>=<span class="string">org.apache.log4j.DailyRollingFileAppender</span></span><br><span class="line"><span class="meta">log4j.appender.redoLogger.File</span>=<span class="string">/data/logs/my-redo.log</span></span><br><span class="line"><span class="meta">log4j.appender.redoLogger.Append</span>=<span class="string">true</span></span><br><span class="line"><span class="meta">log4j.appender.redoLogger.MaxFileSize</span>=<span class="string">500MB</span></span><br><span class="line"><span class="meta">log4j.appender.redoLogger.MaxBackupIndex</span>=<span class="string">7</span></span><br><span class="line"><span class="meta">log4j.appender.redoLogger.Encoding</span>=<span class="string">UTF-8</span></span><br><span class="line"><span class="meta">log4j.appender.redoLogger.layout</span>=<span class="string">org.apache.log4j.PatternLayout</span></span><br><span class="line"><span class="meta">log4j.appender.redoLogger.layout.ConversionPattern</span>=<span class="string">%d&#123;yyyy-MM-dd HH:mm:ss.sss&#125;,%c,%-p,%m \n</span></span><br><span class="line"><span class="meta">log4j.appender.redoLogger.DatePattern</span>=<span class="string">&#x27;.&#x27;yyyy-MM-dd-HH</span></span><br></pre></td></tr></table></figure>
-<h3 id="Java代码的方式"><a href="#Java代码的方式" class="headerlink" title="Java代码的方式"></a>Java代码的方式</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">DailyRollingFileAppender redoAppender = <span class="keyword">new</span> DailyRollingFileAppender();</span><br><span class="line">redoAppender.setDatePattern(<span class="string">&quot;&#x27;.&#x27;yyyy-MM-dd-HH&quot;</span>);</span><br><span class="line"></span><br><span class="line">Logger loggerRedo = Logger.getLogger(<span class="string">&quot;redo&quot;</span>);</span><br><span class="line">loggerRedo.addAppender(appender);</span><br></pre></td></tr></table></figure>
-<p>使用</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> Logger redoLogger = LoggerFactory.getLogger(<span class="string">&quot;redo&quot;</span>);</span><br><span class="line">...</span><br><span class="line">redoLogger.error(<span class="string">&quot;something is wrong&quot;</span>);</span><br></pre></td></tr></table></figure>
-<p>下面的列表<br>The following list shows all the date patterns which have defined by log4j,</p>
-<table>
-<thead>
-<tr>
-<th align="left">name</th>
-<th align="left">DatePattern</th>
-<th align="left">sample</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">Minutely</td>
-<td align="left"><code>&#39;.&#39;yyyy-MM-dd-HH-mm</code></td>
-<td align="left">application.log.2013-02-28-13-54</td>
-</tr>
-<tr>
-<td align="left">Hourly</td>
-<td align="left"><code>&#39;.&#39;yyyy-MM-dd-HH</code></td>
-<td align="left">application.log.2013-02-28-13</td>
-</tr>
-<tr>
-<td align="left">Half-daily</td>
-<td align="left"><code>&#39;.&#39;yyyy-MM-dd-a</code></td>
-<td align="left">application.log.2013-02-28-AM    app.log.2013-02-28-PM</td>
-</tr>
-<tr>
-<td align="left">Daily</td>
-<td align="left"><code>&#39;.&#39;yyyy-MM-dd</code></td>
-<td align="left">application.log.2013-02-28</td>
-</tr>
-<tr>
-<td align="left">Weekly</td>
-<td align="left"><code>&#39;.&#39;yyyy-ww</code></td>
-<td align="left">application.log.2013-07 app.log.2013-08</td>
-</tr>
-<tr>
-<td align="left">Monthly</td>
-<td align="left"><code>&#39;.&#39;yyyy-MM</code></td>
-<td align="left">application.log.2013-01 app.log.2013-02</td>
-</tr>
-</tbody></table>
-<h2 id="自定义-writerAppender"><a href="#自定义-writerAppender" class="headerlink" title="自定义 writerAppender"></a>自定义 writerAppender</h2><p>log4j将日志输出到swing控件</p>
-<h3 id="自定义-writer"><a href="#自定义-writer" class="headerlink" title="自定义 writer"></a>自定义 writer</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">LogWriter</span> <span class="keyword">extends</span> <span class="title">Writer</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> LogListModel model;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">LogWriter</span><span class="params">(LogListModel model)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.model = model;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(<span class="keyword">int</span> c)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        model.addElement(<span class="string">&quot;&quot;</span> + c);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(<span class="keyword">char</span>[] cbuf)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        model.addElement(<span class="keyword">new</span> String(cbuf));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(String str)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        model.addElement(str);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(String str, <span class="keyword">int</span> off, <span class="keyword">int</span> len)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        model.addElement(str);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(<span class="keyword">char</span>[] cbuf, <span class="keyword">int</span> off, <span class="keyword">int</span> len)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        model.addElement(<span class="keyword">new</span> String(cbuf));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">flush</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="创建logger与Swing组件"><a href="#创建logger与Swing组件" class="headerlink" title="创建logger与Swing组件"></a>创建logger与Swing组件</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Logger loggerA = LoggerFactory.getLogger(<span class="string">&quot;A1&quot;</span>);</span><br><span class="line"><span class="keyword">private</span> LogListModel logListModel;</span><br><span class="line"></span><br><span class="line">logListModel = <span class="keyword">new</span> LogListModel();</span><br><span class="line">JList ml = <span class="keyword">new</span> JList(logListModel);</span><br><span class="line"></span><br><span class="line">WriterAppender writeappender = <span class="keyword">new</span> WriterAppender(<span class="keyword">new</span> SimpleLayout(), <span class="keyword">new</span> LogWriter(logListModel));</span><br><span class="line">writeappender.setName(<span class="string">&quot;A1&quot;</span>);</span><br><span class="line">writeappender.setImmediateFlush(<span class="keyword">true</span>);</span><br><span class="line">Logger.getRootLogger().addAppender(writeappender);</span><br><span class="line">Logger.getRootLogger().setLevel(Level.INFO);</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-<p>-</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/1711423/how-to-rotate-log-files-based-on-time-rather-than-size-in-log4j">How to rotate log files based on time rather than size in Log4j?
-</a></li>
-<li><a target="_blank" rel="noopener" href="http://www.cnblogs.com/ArtsCrafts/archive/2013/06/07/log4j5.html">Log4j详细介绍(五)—-输出地Appender</a></li>
-</ol>
-
       
     </div>
 
@@ -1631,7 +1633,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">223</span>
+          <span class="site-state-item-count">230</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1644,7 +1646,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">109</span>
+        <span class="site-state-item-count">110</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
