@@ -183,711 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/hadoop-cluser-in-docker/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/docker/hadoop-cluser-in-docker/" class="post-title-link" itemprop="url">在Docker上搭建Hadoop集群container</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-08 17:49:16" itemprop="dateModified" datetime="2021-02-08T17:49:16+08:00">2021-02-08</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>为了学习Hadoop，尝试使用Vbox搭建环境，不是很方便。后面转向Docker。本文将使用Docker搭建Hadoop集群记录下来，以备后用</p>
-</blockquote>
-<p>基础环境</p>
-<ul>
-<li>MacOS 10.12</li>
-<li>Docker 17.03.1-ce</li>
-</ul>
-<p>网易镜像 <a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/home/">https://c.163yun.com/hub#/m/home/</a></p>
-<h1 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h1><p>在MacOS 上安装Docker即为简单，从官网上下载dmg包，拖到应用目录启动即可。</p>
-<p>安装完成后 查看docker 版本:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker version</span></span><br><span class="line"></span><br><span class="line">Client:</span><br><span class="line"> Version:      17.03.1-ce</span><br><span class="line"> API version:  1.27</span><br><span class="line"> Go version:   go1.7.5</span><br><span class="line"> Git commit:   c6d412e</span><br><span class="line"> Built:        Tue Mar 28 00:40:02 2017</span><br><span class="line"> OS/Arch:      darwin/amd64</span><br><span class="line"></span><br><span class="line">Server:</span><br><span class="line"> Version:      17.03.1-ce</span><br><span class="line"> API version:  1.27 (minimum version 1.12)</span><br><span class="line"> Go version:   go1.7.5</span><br><span class="line"> Git commit:   c6d412e</span><br><span class="line"> Built:        Fri Mar 24 00:00:50 2017</span><br><span class="line"> OS/Arch:      linux/amd64</span><br><span class="line"> Experimental: true</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-
-
-<h1 id="docker-建立镜像"><a href="#docker-建立镜像" class="headerlink" title="docker 建立镜像"></a>docker 建立镜像</h1><p>建立三个镜像，存储目录如下:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> tree</span></span><br><span class="line">.</span><br><span class="line">├── centos-ssh-root</span><br><span class="line">│   └── Dockerfile</span><br><span class="line">├── centos-ssh-root-jdk</span><br><span class="line">│   ├── Dockerfile</span><br><span class="line">│   └── jdk-7u79.tar.gz</span><br><span class="line">└── centos-ssh-root-jdk-hadoop</span><br><span class="line">    ├── Dockerfile</span><br><span class="line">    └── hadoop-2.7.3.tar.gz</span><br></pre></td></tr></table></figure>
-<h2 id="建立CentOS-SSH-root基础镜像"><a href="#建立CentOS-SSH-root基础镜像" class="headerlink" title="建立CentOS-SSH-root基础镜像"></a>建立CentOS-SSH-root基础镜像</h2><p>建立一个带有ssh和root账户的CentOS镜像</p>
-<ol>
-<li>新建Dockerfile文件<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir  centos-ssh-root</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 新建 Dockerfile 文件</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> vi  Dockerfile</span></span><br></pre></td></tr></table></figure>
-Dockerfile的内容为:</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 选择一个已有的os镜像作为基础  国内首选仓库 c.163.com</span></span><br><span class="line">FROM hub.c.163.com/public/centos:7.2.1511 </span><br><span class="line">RUN yum clean all</span><br><span class="line">RUN yum install -y yum-plugin-ovl || true</span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装基础的工具包</span></span><br><span class="line">RUN yum install -y vim tar wget curl rsync bzip2 iptables tcpdump less telnet net-tools lsof sysstat cronie python-setuptools</span><br><span class="line">RUN yum clean all</span><br><span class="line">RUN easy_install supervisor</span><br><span class="line">RUN cp -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span><br><span class="line">EXPOSE 22</span><br><span class="line">RUN mkdir -p /etc/supervisor/conf.d/</span><br><span class="line">RUN /usr/bin/echo_supervisord_conf &gt; /etc/supervisord.conf</span><br><span class="line">RUN echo [include] &gt;&gt; /etc/supervisord.conf</span><br><span class="line">RUN echo &#x27;files = /etc/supervisor/conf.d/*.conf&#x27; &gt;&gt; /etc/supervisord.conf</span><br><span class="line"><span class="meta">#</span><span class="bash">COPY sshd.conf /etc/supervisor/conf.d/sshd.conf</span></span><br><span class="line">CMD [&quot;/usr/bin/supervisord&quot;]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 镜像的作者</span>  </span><br><span class="line">MAINTAINER avery </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装openssh-server和sudo软件包，并且将sshd的UsePAM参数设置成no</span>  </span><br><span class="line">RUN yum install -y openssh-server sudo  </span><br><span class="line">RUN sed -i &#x27;s/UsePAM yes/UsePAM no/g&#x27; /etc/ssh/sshd_config  </span><br><span class="line"><span class="meta">#</span><span class="bash">安装openssh-clients</span></span><br><span class="line">RUN yum  install -y openssh-clients</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加测试用户root，密码abc.123，并且将此用户添加到sudoers里</span>  </span><br><span class="line">RUN echo &quot;root:abc.123&quot; | chpasswd  </span><br><span class="line">RUN echo &quot;root   ALL=(ALL)       ALL&quot; &gt;&gt; /etc/sudoers  </span><br><span class="line"><span class="meta">#</span><span class="bash"> 下面这两句比较特殊，</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 在centos6上必须要有，否则创建出来的容器sshd不能登录</span>  </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为了避免文件已存在报错，首先删掉私钥文件</span></span><br><span class="line">RUN rm -rf /etc/ssh/ssh_host_rsa_key</span><br><span class="line">RUN rm -rf /etc/ssh/ssh_host_dsa_key</span><br><span class="line"></span><br><span class="line">RUN ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key  </span><br><span class="line">RUN ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key  </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动sshd服务并且暴露22端口</span>  </span><br><span class="line"><span class="meta">#</span><span class="bash"> RUN mkdir /var/run/sshd</span>  </span><br><span class="line">EXPOSE 22  </span><br><span class="line">CMD [&quot;/usr/sbin/sshd&quot;, &quot;-D&quot;]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<ol start="2">
-<li>创建镜像</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 在Dockerfile同级目录下执行下面的命令，最后的.必须有</span></span><br><span class="line">docker build -t=&quot;avery/centos-ssh-root&quot; .</span><br></pre></td></tr></table></figure>
-<p>查看刚刚创建成功的镜像</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        35 hours ago        776 MB</span><br></pre></td></tr></table></figure>
-<h1 id="创建带有JDK的镜像"><a href="#创建带有JDK的镜像" class="headerlink" title="创建带有JDK的镜像"></a>创建带有JDK的镜像</h1><ol>
-<li>准备 下载JDK<br>此处使用JDK7u79<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir centos-ssh-root-jdk</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root-jdk</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> cp ~/Download/jdk-7u79.tar.gz .</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> vi Dockerfile</span></span><br></pre></td></tr></table></figure></li>
-<li>Dockerfile文件</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FROM avery/centos-ssh-root</span><br><span class="line">ADD jdk-7u79.tar.gz /usr/local/</span><br><span class="line">RUN mv /usr/local/jdk1.7.0_79 /usr/local/jdk1.7</span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加环境变量</span></span><br><span class="line">ENV JAVA_HOME /usr/local/jdk1.7</span><br><span class="line">ENV PATH $JAVA_HOME/bin:$PATH</span><br><span class="line"><span class="meta">#</span><span class="bash"> 可能上面的设置不会生效</span></span><br><span class="line">RUN echo &#x27;JAVA_HOME=/usr/local/jdk1.7/&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;PATH=$JAVA_HOME/bin:$PATH&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;export JAVA_HOME&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;export PATH&#x27; &gt;&gt; .bash_profile</span><br></pre></td></tr></table></figure>
-<ol start="3">
-<li>创建镜像</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t=&quot;avery/centos-ssh-root&quot; .</span><br></pre></td></tr></table></figure>
-<ol start="4">
-<li>查看镜像</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root-jdk          latest              e773519d0452        34 hours ago        1.39 GB</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        35 hours ago        776 MB</span><br></pre></td></tr></table></figure>
-<h2 id="构建hadoop镜像"><a href="#构建hadoop镜像" class="headerlink" title="构建hadoop镜像"></a>构建hadoop镜像</h2><ol>
-<li>准备</li>
-</ol>
-<p>官网下载 hadoop-2.7.3.tar.gz</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir centos-ssh-root-jdk-hadoop</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root-jdk-hadoop</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> cp ../hadoop-2.7.3.tar.gz .</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> vi Dockerfile</span></span><br></pre></td></tr></table></figure>
-<ol start="2">
-<li>Dockerfile</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FROM avery/centos-ssh-root-jdk</span><br><span class="line">ADD hadoop-2.7.3.tar.gz /usr/local</span><br><span class="line">RUN mv /usr/local/hadoop-2.7.3 usr/local/hadoop</span><br><span class="line">ENV HADOOP_HOME /usr/local/hadoop</span><br><span class="line">ENV PATH $HADOOP_HOME/bin:$PATH</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为了防止环境变量失效</span></span><br><span class="line">RUN  echo &#x27;HADOOP_HOME=/usr/local/hadoop/&#x27; &gt;&gt;.bash_profile</span><br><span class="line">RUN  echo &#x27;PATH=$HADOOP_HOME/bin:$PATH&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN  echo &#x27;export HADOOP_HOME&#x27; &gt;&gt; .bash_profile</span><br><span class="line">RUN  echo &#x27;export PATH&#x27; &gt;&gt; .bash_profile</span><br></pre></td></tr></table></figure>
-<ol start="3">
-<li>创建镜像<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t=&quot;avery/centos-ssh-root-jdk-hadoop&quot; .</span><br></pre></td></tr></table></figure></li>
-<li>查看</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root-jdk-hadoop   latest              c93aadf2b6c5        1 hours ago        2.05 GB</span><br><span class="line">avery/centos-ssh-root-jdk          latest              e773519d0452        1 hours ago        1.39 GB</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        1 hours ago        776 MB</span><br></pre></td></tr></table></figure>
-<h1 id="docker-搭建-Hadoop集群"><a href="#docker-搭建-Hadoop集群" class="headerlink" title="docker 搭建 Hadoop集群"></a>docker 搭建 Hadoop集群</h1><p>此处搭建的集群只在本机使用，各个Docker container没有独立的ip，如需要通过IP访问可以参考<a target="_blank" rel="noopener" href="http://blog.csdn.net/xu470438000/article/details/50512442">使用docker搭建hadoop分布式集群</a></p>
-<p>在MacOS上修改系统文件，需要关闭Rootless:</p>
-<p>重启按住 Command+R，进入恢复模式，打开Terminal。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil disable</span><br></pre></td></tr></table></figure>
-<p>重启即可。如果要恢复默认，那么</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil enable</span><br></pre></td></tr></table></figure>
-
-<h2 id="创建3台container"><a href="#创建3台container" class="headerlink" title="创建3台container"></a>创建3台container</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker run --name hadoop0 --hostname hadoop0 -d -P -p 50070:50070 -p 8088:8088 avery/centos-ssh-root-jdk-hadoop</span><br><span class="line"></span><br><span class="line">docker run --name hadoop1 --hostname hadoop1 -d -P avery/centos-ssh-root-jdk-hadoop</span><br><span class="line"></span><br><span class="line">docker run --name hadoop2 --hostname hadoop2 -d -P avery/centos-ssh-root-jdk-hadoop</span><br></pre></td></tr></table></figure>
-<p>查看三个container的信息</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker container ls</span><br><span class="line">CONTAINER ID        IMAGE                              COMMAND               CREATED             STATUS              PORTS                                                                     NAMES</span><br><span class="line">78e5e35adfa4        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:32776-&gt;22/tcp                                                     hadoop2</span><br><span class="line">5f27fd91c7ba        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:32775-&gt;22/tcp                                                     hadoop1</span><br><span class="line">1d7fd37371cc        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:8088-&gt;8088/tcp, 0.0.0.0:50070-&gt;50070/tcp, 0.0.0.0:32774-&gt;22/tcp   hadoop0</span><br></pre></td></tr></table></figure>
-<p>查看三个container的ip:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop0</span></span><br><span class="line">172.17.0.2</span><br><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop1</span></span><br><span class="line">172.17.0.3</span><br><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop2</span></span><br><span class="line">172.17.0.4</span><br></pre></td></tr></table></figure>
-
-<h2 id="集群规划"><a href="#集群规划" class="headerlink" title="集群规划"></a>集群规划</h2><p>准备搭建一个具有三个节点的集群，一主两从 </p>
-<ul>
-<li>主节点：hadoop0 ip：172.17.0.2</li>
-<li>从节点1：hadoop1 ip：172.17.0.3</li>
-<li>从节点2：hadoop2 ip：172.17.0.4</li>
-</ul>
-<h2 id="连接container"><a href="#连接container" class="headerlink" title="连接container"></a>连接container</h2><p>验证ssh连接</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32774</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32775</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32776</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br></pre></td></tr></table></figure>
-<p>使用exec</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker exec -it hadoop0 /bin/bash</span><br></pre></td></tr></table></figure>
-
-<h2 id="修改container的主机名"><a href="#修改container的主机名" class="headerlink" title="修改container的主机名"></a>修改container的主机名</h2><p>分别修改三个container的hosts</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/hosts </span><br></pre></td></tr></table></figure>
-<p>添加下面配置</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">172.17.0.2    hadoop0</span><br><span class="line">172.17.0.3    hadoop1</span><br><span class="line">172.17.0.4    hadoop2</span><br></pre></td></tr></table></figure>
-<h2 id="ssh-免密"><a href="#ssh-免密" class="headerlink" title="ssh 免密"></a>ssh 免密</h2><p>设置ssh免密码登录<br>在hadoop0上执行下面操作</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">mkdir .ssh</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop0</span><br><span class="line">ssh-copy-id -i hadoop1</span><br><span class="line">ssh-copy-id -i hadoop2</span><br></pre></td></tr></table></figure>
-<p>在hadoop1上执行下面操作</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop1</span><br></pre></td></tr></table></figure>
-<p>在hadoop2上执行下面操作</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop2</span><br></pre></td></tr></table></figure>
-<p>至此，Docker搭建Hadoop集群的准备工作</p>
-<hr>
-<p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="http://blog.csdn.net/xu470438000/article/details/50512442">使用docker搭建hadoop分布式集群</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/dubbo/base/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/dubbo/base/" class="post-title-link" itemprop="url">Dubbo基础</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-08 17:49:18" itemprop="dateModified" datetime="2021-02-08T17:49:18+08:00">2021-02-08</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Dubbo-分布式服务治理框架"><a href="#Dubbo-分布式服务治理框架" class="headerlink" title="Dubbo-分布式服务治理框架"></a>Dubbo-分布式服务治理框架</h1><blockquote>
-<p>学习dubbo教程 笔记整理</p>
-<p><a target="_blank" rel="noopener" href="http://dubbo.io/Developer+Guide-zh.htm">Dubbo官方文档</a></p>
-</blockquote>
-<p>关键词：分布式治理</p>
-<p>Dubbo是阿里巴巴推出的一款分布式服务治理框架（虽然现在阿里内部一些部门已经不再使用）。</p>
-<p>Dubbo将分布式服务分为四个角色：服务提供者、服务消费者、注册中心和监控中心。</p>
-<h1 id="Dubbo角色"><a href="#Dubbo角色" class="headerlink" title="Dubbo角色"></a>Dubbo角色</h1><p>![][dubbo-roles]</p>
-<ol>
-<li>服务提供者注册到服务注册中心</li>
-<li>服务消费者从服务提供者订阅服务</li>
-<li>当服务提供者发生变化（出现新服务提供者、旧的服务提供者死掉等），注册中心通知服务消费者</li>
-<li>当服务消费者调用服务时，首先从注册中心查找服务，注册中心直接将选定的服务提供者的ip和端口等信息返回给服务消费者，服务消费者直接调用服务提供者</li>
-<li>服务提供者和服务消费者每个一分钟将收集的运行信息上报到监控中心</li>
-</ol>
-<p>只有服务消费者调用服务生成者是同步调用，其他都是异步的。</p>
-<p>Provider与Registry、Consumer与Register之间都保持着长连接，用于保持信息同步</p>
-<h1 id="简洁的项目结构"><a href="#简洁的项目结构" class="headerlink" title="简洁的项目结构"></a>简洁的项目结构</h1><h1 id="Dubbo支持的RPC协议"><a href="#Dubbo支持的RPC协议" class="headerlink" title="Dubbo支持的RPC协议"></a>Dubbo支持的RPC协议</h1><ol>
-<li>支持常见的传输协议：RMI、Dubbo、Hessain、WebService、Http等，<br> 其中Dubbo和RMI协议基于TCP实现，Hessian和WebService基于HTTP实现。</li>
-<li>传输框架：Netty、Mina、以及基于servlet等方式。</li>
-<li>序列化方式：Hessian2、dubbo、JSON（ fastjson 实现）、JAVA、SOAP 等。</li>
-<li>注册中心可以选择 zooKeeper Redis Dubbo Multicast</li>
-</ol>
-<h1 id="Dubbo-服务降级"><a href="#Dubbo-服务降级" class="headerlink" title="Dubbo 服务降级"></a>Dubbo 服务降级</h1><p><a target="_blank" rel="noopener" href="http://blog.csdn.net/zuoanyinxiang/article/details/51027576">Dubbo学习(七)：服务的升级和降级</a></p>
-<p>服务降级方式：</p>
-<ul>
-<li>服务接口拒绝服务：无用户特定信息，页面能访问，但是添加删除提示服务器繁忙。页面内容也可在Varnish或CDN内获取。</li>
-<li>页面拒绝服务：页面提示由于服务繁忙此服务暂停。跳转到varnish或nginx的一个静态页面。</li>
-<li>延迟持久化：页面访问照常，但是涉及记录变更，会提示稍晚能看到结果，将数据记录到异步队列或log，服务恢复后执行。</li>
-<li>随机拒绝服务：服务接口随机拒绝服务，让用户重试，目前较少有人采用。因为用户体验不佳。</li>
-</ul>
-<p>服务降级埋点的地方：</p>
-<ul>
-<li>消息中间件：所有API调用可以使用消息中间件进行控制</li>
-<li>前端页面：指定网址不可访问（NGINX+LUA）</li>
-<li>底层数据驱动：拒绝所有增删改动作，只允许查询</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_2_in_or/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/syntax_2_in_or/" class="post-title-link" itemprop="url">MySQL in or优化</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-16 22:40:00" itemprop="dateCreated datePublished" datetime="2017-02-16T22:40:00+08:00">2017-02-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-08 17:49:15" itemprop="dateModified" datetime="2021-02-08T17:49:15+08:00">2021-02-08</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>MySQL会对sql语句做优化， </p>
-<ol>
-<li>in 后面的条件不超过一定数量仍然会使用索引。mysql 会根据索引长度和in后面条件数量判断是否使用索引。</li>
-<li>如果是in后面是子查询，则不会使用索引。此时采用<code>join</code>来替换</li>
-<li>使用<code>union all</code>代替<code>in</code>和<code>or</code></li>
-</ol>
-<h1 id="使用union-all优化的样例"><a href="#使用union-all优化的样例" class="headerlink" title="使用union all优化的样例"></a>使用<code>union all</code>优化的样例</h1><p>一个文章库，里面有两个表：category和article。category里面有10条分类数据。article里面有 20万条。article里面有一个”article_category”字段是与category里的”category_id”字段相对应的。 article表里面已经把 article_category字义为了索引。数据库大小为1.3G。</p>
-<p><strong>问题描述：</strong></p>
-<p>执行一个很普通的查询： </p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Select</span> <span class="operator">*</span> <span class="keyword">FROM</span> `article` <span class="keyword">Where</span> article_category<span class="operator">=</span><span class="number">11</span> <span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">DESC</span> LIMIT <span class="number">5</span> </span><br></pre></td></tr></table></figure>
-<p>执行时间大约要5秒左右</p>
-<p><strong>解决方案：</strong><br>建一个索引：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> index idx_u <span class="keyword">on</span> article (article_category,article_id);</span><br></pre></td></tr></table></figure>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Select</span> <span class="operator">*</span> <span class="keyword">FROM</span> `article` <span class="keyword">Where</span> article_category<span class="operator">=</span><span class="number">11</span> <span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">DESC</span> LIMIT <span class="number">5</span> </span><br></pre></td></tr></table></figure>
-<p>减少到0.0027秒</p>
-<p><strong>继续问题：</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Select</span> <span class="operator">*</span> <span class="keyword">FROM</span> `article` <span class="keyword">Where</span> article_category <span class="keyword">IN</span> (<span class="number">2</span>,<span class="number">3</span>) <span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">DESC</span> LIMIT <span class="number">5</span> </span><br></pre></td></tr></table></figure>
-<p>执行时间要11.2850秒。</p>
-<p><strong>使用OR:</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article</span><br><span class="line"><span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">2</span></span><br><span class="line"><span class="keyword">or</span> article_category<span class="operator">=</span><span class="number">3</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span></span><br><span class="line">limit <span class="number">5</span></span><br></pre></td></tr></table></figure>
-<p>执行时间：11.0777</p>
-<p><strong>解决方案：</strong><br>避免使用in 或者 or (or会导致扫表)，使用union all</p>
-<p><strong>使用UNION ALL：</strong></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(<span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article <span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">2</span> <span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span> limit <span class="number">5</span>)</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span> (<span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article <span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">3</span> <span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span> limit <span class="number">5</span>)</span><br><span class="line"><span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">desc</span></span><br><span class="line">limit <span class="number">5</span></span><br></pre></td></tr></table></figure>
-<p>执行时间：0.0261</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/cluster_deploy/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/cluster_deploy/" class="post-title-link" itemprop="url">mac搭建hadoop、hive、spark、flink环境</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-08 17:49:18" itemprop="dateModified" datetime="2021-02-08T17:49:18+08:00">2021-02-08</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="mysql"><a href="#mysql" class="headerlink" title="mysql"></a>mysql</h1><p>启动mysql</p>
-<p>brew services start mysql</p>
-<p>abc.ABC.123</p>
-<h1 id="集群搭建"><a href="#集群搭建" class="headerlink" title="集群搭建"></a>集群搭建</h1><ol>
-<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/33117305">mac osx 搭建hadoop开发环境</a></li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/u010638969/article/details/51283216">spark on yarn</a></li>
-<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/65825211">hive环境搭建</a></li>
-</ol>
-<p>按照上面文章的方式搭建，启动hdfs、yarn</p>
-<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/33968422/bin-bash-bin-java-no-such-file-or-directory"><strong>必须使用这个命令</strong></a></p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动yarn</span></span></span><br><span class="line">hadoop/sbin/./yarn-daemon.sh start resourcemanager</span><br><span class="line">hadoop/sbin./yarn-daemon.sh start nodemanager</span><br><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动hdfs</span></span></span><br><span class="line">hadoop/sbin/start-hdfs.sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p><a target="_blank" rel="noopener" href="http://localhost:50070/">hdfs-web</a><br><a target="_blank" rel="noopener" href="http://localhost:8088/">yarn-web</a></p>
-<h2 id="hive"><a href="#hive" class="headerlink" title="hive"></a>hive</h2><p>create user ‘hadoop’@’%’ identified by ‘hadoop%HADOOP%123’;</p>
-<p>grant all privileges on <em>.</em> to ‘hadoop’@’%’ with grant option;</p>
-<p>flush privileges;</p>
-<h2 id="flink-on-yarn"><a href="#flink-on-yarn" class="headerlink" title="flink on yarn"></a>flink on yarn</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/xu470438000/article/details/79576989">flink on yarn部署</a></p>
-<p>在flink lib下增加flink-hadoop兼容包<a target="_blank" rel="noopener" href="https://repo.maven.apache.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.7.5-7.0/flink-shaded-hadoop-2-uber-2.7.5-7.0.jar">Pre-bundled Hadoop 2.7.5</a></p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动</span></span><br><span class="line">bin/start-cluster.sh</span><br></pre></td></tr></table></figure>
-
-<h2 id="搭建AthenaX"><a href="#搭建AthenaX" class="headerlink" title="搭建AthenaX"></a>搭建AthenaX</h2><p><a target="_blank" rel="noopener" href="https://athenax.readthedocs.io/en/latest/getting_started/">Building AthenaX and Flink</a></p>
-<h2 id="mac-install-kafka"><a href="#mac-install-kafka" class="headerlink" title="mac install kafka"></a>mac install kafka</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">brew install zookeeper</span><br><span class="line">brew install kafka</span><br></pre></td></tr></table></figure>
-<p>修改 /usr/local/etc/kafka/server.properties, 找到 listeners=PLAINTEXT://:9092 那一行，把注释取消掉。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ brew services start zookeeper</span><br><span class="line">$ brew services start kafka</span><br></pre></td></tr></table></figure>
-<p>创建topic</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;usr&#x2F;local&#x2F;bin&#x2F;kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic order-streaming-test</span><br></pre></td></tr></table></figure>
-<h3 id="清理topic"><a href="#清理topic" class="headerlink" title="清理topic"></a>清理topic</h3><p>cd /usr/local/var/lib/kafka-logs</p>
-<p><a target="_blank" rel="noopener" href="https://colobu.com/2019/09/27/install-Kafka-on-Mac/">install kafka on mac</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/RPC/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/RPC/" class="post-title-link" itemprop="url">RPC</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-08 17:49:18" itemprop="dateModified" datetime="2021-02-08T17:49:18+08:00">2021-02-08</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>RPC -  Remote Procedure Call 远程过程调用<br>是一种进程间通信方式。它允许程序调用另一个地址空间（通常是共享网络的另一台机器上）的过程或函数，而不用程序员显式编码这个远程调用的细节。即程序员无论是调用本地的还是远程的，本质上编写的调用代码基本相同。</p>
-<p>RPC 的鼻祖<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Bruce_Jay_Nelson">Bruce Jay Nelson</a> 在1980s提出了基本的实现结构<br><img src="/images/distributed/RPC/rpc-struct-01.png" alt="RPC基本实现结构"></p>
-<p>图中的<code>user</code>即为<code>client</code></p>
-<h1 id="常见的RPC协议"><a href="#常见的RPC协议" class="headerlink" title="常见的RPC协议"></a>常见的RPC协议</h1><p>CORBAR: 为了解决异构平台的 RPC，使用了 <code>IDL</code>（Interface Definition Language）来定义远程接口，并将其映射到特定的平台语言中。后来大部分的跨语言平台 RPC 基本都采用了此类方式，比如我们熟悉的 Web Service（SOAP），近年开源的Thrift 等。他们大部分都通过 IDL 定义，并提供工具来映射生成不同语言平台的 user-stub 和 server-stub，并通过框架库来提供 RPCRuntime 的支持。不过貌似每个不同的 RPC 框架都定义了各自不同的 IDL 格式，导致程序员的学习成本进一步上升（苦逼啊），Web Service 尝试建立业界标准，无赖标准规范复杂而效率偏低，否则 Thrift 等更高效的 RPC 框架就没必要出现了。</p>
-<p>IDL 是为了跨平台语言实现 RPC 不得已的选择，要解决更广泛的问题自然导致了更复杂的方案。而对于同一平台内的 RPC 而言显然没必要搞个中间语言出来，例如Java原生的 RMI，这样对于 java 程序员而言显得更直接简单，降低使用的学习成本。目前市面上提供的 RPC 框架已经可算是五花八门，百家争鸣了。需要根据实际使用场景谨慎选型，需要考虑的选型因素我觉得至少包括下面几点：</p>
-<ol>
-<li>性能指标</li>
-<li>是否需要跨语言平台</li>
-<li>内网开放还是公网开放</li>
-<li>开源 RPC 框架本身的质量、社区活跃度</li>
-</ol>
-<h2 id="CORBAR"><a href="#CORBAR" class="headerlink" title="CORBAR"></a>CORBAR</h2><h2 id="RMI"><a href="#RMI" class="headerlink" title="RMI"></a>RMI</h2><h2 id="Web-Service（SOAP）"><a href="#Web-Service（SOAP）" class="headerlink" title="Web Service（SOAP）"></a>Web Service（SOAP）</h2><h2 id="Thrift"><a href="#Thrift" class="headerlink" title="Thrift"></a>Thrift</h2><h1 id="异步调用与同步调用"><a href="#异步调用与同步调用" class="headerlink" title="异步调用与同步调用"></a>异步调用与同步调用</h1><ol>
-<li>同步调用<br>客户方等待调用执行完成并返回结果。  </li>
-<li>异步调用<br>客户方调用后不用等待执行结果返回，但依然可以通过回调通知等方式获取返回结果。<br>若客户方不关心调用返回结果，则变成单向异步调用，单向调用不用返回结果。  </li>
-</ol>
-<h2 id="RPC-结构拆解"><a href="#RPC-结构拆解" class="headerlink" title="RPC 结构拆解"></a>RPC 结构拆解</h2><p><img src="http://img.blog.csdn.net/20150108170231000?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbWluZGZsb2F0aW5n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>RPC 服务方通过 <code>RpcServer</code> 去导出（export）远程接口方法，而客户方通过 <code>RpcClient</code> 去引入（import）远程接口方法。客户方像调用本地方法一样去调用远程接口方法，RPC 框架提供接口的代理实现，实际的调用将委托给代理<code>RpcProxy</code> 。代理封装调用信息并将调用转交给<code>RpcInvoker</code> 去实际执行。在客户端的<code>RpcInvoker</code> 通过连接器<code>RpcConnector</code> 去维持与服务端的通道<code>RpcChannel</code>，并使用<code>RpcProtocol</code> 执行协议编码（encode）并将编码后的请求消息通过通道发送给服务方。</p>
-<p>RPC 服务端接收器 <code>RpcAcceptor</code> 接收客户端的调用请求，同样使用<code>RpcProtocol</code> 执行协议解码（decode）。解码后的调用信息传递给<code>RpcProcessor</code> 去控制处理调用过程，最后再委托调用给<code>RpcInvoker</code> 去实际执行并返回调用结果。</p>
-<h2 id="RPC-组件职责"><a href="#RPC-组件职责" class="headerlink" title="RPC 组件职责"></a>RPC 组件职责</h2><p>上面我们进一步拆解了 RPC 实现结构的各个组件组成部分，下面我们详细说明下每个组件的职责划分。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">1. RpcServer  </span><br><span class="line">   负责导出（export）远程接口  </span><br><span class="line">2. RpcClient  </span><br><span class="line">   负责导入（import）远程接口的代理实现  </span><br><span class="line">3. RpcProxy  </span><br><span class="line">   远程接口的代理实现  </span><br><span class="line">4. RpcInvoker  </span><br><span class="line">   客户方实现：负责编码调用信息和发送调用请求到服务方并等待调用结果返回  </span><br><span class="line">   服务方实现：负责调用服务端接口的具体实现并返回调用结果  </span><br><span class="line">5. RpcProtocol  </span><br><span class="line">   负责协议编&#x2F;解码  </span><br><span class="line">6. RpcConnector  </span><br><span class="line">   负责维持客户方和服务方的连接通道和发送数据到服务方  </span><br><span class="line">7. RpcAcceptor  </span><br><span class="line">   负责接收客户方请求并返回请求结果  </span><br><span class="line">8. RpcProcessor  </span><br><span class="line">   负责在服务方控制调用过程，包括管理调用线程池、超时时间等  </span><br><span class="line">9. RpcChannel  </span><br><span class="line">   数据传输通道  </span><br></pre></td></tr></table></figure>
-<h2 id="RPC-实现分析"><a href="#RPC-实现分析" class="headerlink" title="RPC 实现分析"></a>RPC 实现分析</h2><p>在进一步拆解了组件并划分了职责之后，这里以在  Java 平台实现该 RPC 框架概念模型为例，详细分析下实现中需要考虑的因素。</p>
-<h3 id="导出远程接口"><a href="#导出远程接口" class="headerlink" title="导出远程接口"></a>导出远程接口</h3><p>导出远程接口的意思是指只有导出的接口可以供远程调用，而未导出的接口则不能。在 java 中导出接口的代码片段可能如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">DemoService demo   = <span class="keyword">new</span> ...;  </span><br><span class="line">RpcServer   server = <span class="keyword">new</span> ...;  </span><br><span class="line">server.export(DemoService.class, demo, options);  </span><br></pre></td></tr></table></figure>
-<p>我们可以导出整个接口，也可以更细粒度一点只导出接口中的某些方法，如：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 只导出 DemoService 中签名为 hi(String s) 的方法  </span></span><br><span class="line">server.export(DemoService.class, demo, <span class="string">&quot;hi&quot;</span>, <span class="keyword">new</span> Class&lt;?&gt;[] &#123; String.class &#125;, options);  </span><br></pre></td></tr></table></figure>
-<p>java 中还有一种比较特殊的调用就是多态，也就是一个接口可能有多个实现，那么远程调用时到底调用哪个？这个本地调用的语义是通过 jvm 提供的引用多态性隐式实现的，那么对于 RPC 来说跨进程的调用就没法隐式实现了。如果前面<code>DemoService</code> 接口有 2 个实现，那么在导出接口时就需要特殊标记不同的实现，如：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">DemoService demo   = <span class="keyword">new</span> ...;  </span><br><span class="line">DemoService demo2  = <span class="keyword">new</span> ...;  </span><br><span class="line">RpcServer   server = <span class="keyword">new</span> ...;  </span><br><span class="line">server.export(DemoService.class, demo, options);  </span><br><span class="line">server.export(<span class="string">&quot;demo2&quot;</span>, DemoService.class, demo2, options);  </span><br></pre></td></tr></table></figure>
-<p>上面 demo2 是另一个实现，我们标记为 “demo2” 来导出，那么远程调用时也需要传递该标记才能调用到正确的实现类，这样就解决了多态调用的语义。</p>
-<h3 id="导入远程接口与客户端代理"><a href="#导入远程接口与客户端代理" class="headerlink" title="导入远程接口与客户端代理"></a>导入远程接口与客户端代理</h3><p>导入相对于导出远程接口，客户端代码为了能够发起调用必须要获得远程接口的方法或过程定义。目前，大部分跨语言平台 RPC 框架采用根据 IDL 定义通过 code generator 去生成 stub 代码，这种方式下实际导入的过程就是通过代码生成器在编译期完成的。我所使用过的一些跨语言平台 RPC 框架如 CORBAR、WebService、ICE、Thrift 均是此类方式。</p>
-<p>代码生成的方式对跨语言平台 RPC 框架而言是必然的选择，而对于同一语言平台的 RPC 则可以通过共享接口定义来实现。在 java 中导入接口的代码片段可能如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">RpcClient client = <span class="keyword">new</span> ...;  </span><br><span class="line">DemoService demo = client.refer(DemoService.class);  </span><br><span class="line">demo.hi(<span class="string">&quot;how are you?&quot;</span>);  </span><br></pre></td></tr></table></figure>
-<p>在 java 中 ‘import’ 是关键字，所以代码片段中我们用 refer 来表达导入接口的意思。这里的导入方式本质也是一种代码生成技术，只不过是在运行时生成，比静态编译期的代码生成看起来更简洁些。java 里至少提供了两种技术来提供动态代码生成，一种是 jdk 动态代理，另外一种是字节码生成。动态代理相比字节码生成使用起来更方便，但动态代理方式在性能上是要逊色于直接的字节码生成的，而字节码生成在代码可读性上要差很多。两者权衡起来，个人认为牺牲一些性能来获得代码可读性和可维护性显得更重要。</p>
-<h3 id="协议编解码"><a href="#协议编解码" class="headerlink" title="协议编解码"></a>协议编解码</h3><p>客户端代理在发起调用前需要对调用信息进行编码，这就要考虑需要编码些什么信息并以什么格式传输到服务端才能让服务端完成调用。出于效率考虑，编码的信息越少越好（传输数据少），编码的规则越简单越好（执行效率高）。我们先看下需要编码些什么信息：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">-- 调用编码 --  </span><br><span class="line">1. 接口方法  </span><br><span class="line">   包括接口名、方法名  </span><br><span class="line">2. 方法参数  </span><br><span class="line">   包括参数类型、参数值  </span><br><span class="line">3. 调用属性  </span><br><span class="line">   包括调用属性信息，例如调用附件隐式参数、调用超时时间等  </span><br><span class="line">  </span><br><span class="line">-- 返回编码 --  </span><br><span class="line"> 1. 返回结果  </span><br><span class="line">    接口方法中定义的返回值  </span><br><span class="line"> 2. 返回码  </span><br><span class="line">    异常返回码  </span><br><span class="line"> 3. 返回异常信息  </span><br><span class="line">    调用异常信息  </span><br></pre></td></tr></table></figure>
-<p>除了以上这些必须的调用信息，我们可能还需要一些元信息以方便程序编解码以及未来可能的扩展。这样我们的编码消息里面就分成了两部分，一部分是元信息、另一部分是调用的必要信息。如果设计一种 RPC 协议消息的话，元信息我们把它放在协议消息头中，而必要信息放在协议消息体中。下面给出一种概念上的 RPC 协议消息设计格式：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">-- 消息头 --  </span><br><span class="line">magic      : 协议魔数，为解码设计  </span><br><span class="line">header size: 协议头长度，为扩展设计  </span><br><span class="line">version    : 协议版本，为兼容设计  </span><br><span class="line">st         : 消息体序列化类型  </span><br><span class="line">hb         : 心跳消息标记，为长连接传输层心跳设计  </span><br><span class="line">ow         : 单向消息标记，  </span><br><span class="line">rp         : 响应消息标记，不置位默认是请求消息  </span><br><span class="line">status code: 响应消息状态码  </span><br><span class="line">reserved   : 为字节对齐保留  </span><br><span class="line">message id : 消息 id  </span><br><span class="line">body size  : 消息体长度  </span><br><span class="line">  </span><br><span class="line">-- 消息体 --  </span><br><span class="line">采用序列化编码，常见有以下格式  </span><br><span class="line">xml   : 如 webservie soap  </span><br><span class="line">json  : 如 JSON-RPC  </span><br><span class="line">binary: 如 thrift; hession; kryo 等  </span><br></pre></td></tr></table></figure>
-<p>格式确定后编解码就简单了，由于头长度一定所以我们比较关心的就是消息体的序列化方式。序列化我们关心三个方面：<br>\1. 序列化和反序列化的效率，越快越好。 <br>\2. 序列化后的字节长度，越小越好。 <br>\3. 序列化和反序列化的兼容性，接口参数对象若增加了字段，是否兼容。<br>上面这三点有时是鱼与熊掌不可兼得，这里面涉及到具体的序列化库实现细节，就不在本文进一步展开分析了。</p>
-<h3 id="传输服务"><a href="#传输服务" class="headerlink" title="传输服务"></a>传输服务</h3><p>协议编码之后，自然就是需要将编码后的 RPC 请求消息传输到服务方，服务方执行后返回结果消息或确认消息给客户方。RPC 的应用场景实质是一种可靠的请求应答消息流，和 HTTP 类似。因此选择长连接方式的 TCP 协议会更高效，与 HTTP 不同的是在协议层面我们定义了每个消息的唯一 id，因此可以更容易的复用连接。</p>
-<p>既然使用长连接，那么第一个问题是到底 client 和 server 之间需要多少根连接？实际上单连接和多连接在使用上没有区别，对于数据传输量较小的应用类型，单连接基本足够。单连接和多连接最大的区别在于，每根连接都有自己私有的发送和接收缓冲区，因此大数据量传输时分散在不同的连接缓冲区会得到更好的吞吐效率。所以，如果你的数据传输量不足以让单连接的缓冲区一直处于饱和状态的话，那么使用多连接并不会产生任何明显的提升，反而会增加连接管理的开销。</p>
-<p>连接是由 client 端发起建立并维持。如果 client 和 server 之间是直连的，那么连接一般不会中断（当然物理链路故障除外）。如果 client 和 server 连接经过一些负载中转设备，有可能连接一段时间不活跃时会被这些中间设备中断。为了保持连接有必要定时为每个连接发送心跳数据以维持连接不中断。心跳消息是 RPC 框架库使用的内部消息，在前文协议头结构中也有一个专门的心跳位，就是用来标记心跳消息的，它对业务应用透明。</p>
-<h3 id="执行调用"><a href="#执行调用" class="headerlink" title="执行调用"></a>执行调用</h3><p>client stub 所做的事情仅仅是编码消息并传输给服务方，而真正调用过程发生在服务方。server stub 从前文的结构拆解中我们细分了 <code>RpcProcessor</code> 和<code>RpcInvoker</code> 两个组件，一个负责控制调用过程，一个负责真正调用。这里我们还是以 java 中实现这两个组件为例来分析下它们到底需要做什么？</p>
-<p>java 中实现代码的动态接口调用目前一般通过反射调用。除了原生的 jdk 自带的反射，一些第三方库也提供了性能更优的反射调用，因此 <code>RpcInvoker</code> 就是封装了反射调用的实现细节。</p>
-<p>调用过程的控制需要考虑哪些因素，<code>RpcProcessor</code> 需要提供什么样地调用控制服务呢？下面提出几点以启发思考：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. 效率提升  </span><br><span class="line">   每个请求应该尽快被执行，因此我们不能每请求来再创建线程去执行，需要提供线程池服务。  </span><br><span class="line">2. 资源隔离  </span><br><span class="line">   当我们导出多个远程接口时，如何避免单一接口调用占据所有线程资源，而引发其他接口执行阻塞。  </span><br><span class="line">3. 超时控制  </span><br><span class="line">   当某个接口执行缓慢，而 client 端已经超时放弃等待后，server 端的线程继续执行此时显得毫无意义。  </span><br></pre></td></tr></table></figure>
-
-<h2 id="RPC-异常处理"><a href="#RPC-异常处理" class="headerlink" title="RPC 异常处理"></a>RPC 异常处理</h2><p>无论 RPC 怎样努力把远程调用伪装的像本地调用，但它们依然有很大的不同点，而且有一些异常情况是在本地调用时绝对不会碰到的。在说异常处理之前，我们先比较下本地调用和 RPC 调用的一些差异：</p>
-<ol>
-<li>本地调用一定会执行，而远程调用则不一定，调用消息可能因为网络原因并未发送到服务方。</li>
-<li>本地调用只会抛出接口声明的异常，而远程调用还会跑出 RPC 框架运行时的其他异常。</li>
-<li>本地调用和远程调用的性能可能差距很大，这取决于 RPC 固有消耗所占的比重。<br>正是这些区别决定了使用 RPC 时需要更多考量。当调用远程接口抛出异常时，异常可能是一个业务异常，也可能是 RPC 框架抛出的运行时异常（如：网络中断等）。业务异常表明服务方已经执行了调用，可能因为某些原因导致未能正常执行，而 RPC 运行时异常则有可能服务方根本没有执行，对调用方而言的异常处理策略自然需要区分。</li>
-</ol>
-<p>由于 RPC 固有的消耗相对本地调用高出几个数量级，本地调用的固有消耗是纳秒级，而 RPC 的固有消耗是在毫秒级。那么对于过于轻量的计算任务就并不合适导出远程接口由独立的进程提供服务，只有花在计算任务上时间远远高于 RPC 的固有消耗才值得导出为远程接口提供服务。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此我们提出了一个 RPC 实现的概念框架，并详细分析了需要考虑的一些实现细节。无论 RPC 的概念是如何优雅，但是“草丛中依然有几条蛇隐藏着”，只有深刻理解了 RPC 的本质，才能更好地应用。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/PhantomJS/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/PhantomJS/" class="post-title-link" itemprop="url">PhamtomJs</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-08 17:49:18" itemprop="dateModified" datetime="2021-02-08T17:49:18+08:00">2021-02-08</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>PhamtomJs 是服务端的无界面的Chrome浏览器，提供JS API和shell命令行，方便操作</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="http://phantomjs.org/quick-start.html">官方的文档</a></p>
-</blockquote>
-<h1 id="Java-操作"><a href="#Java-操作" class="headerlink" title="Java 操作"></a>Java 操作</h1><h2 id="阻塞式"><a href="#阻塞式" class="headerlink" title="阻塞式"></a>阻塞式</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">openWithPhanatomjs</span><span class="params">(String viewUrl)</span> </span>&#123;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs start&quot;</span> + viewUrl);</span><br><span class="line">      InputStreamReader inReader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">      BufferedReader reader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream errorStream = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">          String path = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              path = Thread.currentThread().getContextClassLoader().getResource(<span class="string">&quot;/&quot;</span>).toURI().getPath();</span><br><span class="line">          &#125; <span class="keyword">catch</span> (URISyntaxException e) &#123;</span><br><span class="line">              e.printStackTrace();</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">final</span> String s = path + File.separator + <span class="string">&quot;otwp.js&quot;</span>;</span><br><span class="line"><span class="comment">//            logger.info(s);</span></span><br><span class="line">          Process process = Runtime.getRuntime().exec(phanatomjsHome + <span class="string">&quot; &quot;</span> + s + <span class="string">&quot; &quot;</span> + viewUrl);</span><br><span class="line">          inputStream = process.getInputStream();</span><br><span class="line">          inReader = <span class="keyword">new</span> InputStreamReader(inputStream, <span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">          reader = <span class="keyword">new</span> BufferedReader(inReader);</span><br><span class="line">          String line = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">while</span> ((line = reader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">          errorStream = process.getErrorStream();</span><br><span class="line">          <span class="keyword">final</span> BufferedReader bufferedReader = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> InputStreamReader(errorStream));</span><br><span class="line">          <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">      &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              <span class="keyword">if</span> (inReader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inReader.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (inputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inputStream.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (reader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  reader.close();</span><br><span class="line">              &#125;</span><br><span class="line">          &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">              logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs end&quot;</span> + viewUrl);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<h1 id="样例"><a href="#样例" class="headerlink" title="样例"></a>样例</h1><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// run this js with command:</span></span><br><span class="line"><span class="comment">// phantomjs openTableauWithPhantomjs.js &lt;Tableau view url&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">&quot;start open with Phantomjs&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> system = <span class="built_in">require</span>(<span class="string">&#x27;system&#x27;</span>);</span><br><span class="line"><span class="keyword">if</span> (system.args.length === <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Please input view url&#x27;</span>);</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">    phantom.exit();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> viewUrl = system.args[<span class="number">1</span>];</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Open url: &#x27;</span> + viewUrl);</span><br><span class="line">    <span class="keyword">var</span> page = <span class="built_in">require</span>(<span class="string">&#x27;webpage&#x27;</span>).create();</span><br><span class="line">    <span class="keyword">var</span> t = <span class="built_in">Date</span>.now();</span><br><span class="line"></span><br><span class="line">    page.onConsoleMessage = <span class="function"><span class="keyword">function</span> (<span class="params">msg</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(msg);</span><br><span class="line">    &#125;;</span><br><span class="line">    page.onLoadFinished = <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;加载完毕, 状态: &#x27;</span> + status);</span><br><span class="line"></span><br><span class="line">    &#125;;</span><br><span class="line">    page.settings.resourceTimeout=<span class="number">100000</span>;</span><br><span class="line"></span><br><span class="line">    page.open(viewUrl, <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> title = page.evaluate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">document</span>.title;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="built_in">console</span>.log(status + <span class="string">&#x27;\ttitle:&#x27;</span> + title);</span><br><span class="line">        <span class="keyword">if</span> (status !== <span class="string">&#x27;success&#x27;</span>) &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;Fail to load the address!&#x27;</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            t = <span class="built_in">Date</span>.now() - t;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;open success: elase time : &#x27;</span> + t);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">        phantom.exit();</span><br><span class="line"></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<hr>
-<p>[参考文献]</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://www.qcloud.com/community/article/743451001489391682">PhantomJS 基础及示例</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/base/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -919,7 +214,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-08 17:49:15" itemprop="dateModified" datetime="2021-02-08T17:49:15+08:00">2021-02-08</time>
+                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1010,7 +305,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-08 17:49:15" itemprop="dateModified" datetime="2021-02-08T17:49:15+08:00">2021-02-08</time>
+                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1175,7 +470,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-08 17:49:15" itemprop="dateModified" datetime="2021-02-08T17:49:15+08:00">2021-02-08</time>
+                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1584,7 +879,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-08 17:49:15" itemprop="dateModified" datetime="2021-02-08T17:49:15+08:00">2021-02-08</time>
+                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1962,6 +1257,1100 @@ rename-command FLUSHALL 1041285018a942a4922cbf76623b741e</code></pre>
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/HttpClient/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/HttpClient/" class="post-title-link" itemprop="url">HttpClient</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-12 12:26:00" itemprop="dateCreated datePublished" datetime="2016-12-12T12:26:00+08:00">2016-12-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="HttpClient-2-3-6中-使用-SSL-3"><a href="#HttpClient-2-3-6中-使用-SSL-3" class="headerlink" title="HttpClient 2.3.6中 使用 SSL 3"></a>HttpClient 2.3.6中 使用 SSL 3</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">httpPost</span><span class="params">(String strUrl, List&lt;NameValuePair&gt; params)</span> </span>&#123;</span><br><span class="line">    RequestConfig.Builder bld = RequestConfig.custom();</span><br><span class="line">    bld.setConnectTimeout(<span class="number">60000</span>);</span><br><span class="line">    bld.setConnectionRequestTimeout(<span class="number">60000</span>);</span><br><span class="line">    bld.setSocketTimeout(<span class="number">60000</span>);</span><br><span class="line"></span><br><span class="line">    RequestConfig config = bld.build();</span><br><span class="line">    CloseableHttpClient closeableHttpClient = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        SSLContext sslcontext = SSLContexts.custom()</span><br><span class="line">                .loadTrustMaterial(<span class="keyword">null</span>, <span class="keyword">new</span> TrustSelfSignedStrategy())</span><br><span class="line">                .loadKeyMaterial(<span class="keyword">null</span>, <span class="keyword">null</span>)</span><br><span class="line">                .build();</span><br><span class="line"></span><br><span class="line">        SSLConnectionSocketFactory sslsf = <span class="keyword">new</span> SSLConnectionSocketFactory(</span><br><span class="line">                sslcontext, <span class="keyword">new</span> String[]&#123;<span class="string">&quot;SSLv3&quot;</span>, <span class="string">&quot;TLSv1&quot;</span>&#125;, <span class="keyword">null</span>,</span><br><span class="line">                SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (closeableHttpClient == <span class="keyword">null</span>) &#123;</span><br><span class="line">            closeableHttpClient = HttpClients.custom()</span><br><span class="line">                    .setSSLSocketFactory(sslsf).build();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    String result = <span class="keyword">null</span>;</span><br><span class="line">    CloseableHttpResponse response = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        HttpPost post = <span class="keyword">new</span> HttpPost(strUrl);</span><br><span class="line">        post.setEntity(<span class="keyword">new</span> UrlEncodedFormEntity(params, <span class="string">&quot;UTF-8&quot;</span>));</span><br><span class="line">        response = closeableHttpClient.execute(post);</span><br><span class="line">        <span class="keyword">int</span> code = response.getStatusLine().getStatusCode();</span><br><span class="line">        System.out.println(<span class="string">&quot;请求返回结果: Code:&quot;</span> + code);</span><br><span class="line">        <span class="keyword">if</span> (code == <span class="number">200</span>) &#123;</span><br><span class="line">            result = EntityUtils.toString(response.getEntity(), <span class="string">&quot;UTF-8&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        System.out.println(<span class="string">&quot;请求返回值为:=&gt; &quot;</span> + result);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (closeableHttpClient != <span class="keyword">null</span>) &#123;</span><br><span class="line">                closeableHttpClient.close();</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (response != <span class="keyword">null</span>) &#123;</span><br><span class="line">                response.close();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id=""><a href="#" class="headerlink" title=""></a></h1>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/04.thread-synchronization/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/multithread/04.thread-synchronization/" class="post-title-link" itemprop="url">Java多线程4: 同步锁与Java线程同步方法比较</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-09 00:00:00" itemprop="dateCreated datePublished" datetime="2016-12-09T00:00:00+08:00">2016-12-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><a href="/Java/advanced-engineer-outline/">&lt;Java高级软件工程师知识结构</a></p>
+<pre><code>Java多线程是Java基础的重要的一部分，支持多线程是Java的重要特性之一. 主要包括如下内容:</code></pre>
+<blockquote>
+<ol>
+<li><a href="/Java/multithread/01.base/">Java多线程1: 线程生命周期和多线程基础</a></li>
+<li><a href="/Java/multithread/02.Lock-Semaphore-Atomic/">Java多线程2: Lock、信号量、原子量与队列</a></li>
+<li><a href="/Java/multithread/03.volatile/">Java多线程3: volatile</a></li>
+<li><a href="/Java/multithread/04.thread-synchronization/">Java多线程4: 同步锁与Java线程同步方法比较</a></li>
+<li><a href="/Java/multithread/05.ThreadPool/">Java多线程5: 线程池</a></li>
+<li><a href="/Java/multithread/06.BlockingQueue/">Java多线程6: Java阻塞队列与生产者消费者模式</a></li>
+</ol>
+</blockquote>
+<ol>
+<li>Atomic Class 依赖寄存器 CAS</li>
+<li>volatile 共享变量</li>
+<li>ThreadLocal CopyOnWrite 只读或近似只读</li>
+<li>Synchronized CAS级别</li>
+<li>Lock condition readAndWriteLock 并发级别</li>
+<li>CountdownLatch</li>
+<li>Semaphore</li>
+</ol>
+<hr>
+<p>【参考文献】:</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/sql-lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/sql-lock/" class="post-title-link" itemprop="url">数据库锁的基本原理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-01 00:00:00" itemprop="dateCreated datePublished" datetime="2016-12-01T00:00:00+08:00">2016-12-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="数据库锁的基本原理"><a href="#数据库锁的基本原理" class="headerlink" title="数据库锁的基本原理"></a>数据库锁的基本原理</h1><h2 id="为什么要锁"><a href="#为什么要锁" class="headerlink" title="为什么要锁"></a>为什么要锁</h2><p>数据库通常有大量的用户在同时操作，所以并发的情况下需要控制对临界资源的操作，数据库通过锁来控制对临界资源的访问，从而保证数据的一致性。例如对于同一个账户，操作之前账户余额为1000，同时开始2个事务，一个事务取款100，一个事务往账户中汇入100，那么2个事务结束后，账户的余额必须还是1000，否则要么银行不干，要么个人不干。 </p>
+<h2 id="锁类型"><a href="#锁类型" class="headerlink" title="锁类型"></a>锁类型</h2><h3 id="共享锁-读锁"><a href="#共享锁-读锁" class="headerlink" title="共享锁(读锁)"></a>共享锁(读锁)</h3><p>读锁是共享的，互相不阻塞，也就是可以多个客户同时读取同一资源，而不互相干扰。</p>
+<p>加锁条件：当执行select时，数据库为这个事务分配一把共享锁，来锁定被查询的数据。 </p>
+<p>解锁条件：默认情况下，数据被读取之后，数据库立即解锁。例如select * from table中，先锁定第一行，读取后，立即解锁第一行，然后再锁定第二行，这样大大降低锁争用程度。在repeatable read和serializable 这两种事务隔离级别下，共享锁是在事务结束时释放的，serializable对表加锁。 </p>
+<h3 id="排它锁-独占锁-写锁"><a href="#排它锁-独占锁-写锁" class="headerlink" title="排它锁(独占锁)(写锁)"></a>排它锁(独占锁)(写锁)</h3><p>写锁是排他的，一个写锁会阻塞其他的读锁和写锁，只有这样才能保证同一时刻，只有一个用户能够写入，并阻止其他用户读取正在写入的同一资源。如果要锁定的数据资源，已经放置了其他的锁，则不能再放置排它锁。<br>加锁条件：当执行insert update 和delete语句时，数据库会对操纵的资源使用排它锁。<br>解锁条件：事务结束时解锁。 </p>
+<h2 id="锁原理"><a href="#锁原理" class="headerlink" title="锁原理"></a>锁原理</h2><p>锁的基本原理如下：</p>
+<p>1.当第一个事务访问数据库资源时，如果执行select语句，则必须先获得共享锁，如果执行insert update和delete时，必须获得排它锁<br>2.当第二个事务也要访问相同的资源时，如果执行select语句，也必须先获得共享锁，如果执行insert update或者delete，也必须获得共享锁。根据已经放置在资源上的锁类型，来决定第二个事务是应该等待第一个事务释放锁，还是立即获得锁。 </p>
+<table>
+<thead>
+<tr>
+<th>资源上的锁</th>
+<th>第二个事务进行读</th>
+<th>第二个事务进行写</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>无</td>
+<td>立即获得共享锁</td>
+<td>立即获得排他锁</td>
+</tr>
+<tr>
+<td>共享锁</td>
+<td>立即获得共享锁</td>
+<td>等待第一个事务释放锁</td>
+</tr>
+<tr>
+<td>排他锁</td>
+<td>等待第一个事务释放锁</td>
+<td>等待第一个事务释放锁</td>
+</tr>
+</tbody></table>
+<h2 id="锁粒度"><a href="#锁粒度" class="headerlink" title="锁粒度"></a>锁粒度</h2><p>常见的锁有表锁、 行锁、 页锁、外键锁等。 </p>
+<p>锁有一定的消耗，主要有：获得锁，检查锁是否已经解除，释放锁等，这些操作都会增加系统的开销。<br>表锁开销比较小，但是并发性能也较差，行锁并发性能高，但是需要更多锁，数据库系统一般都支持锁的自动升级，例如一个事务中的锁过多的时候，可能会将行锁升级到表锁。</p>
+<p>mysql的各个存储引擎根据不同的应用场景采用不同的锁机制，MyISAM存储引擎采用表锁，InnoDB使用行锁。如果执行alert table之类的操作，服务器也会采用表锁，而忽略存储引擎的锁机制。<br>页锁，某些数据库支持页锁，页锁粒度介于行锁和表锁之间，用于锁定存放数据的页，1页通常含有n个数据行。 </p>
+<p>外键锁：外键会产生高级别的锁，后面介绍死锁的时候会提到。 </p>
+<h2 id="乐观锁和悲观锁"><a href="#乐观锁和悲观锁" class="headerlink" title="乐观锁和悲观锁"></a>乐观锁和悲观锁</h2><p>悲观锁：假设如果不加锁就一定会出现问题。<br>乐观锁：先假定不会出现并发问题，出现问题后再采取相应的措施。<br>悲观锁通过<code>select * from tbl for update</code>实现。<br>乐观锁可以在表中加一个version字段，每次更新的时候都+1，这样如果出现并发，第二次更新的时候version的值已经不再匹配，可以在这时采取相应的措施。</p>
+<h2 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h2><h3 id="死锁是如何产生的"><a href="#死锁是如何产生的" class="headerlink" title="死锁是如何产生的"></a>死锁是如何产生的</h3><p>同java的死锁一样，都是互相等待对方释放锁，造成了相互阻塞，造成的死锁。<br>请看下面的表格： </p>
+<p><img src="/images/database/lock/concept-02.gif"></p>
+<h3 id="如何避免死锁"><a href="#如何避免死锁" class="headerlink" title="如何避免死锁"></a>如何避免死锁</h3><p>1.修改操作表的顺序<br>从上面的示例中可以看出，如果调整一下操作表的顺序就可以避免死锁。<br>2.外键<br>如果向子表写记录，那么外键约束会检查父表的记录，并锁住父表的记录，来保证这条记录不会在这个事务完成之时就被删除了。<br>产生高级别的锁，会阻止其他事务操作或者其他DML操作，如果是因为外键产生的死锁，可以去掉外键约束，由应用来保证数据的完整性，通常生产环境都不建议加外键约束。<br>3.短事务<br>缩短事务的执行时间，可以减少锁的持有时间，可以降低死锁的风险。 </p>
+<h2 id="锁可能出现的问题"><a href="#锁可能出现的问题" class="headerlink" title="锁可能出现的问题"></a>锁可能出现的问题</h2><p>上锁是有开销的，即使不是给数据行而是给数据页上锁，也是有一定的时间的，如果第一个事务update一张大表，这时候第二个事务update这张大表比较靠后的位置的数据，这时候就可能会出现，第一个事务还没来得及给相应的数据上锁，第二个事务已经上了锁，所以出现第一个事务要等待第二个事务提交后释放锁，才能继续执行的情况。 </p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/best_practices/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/best_practices/" class="post-title-link" itemprop="url">MySQL数据库设计总结</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-01 00:00:00" itemprop="dateCreated datePublished" datetime="2016-12-01T00:00:00+08:00">2016-12-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="MySQL数据库设计总结"><a href="#MySQL数据库设计总结" class="headerlink" title="MySQL数据库设计总结"></a>MySQL数据库设计总结</h1><blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.qcloud.com/community/article/119">参考文献: MySQL数据库设计总结</a></p>
+</blockquote>
+<h2 id="常用规则"><a href="#常用规则" class="headerlink" title="常用规则"></a>常用规则</h2><p><strong>规则1</strong>：一般情况可以选择<code>MyISAM</code>存储引擎，如果需要事务支持必须使用<code>InnoDB</code>存储引擎。</p>
+<p>注意：<code>MyISAM</code>存储引擎 <code>B-tree索引</code>有一个很大的限制：参与一个<strong>索引的所有字段的长度之和不能超过1000字节</strong>。另外<strong>MyISAM数据和索引是分开</strong>，而<code>InnoDB</code>的数据存储是按<strong>聚簇(cluster)索引有序排列</strong>的，主键是默认的<strong>聚簇(cluster)索引</strong>，因此<code>MyISAM</code>虽然在一般情况下，查询性能比<code>InnoDB</code>高，但<code>InnoDB</code>的以主键为条件的查询性能是非常高的。</p>
+<p><strong>规则2</strong>：命名规则。</p>
+<ol>
+<li>数据库和表名应尽可能和所服务的业务模块名一致</li>
+<li>服务与同一个子模块的一类表应尽量以子模块名(或部分单词)为前缀或后缀</li>
+<li>表名应尽量包含与所存放数据对应的单词</li>
+<li>字段名称也应尽量保持和实际数据相对应</li>
+<li>联合索引名称应尽量包含所有索引键字段名或缩写，且各字段名在索引名中的顺序应与索引键在索引中的索引顺序一致，并尽量包含一个类似idx的前缀或后缀，以表明期对象类型是索引。</li>
+<li>约束等其他对象也应该尽可能包含所属表或其他对象的名称，以表明各自的关系</li>
+</ol>
+<p><strong>规则3</strong>：数据库字段类型定义</p>
+<ol>
+<li>经常需要计算和排序等消耗CPU的字段,应该尽量选择更为迅速的字段，如用<code>TIMESTAMP</code>(4个字节，最小值<code>1970-01-01 00:00:00</code>)代替<code>Datetime</code>（8个字节，最小值<code>1001-01-01 00:00:00</code>）,通过整型替代浮点型和字符型</li>
+<li>变长字段使用<code>varchar</code>，不要使用<code>char</code></li>
+<li>对于二进制多媒体数据，流水队列数据(如日志)，超大文本数据不要放在数据库字段中</li>
+</ol>
+<p><strong>规则4</strong>：业务逻辑执行过程必须读到的表中必须要有初始的值。避免业务读出为负或无穷大的值导致程序失败</p>
+<p><strong>规则5</strong>：并不需要一定遵守范式理论，适度的冗余，让Query尽量减少Join</p>
+<p><strong>规则6</strong>：访问频率较低的大字段拆分出数据表。有些大字段占用空间多，访问频率较其他字段明显要少很多，这种情况进行拆分，频繁的查询中就不需要读取大字段，造成IO资源的浪费。</p>
+<p><strong>规则7</strong>：大表可以考虑水平拆分。大表影响查询效率，根据业务特性有很多拆分方式，像根据时间递增的数据，可以根据时间来分。以id划分的数据，可根据id%数据库个数的方式来拆分。</p>
+<h2 id="一-数据库索引"><a href="#一-数据库索引" class="headerlink" title="一.数据库索引"></a>一.数据库索引</h2><p><strong>规则8</strong>：业务需要的相关索引是根据实际的设计所构造sql语句的**<em>where条件**</em>来确定的，<br>业务不需要的字段不要建索引，不允许在联合索引（或主键）中存在多余的字段。特别是该字段根本不会在条件语句中出现。</p>
+<p><strong>规则9</strong>：唯一确定一条记录的一个字段或多个字段要建立主键或者唯一索引，不能唯一确定一条记录，为了提高查询效率建普通索引</p>
+<p><strong>规则10</strong>：业务使用的表，有些记录数很少，甚至只有一条记录，为了<strong>约束</strong>的需要，也要建立索引或者设置主键。</p>
+<p><strong>规则11</strong>：对于取值不能重复，经常作为查询条件的字段，应该建唯一索引(主键默认唯一索引)，并且将查询条件中该字段的条件置于第一个位置。没有必要再建立与该字段有关的联合索引。</p>
+<p><strong>规则12</strong>：对于经常查询的字段，其<strong>值不唯一</strong>，也应该考虑建立<strong>普通索引</strong>，查询语句中该字段条件置于第一个位置，对联合索引处理的方法同样。</p>
+<p><strong>规则13</strong>：业务通过不唯一索引访问数据时，需要考虑通过该索引值返回的记录稠密度，原则上可能的<strong>稠密度最大不能高于0.2</strong>，如果稠密度太大，则不合适建立索引了。</p>
+<blockquote>
+<p>当通过这个索引查找得到的数据量占到表内所有数据的20%以上时，则需要考虑建立该索引的代价，同时由于索引扫描产生的都是随机I/O，生成效率比全表顺序扫描的顺序I/O低很多。数据库系统优化query的时候有可能不会用到这个索引。</p>
+</blockquote>
+<p><strong>规则14</strong>：需要联合索引(或联合主键)的数据库要注意索引的顺序。SQL语句中的匹配条件也要跟索引的顺序保持一致。</p>
+<p>注意：索引的顺势不正确也可能导致严重的后果。</p>
+<p><strong>规则15</strong>：表中的多个字段查询作为查询条件，不含有其他索引，并且字段联合值不重复，可以在这多个字段上建唯一的联合索引，假设索引字段为 (a1,a2,…an),则查询条件<code>(a1 op val1,a2 op val2,...am op valm)m&lt;=n</code>,可以用到索引，查询条件中字段的位置与索引中的字段位置是一致的。</p>
+<p><strong>规则16</strong>：联合索引的建立原则(以下均假设在数据库表的字段a,b,c上建立联合索引(<code>a,b,c</code>))</p>
+<ol>
+<li>联合索引中的字段应尽量满足过滤数据从多到少的顺序，也就是说差异最大的字段应该放在第一个字段</li>
+<li>建立索引尽量与SQL语句的条件顺序一致，使SQL语句尽量以整个索引为条件，尽量避免以索引的一部分(特别是首个条件与索引的首个字段不一致时)作为查询的条件</li>
+<li><code>Where a=1</code>, <code>where a&gt;=12 and a&lt;15</code>, <code>where a=1 and b&lt;5</code> , <code>where a=1 and b=7 and c&gt;=40</code>为条件可以用到此联合索引；而这些语句<code>where b=10</code>, <code>where c=221</code>, <code>where b&gt;=12 and c=2</code>则无法用到这个联合索引。</li>
+<li>当需要查询的数据库字段全部在索引中体现时，数据库可以直接查询索引得到查询信息无须对整个表进行扫描(这就是所谓的key-only)，能大大的提高查询效率。<br>当a，ab，abc与其他表字段关联查询时可以用到索引</li>
+<li>当a，ab，abc顺序而不是b，c，bc，ac为顺序执行Order by或者group不要时可以用到索引</li>
+<li>以下情况时，进行表扫描然后排序可能比使用联合索引更加有效<ul>
+<li>a. 表已经按照索引组织好了</li>
+<li>b. 被查询的数据占所有数据的很多比例。</li>
+</ul>
+</li>
+</ol>
+<p><strong>规则17</strong>：重要业务访问数据表时。但不能通过索引访问数据时，应该确保顺序访问的记录数目是有限的，原则上不得多于10.</p>
+<h2 id="二-Query语句与应用系统优化"><a href="#二-Query语句与应用系统优化" class="headerlink" title="二. Query语句与应用系统优化"></a>二. Query语句与应用系统优化</h2><p><strong>规则18</strong>：合理构造Query语句</p>
+<ol>
+<li><p>Insert语句中，根据测试，批量一次插入1000条时效率最高，多于1000条时，要拆分，多次进行同样的插入，应该合并批量进行。注意query语句的长度要小于mysqld的参数 max_allowed_packet</p>
+</li>
+<li><p>查询条件中各种逻辑操作符性能顺序是and,or,in,因此在查询条件中应该尽量避免使用在大集合中使用in</p>
+</li>
+<li><p>永远用小结果集驱动大记录集，因为在mysql中，只有Nested Join一种Join方式，就是说mysql的join是通过嵌套循环来实现的。通过小结果集驱动大记录集这个原则来减少嵌套循环的循环次数，以减少IO总量及CPU运算次数</p>
+</li>
+<li><p>尽量优化Nested Join内层循环。</p>
+</li>
+<li><p>只取需要的columns，尽量不要使用<code>select *</code></p>
+</li>
+<li><p>仅仅使用最有效的过滤字段，where 字句中的过滤条件少为好</p>
+</li>
+<li><p>尽量避免复杂的Join和子查询</p>
+<p>Mysql在并发这块做得并不是太好，当并发量太高的时候，整体性能会急剧下降，这主要与Mysql内部资源的争用锁定控制有关，<code>MyIsam</code>用表锁，<code>InnoDB</code>好一些用行锁。</p>
+</li>
+</ol>
+<p><strong>规则19</strong>：应用系统的优化</p>
+<ol>
+<li>合理使用<code>cache</code>，对于变化较少的部分活跃数据通过应用层的<code>cache</code>缓存到内存中，对性能的提升是成数量级的。</li>
+<li>对重复执行相同的query进行合并，减少IO次数。</li>
+<li>事务相关性最小原则</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/mongodb/the-little-mongodb-book/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/mongodb/the-little-mongodb-book/" class="post-title-link" itemprop="url">The Little MongoDB Book</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-11-27 08:44:00" itemprop="dateCreated datePublished" datetime="2016-11-27T08:44:00+08:00">2016-11-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/NOSQL/" itemprop="url" rel="index"><span itemprop="name">NOSQL</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><img src="/images/NOSQL/mongodb/mongodb-the-little-mongodb-book.png"></p>
+<h1 id="关于本书"><a href="#关于本书" class="headerlink" title="关于本书"></a>关于本书</h1><h2 id="许可"><a href="#许可" class="headerlink" title="许可"></a>许可</h2><p>本书《 The Little MongoDB Book 》基于 Attribution-NonCommercial 3.0 Unported license. <strong>你无须为本书付款。</strong></p>
+<p>你可以自由的复制，分发，修改和传阅本书。但请认可该书属于作者 Karl Seguin，并请勿将本书用于任何商业目的。</p>
+<p>你可以在以下链接查看完整的许可文档:</p>
+<p><a target="_blank" rel="noopener" href="http://creativecommons.org/licenses/by-nc/3.0/legalcode">http://creativecommons.org/licenses/by-nc/3.0/legalcode</a></p>
+<h2 id="关于作者"><a href="#关于作者" class="headerlink" title="关于作者"></a>关于作者</h2><p>Karl Seguin 在多领域有着丰富经验，他是 .NET 和 Ruby 的开发专家。他也参与贡献 OSS 项目, 还是技术文档撰写人而且偶尔做做演讲。MongoDB 方面，他是 C# MongoDB 库 NoRM 的核心开发者，写有互动入门教程 <a target="_blank" rel="noopener" href="http://openmymind.net/mongly/">mongly</a> 和 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/Mongo-Web-Admin">Mongo Web Admin</a>。他用 MongoDB，为休闲游戏开发者写了一个免费服务, <a target="_blank" rel="noopener" href="http://mogade.com/">mogade.com</a>。</p>
+<p>Karl 还编写了 <a target="_blank" rel="noopener" href="http://openmymind.net/2012/1/23/The-Little-Redis-Book/">The Little Redis Book</a> <em>1</em></p>
+<p>你可以在 <a target="_blank" rel="noopener" href="http://openmymind.net/">http://openmymind.net</a> 找到他的 Blog，或者通过 <a target="_blank" rel="noopener" href="http://twitter.com/karlseguin">@karlseguin</a> 在 Twitter 上关注他。</p>
+<h2 id="鸣谢"><a href="#鸣谢" class="headerlink" title="鸣谢"></a>鸣谢</h2><p>特别感谢 <a target="_blank" rel="noopener" href="http://twitter.com/perryneal">Perry Neal</a>, 赐予我你的视野，精神，和热情。你赐予了我无尽的力量。感恩。</p>
+<h2 id="最新版本"><a href="#最新版本" class="headerlink" title="最新版本"></a>最新版本</h2><p>最新的版本由 Asya Kamsky 更新到了 MongoDB 2.6 。本书最新代码可以在这里获得:</p>
+<p><a target="_blank" rel="noopener" href="http://github.com/karlseguin/the-little-mongodb-book">http://github.com/karlseguin/the-little-mongodb-book</a>.</p>
+<h3 id="中文版本"><a href="#中文版本" class="headerlink" title="中文版本"></a>中文版本</h3><p>Karl 在 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book">the-little-mongodb-book</a> 的 Github 链接中给出了 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang">justinyhuang</a> 的 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang/the-little-mongodb-book-cn">the-little-mongodb-book-cn</a> 链接。但貌似 justinyhuang 并没有同步更新到 MongoDB 2.6 。内容上也和原文稍微有点出入，并且由于本人水平有限，无法提交自信正确的内容。因此重开一项目。如果你被搜索引擎引导到本工程，在此向你致歉，并希望有能力者且有时间者一同完善和同步本工程。你可以通过我的 邮箱 <a href="mailto:&#103;&#x65;&#x6d;&#105;&#110;&#x69;&#x79;&#x65;&#108;&#108;&#111;&#x77;&#x40;&#x67;&#109;&#x61;&#105;&#x6c;&#46;&#x63;&#111;&#109;">&#103;&#x65;&#x6d;&#105;&#110;&#x69;&#x79;&#x65;&#108;&#108;&#111;&#x77;&#x40;&#x67;&#109;&#x61;&#105;&#x6c;&#46;&#x63;&#111;&#109;</a> 来联系我，或者通过 <a target="_blank" rel="noopener" href="https://twitter.com/geminiyellow">@geminiyellow</a> 在 Twitter 上关注我。</p>
+<p>最新中文版本基于 <a target="_blank" rel="noopener" href="https://github.com/asya999">asya999</a> 在 May 29, 2014 提交的 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book/pull/38">#38</a> SHA 是：6d4dce8ead6a767e1e8de1b59f714510d36d366f</p>
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
+<p>这章那么短不是我的错，MongoDB 就真的很易学。</p>
+</blockquote>
+<p>都说技术在飞速发展。确实，有接连不断的新技术新方法出现。但是，我一直认为，程序员用到的基础技术的发展却是相当缓慢的。你可以好几年不学习但还能混得下去。令人惊讶的其实是成熟技术的被替换速度。就像在一夜之间，那些长期稳定成熟的技术发现它们不再被开发者关注。</p>
+<p>最好的例子就是 NoSQL 技术的发展，以及它对稳定的关系型数据库市场的蚕食。看起来就像，昨天网络还是由 RDBMS 们来驱动的，而今天，就冒出五种左右的 NoSQL 解决案已经证明了它们都是值得拥有的。</p>
+<p>虽然这些转变看起来都是一夜之间发生的，实际上他们他们可能花了数年的时间来取得公众的认可。最开始是由一小波开发者和公司在推动。解决方案被不断细化，吸取教训，然后一个新技术就这样诞生了，慢慢的后来者也开始了尝试。再次重申，NoSQL 的许多解决方案并不是为了取代传统的存储方案，而是解决一些特殊需求，填补了传统解决方案的一些空白。</p>
+<p>说了那么多，我们第一件应该解决的事情是解释一下什么是 NoSQL。它是一个宽松的概念，不同的人有不同的见解。就个人而言，我通常认为它是数据存储系统的一部分。换而言之，NoSQL (重申, 就我而言)，的好处是让你的持久层不需要一个独立的系统。历史上，传统的关系数据库厂商尝试把他们的产品当作一揽子解决方案，NoSQL 倾向于扮演，在特定的工作中充当最好的工具这种角色。因此，你的 NoSQL 架构中还是可以用到关系型数据库，比如说 MySQL，但是可以也可以用 Redis 作为系统中某部分的持久层，或者是用到 Hadoop 来处理大数据。简而言之，NoSQL 就是需要用开放的可代替的意识，使用现有的或者未来的方式和工具来管理你的数据。</p>
+<p>你会想知道，MongoDB 是不是适用于这一切。作为一个面向文档数据库，MongoDB 是最通用的 NoSQL 解决案。它可以看成是关系型数据库的代替方案。和关系型数据库一样，它也可以和其他的 NoSQL 解决案搭配在一起更好的工作。MongoDB 有优点也有缺点，我们将会在本书后面的章节中介绍。</p>
+<h1 id="开始"><a href="#开始" class="headerlink" title="开始"></a>开始</h1><p>本书大部分内容将会专注于 MongoDB 的核心功能。我们会用到 MongoDB 的 shell。因为 shell 不但有助于学习，而且还是个很有用的管理工具。实际代码中你需要用到 MongoDB 驱动。</p>
+<p>这也引出了关于 MongoDB 你所需要知道的第一件事: 它的驱动。MongoDB 有各种语言的 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/ecosystem/drivers/">官方驱动</a>。这些驱动可以认为是和你所熟悉的各种数据库驱动一样的东西。基于这些驱动，开发社区又创建了更多的语言/框架相关库。比如说，<a target="_blank" rel="noopener" href="https://github.com/atheken/NoRM">NoRM</a> 是一个 C# 语言库，用 LINQ 实现,而 <a target="_blank" rel="noopener" href="https://github.com/jnunemaker/mongomapper">MongoMapper</a> 是一个 Ruby 库，ActiveRecord-friendly。你可以选择直接对 MongoDB 核心进行开发，或选择高级库。之所以要指出，是因为许多新手都觉得迷惑，为什么这里有官方版本和社区版本 - 前者通常关心和 MongoDB 核心的通讯/连接，而后者有更多的语言和框架的实现。</p>
+<p>说到这，我希望你可以在 MongoDB 环境中尝试一下我的例子，并且在尝试解决可能遇到的问题。MongoDB 很容易安装和运行，所以让我们花几分钟把所有的东西运行起来。</p>
+<ol>
+<li><p>先打开 <a target="_blank" rel="noopener" href="http://www.mongodb.org/downloads">官方下载页面</a> ，从你选择的操作系统下面的第一行(推荐稳定版本)下载二进制文件。根据开发实际，你可以选择 32位 或者 64位。</p>
+</li>
+<li><p>解压缩文件 (随便你放哪) 然后进入 <code>bin</code> 子目录。现在还不要执行任何命令，只要记住 <code>mongod</code> 用来打开服务进程，<code>mongo</code> 打开客户端 shell - 大部分时间我们将要使用这两个命令。</p>
+</li>
+<li><p>在 <code>bin</code> 子目录下创建一个文本文件，命名为 <code>mongodb.config</code>。</p>
+</li>
+<li><p>在 mongodb.config 中添加一行: <code>dbpath=PATH_TO_WHERE_YOU_WANT_TO_STORE_YOUR_DATABASE_FILES</code>。比如，在 Windows 你可以写 <code>dbpath=c:\mongodb\data</code> ，在 Linux 可能是 <code>dbpath=/var/lib/mongodb/data</code>。</p>
+</li>
+<li><p>确保你指定的 <code>dbpath</code> 确实存在。</p>
+</li>
+<li><p>执行 mongod ，带上参数 <code>--config /path/to/your/mongodb.config</code> 。</p>
+</li>
+</ol>
+<p>以 Windows 用户为例，如果你解压下载文档到 <code>c:\mongodb\</code> ，并且你创建了 <code>c:\mongodb\data\</code> ,那么在 <code>c:\mongodb\bin\mongodb.config</code> 你要指定 <code>dbpath=c:\mongodb\data\</code>。 然后你可以在 CMD 执行 <code>mongod</code> 如下命令行 <code>c:\mongodb\bin\mongod --config c:\mongodb\bin\mongodb.config</code>。</p>
+<p>为省心你可以把 <code>bin</code> 文件夹路径添加到环境变量 PATH 中，可以简化命令。MacOSX 和 Linux 用户方法几乎一样。唯一需要改变的是路径。</p>
+<p>希望你现在已经可以启动 MongoDB 了。如果出现异常，仔细阅读一下异常信息 - 服务器对异常的解释做得非常好。</p>
+<p>现在你可以执行 <code>mongo</code> (没有 <em>d</em>) ，链接 shell 到你的服务器上了。尝试输入 <code>db.version()</code> 来确认所有都正确执行了。你应该能拿到一个已安装的版本号。</p>
+<h1 id="第一章-基础知识"><a href="#第一章-基础知识" class="headerlink" title="第一章 - 基础知识"></a>第一章 - 基础知识</h1><p>我们通过学习 MongoDB 的基本工作原理，开始我们的 MongoDB 之旅。当然，这是学习 MongoDB 的核心，它也能帮助我们回答诸如，MongoDB 适用于哪些场景这些更高层次的问题。</p>
+<p>开始之前，这有六个简单的概念我们需要了解一下。</p>
+<ol>
+<li><p>MongoDB中的 <code>database</code> 有着和你熟知的”数据库”一样的概念 (对 Oracle 来说就是 schema)。一个 MongoDB 实例中，可以有零个或多个数据库，每个都作为一个高等容器，用于存储数据。</p>
+</li>
+<li><p>数据库中可以有零个或多个 <code>collections</code> (集合)。集合和传统意义上的 <code>table</code> 基本一致，你可以简单的把两者看成是一样的东西。</p>
+</li>
+<li><p>集合是由零个或多个 <code>documents</code> (文档)组成。同样，一个文档可以看成是一 <code>row</code>。</p>
+</li>
+<li><p>文档是由零个或多个 <code>fields</code> (字段)组成。, 没错，它就是 <code>columns</code>。</p>
+</li>
+<li><p><code>Indexes</code> (索引)在 MongoDB 中扮演着和它们在 RDBMS 中一样的角色。</p>
+</li>
+<li><p><code>Cursors</code> (游标)和上面的五个概念都不一样，但是它非常重要，并且经常被忽视，因此我觉得它们值得单独讨论一下。其中最重要的你要理解的一点是，游标是，当你问 MongoDB 拿数据的时候，它会给你返回一个结果集的指针而不是真正的数据，这个指针我们叫它游标，我们可以拿游标做我们想做的任何事情，比如说计数或者跨行之类的，而无需把真正的数据拖下来，在真正的数据上操作。</p>
+</li>
+</ol>
+<p>综上，MongoDB 是由包含 <code>collections</code> 的 <code>databases</code> 组成的。而 <code>collection</code> 是由 <code>documents</code>组成。每个 <code>document</code> 是由 <code>fields</code> 组成。 <code>Collections</code> 可以被 <code>indexed</code>，以便提高查找和排序的性能。最后，当我们从 MongoDB 获取数据的时候，我们通过 <code>cursor</code> 来操作，读操作会被延迟到需要实际数据的时候才会执行。</p>
+<p>那为什么我们需要新的术语(collection vs. table, document vs. row and field vs. column)？为了让看起来更复杂点？事实上，虽然这些概念和关系型数据中的概念类似，但是还是有差异的。核心差异在于，关系型数据库是在 <code>table</code> 上定义的 <code>columns</code>，而面向文档数据库是在 <code>document</code> 上定义的 <code>fields</code>。也就是说，在 <code>collection</code> 中的每个 <code>document</code> 都可以有它自己独立的 <code>fields</code>。因此，对于 <code>collection</code> 来说是个简化了的 <code>table</code> ，但是一个 <code>document</code> 却比一 <code>row</code> 有更多的信息。</p>
+<p>虽然这些概念很重要，但是如果现在搞不明白也不要紧。多插几条数据就明白上面说的到底是什么意思了。反正，要点就是，集合不对存储内容严格限制 (所谓的无模式(schema-less))。字段由每个独立的文档进行跟踪处理。这样做的优点和缺点将在下面章节一一讨论。</p>
+<p>好了我们开始吧。如果你还没有运行 MongoDB，那么快去运行 <code>mongod</code> 服务和开启 mongo shell。shell 用的是 JavaScript。你可以试试一些全局命令，比如 <code>help</code> 或者 <code>exit</code>。如果要操作当前数据库，用 <code>db</code> ，比如 <code>db.help()</code> 或者 <code>db.stats()</code>。如果要操作指定集合，大多数情况下我们会操作集合而不是数据库，用 <code>db.COLLECTION_NAME</code> ，比如 <code>db.unicorns.help()</code> 或者 <code>db.unicorns.count()</code>。</p>
+<p>我们继续，输入 <code>db.help()</code>，就能拿到一个对 <code>db</code> 能执行的所有的命令的列表。</p>
+<p>顺便说一句:因为这是一个 JavaScript shell，如果你输入的命令漏了 <code>()</code>，你会看到这个命令的源码，而不是执行这个命令。我提一下，是为了避免你执行漏了括号的命令，拿到一个以 <code>function (...)&#123;</code> 开头的返回的时候，觉得神奇不可思议。比如说，如果你输入 <code>db.help</code> (不带括号), 你会看到 <code>help</code> 方法的内部实现。</p>
+<p>首先我们用全局的 <code>use</code> 来切换数据库，继续，输入 <code>use learn</code>。这个数据库实际存在与否完全没有关系。我们在里面生成集合的时候， <code>learn</code> 数据库会自动建起来。现在，我们在一个数据库里面了，你可以开始尝试一下数据库命令，比如 <code>db.getCollectionNames()</code>。执行之后，你会得到一个空数组 (<code>[ ]</code>)。因为集合是无模式的，我们不需要特地去配置它。我们可以简单的插入一个文档到一个新的集合。像这样，我们用 <code>insert</code> 命令，在文档中插入:</p>
+<pre><code>db.unicorns.insert(&#123;name: &#39;Aurora&#39;,
+    gender: &#39;f&#39;, weight: 450&#125;)</code></pre>
+<p>这行命令对集合 <code>unicorns</code> 执行了 <code>insert</code> 命令，并传入一个参数。MongoDB 内部用二进制序列化 JSON 格式，称为 BSON。外部，也就是说我们多数情况应该用 JSON，就像上面的参数一样。然后我们执行 <code>db.getCollectionNames()</code> ，我们将能拿到两个集合: <code>unicorns</code> 和 <code>system.indexes</code>。在每个数据库中都会有一个 <code>system.indexes</code> 集合，用来保存我们数据的的索引信息。</p>
+<p>你现在可以对用 <code>unicorns</code> 执行 <code>find</code> 命令，然后返回文档列表:</p>
+<pre><code>db.unicorns.find()</code></pre>
+<p>请注意，除你指定的字段之外，会多出一个 <code>_id</code> 字段。每个文档都会有一个唯一 <code>_id</code> 字段。你可以自己生成一个，或者让 MongoDB 帮你生成一个 <code>ObjectId</code> 类型的。多数情况下，你会乐意让 MongoDB 帮你生成的。默认的 <code>_id</code> 字段是已被索引的 - 这就说明了为什么会有 <code>system.indexes</code> 集合。你可以看看 <code>system.indexes</code>:</p>
+<pre><code>db.system.indexes.find()</code></pre>
+<p>你可以看到索引的名字，被索引的数据库和集合，以及在索引中的字段。</p>
+<p>现在，回到我们关于数组无模式的讨论中来。往 <code>unicorns</code> 插入一个完全不同的文档，比如:</p>
+<pre><code>db.unicorns.insert(&#123;name: &#39;Leto&#39;,
+    gender: &#39;m&#39;,
+    home: &#39;Arrakeen&#39;,
+    worm: false&#125;)</code></pre>
+<p>然后，再用 <code>find</code> 列出文档。等我们理解再深入一点的时候，将会讨论一下 MongoDB 的有趣行为。到这里，我希望你开始理解，为什么那些传统的术语在这里不适用了。</p>
+<h2 id="掌握选择器-Selector"><a href="#掌握选择器-Selector" class="headerlink" title="掌握选择器(Selector)"></a>掌握选择器(Selector)</h2><p>除了我们介绍过的六个概念，在开始讨论更深入的话题之前，MongoDB 还有一个应该掌握的实用概念:查询选择器。MongoDB 的查询选择器就像 SQL 语句里面的 <code>where</code> 一样。因此，你会在对集合的文档做查找，计数，更新，删除的时候用到它。选择器是一个 JSON 对象，最简单的是就是用 <code>&#123;&#125;</code> 匹配所有的文档。如果我们想找出所有母独角兽，我们可以用 <code>&#123;gender:&#39;f&#39;&#125;</code>。</p>
+<p>开始深入学习选择器之前，让我们先做些准备。首先，把刚才我们插入 <code>unicorns</code> 集合的数据删除，通过: <code>db.unicorns.remove(&#123;&#125;)</code>。现在，再插入一些用来演示的数据 (你不会手打吧):</p>
+<pre><code>db.unicorns.insert(&#123;name: &#39;Horny&#39;,
+    dob: new Date(1992,2,13,7,47),
+    loves: [&#39;carrot&#39;,&#39;papaya&#39;],
+    weight: 600,
+    gender: &#39;m&#39;,
+    vampires: 63&#125;);
+db.unicorns.insert(&#123;name: &#39;Aurora&#39;,
+    dob: new Date(1991, 0, 24, 13, 0),
+    loves: [&#39;carrot&#39;, &#39;grape&#39;],
+    weight: 450,
+    gender: &#39;f&#39;,
+    vampires: 43&#125;);
+db.unicorns.insert(&#123;name: &#39;Unicrom&#39;,
+    dob: new Date(1973, 1, 9, 22, 10),
+    loves: [&#39;energon&#39;, &#39;redbull&#39;],
+    weight: 984,
+    gender: &#39;m&#39;,
+    vampires: 182&#125;);
+db.unicorns.insert(&#123;name: &#39;Roooooodles&#39;,
+    dob: new Date(1979, 7, 18, 18, 44),
+    loves: [&#39;apple&#39;],
+    weight: 575,
+    gender: &#39;m&#39;,
+    vampires: 99&#125;);
+db.unicorns.insert(&#123;name: &#39;Solnara&#39;,
+    dob: new Date(1985, 6, 4, 2, 1),
+    loves:[&#39;apple&#39;, &#39;carrot&#39;,
+        &#39;chocolate&#39;],
+    weight:550,
+    gender:&#39;f&#39;,
+    vampires:80&#125;);
+db.unicorns.insert(&#123;name:&#39;Ayna&#39;,
+    dob: new Date(1998, 2, 7, 8, 30),
+    loves: [&#39;strawberry&#39;, &#39;lemon&#39;],
+    weight: 733,
+    gender: &#39;f&#39;,
+    vampires: 40&#125;);
+db.unicorns.insert(&#123;name:&#39;Kenny&#39;,
+    dob: new Date(1997, 6, 1, 10, 42),
+    loves: [&#39;grape&#39;, &#39;lemon&#39;],
+    weight: 690,
+    gender: &#39;m&#39;,
+    vampires: 39&#125;);
+db.unicorns.insert(&#123;name: &#39;Raleigh&#39;,
+    dob: new Date(2005, 4, 3, 0, 57),
+    loves: [&#39;apple&#39;, &#39;sugar&#39;],
+    weight: 421,
+    gender: &#39;m&#39;,
+    vampires: 2&#125;);
+db.unicorns.insert(&#123;name: &#39;Leia&#39;,
+    dob: new Date(2001, 9, 8, 14, 53),
+    loves: [&#39;apple&#39;, &#39;watermelon&#39;],
+    weight: 601,
+    gender: &#39;f&#39;,
+    vampires: 33&#125;);
+db.unicorns.insert(&#123;name: &#39;Pilot&#39;,
+    dob: new Date(1997, 2, 1, 5, 3),
+    loves: [&#39;apple&#39;, &#39;watermelon&#39;],
+    weight: 650,
+    gender: &#39;m&#39;,
+    vampires: 54&#125;);
+db.unicorns.insert(&#123;name: &#39;Nimue&#39;,
+    dob: new Date(1999, 11, 20, 16, 15),
+    loves: [&#39;grape&#39;, &#39;carrot&#39;],
+    weight: 540,
+    gender: &#39;f&#39;&#125;);
+db.unicorns.insert(&#123;name: &#39;Dunx&#39;,
+    dob: new Date(1976, 6, 18, 18, 18),
+    loves: [&#39;grape&#39;, &#39;watermelon&#39;],
+    weight: 704,
+    gender: &#39;m&#39;,
+    vampires: 165&#125;);</code></pre>
+<p>现在我们有数据了，我们可以开始来学习掌握选择器了。<code>&#123;field: value&#125;</code> 用来查找那些 <code>field</code> 的值等于 <code>value</code> 的文档。 <code>&#123;field1: value1, field2: value2&#125;</code> 相当于 <code>and</code> 查询。还有 <code>$lt</code>, <code>$lte</code>, <code>$gt</code>, <code>$gte</code> 和 <code>$ne</code> 被用来处理 小于，小于等于，大于，大于等于，和不等于操作。比如，获取所有体重大于700磅的公独角兽，我们可以这样:</p>
+<pre><code>db.unicorns.find(&#123;gender: &#39;m&#39;,
+    weight: &#123;$gt: 700&#125;&#125;)
+//or (not quite the same thing, but for
+//demonstration purposes)
+db.unicorns.find(&#123;gender: &#123;$ne: &#39;f&#39;&#125;,
+    weight: &#123;$gte: 701&#125;&#125;)</code></pre>
+<p><code>$exists</code> 用来匹配字段是否存在，比如:</p>
+<pre><code>db.unicorns.find(&#123;
+    vampires: &#123;$exists: false&#125;&#125;)</code></pre>
+<p>会返回一条文档。’$in’ 被用来匹配查询文档在我们传入的数组参数中是否存在匹配值，比如:</p>
+<pre><code>db.unicorns.find(&#123;
+    loves: &#123;$in:[&#39;apple&#39;,&#39;orange&#39;]&#125;&#125;)</code></pre>
+<p>会返回那些喜欢 <code>apple</code> 或者 <code>orange</code> 的独角兽。</p>
+<p>如果我们想要 OR 而不是 AND 来处理选择条件的话，我们可以用 <code>$or</code> 操作符，再给它一个我们要匹配的数组:</p>
+<pre><code>db.unicorns.find(&#123;gender: &#39;f&#39;,
+    $or: [&#123;loves: &#39;apple&#39;&#125;,
+          &#123;weight: &#123;$lt: 500&#125;&#125;]&#125;)</code></pre>
+<p>上面的查询会返回那些喜欢 <code>apples</code> 或者 <code>weigh</code> 小于500磅的母独角兽。</p>
+<p>在我们最后两个例子里面有个非常赞的特性。你应该已经注意到了，<code>loves</code> 字段是个数组。MongoDB 允许数组作为基本对象(first class objects)处理。这是个令人难以置信的超赞特性。一旦你开始用它，你都不知道没了它你怎么活下去了。最有趣的是，基于数组的查询变得非常简单: <code>&#123;loves: &#39;watermelon&#39;&#125;</code> 会把文档中 <code>loves</code> 中有 <code>watermelon</code> 的值全部查询出来。</p>
+<p>除了我们介绍的这些，还有更多可用的操作。所有这些都记载在 MongoDB 手册上的 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/reference/operator/query/#query-selectors">Query Selectors</a> 这一章。我们介绍的仅仅是那些你学习时所需要用到的，同时也是你最经常用到的操作。</p>
+<p>我们已经学习了选择器是如何配合 <code>find</code> 命令使用的了。还大致介绍了一下如何配合 <code>remove</code> 命令使用，<code>count</code> 命令虽然没介绍，不过你肯定知道应该怎么做，而 <code>update</code> 命令，之后我们会花多点时间来详细学习它。</p>
+<p>MongoDB 为我们的 <code>_id</code> 字段生成的 <code>ObjectId</code> 可以这样查询:</p>
+<pre><code>db.unicorns.find(
+    &#123;_id: ObjectId(&quot;TheObjectId&quot;)&#125;)</code></pre>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>我们还没有看到 <code>update</code> , 或是能拿来做更华丽事情的 <code>find</code>。不过，我们已经安装好 MongoDB 并运行起来了, 简略的介绍了一下 <code>insert</code> 和 <code>remove</code> 命令 (完整版也没比我们介绍的多什么)。 我们还介绍了 <code>find</code> 以及了解了 MongoDB <code>selectors</code> 是怎么一回事。 我们起了个很好的头，并为以后的学习奠定了坚实基础。 信不信由你，其实你已经掌握了学习 MongoDB 所必须的大多数知识 - 它真的是易学易用。 我强烈建议你在继续学习之前在本机上多试试多玩玩。 插入不同的文档，可以试试看在不同的集合中，习惯一下使用不同的选择器。试试 <code>find</code>, <code>count</code> 和 <code>remove</code>。 多试几次之后，你会发现原来看起来那么格格不入的东西，用起来居然水到渠成。</p>
+<h1 id="第二章-更新"><a href="#第二章-更新" class="headerlink" title="第二章 - 更新"></a>第二章 - 更新</h1><p>在第一章，我们介绍了 CRUD 的四分之三(create, read, update 和 delete) 操作。这章，我们来专门来讨论我们跳过的那个操作: <code>update</code>。 <code>Update</code> 有些独特的行为，这是为什么我们把它独立成章。</p>
+<h2 id="Update-覆盖还是-set"><a href="#Update-覆盖还是-set" class="headerlink" title="Update: 覆盖还是 $set"></a>Update: 覆盖还是 $set</h2><p>最简单的情况， <code>update</code> 有两个参数: 选择器 (<code>where</code>) 和需要更新字段的内容。假设 Roooooodles 长胖了，你会希望我们这样操作:</p>
+<pre><code>db.unicorns.update(&#123;name: &#39;Roooooodles&#39;&#125;,
+    &#123;weight: 590&#125;)</code></pre>
+<p>(如果你已经把 <code>unicorns</code> 集合玩坏了，它已经不是原来的数据了的话，再执行一次 <code>remove</code> 删除所有数据，然后重新插入第一章中所有的代码。)</p>
+<p>现在，如果你查一下被更新了的记录:</p>
+<pre><code>db.unicorns.find(&#123;name: &#39;Roooooodles&#39;&#125;)</code></pre>
+<p>你会发现 <code>update</code> 的第一个惊喜，没找到任何文档。因为我们指定的第二个参数没有使用任何的更新选项，因此，它 <strong>replace</strong> 了原始文档。也就是说， <code>update</code> 先根据 <code>name</code> 找到一个文档，然后用新文档(第二个参数)覆盖替换了整个文档。这和 SQL 的 <code>update</code> 命令的完全不一样。在某些情况下，这非常理想，可以用于某些完全动态更新上。但是，如果你只希望改变一个或者几个字段的值的时候，你应该用 MongoDB 的 <code>$set</code> 操作。继续，让我们来更新重置这个丢失的数据:</p>
+<pre><code>db.unicorns.update(&#123;weight: 590&#125;, &#123;$set: &#123;
+    name: &#39;Roooooodles&#39;,
+    dob: new Date(1979, 7, 18, 18, 44),
+    loves: [&#39;apple&#39;],
+    gender: &#39;m&#39;,
+    vampires: 99&#125;&#125;)</code></pre>
+<p>这里不会覆盖新字段 <code>weight</code> 因为我们没有指定它。现在让我们来执行:</p>
+<pre><code>db.unicorns.find(&#123;name: &#39;Roooooodles&#39;&#125;)</code></pre>
+<p>我们拿到了期待的结果。因此，在最开始的时候，我们正确的更新 weight 的方式应该是:</p>
+<pre><code>db.unicorns.update(&#123;name: &#39;Roooooodles&#39;&#125;,
+    &#123;$set: &#123;weight: 590&#125;&#125;)</code></pre>
+<h2 id="Update-操作符"><a href="#Update-操作符" class="headerlink" title="Update 操作符"></a>Update 操作符</h2><p>除了 <code>$set</code>，我们还可以用其他的更新操作符做些有意思的事情。所有的更新操作都是对字段起作用 - 所以你不用担心整个文档被删掉。比如，<code>$inc</code> 可以用来给一个字段增加一个正/负值。假设说 Pilot 获得了非法的两个 vampire kills 点，我们可以这样修正它:</p>
+<pre><code>db.unicorns.update(&#123;name: &#39;Pilot&#39;&#125;,
+    &#123;$inc: &#123;vampires: -2&#125;&#125;)</code></pre>
+<p>假设 Aurora 忽然长牙了，我们可以给她的 <code>loves</code> 字段加一个值，通过 <code>$push</code> 操作:</p>
+<pre><code>db.unicorns.update(&#123;name: &#39;Aurora&#39;&#125;,
+    &#123;$push: &#123;loves: &#39;sugar&#39;&#125;&#125;)</code></pre>
+<p>MongoDB 手册的 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/reference/operator/update/#update-operators">Update Operators</a> 这章，可以查到更多可用的更新操作符的信息。</p>
+<h2 id="Upserts"><a href="#Upserts" class="headerlink" title="Upserts"></a>Upserts</h2><p>用 <code>update</code> 还有一个最大的惊喜，就是它完全支持 <code>upserts</code>。所谓 <code>upsert</code> 更新，即在文档中找到匹配值时更新它，无匹配时向文档插入新值，你可以这样理解。要使用 upsert 我们需要向 update 写入第三个参数 <code>&#123;upsert:true&#125;</code>。</p>
+<p>一个最常见的例子是网站点击计数器。如果我们想保存一个实时点击总数，我们得先看看是否在页面上已经有点击记录，然后基于此再决定执行更新或者插入操作。如果省略 upsert 选项(或者设为 false)，执行下面的操作不会带来任何变化:</p>
+<pre><code>db.hits.update(&#123;page: &#39;unicorns&#39;&#125;,
+    &#123;$inc: &#123;hits: 1&#125;&#125;);
+db.hits.find();</code></pre>
+<p>但是，如果我们加上 upsert 选项，结果会大不同:</p>
+<pre><code>db.hits.update(&#123;page: &#39;unicorns&#39;&#125;,
+    &#123;$inc: &#123;hits: 1&#125;&#125;, &#123;upsert:true&#125;);
+db.hits.find();</code></pre>
+<p>由于没有找到字段 <code>page</code> 值为 <code>unicorns</code>的文档，一个新的文档被生成插入。当我们第二次执行这句命令的时候，这个既存的文档将会被更新，且 <code>hits</code> 会被增加到 2。</p>
+<pre><code>db.hits.update(&#123;page: &#39;unicorns&#39;&#125;,
+    &#123;$inc: &#123;hits: 1&#125;&#125;, &#123;upsert:true&#125;);
+db.hits.find();</code></pre>
+<h2 id="批量-Updates"><a href="#批量-Updates" class="headerlink" title="批量 Updates"></a>批量 Updates</h2><p>关于 <code>update</code> 的最后一个惊喜，默认的，它只更新单个文档。到目前为止，我们的所有例子，看起来都挺符合逻辑的。但是，如果你执行一些像这样的操作的时候:</p>
+<pre><code>db.unicorns.update(&#123;&#125;,
+    &#123;$set: &#123;vaccinated: true &#125;&#125;);
+db.unicorns.find(&#123;vaccinated: true&#125;);</code></pre>
+<p>你肯定会希望，你所有的宝贝独角兽都被接种疫苗了。为了达到这个目的， <code>multi</code> 选项需要设为 true:</p>
+<pre><code>db.unicorns.update(&#123;&#125;,
+    &#123;$set: &#123;vaccinated: true &#125;&#125;,
+    &#123;multi:true&#125;);
+db.unicorns.find(&#123;vaccinated: true&#125;);</code></pre>
+<h2 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h2><p>本章中我们介绍了集合的基本 CRUD 操作。我们详细讲解了 <code>update</code> 及它的三个有趣的行为。 首先，如果你传 MongoDB 一个文档但是不带更新操作, MongoDB 的 <code>update</code> 会默认替换现有文档。因此，你通常要用到 <code>$set</code> 操作 (或者其他各种可用的用于修改文档的操作)。 其次， <code>update</code> 支持 <code>upsert</code> 操作，当你不知道文档是否存在的时候，非常有用。 最后，默认情况下， <code>update</code> 只更新第一个匹配文档，因此当你希望更新所有匹配文档时，你要用 <code>multi</code> 。</p>
+<h1 id="第三章-掌握查询"><a href="#第三章-掌握查询" class="headerlink" title="第三章 - 掌握查询"></a>第三章 - 掌握查询</h1><p>在第一章中我们对 <code>find</code> 命令做了一个初步的了解。除了 <code>selectors</code> 以外 <code>find</code> 还有更丰富的功能。我们已经说过，<code>find</code> 返回的结果是一个 <code>cursor</code>。我们将进一步看看它到底是什么意思。</p>
+<h2 id="字段选择"><a href="#字段选择" class="headerlink" title="字段选择"></a>字段选择</h2><p>在开始 <code>cursors</code> 的话题之前，你应该知道 <code>find</code> 有第二个可选参数，叫做 “projection”。这个参数是我们要检索或者排除字段的列表。比如，我们可以仅查询返回独角兽的名字而不带别的字段:</p>
+<pre><code>db.unicorns.find(&#123;&#125;, &#123;name: 1&#125;);</code></pre>
+<p>默认的，<code>_id</code> 字段总是会返回的。我们可以通过这样显式的把它从返回结果中排除 <code>&#123;name:1, _id: 0&#125;</code>。</p>
+<p>除了 <code>_id</code> 字段，你不能把检索和排除混合使用。仔细想想，这是有道理的。你只能显式的检索或者排除某些字段。</p>
+<h2 id="排序-Ordering"><a href="#排序-Ordering" class="headerlink" title="排序(Ordering)"></a>排序(Ordering)</h2><p>到目前位置我已经提到好多次， <code>find</code> 返回的是一个游标，它只有在需要的时候才会执行。但是，你在 shell 中看确实到的是 <code>find</code> 被立刻执行了。这只是 shell 的行为。 我们可以通过一个 <code>find</code> 的链式方法，观察到 <code>cursors</code> 的真正行为。我们来看看 <code>sort</code>。我们指定我们希望排序的字段，以 JSON 方式，其中 1 表示升序 -1 表示降序。比如:</p>
+<pre><code>//heaviest unicorns first
+db.unicorns.find().sort(&#123;weight: -1&#125;)
+
+//by unicorn name then vampire kills:
+db.unicorns.find().sort(&#123;name: 1,
+    vampires: -1&#125;)</code></pre>
+<p>就像关系型数据库那样，MongoDB 允许对索引进行排序。我们再稍后将详细讨论索引。那，你应该知道的是，MongoDB 对未经索引的字段进行排序是有大小限制的。就是说，如果你试图对一个非常大的没有经过索引的结果集进行排序的话，你会得到个异常。有些人认为这是一个缺点。说实话，我是多希望更多的数据库可以有这种能力去拒绝未经优化的查询。(我不是把每个 MongoDB 的缺点硬说成优点，但是我已经看够了那些缺乏优化的数据库了，我真心希望他们能有一个 strict-mode。)</p>
+<h2 id="分页-Paging"><a href="#分页-Paging" class="headerlink" title="分页(Paging)"></a>分页(Paging)</h2><p>对结果分页可以通过 <code>limit</code> 和 <code>skip</code> 游标方法来实现。比如要获取第二和第三重的独角兽，我们可以这样:</p>
+<pre><code>db.unicorns.find()
+    .sort(&#123;weight: -1&#125;)
+    .limit(2)
+    .skip(1)</code></pre>
+<p>通过 <code>limit</code> 和 <code>sort</code> 的配合，可以在对非索引字段进行排序时避免引起问题。</p>
+<h2 id="计数-Count"><a href="#计数-Count" class="headerlink" title="计数(Count)"></a>计数(Count)</h2><p>shell 中可以直接对一个集合执行 <code>count</code> ，像这样:</p>
+<pre><code>db.unicorns.count(&#123;vampires: &#123;$gt: 50&#125;&#125;)</code></pre>
+<p>实际上，<code>count</code> 是一个 <code>cursor</code> 的方法，shell 只是简单的提供了一个快捷方式。以不提供快捷方式的方法来执行的时候需要这样(在 shell 中同样可以执行):</p>
+<pre><code>db.unicorns.find(&#123;vampires: &#123;$gt: 50&#125;&#125;)
+    .count()</code></pre>
+<h2 id="小结-2"><a href="#小结-2" class="headerlink" title="小结"></a>小结</h2><p>使用 <code>find</code> 和 <code>cursors</code> 非常简单。还讲了一些我们后面章节会用到的或是非常特殊情况才用的命令，不过不管怎样，现在，你应该已经非常熟练使用 mongo shell 以及理解 MongoDB 的基本原则了。</p>
+<h1 id="第四章-数据建模"><a href="#第四章-数据建模" class="headerlink" title="第四章 - 数据建模"></a>第四章 - 数据建模</h1><p>让我们换换思维，对 MongoDB 进行一个更抽象的理解。介绍一些新的术语和一些新的语法是非常容易的。而要接受一个以新的范式来建模，是相当不简单的。事实是，当用新技术进行建模的时候，我们中的许多人还在找什么可用的什么不可用。在这里我们只是开始新的开端，而最终你需要去在实战中练习和学习。</p>
+<p>与大多数 NoSQL 数据库相比，面向文档型数据库和关系型数据库很相似 - 至少，在建模上是这样的。但是，不同点非常重要。</p>
+<h2 id="No-Joins"><a href="#No-Joins" class="headerlink" title="No Joins"></a>No Joins</h2><p>你需要适应的第一个，也是最根本的区别就是 mongoDB 没有链接(join) 。我不知道 MongoDB 中不支持链接的具体原因，但是我知道链接基本上意味着不可扩展。就是说，一旦你把数据水平扩展，无论如何你都要放弃在客户端(应用服务器)使用链接。事实就是，数据 <em>有</em> 关系, 但 MongoDB 不支持链接。</p>
+<p>没别的办法，为了在无连接的世界生存下去，我们只能在我们的应用代码中自己实现链接。我们需要进行二次查询 <code>find</code> ，把相关数据保存到另一个集合中。我们设置数据和在关系型数据中声明一个外键没什么区别。先不管我们那美丽的 <code>unicorns</code> 了，让我们来看看我们的 <code>employees</code>。 首先我们来创建一个雇主 (我提供了一个明确的 <code>_id</code> ，这样我们就可以和例子作成一样)</p>
+<pre><code>db.employees.insert(&#123;_id: ObjectId(
+    &quot;4d85c7039ab0fd70a117d730&quot;),
+    name: &#39;Leto&#39;&#125;)</code></pre>
+<p>然后让我们加几个工人，把他们的管理者设置为 <code>Leto</code>:</p>
+<pre><code>db.employees.insert(&#123;_id: ObjectId(
+    &quot;4d85c7039ab0fd70a117d731&quot;),
+    name: &#39;Duncan&#39;,
+    manager: ObjectId(
+    &quot;4d85c7039ab0fd70a117d730&quot;)&#125;);
+db.employees.insert(&#123;_id: ObjectId(
+    &quot;4d85c7039ab0fd70a117d732&quot;),
+    name: &#39;Moneo&#39;,
+    manager: ObjectId(
+    &quot;4d85c7039ab0fd70a117d730&quot;)&#125;);</code></pre>
+<p>(有必要再重复一次， <code>_id</code> 可以是任何形式的唯一值。因为你很可能在实际中使用 <code>ObjectId</code> ，我们也在这里用它。)</p>
+<p>当然，要找出 Leto 的所有工人，只需要执行:</p>
+<pre><code>db.employees.find(&#123;manager: ObjectId(
+    &quot;4d85c7039ab0fd70a117d730&quot;)&#125;)</code></pre>
+<p>这没什么神奇的。在最坏的情况下，大多数的时间，为弥补无链接所做的仅仅是增加一个额外的查询(可能是被索引的)。</p>
+<h2 id="数组和内嵌文档"><a href="#数组和内嵌文档" class="headerlink" title="数组和内嵌文档"></a>数组和内嵌文档</h2><p>MongoDB 不支持链接不意味着它没优势。还记得我们说过 MongoDB 支持数组作为文档中的基本对象吗？这在处理多对一(many-to-one)或者多对多(many-to-many)的关系的时候非常方便。举个简单的例子，如果一个工人有两个管理者，我们只需要像这样存一下数组:</p>
+<pre><code>db.employees.insert(&#123;_id: ObjectId(
+    &quot;4d85c7039ab0fd70a117d733&quot;),
+    name: &#39;Siona&#39;,
+    manager: [ObjectId(
+    &quot;4d85c7039ab0fd70a117d730&quot;),
+    ObjectId(
+    &quot;4d85c7039ab0fd70a117d732&quot;)] &#125;)</code></pre>
+<p>有趣的是，对于某些文档，<code>manager</code> 可以是单个不同的值，而另外一些可以是数组。而我们原来的 <code>find</code> 查询依旧可用:</p>
+<pre><code>db.employees.find(&#123;manager: ObjectId(
+    &quot;4d85c7039ab0fd70a117d730&quot;)&#125;)</code></pre>
+<p>你会很快就发现，数组中的值比多对多链接表(many-to-many join-tables)要容易处理得多。</p>
+<p>数组之外，MongoDB 还支持内嵌文档。来试试看向文档插入一个内嵌文档，像这样:</p>
+<pre><code>db.employees.insert(&#123;_id: ObjectId(
+    &quot;4d85c7039ab0fd70a117d734&quot;),
+    name: &#39;Ghanima&#39;,
+    family: &#123;mother: &#39;Chani&#39;,
+        father: &#39;Paul&#39;,
+        brother: ObjectId(
+    &quot;4d85c7039ab0fd70a117d730&quot;)&#125;&#125;)</code></pre>
+<p>像你猜的那样，内嵌文档可以用 dot-notation 查询:</p>
+<pre><code>db.employees.find(&#123;
+    &#39;family.mother&#39;: &#39;Chani&#39;&#125;)</code></pre>
+<p>我们只简单的介绍一下内嵌文档适用情况，以及你怎么使用它们。</p>
+<p>结合两个概念，我们甚至可以内嵌文档数组:</p>
+<pre><code>db.employees.insert(&#123;_id: ObjectId(
+    &quot;4d85c7039ab0fd70a117d735&quot;),
+    name: &#39;Chani&#39;,
+    family: [ &#123;relation:&#39;mother&#39;,name: &#39;Chani&#39;&#125;,
+        &#123;relation:&#39;father&#39;,name: &#39;Paul&#39;&#125;,
+        &#123;relation:&#39;brother&#39;, name: &#39;Duncan&#39;&#125;]&#125;)</code></pre>
+<h2 id="反规范化-Denormalization"><a href="#反规范化-Denormalization" class="headerlink" title="反规范化(Denormalization)"></a>反规范化(Denormalization)</h2><p>另外一个代替链接的方案是对你的数据做反规范化处理(denormalization)。从历史角度看，反规范化处理是为了解决那些对性能敏感的问题，或是需要做快照的数据(比如说审计日志)。但是，随着日益增长的普及的 NoSQL，对链接的支持的日益丧失，反规范化作为规范化建模的一部分变得越来越普遍了。这不意味着，应该对你文档里的每条数据都做冗余处理。而是说，与其对冗余数据心存恐惧，让它影响你的设计决策，不如在建模的时候考虑什么信息应当属于什么文档。</p>
+<p>比如说，假设你要写一个论坛应用。传统的方式是通过 <code>posts</code> 中的 <code>userid</code> 列，来关联一个特定的 <code>user</code> 和一篇 <code>post</code> 。这样的建模，你没法在显示 <code>posts</code> 的时候不查询 (链接到) <code>users</code>。一个代替案是简单的在每篇 <code>post</code> 中把 <code>name</code> 和 <code>userid</code> 一起保存。你可能要用到内嵌文档，比如 <code>user: &#123;id: ObjectId(&#39;Something&#39;), name: &#39;Leto&#39;&#125;</code>。是的，如果你让用户可以更新他们的名字，那么你得对所有的文档都进行更新(一个多重更新)。</p>
+<p>适应这种方法不是对任何人都那么简单的。很多情况下这样做甚至是无意义的。不过不要害怕去尝试。它只是在某些情况下不适用而已，但在某些情况下是最好的解决方法。</p>
+<h2 id="你的选择是？"><a href="#你的选择是？" class="headerlink" title="你的选择是？"></a>你的选择是？</h2><p>在处理一对多(one-to-many)或者多对多(many-to-many)场景的时候，id 数组通常是一个正确的选择。但通常，新人开发者在面对内嵌文档和 “手工” 引用时，左右为难。</p>
+<p>首先，你应该知道的是，一个独立文档的大小当前被限制在 16MB 。知道了文档的大小限制，挺宽裕的，对你考虑怎么用它多少有些影响。在这点上，看起来大多数开发者都愿意手工维护数据引用关系。内嵌文档经常被用到，大多数情况下多是很小的数据块，那些总是被和父节点一起拉取的数据块。现实的例子是为每个用户保存一个 <code>addresses</code> ，看起来像这样:</p>
+<pre><code>db.users.insert(&#123;name: &#39;leto&#39;,
+    email: &#39;leto@dune.gov&#39;,
+    addresses: [&#123;street: &quot;229 W. 43rd St&quot;,
+                city: &quot;New York&quot;, state:&quot;NY&quot;,zip:&quot;10036&quot;&#125;,
+               &#123;street: &quot;555 University&quot;,
+                city: &quot;Palo Alto&quot;, state:&quot;CA&quot;,zip:&quot;94107&quot;&#125;]&#125;)</code></pre>
+<p>这并不意味着你要低估内嵌文档的能力，或者仅仅把他们当成小技巧。把你的数据模型直接映射到你的对象，这会使得问题更简单，并且通常也不需要用到链接了。尤其是，当你考虑到 MongoDB 允许你对内嵌文档和数组的字段进行查询和索引时，效果特别明显。</p>
+<h2 id="大而全还是小而专的集合？"><a href="#大而全还是小而专的集合？" class="headerlink" title="大而全还是小而专的集合？"></a>大而全还是小而专的集合？</h2><p>由于对集合没做任何的强制要求，完全可以在系统中用一个混合了各种文档的集合，但这绝对是个非常烂的主意。大多数 MongoDB 系统都采用了和关系型数据库类似的结构，分成几个集合。换而言之，如果在关系型数据库中是一个表，那么在 MongoDB 中会被作成一个集合 (many-to-many join tables being an important exception as well as tables that exist only to enable one to many relationships with simple entities)。</p>
+<p>当你把内嵌文档考虑进来的时候，这个话题会变的更有趣。常见的例子就是博客。你是应该分成一个 <code>posts</code> 集合和一个 <code>comments</code> 集合呢，还是应该每个 <code>post</code> 下面嵌入一个 <code>comments</code> 数组？ 先不考虑那个 16MB 文档大小限制 ( <em>哈姆雷特</em> 全文也没超过 200KB，所以你的博客是有多人气？)，许多开发者都喜欢把东西划分开来。这样更简洁更明确，给你更好的性能。MongoDB 的灵活架构允许你把这两种方式结合起来，你可以把评论放在独立的集合中，同时在博客帖子下嵌入一小部分评论 (比如说最新评论) ，以便和帖子一同显示。这遵守以下的规则，就是你到想在一次查询中获取到什么内容。</p>
+<p>这没有硬性规定(好吧，除了16MB限制)。尝试用不同的方法解决问题，你会知道什么能用什么不能用。</p>
+<h2 id="小结-3"><a href="#小结-3" class="headerlink" title="小结"></a>小结</h2><p>本章目标是提供一些对你在 MongoDB 中数据建模有帮助的指导, 一个新起点，如果愿意你可以这样认为。在一个面向文档系统中建模，和在面向关系世界中建模，是不一样的，但也没多少不同。你能得到更多的灵活性并且只有一个约束，而对于新系统，一切都很完美。你唯一会做错的就是你不去尝试。</p>
+<h1 id="第五章-MongoDB-适用场景"><a href="#第五章-MongoDB-适用场景" class="headerlink" title="第五章 - MongoDB 适用场景"></a>第五章 - MongoDB 适用场景</h1><p>现在你应该有感觉，何时何地把 MongoDB 融入你现有的系统是最棒的了。这有超多的新的类似的存储技术，肯定会让你在选择的时候晕头转向。</p>
+<p>对我来说，最重要的教训，跟 MongoDB 无关，是说你不用再依赖单一的解决案来处理你的数据了。毫无疑问，一个单一的解决案有明显的优势，对于许多项目来说 - 或者说大多数 - 单一解决案是一个明智的选择。意思不是说你 <em>必须</em> 使用不同的技术，而是说你 <em>可以</em>。 只有你自己才知道，引进新技术是否利大于弊。</p>
+<p>说了那么多，我希望你到目前为止学到知识让你觉得 MongoDB 是一个通用的解决案。我们已经提到很多次了，面向文档的数据库和关系型数据库有很多方面类似。因此，与其绕开这些相同点，不如我们可以简单的这样认为， MongoDB 是关系型数据库的一个代替案。比如说用 Lucene 作为关系型数据库的全文检索索引的加强，或者用 Redis 作为持久型 key-value 存储，MongoDB 就是用来保存你的数据的。</p>
+<p>注意，我没有说用 MongoDB <em>取代</em> 关系型数据库，而是 <em>代替</em> 案。它能做的有很多工具也能做。有些事情 MongoDB 可以做的更好，另外一些 MongoDB 做得差点。我们来进一步来讨论一下。</p>
+<h2 id="无模式-Flexible-Schema"><a href="#无模式-Flexible-Schema" class="headerlink" title="无模式(Flexible Schema)"></a>无模式(Flexible Schema)</h2><p>面向文档数据库经常吹嘘的一个好处就是，它不需要一个固定的模式。这使得他们比传统的数据库表要灵活得多。我同意无模式是一个很不错的特性，但不是大多数人说的那样。</p>
+<p>人们讲到无模式的时候，好像你就会把一堆乱七八糟的数据统统存起来一样。确实有些领域有些数据用关系型数据库来建模很痛苦，不过我觉得这些都是不常见的特例。无模式是酷，可是大多数情况下你的数据结构还是应当好好设计的。真正需要处理混乱时是不错，比如当你添加一个新功能的时候，不过事实是，大多数情况下，一个空列基本可以解决问题。</p>
+<p>对我来说，动态模式的真正好处在于无需很多设置以及可以降低在 OOP 中使用的阻力。这在你使用静态语言的时候尤其明显。我在 C# 和 Ruby 中用过 MongoDB ，差异非常明显。Ruby 的动态特性以及它的流行的 ActiveRecord 实现，已经大幅降低面向对象/关系开发之间差异所带来的阻力。这不是说 MongoDB 和 Ruby 不配，而是是说它们太配了。真的，我觉得许多 Ruby 开发者眼中的的 MongoDB 只是有些许改进而已，而在 C# 或者 Java 开发者眼中，MongoDB 带来的是处理数据交互方式的翻天覆地变化。</p>
+<p>假设从驱动开发者角度来看这个问题。你想保存一个对象？把它串行化成 JSON (严格来说是 BSON, 不过差不多) 然后把它传给 MongoDB。不需要做任何属性映射或者类型映射。这种简单性的好处就这样传递给了你，终端开发者。</p>
+<h2 id="写操作-Writes"><a href="#写操作-Writes" class="headerlink" title="写操作(Writes)"></a>写操作(Writes)</h2><p>MongoDB 可以胜任的一个特殊角色是在日志领域。有两点使得 MongoDB 的写操作非常快。首先，你可以选择发送了写操作命令之后立刻返回，而无须等到操作完成。其次，你可以控制数据持久性的写行为。这些设置，加上，可以定义一个成功的提交，需要在多少台服务器上成功拿到你的数据之后才算成功，并且每个写操作都是可设置, 这就给予你很高的权限用以控制写性能和数据持久性。</p>
+<p>除了这些性能因素，日志数据还是这样一种数据集，用无模式集合更有优势。最后，MongoDB 还提供了 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/core/capped-collections/">受限集合(capped collection)</a>。到目前为止，所有我们默认创建的集合都是普通集合。我们可以通过 <code>db.createCollection</code> 命令来创建一个受限集合并标记它的限制:</p>
+<pre><code>//limit our capped collection to 1 megabyte
+db.createCollection(&#39;logs&#39;, &#123;capped: true,
+    size: 1048576&#125;)</code></pre>
+<p>当我们的受限集合到达 1MB 上限的时候，旧文档会被自动清除。另外一种限制可以基于文档个数，而不是大小，用 <code>max</code> 标记。受限集合有一些非常有趣的属性。比如说，你可以更新文档但是你不能改变它的大小。插入顺序是被设置好了的，因此不需要另外提供一个索引来获取基于时间的排序，你可以 “tail” 一个受限集合，就和你在 Unix 中通过 <code>tail -f &lt;filename&gt;</code> 来处理文件一样，获取最新的数据，如果存在数据的话，而不需要重新查询它。</p>
+<p>如果想让你的数据 “过期” ，基于时间而不是整个集合的大小，你可以用 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/tutorial/expire-data/">TTL 索引</a> ，所谓 TTL 是 “time-to-live” 的缩写。</p>
+<h2 id="持久性-Durability"><a href="#持久性-Durability" class="headerlink" title="持久性(Durability)"></a>持久性(Durability)</h2><p>在 1.8 之前的版本，MongoDB 不支持单服务器持久性。就是说，如果一个服务器崩溃了，可能会导致数据的丢失或者损坏。解决案是在多服务器上运行 MongoDB 副本 (MongoDB 支持复制)。日志(Journaling)是 1.8 版追加的一个非常重要的功能。从 2.0 版的 MongoDB 开始，日志是默认启动的，该功能允许快速恢复服务器，比如遭遇到了服务器崩溃或者停电的情况。</p>
+<p>持久性在这里只是提一下，因为围绕 MongoDB 过去缺乏单服务器持久的问题，人们取得了众多成果。这个话题在以后的 Google 检索中也许还会继续出现。但是关于缺少日志功能这一缺点的信息，都是过时了的。</p>
+<h2 id="全文检索-Full-Text-Search"><a href="#全文检索-Full-Text-Search" class="headerlink" title="全文检索(Full Text Search)"></a>全文检索(Full Text Search)</h2><p>真正的全文检索是在最近加入到 MongoDB 中的。它支持十五国语言，支持词形变化(stemming)和干扰字(stop words)。除了原生的 MongoDB 的全文检索支持，如果你需要一个更强大更全面的全文检索引擎的话，你需要另找方案。</p>
+<h2 id="事务-Transactions"><a href="#事务-Transactions" class="headerlink" title="事务(Transactions)"></a>事务(Transactions)</h2><p>MongoDB 不支持事务。这有两个代替案，一个很好用但有限制，另外一个比较麻烦但灵活。</p>
+<p>第一个方案，就是各种原子更新操作。只要能解决你的问题，都挺不错。我们已经看过几个简单的了，比如 <code>$inc</code> 和 <code>$set</code>。还有像 <code>findAndModify</code> 命令，可以更新或删除文档之后，自动返回修改过的文档。</p>
+<p>第二个方案，当原子操作不能满足的时候，回到两段提交上来。对于事务，两段提交就好像给链接手工解引用。这是一个和存储无关的解决方案。两段提交实际上在关系型数据库世界中非常常用，用来实现多数据库之间的事务。 MongoDB 网站 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/tutorial/perform-two-phase-commits/">有个例子</a> 演示了最典型的场合 (资金转账)。通常的想法是，把事务的状态保存到实际的原子更新的文档中，然后手工的进行 init-pending-commit/rollback 处理。</p>
+<p>MongoDB 支持内嵌文档以及它灵活的 schema 设计，让两步提交没那么痛苦，但是它仍然不是一个好处理，特别是当你刚开始接触它的时候。</p>
+<h2 id="数据处理-Data-Processing"><a href="#数据处理-Data-Processing" class="headerlink" title="数据处理(Data Processing)"></a>数据处理(Data Processing)</h2><p>在2.2 版本之前的 MongoDB 依赖 MapReduce 来解决大部分数据处理工作。在 2.2 版本，它追加了一个强力的功能，叫做 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/core/aggregation-pipeline/">aggregation framework or pipeline</a>，因此你只要对那些尚未支持管道的，需要使用复杂方法的，不常见的聚合使用 MapReduce。下一章我们将看看聚合管道和 MapReduce 的细节。现在，你可以把他们想象成功能强大的，用不同方法实现的 <code>group by</code> (打个比方)。对于非常大的数据的处理，你可能要用到其他的工具，比如 Hadoop。值得庆幸的是，这两个系统是相辅相成的，这里有个 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/ecosystem/tools/hadoop/">MongoDB connector for Hadoop</a>。</p>
+<p>当然，关系型数据库也不擅长并行数据处理。MongoDB 有计划在未来的版本中，改善增加处理大数据集的能力。</p>
+<h2 id="地理空间查询-Geospatial"><a href="#地理空间查询-Geospatial" class="headerlink" title="地理空间查询(Geospatial)"></a>地理空间查询(Geospatial)</h2><p>一个很强大的功能就是 MongoDB 支持 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/applications/geospatial-indexes/">geospatial 索引</a>。这允许你保存 geoJSON 或者 x 和 y 坐标到文档，并查询文档，用如 <code>$near</code> 来获取坐标集，或者 <code>$within</code> 来获取一个矩形或圆中的点。这个特性最好通过一些可视化例子来演示，所以如果你想学更多的话，可以试试看 <a target="_blank" rel="noopener" href="http://mongly.openmymind.net/geo/index">5 minute geospatial interactive tutorial</a>。</p>
+<h2 id="工具和成熟度"><a href="#工具和成熟度" class="headerlink" title="工具和成熟度"></a>工具和成熟度</h2><p>你应该已经知道这个问题的答案了，MongoDB 确实比大多数的关系型数据要年轻很多。这个问题确实是你应当考虑的，但是到底有多重要，这取决于你要做什么，怎么做。不管怎么说，一个好的评估，不可能忽略 MongoDB 年轻这一事实，而可用的工具也不是很好 (虽然成熟的关系型数据库工具有些也非常渣!)。举个例子，它缺乏对十进制浮点数的支持，在处理货币的系统来说，明显是一个问题 (尽管也不是致命的) 。</p>
+<p>积极的一方面，它为大多数语言提供了驱动，协议现代而简约，开发速度相当快。MongoDB 被众多公司用到了生产环境中，虽然有所担心，但经过验证后，担心很快就变成了过去。</p>
+<h2 id="小结-4"><a href="#小结-4" class="headerlink" title="小结"></a>小结</h2><p>本章要说的是，MongoDB，大多数情况下，可以取代关系型数据库。它更简单更直接；更快速并且通常对应用开发者的约束更少。不过缺乏事务支持也许值得慎重考虑。当人们说起 <em>MongoDB 在新的数据库阵营中到底处在什么位置？</em> 时，答案很简单: <strong>中庸</strong>(<em>2</em>)。</p>
+<h1 id="第六章-数据聚合"><a href="#第六章-数据聚合" class="headerlink" title="第六章 - 数据聚合"></a>第六章 - 数据聚合</h1><h2 id="聚合管道-Aggregation-Pipeline"><a href="#聚合管道-Aggregation-Pipeline" class="headerlink" title="聚合管道(Aggregation Pipeline)"></a>聚合管道(Aggregation Pipeline)</h2><p>聚合管道提供了一种方法用于转换整合文档到集合。你可以通过管道来传递文档，就像 Unix 的 “pipe” 一样，将一个命令的输出传递到另第二个，第三个，等等。</p>
+<p>最简单的聚合，应该是你在 SQL 中早已熟悉的 <code>group by</code> 操作。我们已经看过 <code>count()</code> 方法，那么假设我们怎么才能知道有多少匹公独角兽，有多少匹母独角兽呢？</p>
+<pre><code>db.unicorns.aggregate([&#123;$group:&#123;_id:&#39;$gender&#39;,
+    total: &#123;$sum:1&#125;&#125;&#125;])</code></pre>
+<p>在 shell 中，我们有 <code>aggregate</code> 辅助类，用来执行数组的管道操作。对于简单的对某物进行分组计数，我们只需要简单的调用 <code>$group</code>。这和 SQL 中的 <code>GROUP BY</code> 完全一致，我们用来创建一个新的文档，以 <code>_id</code> 字段表示我们以什么来分组(在这里是以 <code>gender</code>) ，另外的字段通常被分配为聚合的结果，在这里，我们对匹配某一性别的各文档使用了 <code>$sum</code> 1 。你应该注意到了 <code>_id</code> 字段被分配为 <code>&#39;$gender&#39;</code> 而不是 <code>&#39;gender&#39;</code> - 字段前面的 <code>&#39;$&#39;</code> 表示，该字段将会被输入的文档中的有同样名字的值所代替，一个占位符。</p>
+<p>我们还可以用其他什么管道操作呢？在 <code>$group</code> 之前(之后也很常用)的一个是 <code>$match</code> - 这和 <code>find</code> 方法完全一样，允许我们获取文档中某个匹配的子集，或者在我们的结果中对文档进行筛选。</p>
+<pre><code>db.unicorns.aggregate([&#123;$match: &#123;weight:&#123;$lt:600&#125;&#125;&#125;,
+    &#123;$group: &#123;_id:&#39;$gender&#39;,  total:&#123;$sum:1&#125;,
+      avgVamp:&#123;$avg:&#39;$vampires&#39;&#125;&#125;&#125;,
+    &#123;$sort:&#123;avgVamp:-1&#125;&#125; ])</code></pre>
+<p>这里我们介绍另外一个管道操作 <code>$sort</code> ，作用和你想的完全一致，还有和它一起用的 <code>$skip</code> 和 <code>$limit</code>。以及用 <code>$group</code> 操作 <code>$avg</code>。</p>
+<p>MongoDB 数组非常强大，并且他们不会阻止我们往保存中的数组中写入内容。我们需要可以 “flatten” 他们以便对所有的东西进行计数:</p>
+<pre><code>db.unicorns.aggregate([&#123;$unwind:&#39;$loves&#39;&#125;,
+     &#123;$group: &#123;_id:&#39;$loves&#39;,  total:&#123;$sum:1&#125;,
+     unicorns:&#123;$addToSet:&#39;$name&#39;&#125;&#125;&#125;,
+      &#123;$sort:&#123;total:-1&#125;&#125;,
+      &#123;$limit:1&#125; ])</code></pre>
+<p>这里我们可以找出独角兽最喜欢吃的食物，以及拿到喜欢这种食物的独角兽的名单。 <code>$sort</code> 和 <code>$limit</code> 的组合能让你拿到 “top N” 这种查询的结果。</p>
+<p>还有另外一个强大的管道操作叫做 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/reference/operator/aggregation/project/#pipe._S_project"><code>$project</code></a> (类似于 <code>find</code>)，不但允许你拿到指定字段，还可以根据现存字段进行创建或计算一个新字段。比如，可以用数学操作，在做平均运算之前，对几个字段进行加法运算，或者你可以用字符串操作创建一个新的字段，用于拼接现有字段。</p>
+<p>这只是用聚合所能做到的众多功能中的皮毛， 2.6 的聚合拥有了更强大的力量，比如聚合命令可以返回结果集的游标(我们已经在第一章学过了) 或者可以将结果写到另外一个新集合中，通过 <code>$out</code> 管道操作。你可以从 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/core/aggregation-pipeline/">MongoDB 手册</a> 得到关于管道操作和表达式操作更多的例子。</p>
+<h2 id="MapReduce"><a href="#MapReduce" class="headerlink" title="MapReduce"></a>MapReduce</h2><p>MapReduce 分两步进行数据处理。首先是 map，然后 reduce。在 map 步骤中，转换输入文档和输出一个 key=&gt;value 对(key 和/或 value 可以很复杂)。然后, key/value 对以 key 进行分组，有同样的 key 的 value 会被收入一个数组中。在 reduce 步骤中，获取 key 和该 key 的 value 的数组，生成最终结果。map 和 reduce 方法用 JavaScript 来编写。</p>
+<p>在 MongoDB 中我们对一个集合使用 <code>mapReduce</code> 命令。 <code>mapReduce</code> 执行 map 方法， reduce 方法和 output 指令。在我们的 shell 中，我们可以创建输入一个 JavaScript 方法。许多库中，支持字符串方法 (有点丑)。第三个参数设置一个附加参数，比如说我们可以过滤，排序和限制那些我们想要分析的文档。我们也可以提供一个 <code>finalize</code> 方法来处理 <code>reduce</code> 步骤之后的结果。</p>
+<p>在你的大多数聚合中，也许无需用到 MapReduce , 但如果需要，你可以读到更多关于它的内容，从 <a target="_blank" rel="noopener" href="http://openmymind.net/2011/1/20/Understanding-Map-Reduce/">我的 blog</a> 和 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/core/map-reduce/">MongoDB 手册</a>。</p>
+<h2 id="小结-5"><a href="#小结-5" class="headerlink" title="小结"></a>小结</h2><p>在这章中我们介绍了 MongoDB 的 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/aggregation/">聚合功能(aggregation capabilities)</a>。 一旦你理解了聚合管道(Aggregation Pipeline)的构造，它还是相对容易编写的，并且它是一个聚合数据的强有力工具。 MapReduce 更难理解一点，不过它强力无边，就像你用 JavaScript 写的代码一样。</p>
+<h1 id="第七章-性能和工具"><a href="#第七章-性能和工具" class="headerlink" title="第七章 - 性能和工具"></a>第七章 - 性能和工具</h1><p>在这章中，我们来讲几个关于性能的话题，以及在 MongoDB 开发中用到的一些工具。我们不会深入其中的一个话题，不过我们会指出每个话题中最重要的方面。</p>
+<h2 id="索引-Index"><a href="#索引-Index" class="headerlink" title="索引(Index)"></a>索引(Index)</h2><p>首先我们要介绍一个特殊的集合 <code>system.indexes</code> ，它保存了我们数据库中所有的索引信息。索引的作用在 MongoDB 中和关系型数据库基本一致: 帮助改善查询和排序的性能。创建索引用 <code>ensureIndex</code> :</p>
+<pre><code>// where &quot;name&quot; is the field name
+db.unicorns.ensureIndex(&#123;name: 1&#125;);</code></pre>
+<p>删除索引用 <code>dropIndex</code>:</p>
+<pre><code>db.unicorns.dropIndex(&#123;name: 1&#125;);</code></pre>
+<p>可以创建唯一索引，这需要把第二个参数 <code>unique</code> 设置为 <code>true</code>:</p>
+<pre><code>db.unicorns.ensureIndex(&#123;name: 1&#125;,
+    &#123;unique: true&#125;);</code></pre>
+<p>索引可以内嵌到字段中 (再说一次，用点号) 和任何数组字段。我们可以这样创建复合索引:</p>
+<pre><code>db.unicorns.ensureIndex(&#123;name: 1,
+    vampires: -1&#125;);</code></pre>
+<p>索引的顺序 (1 升序, -1 降序) 对单键索引不起任何影响，但它会在使用复合索引的时候有所不同，比如你用不止一个索引来进行排序的时候。</p>
+<p>阅读 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/indexes/">indexes page</a> 获取更多关于索引的信息。</p>
+<h2 id="Explain"><a href="#Explain" class="headerlink" title="Explain"></a>Explain</h2><p>需要检查你的查询是否用到了索引，你可以通过 <code>explain</code> 方法:</p>
+<pre><code>db.unicorns.find().explain()</code></pre>
+<p>输出告诉我们，我们用的是 <code>BasicCursor</code> (意思是没索引), 12 个对象被扫描，用了多少时间，什么索引，如果有索引，还会有其他有用信息。</p>
+<p>如果我们改变查询索引语句，查询一个有索引的字段，我们可以看到 <code>BtreeCursor</code> 作为索引被用到填充请求中去:</p>
+<pre><code>db.unicorns.find(&#123;name: &#39;Pilot&#39;&#125;).explain()</code></pre>
+<h2 id="复制-Replication"><a href="#复制-Replication" class="headerlink" title="复制(Replication)"></a>复制(Replication)</h2><p>MongoDB 的复制在某些方面和关系型数据库的复制类似。所有的生产部署应该都是副本集，理想情况下，三个或者多个服务器都保持相同的数据。写操作被发送到单个服务器，也即主服务器，然后从它异步复制到所有的从服务器上。你可以控制是否允许从服务器上进行读操作，这可以让一些特定的查询从主服务器中分离出来，当然，存在读取到旧数据的风险。如果主服务器异常关闭，从服务中的一个将会自动晋升为新的主服务器继续工作。另外，MongoDB 的复制不在本书的讨论范围之内。</p>
+<h2 id="分片-Sharding"><a href="#分片-Sharding" class="headerlink" title="分片(Sharding)"></a>分片(Sharding)</h2><p>MongoDB 支持自动分片。分片是实现数据扩展的一种方法，依靠在跨服务器或者集群上进行数据分区来实现。一个最简单的实现是把所有的用户数据，按照名字首字母 A-M 放在服务器 1 ，然后剩下的放在服务器 2。谢天谢地，MongoDB 的拆分能力远比这种分法要强。分片不在本书的讨论范围之内，不过你应当有分片的概念，并且，当你的需求增长超过了使用单一副本集的时候，你应该考虑它。</p>
+<p>尽管复制有时候可以提高性能(通过将长时间查询隔离到从服务器，或者降低某些类型的查询的延迟),但它的主要目的是维护高可用性。分片是扩展 MongoDB 集群的主要方法。把复制和分片结合起来实现可扩展和高可用性的通用方法。</p>
+<h2 id="状态-Stats"><a href="#状态-Stats" class="headerlink" title="状态(Stats)"></a>状态(Stats)</h2><p>你可以通过 <code>db.stats()</code> 查询数据库的状态。基本上都是关于数据库大小的信息。你还可以查询集合的状态，比如说 <code>unicorns</code> 集合，可以输入 <code>db.unicorns.stats()</code>。基本上都是关于集合大小的信息，以及集合的索引信息。</p>
+<h2 id="分析器-Profiler"><a href="#分析器-Profiler" class="headerlink" title="分析器(Profiler)"></a>分析器(Profiler)</h2><p>你可以这样执行 MongoDB profiler :</p>
+<pre><code>db.setProfilingLevel(2);</code></pre>
+<p>启动之后，我们可以执行一个命令:</p>
+<pre><code>db.unicorns.find(&#123;weight: &#123;$gt: 600&#125;&#125;);</code></pre>
+<p>然后检查 profiler:</p>
+<pre><code>db.system.profile.find()</code></pre>
+<p>输出会告诉我们:什么时候执行了什么，有多少文档被扫描，有多少数据被返回。</p>
+<p>你要停止 profiler 只需要再调用一次 <code>setProfilingLevel</code> ，不过这次参数是 <code>0</code>。指定 <code>1</code> 作为第一个参数，将会统计那些超过 100 milliseconds 的任务. 100 milliseconds 是默认的阈值，你可以在第二个参数中，指定不同的阈值时间，以 milliseconds 为单位:</p>
+<pre><code>//profile anything that takes
+//more than 1 second
+db.setProfilingLevel(1, 1000);</code></pre>
+<h2 id="备份和还原"><a href="#备份和还原" class="headerlink" title="备份和还原"></a>备份和还原</h2><p>在 MongoDB 的 <code>bin</code> 目录下有一个可执行文件 <code>mongodump</code> 。简单执行 <code>mongodump</code> 会链接到 localhost 并备份你所有的数据库到 <code>dump</code> 子目录。你可以用 <code>mongodump --help</code> 查看更多执行参数。常用的参数有 <code>--db DBNAME</code> 备份指定数据库和 <code>--collection COLLECTIONNAME</code> 备份指定集合。你可以用 <code>mongorestore</code> 可执行文件，同样在 <code>bin</code> 目录下，还原之前的备份。同样， <code>--db</code> 和 <code>--collection</code> 可以指定还原的数据库和/或集合。 <code>mongodump</code> 和 <code>mongorestore</code> 使用 BSON，这是 MongoDB 的原生格式。</p>
+<p>比如，来备份我们的 <code>learn</code> 数据库导 <code>backup</code> 文件夹，我们需要执行(在控制台或者终端中执行该命令，而不是在 mongo shell 中):</p>
+<pre><code>mongodump --db learn --out backup</code></pre>
+<p>如果只还原 <code>unicorns</code> 集合，我们可以这样做:</p>
+<pre><code>mongorestore --db learn --collection unicorns \
+    backup/learn/unicorns.bson</code></pre>
+<p>值得一提的是， <code>mongoexport</code> 和 <code>mongoimport</code> 是另外两个可执行文件，用于导出和从 JSON/CSV 格式文件导入数据。比如说，我们可以像这样导出一个 JSON:</p>
+<pre><code>mongoexport --db learn --collection unicorns</code></pre>
+<p>CSV 格式是这样:</p>
+<pre><code>mongoexport --db learn \
+    --collection unicorns \
+    --csv --fields name,weight,vampires</code></pre>
+<p>注意 <code>mongoexport</code> 和 <code>mongoimport</code> 不一定能正确代表数据。真实的备份中，只能使用 <code>mongodump</code> 和 <code>mongorestore</code> 。  你可以从 MongoDB 手册中读到更多的 <a target="_blank" rel="noopener" href="http://docs.mongodb.org/manual/core/backups/">备份须知</a> 。</p>
+<h2 id="小结-6"><a href="#小结-6" class="headerlink" title="小结"></a>小结</h2><p>在这章中我们介绍了 MongoDB 的各种命令，工具和性能细节。我们没有涉及所有的东西，不过我们已经把常用的都看了一遍。MongoDB 的索引和关系型数据库中的索引非常类似，其他一些工具也一样。不过，在 MongoDB 中，这些更易于使用。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>你现在应该有足够的能力开始在真实项目中使用 MongoDB 了。虽然 MongoDB 远不止我们学到的这些内容，但是你要作的下一步是，把学到的知识融会贯通，熟悉我们需要用到的功能。<a target="_blank" rel="noopener" href="http://www.mongodb.org/">MongoDB website</a> 有许多有用的信息。官网的 <a target="_blank" rel="noopener" href="http://groups.google.com/group/mongodb-user">MongoDB user group</a> 是个问问题的好地方。</p>
+<p>NoSQL 不光是为需求而生，它同时还是不断尝试创新的成果。不得不承认，我们的领域是不断前行的。如果我们不尝试，一旦失败，我们就绝不会取得成功。就是这样的，我认为，这是让你在职业生涯一路走好的方法。</p>
+<hr>
+<p><em>1</em> :中文版本 <a target="_blank" rel="noopener" href="https://github.com/geminiyellow/the-little-redis-book/blob/master/zh-cn/redis.md">the-little-redis-book</a></p>
+<p><em>2</em> :参考 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang/the-little-mongodb-book-cn/blob/master/mongodb.md">justinyhuang</a> 的翻译。MongoDB 属于 NoSQL，但是和传统关系型数据库类似，且较为通用。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/network/security/HTTPS-SSL/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/network/security/HTTPS-SSL/" class="post-title-link" itemprop="url">HTTPS与SSL</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-10-31 12:26:00" itemprop="dateCreated datePublished" datetime="2016-10-31T12:26:00+08:00">2016-10-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/network/" itemprop="url" rel="index"><span itemprop="name">network</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="HTTPS"><a href="#HTTPS" class="headerlink" title="HTTPS"></a>HTTPS</h1><p>HTTPS(Hypertext Transfer Protocol Secure)即安全的HTTP. HTTPS的安全基础是安全套接层(Secure Sockets Layer, SSL). HTTP工作在应用层(OSI模型的最高层), SSL协议工作在一个较低的子层, 位于TCP/IP协议和HTTP协议之间. 在HTTP报文传输前对其加密, 并在到达时对其解密. 严格地讲, HTTPS并不是一个单独的协议, 而是工作在SSL协议上的HTTP协议. </p>
+<p>HTTPS，即安全的超文本传输协议，采用了SSL技术，被广泛使用以保证Web应用系统的安全性。访问Web应用的编程接口大多封装了 SSL，使得访问 HTTPS 和访问 HTTP 一样简单。</p>
+<p><img src="/images/network/security/https-protocal-ssl.png" alt="img"></p>
+<p>HTTPS主要作用有两种：(1)确认通讯双方的身份, (2)建立安全通道, 保证数据传输安全. </p>
+<h2 id="HTTPS的主要作用"><a href="#HTTPS的主要作用" class="headerlink" title="HTTPS的主要作用"></a>HTTPS的主要作用</h2><h3 id="确认通讯双方的身份"><a href="#确认通讯双方的身份" class="headerlink" title="确认通讯双方的身份"></a>确认通讯双方的身份</h3><p>HTTPS通讯中, 通过签名技术, 通讯双方可以确认对方身份. 身份认证分为单向认证和双向认证.<br>单向认证中只有服务器端有证书, 双向认证中服务器和客户端都有证书. 一般的HTTPS站点只有服务器有证书, 而客户端无证书. </p>
+<p>单向认证是双向认证的简化版. </p>
+<h3 id="建立安全通道-保证数据传输安全"><a href="#建立安全通道-保证数据传输安全" class="headerlink" title="建立安全通道, 保证数据传输安全"></a>建立安全通道, 保证数据传输安全</h3><p>基于SSL协议通讯双方可以协商一个用于对称加密的密钥, 该密钥是一个难以破解的随机数, 而且依赖通讯双方的证书、私钥等来协商. 密钥协商好后, 通讯双方用该密钥对数据进行加解密, 从而保证数据安全. </p>
+<h2 id="HTTPS与HTTP协议的差异"><a href="#HTTPS与HTTP协议的差异" class="headerlink" title="HTTPS与HTTP协议的差异"></a>HTTPS与HTTP协议的差异</h2><ol>
+<li>HTTP 的URL是以”http://“开始, HTTPS的URL是以“https://”开始；</li>
+<li>HTTP默认端口为80, HTTPS的默认端口为443；</li>
+<li>采用HTTPS的Web Server需要到CA申请证书；</li>
+<li>HTTPS由HTTP+SSL来实现, 可进行加密传输、身份认证等, 要比HTTP安全</li>
+<li>HTTP的信息是明文传输, 而HTTPS的信息是加密传输　　</li>
+</ol>
+<h1 id="HTTPS的工作原理"><a href="#HTTPS的工作原理" class="headerlink" title="HTTPS的工作原理"></a>HTTPS的工作原理</h1><p>HTTPS在传输数据之前需要客户端（浏览器）与服务端（网站）之间进行一次握手，在握手过程中将确立双方加密传输数据的密码信息。TLS/SSL协议不仅仅是一套加密传输的协议，更是一件经过艺术家精心设计的艺术品，TLS/SSL中使用了非对称加密，对称加密以及HASH算法。握手过程的简单描述如下：</p>
+<ol>
+<li>浏览器将自己支持的一套加密规则发送给网站。</li>
+<li>网站从中选出一组加密算法与HASH算法，并将自己的身份信息以证书的形式发回给浏览器。证书里面包含了网站地址，加密公钥，以及证书的颁发机构等信息。</li>
+<li>获得网站证书之后浏览器要做以下工作：<br>a) 验证证书的合法性（颁发证书的机构是否合法，证书中包含的网站地址是否与正在访问的地址一致等），如果证书受信任，则浏览器栏里面会显示一个小锁头，否则会给出证书不受信的提示。<br>b) 如果证书受信任，或者是用户接受了不受信的证书，浏览器会生成一串随机数的密码，并用证书中提供的公钥加密。<br>c) 使用约定好的HASH计算握手消息，并使用生成的随机数对消息进行加密，最后将之前生成的所有信息发送给网站。</li>
+<li>网站接收浏览器发来的数据之后要做以下的操作：<br>a) 使用自己的私钥将信息解密取出密码，使用密码解密浏览器发来的握手消息，并验证HASH是否与浏览器发来的一致。<br>b) 使用密码加密一段握手消息，发送给浏览器。</li>
+<li>浏览器解密并计算握手消息的HASH，如果与服务端发来的HASH一致，此时握手过程结束，之后所有的通信数据将由之前浏览器生成的随机密码并利用对称加密算法进行加密。</li>
+</ol>
+<p>这里浏览器与网站互相发送加密的握手消息并验证，目的是为了保证双方都获得了一致的密码，并且可以正常的加密解密数据，为后续真正数据的传输做一次测试。另外，HTTPS一般使用的加密与HASH算法如下：</p>
+<p>非对称加密算法：RSA，DSA/DSS</p>
+<p>对称加密算法：AES，RC4，3DES</p>
+<p>HASH算法：MD5，SHA1，SHA256</p>
+<p>其中非对称加密算法用于在握手过程中加密生成的密码，对称加密算法用于对真正传输的数据进行加密，而HASH算法用于验证数据的完整性。由于浏览器生成的密码是整个数据加密的关键，因此在传输的时候使用了非对称加密算法对其加密。非对称加密算法会生成公钥和私钥，公钥只能用于加密数据，因此可以随意传输，而网站的私钥用于对数据进行解密，所以网站都会非常小心的保管自己的私钥，防止泄漏。</p>
+<p><img src="/images/network/security/http-ssl.png"></p>
+<h1 id="Java中的HTTPS"><a href="#Java中的HTTPS" class="headerlink" title="Java中的HTTPS"></a>Java中的HTTPS</h1><p>Java 包含了访问 Https 链接的 API，会用到一个关键类 <strong>HttpsURLConnection</strong> ;  参见如下实现代码：</p>
+<p>代码1</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建URL对象</span></span><br><span class="line">URL myURL = <span class="keyword">new</span> URL(<span class="string">&quot;https://www.sun.com&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建HttpsURLConnection对象，并设置其SSLSocketFactory对象</span></span><br><span class="line">HttpsURLConnection httpsConn = (HttpsURLConnection) myURL.openConnection();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 取得该连接的输入流，以读取响应内容</span></span><br><span class="line">InputStreamReader insr = <span class="keyword">new</span> InputStreamReader(httpsConn.getInputStream());</span><br><span class="line"></span><br><span class="line"><span class="comment">// 读取服务器的响应内容并显示</span></span><br><span class="line"><span class="keyword">int</span> respInt = insr.read();</span><br><span class="line"><span class="keyword">while</span> (respInt != -<span class="number">1</span>) &#123;</span><br><span class="line">    System.out.print((<span class="keyword">char</span>) respInt);</span><br><span class="line">    respInt = insr.read();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在取得connection的时候和正常浏览器访问一样，仍然会<strong>验证服务端的证书是否被信任</strong>（权威机构发行或者被权威机构签名）; 如果服务端证书不被信任，则默认的实现就会有问题，一般来说，用<strong>SunJSSE</strong>会抛如下异常信息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">javax.net.ssl.SSLHandshakeException:</span><br><span class="line">sun.security.validator.ValidatorException: PKIX path building failed:</span><br><span class="line">sun.security.provider.certpath.SunCertPathBuilderException: unable to</span><br><span class="line">find valid certification path to requested target</span><br></pre></td></tr></table></figure>
+
+<h1 id="JSSE"><a href="#JSSE" class="headerlink" title="JSSE"></a>JSSE</h1><p>Java安全套接扩展 (Java Secure Socket Extension, <code>JSSE</code>) 是实现Internet安全通信的一系列包的集合。它是一个<code>SSL</code>和<code>TLS</code>的纯Java实现，可以透明地提供数据加密、服务器认证、信息完整性等功能，可以使我们像使用普通的套接字一样使用JSSE建立的安全套接字。JSSE是一个开放的标准，不只是Sun公司才能实现一个JSSE，事实上其他公司有自己实现的JSSE。</p>
+<h2 id="TrustStore文件"><a href="#TrustStore文件" class="headerlink" title="TrustStore文件"></a>TrustStore文件</h2><p>客户端的 TrustStore 文件。客户端的 TrustStore 文件中保存着被客户端所信任的服务器的证书信息。客户端在进行SSL连接时，JSSE将根据这个文件中的证书决定是否信任服务器端的证书。</p>
+<p>JSSE中，有一个信任管理器类负责决定是否信任远端的证书，这个类有如下的处理规则：</p>
+<ol>
+<li>若系统属性 <strong>javax.net.sll.trustStore</strong> 指定了 TrustStore 文件，那么信任管理器就去jre安装路径下的 lib/security/目录中寻找并使用这个文件来检查证书。</li>
+<li>若该系统属性没有指定 TrustStore 文件，它就会去jre安装路径下寻找默认的 TrustStore 文件，这个文件的相对路径为：lib/security/<strong>jssecacerts</strong>。</li>
+<li>若 jssecacerts 不存在，但是 cacerts 存在（它随J2SDK一起发行，含有数量有限的可信任的基本证书），那么这个默认的 TrustStore 文件就是 lib/security/<strong>cacerts</strong>。</li>
+</ol>
+<p>那遇到这种情况，怎么处理呢？有以下两种方案：</p>
+<ol>
+<li>按照以上信任管理器的规则，<strong>将服务端的公钥(证书)导入到jssecacerts</strong>，或者是在系统属性中设置要加载的 trustStore 文件的路径; 证书导入可以用如下命令：<code>keytool -import -file src_cer_file –keystore dest_cer_store</code> ; 证书可以通过浏览器导出获得; </li>
+<li>实现自己的证书信任管理器类，比如 <strong>MyX509TrustManager</strong> ，该类必须实现<code>X509TrustManager</code>接口中的三个method; 然后在HttpsURLConnection中加载自定义的类.</li>
+</ol>
+<p>　　Java提供了一种非常简洁的方法来访问HTTPS网页，即使用类HttpsURLConnection、URL等。这几个类为支持HTTPS对JSSE相关类做了进一步的封装，例子如下所示：</p>
+<p>TrustStore文件中导入了 <code>https://www.oracle.com</code> 的证书，运行代码 1 当使用<code>HttpsUrlConnection</code>访问该网址时，可以正常的访问。然而把访问的URL改为 <code>https://login.bjut.edu.cn</code> 时，程序将抛出异常<code>javax.net.ssl.SSLException</code>，这是由于<code>https://login.bjut.edu.cn</code> 站点的安全证书不被<code>JSSE</code>所信任。根据<code>JSSE</code>简介中对信任管理器的分析，一种解决这个问题的方法是按照信任管理器的处理规则，把站点的证书放到证书库文件<code>jssecacerts</code>中，或者把证书存放到任一 <code>TrustStore</code> 文件中，然后设置系统属性 <code>javax.net.sll.trustStore</code> 指向该文件。另一种解决方法则是自己实现信任管理器类，让它信任我们指定的证书。下面分别介绍这两种方法: </p>
+<h2 id="将证书导入到TrustStore文件中"><a href="#将证书导入到TrustStore文件中" class="headerlink" title="将证书导入到TrustStore文件中"></a>将证书导入到TrustStore文件中</h2><p>Java提供了命令行工具keytool用于创建证书或者把证书从其它文件中导入到Java自己的TrustStore文件中。把证书从其它文件导入到TrustStore文件中的命令行格式为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">keytool -import -file src_cer_file –keystore dest_cer_store</span><br></pre></td></tr></table></figure>
+<p>　　其中，src_cer_file为存有证书信息的源文件名，dest_cer_store为目标TrustStore文件。</p>
+<p>　　在使用<code>keytool</code>之前，首先要取得源证书文件，这个源文件可使用IE浏览器获得，IE浏览器会把访问过的<code>HTTPS</code>站点的证书保存到本地。从IE浏览器导出证书的方法是打开“Internet 选项”，选择“内容”选项卡，点击“证书…”按钮，在打开的证书对话框中，选中一个证书，然后点击“导出…”按钮，按提示一步步将该证书保存到一文件中。最后就可利用keytool把该证书导入到Java的TrustStore文件中。为了能使Java程序找到该文件，应该把这个文件复制到jre安装路径下的<code>lib/security/</code>目录中。</p>
+<p>　　这样，只需在程序中设置系统属性<code>javax.net.sll.trustStore</code>指向文件dest_cer_store，就能使JSSE信任该证书，从而使程序可以访问使用未经验证的证书的HTTPS站点。</p>
+<p>　　使用这种方法，编程非常简单，但需要手工导出服务器的证书。当服务器证书经常变化时，就需要经常进行手工导出证书的操作。下面介绍的实现X509证书信任管理器类的方法将避免手工导出证书的问题。</p>
+<h2 id="X509证书信任管理器类的实现及应用"><a href="#X509证书信任管理器类的实现及应用" class="headerlink" title="X509证书信任管理器类的实现及应用"></a>X509证书信任管理器类的实现及应用</h2><p>　　在JSSE中，证书信任管理器类就是实现了接口<code>X509TrustManager</code>的类。可以自己实现该接口，让它信任我们指定的证书。</p>
+<p>　　接口<code>X509TrustManager</code>有下述三个公有的方法需要我们实现：</p>
+<p>　　1. <code>void checkClientTrusted(X509Certificate[] chain, String authType)      throws CertificateException</code></p>
+<p>　　该方法检查客户端的证书，若不信任该证书则抛出异常。由于我们不需要对客户端进行认证，因此我们只需要执行默认的信任管理器的这个方法。JSSE中，默认的信任管理器类为<code>TrustManager</code>。</p>
+<p>　　1. <code>void checkServerTrusted(X509Certificate[] chain, String authType)      throws CertificateException</code></p>
+<p>　　该方法检查服务器的证书，若不信任该证书同样抛出异常。通过自己实现该方法，可以使之信任我们指定的任何证书。在实现该方法时，也可以简单的不做任何处理，即一个空的函数体，由于不会抛出异常，它就会信任任何证书。</p>
+<p>　　1. <code>X509Certificate[] getAcceptedIssuers()</code></p>
+<p>　　返回受信任的X509证书数组。</p>
+<p>　　自己实现了信任管理器类，如何使用呢？类<code>HttpsURLConnection</code>似乎并没有提供方法设置信任管理器。其实，<code>HttpsURLConnection</code>通过<code>SSLSocket</code>来建立与HTTPS的安全连接，<code>SSLSocket</code>对象是由<code>SSLSocketFactory</code>生成的。<code>HttpsURLConnection</code>提供了方法<code>setSSLSocketFactory(SSLSocketFactory)</code>设置它使用的<code>SSLSocketFactory</code>对象。<code>SSLSocketFactory</code>通过<code>SSLContext</code>对象来获得，在初始化SSLContext对象时，可指定信任管理器对象。下面用一个图简单表示这几个JSSE类的关系：</p>
+<p><img src="/images/java/JSSE-classes.gif" alt="img"></p>
+<p>　　假设自己实现的X509TrustManager类的类名为：MyX509TrustManager，下面的代码片断说明了如何使用MyX509TrustManager：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> javax.net.ssl.TrustManager;</span><br><span class="line"><span class="keyword">import</span> javax.net.ssl.TrustManagerFactory;</span><br><span class="line"><span class="keyword">import</span> javax.net.ssl.X509TrustManager;</span><br><span class="line"><span class="keyword">import</span> java.io.FileInputStream;</span><br><span class="line"><span class="keyword">import</span> java.security.KeyStore;</span><br><span class="line"><span class="keyword">import</span> java.security.cert.CertificateException;</span><br><span class="line"><span class="keyword">import</span> java.security.cert.X509Certificate;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyX509TrustManager</span> <span class="keyword">implements</span> <span class="title">X509TrustManager</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    * The default X509TrustManager returned by SunX509.  We’ll delegate</span></span><br><span class="line"><span class="comment">    * decisions to it, and fall back to the logic in this class if the</span></span><br><span class="line"><span class="comment">    * default X509TrustManager doesn’t trust it.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    X509TrustManager sunJSSEX509TrustManager;</span><br><span class="line"></span><br><span class="line">    MyX509TrustManager() <span class="keyword">throws</span> Exception &#123;</span><br><span class="line"><span class="comment">// create a &quot;default&quot; JSSE X509TrustManager.</span></span><br><span class="line"></span><br><span class="line">        KeyStore ks = KeyStore.getInstance(<span class="string">&quot;JKS&quot;</span>);</span><br><span class="line">        ks.load(<span class="keyword">new</span> FileInputStream(<span class="string">&quot;trustedCerts&quot;</span>),</span><br><span class="line">                <span class="string">&quot;passphrase&quot;</span>.toCharArray());</span><br><span class="line">        TrustManagerFactory tmf =</span><br><span class="line">                TrustManagerFactory.getInstance(<span class="string">&quot;SunX509&quot;</span>, <span class="string">&quot;SunJSSE&quot;</span>);</span><br><span class="line">        tmf.init(ks);</span><br><span class="line">        TrustManager tms[] = tmf.getTrustManagers();</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">* Iterate over the returned trustmanagers, look</span></span><br><span class="line"><span class="comment">* for an instance of X509TrustManager.  If found,</span></span><br><span class="line"><span class="comment">* use that as our &quot;default&quot; trust manager.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; tms.length; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (tms[i] <span class="keyword">instanceof</span> X509TrustManager) &#123;</span><br><span class="line">                sunJSSEX509TrustManager = (X509TrustManager) tms[i];</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">* Find some other way to initialize, or else we have to fail the</span></span><br><span class="line"><span class="comment">* constructor.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> Exception(<span class="string">&quot;Couldn’t initialize&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    * Delegate to the default trust manager.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">checkClientTrusted</span><span class="params">(X509Certificate[] chain, String authType)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> CertificateException </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            sunJSSEX509TrustManager.checkClientTrusted(chain, authType);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (CertificateException excep) &#123;</span><br><span class="line"><span class="comment">// do any special handling here, or rethrow exception.</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    * Delegate to the default trust manager.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">checkServerTrusted</span><span class="params">(X509Certificate[] chain, String authType)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> CertificateException </span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            sunJSSEX509TrustManager.checkServerTrusted(chain, authType);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (CertificateException excep) &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">        * Possibly pop up a dialog box asking whether to trust the</span></span><br><span class="line"><span class="comment">        * cert chain.</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">    * Merely pass this through.</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="keyword">public</span> X509Certificate[] getAcceptedIssuers() &#123;</span><br><span class="line">        <span class="keyword">return</span> sunJSSEX509TrustManager.getAcceptedIssuers();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用信任管理器创建HTTPS连接</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//创建SSLContext对象，并使用我们指定的信任管理器初始化</span></span><br><span class="line">TrustManager[] tm = &#123;<span class="keyword">new</span> MyX509TrustManager ()&#125;;</span><br><span class="line">SSLContext sslContext = SSLContext.getInstance(<span class="string">&quot;SSL&quot;</span>,<span class="string">&quot;SunJSSE&quot;</span>);</span><br><span class="line">sslContext.init(<span class="keyword">null</span>, tm, <span class="keyword">new</span> java.security.SecureRandom());</span><br><span class="line"></span><br><span class="line"><span class="comment">//从上述SSLContext对象中得到SSLSocketFactory对象</span></span><br><span class="line">SSLSocketFactory ssf = sslContext.getSocketFactory();</span><br><span class="line"></span><br><span class="line"><span class="comment">//创建HttpsURLConnection对象，并设置其SSLSocketFactory对象</span></span><br><span class="line">HttpsURLConnection httpsConn = (HttpsURLConnection)myURL.openConnection();</span><br><span class="line">httpsConn.setSSLSocketFactory(ssf);</span><br></pre></td></tr></table></figure>
+
+
+<p>这样，HttpsURLConnection对象就可以正常连接HTTPS了，无论其证书是否经权威机构的验证，只要实现了接口X509TrustManager的类MyX509TrustManager信任该证书。</p>
+<p>第一种方式<strong>不会破坏JSSE的安全性</strong>，但是要手工导入证书，如果服务器很多，那每台服务器的JRE都必须做相同的操作; 第二种方式<strong>灵活性更高</strong>，但是要小心实现，否则可能会留下安全隐患; </p>
+<h2 id="Java-Key-Store"><a href="#Java-Key-Store" class="headerlink" title="Java Key Store"></a>Java Key Store</h2><p>Java Key Store(JKS)是Java语言中给出的一种密码保护的文件, 可存储密钥和证书. JKS文件好比一个仓库, 为防范别人随便乱拿, 仓库可以设置一把锁, 即JKS文件的密码(storepass). 仓库里可存放多种密钥, 如公钥、私钥和密钥对(由配对公钥和私钥组成). 每个密钥都有一个名字, 称为别名(alias). 仓库里的公钥只要你能进入仓库你就可以随便查看拿走, 私钥则是有密码的(keypass), 只允许有权限的人查看拿走. 所以从JKS文件中读取公钥只需要知道JKS文件(仓库)的密码即可, 但读取私钥时则还必须有私钥的密码[1]. </p>
+<h1 id="网站支持SSL"><a href="#网站支持SSL" class="headerlink" title="网站支持SSL"></a>网站支持SSL</h1><ol>
+<li>将证书上传到服务器</li>
+<li>设置Nignx <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 需要注意：证书路径一定要对，将ssl_certificate 和 ssl_certificate_key的值改成你证书实际存放的路径</span><br><span class="line">server &#123;</span><br><span class="line">    listen 443;</span><br><span class="line">    server_name www.w3ctech.com;</span><br><span class="line">    ssl on;</span><br><span class="line">    ssl_certificate &#x2F;home&#x2F;conf&#x2F;1_www.w3ctech.com_cert.crt;</span><br><span class="line">    ssl_certificate_key &#x2F;home&#x2F;conf&#x2F;2_www.w3ctech.com.key;</span><br><span class="line">    ssl_session_timeout 5m;</span><br><span class="line">    ssl_protocols TLSv1;</span><br><span class="line">    ssl_ciphers HIGH:!aNULL:!MD5;</span><br><span class="line">    ssl_prefer_server_ciphers on;</span><br><span class="line">    location &#x2F; &#123;</span><br><span class="line">        root html;</span><br><span class="line">        index index.html index.htm;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>禁掉80端口 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    listen 443 ssl;</span><br><span class="line">    #省略其他...</span><br><span class="line">    # http访问时，301跳转至https</span><br><span class="line">    if ($scheme &#x3D; http) &#123;</span><br><span class="line">        return 301 https:&#x2F;&#x2F;$server_name$request_uri;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<hr>
+<p>[参考文献]:</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://www.blogjava.net/etlan/archive/2006/06/29/55767.html">导入HTTPS证书</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.binghe.org/2010/03/use-httpsurlconnection-in-java/">Java中用HttpsURLConnection访问Https链接的问题</a></li>
+<li><a target="_blank" rel="noopener" href="http://toutiao.com/a6346453007501377794/?iid=5952171257">实现HTTPS，原来如此简单</a></li>
+<li><a target="_blank" rel="noopener" href="http://blog.jobbole.com/48369/">HTTPS连接的前几毫秒发生了什么</a></li>
+<li><a target="_blank" rel="noopener" href="http://blog.csdn.net/tenfyguo/article/details/40958727">下】安全HTTPS-全面详解对称加密，非对称加密，数字签名，数字证书和HTTPS</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.codeceo.com/article/https-make-safe.html">详解Https是如何确保安全的？ – 码农网</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
@@ -2031,7 +2420,7 @@ rename-command FLUSHALL 1041285018a942a4922cbf76623b741e</code></pre>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">230</span>
+          <span class="site-state-item-count">224</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -2044,7 +2433,7 @@ rename-command FLUSHALL 1041285018a942a4922cbf76623b741e</code></pre>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">110</span>
+        <span class="site-state-item-count">114</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
