@@ -183,431 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/network/security/encrypt-decrypt-signature-certificate/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/network/security/encrypt-decrypt-signature-certificate/" class="post-title-link" itemprop="url">加密/解密/签名/证书及在Java中的使用</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-10-21 12:26:00" itemprop="dateCreated datePublished" datetime="2016-10-21T12:26:00+08:00">2016-10-21</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>本文属于安全专题: 旨在介绍加密和解密相关内容。<br>主要包括：加密解密算法的分类、常见的加密和解密算法以及Java API</p>
-</blockquote>
-<h1 id="摘要"><a href="#摘要" class="headerlink" title="摘要"></a>摘要</h1><p>这是一种与消息认证码结合使用以确保消息完整性的技术。主要使用单向散列函数算法，可用于检验消息的完整性，<br>和通过散列密码直接以文本形式保存等，目前广泛使用的算法有 MD4、MD5、SHA-1，jdk1.5对上面都提供了支持，<br>在java中进行消息摘要很简单， <code>java.security.MessageDigest</code> 提供了一个简易的操作方法：</p>
-<h2 id="MD5"><a href="#MD5" class="headerlink" title="MD5"></a>MD5</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 获取md5摘要</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> info 要加密的信息</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> String 获取md5摘要</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">digestWithMD5</span><span class="params">(String info)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">byte</span>[] digesta = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 得到一个md5的消息摘要</span></span><br><span class="line">        MessageDigest messageDigest = MessageDigest.getInstance(<span class="string">&quot;MD5&quot;</span>);</span><br><span class="line">        <span class="comment">// 添加要进行计算摘要的信息</span></span><br><span class="line">        messageDigest.update(info.getBytes());</span><br><span class="line">        <span class="comment">// 得到该摘要</span></span><br><span class="line">        digesta = messageDigest.digest();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 将摘要转为字符串</span></span><br><span class="line">    <span class="keyword">return</span> EncodingUtils.byte2hex(digesta);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h2 id="SHA"><a href="#SHA" class="headerlink" title="SHA"></a>SHA</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 进行SHA加密</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> info 要加密的信息</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> String 加密后的字符串</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">digestWithSHA</span><span class="params">(String info)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">byte</span>[] digesta = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 得到一个SHA-1的消息摘要</span></span><br><span class="line">        MessageDigest messageDigest = MessageDigest.getInstance(<span class="string">&quot;SHA-1&quot;</span>);</span><br><span class="line">        <span class="comment">// 添加要进行计算摘要的信息</span></span><br><span class="line">        messageDigest.update(info.getBytes());</span><br><span class="line">        <span class="comment">// 得到该摘要</span></span><br><span class="line">        digesta = messageDigest.digest();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 将摘要转为字符串</span></span><br><span class="line">    <span class="keyword">return</span> EncodingUtils.byte2hex(digesta);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h1 id="加密"><a href="#加密" class="headerlink" title="加密"></a>加密</h1><p><a href="/Java/io/object-serialization/">之前的文章</a> 介绍Java对象序列化的时候，曾经提到了对序列化后的对象加密来提高安全性。本文重点介绍<strong>Java的加解密API及其运用</strong>。</p>
-<p>消息摘要只能检查消息的完整性，但是单向的，对明文消息并不能加密，要加密明文的消息的话，就要使用其他的算法，要确保机密性，我们需要使用私钥密码术来交换私有消息。　</p>
-<p>加密，是对原文进行编码生成难以获取原文的乱码的过程。而解密则是对加密后的文本还原成原文的过程。</p>
-<h1 id="对称加密"><a href="#对称加密" class="headerlink" title="对称加密"></a>对称加密</h1><p>A用一个密钥对一个文件加密，而B读取这个文件的话，则需要和A一样的密钥，双方共享一个私钥（而在web环境下，私钥在传递时容易被侦听）：　　</p>
-<p>对称加密, 就是在编码时使用的密钥<code>e</code>和解码时一样<code>d</code>(<code>e=d</code>), 统称为密钥<code>k</code> .</p>
-<p> <strong>加解密的过程</strong></p>
-<p>发送端用共享密钥<code>k</code>对明文<code>p</code>进行加密, 得到密文<code>c</code>, 并将得到的密文发送给接收端, 接收端收到密文后, 并用其相同的共享密钥k对密文进行解密, 得出明文<code>p</code>.</p>
-<p><strong>不足</strong></p>
-<ol>
-<li>共享密钥：发送方和接收方需要首先共享相同的密钥, 即存在密钥<code>k</code>的分发问题, 如何安全的把共享密钥在双方进行分享, 这本身也是一个如何安全通信的问题:</li>
-</ol>
-<ul>
-<li>一种方法是提前双方约定好, 不通过具体的通信进行协商, 避免被监听和截获.</li>
-<li>另一种方式是通过非对称加密信道进行对称密码的分发和共享, 即<strong>混合加密系统</strong>.</li>
-</ul>
-<ol>
-<li>每方一个秘钥：密钥管理的复杂度问题. 由于对称加密的密钥是一对一的使用方式, 若一方要跟n方通信, 则需要维护n对密钥.</li>
-</ol>
-<p><strong>优点</strong></p>
-<p>加密和解密的速度要比非对称加密快很多, 因此常用非对称加密建立的安全信道进行共享密钥的分享, 完成后, 具体的加解密则使用对称加密. 即<code>混合加密系统</code>.</p>
-<p>密钥<code>k</code>的长度对解密破解的难度有很重大的影响, <code>k</code>的长度越长, 对应的密码空间就越大, 遭到暴力破解或者词典破解的难度就更大, 就更加安全.</p>
-<p>使用私钥加密的话，</p>
-<ul>
-<li>首先需要一个密钥，可用 <code>javax.crypto.KeyGenerator</code> 产生一个密钥 (<code>java.security.Key</code>),</li>
-<li>然后传递给一个加密工具(<code>javax.crypto.Cipher</code>), 该工具再使用相应的算法来进行加密，主要 对称算法有 ES（实际密钥只用到56位），AES（支持三种密钥长度：128、192、256位），通常首先128位，其他的还有DESede等，jdk1.5种也 提供了对对称算法的支持，</li>
-</ul>
-<p><strong>常见的对称加密算法</strong></p>
-<p>一般加密和解密的算法是公开的, 需要保持隐秘的是密钥<code>k</code>, 流行的<code>对称加密</code>算法有：<code>DES</code>, <code>Triple-DES</code>, <code>RC2</code>和<code>RC4</code></p>
-<h2 id="创建加密密钥"><a href="#创建加密密钥" class="headerlink" title="创建加密密钥"></a>创建加密密钥</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建对称加密的密匙</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> algorithm 加密算法,可用 DES,DESede,Blowfish</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> SecretKey 秘密（对称）密钥</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> SecretKey <span class="title">createSecretKey</span><span class="params">(String algorithm)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 声明KeyGenerator对象</span></span><br><span class="line">    KeyGenerator keygen;</span><br><span class="line">    <span class="comment">// 声明 密钥对象</span></span><br><span class="line">    SecretKey secretKey = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 返回生成指定算法的秘密密钥的 KeyGenerator 对象</span></span><br><span class="line">        keygen = KeyGenerator.getInstance(algorithm);</span><br><span class="line">        <span class="comment">// 生成一个密钥</span></span><br><span class="line">        secretKey = keygen.generateKey();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 返回密匙</span></span><br><span class="line">    <span class="keyword">return</span> secretKey;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="加密-1"><a href="#加密-1" class="headerlink" title="加密"></a>加密</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 根据密匙进行DES加密</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> key  密匙</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> info 要加密的信息</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> String 加密后的信息</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">encryptByDES</span><span class="params">(SecretKey key, String info)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 定义 加密算法,可用 DES,DESede,Blowfish</span></span><br><span class="line">    String algorithm = <span class="string">&quot;DES&quot;</span>;</span><br><span class="line">    <span class="comment">// 加密随机数生成器 (RNG),(可以不写)</span></span><br><span class="line">    SecureRandom secureRandom = <span class="keyword">new</span> SecureRandom();</span><br><span class="line">    <span class="comment">// 定义要生成的密文</span></span><br><span class="line">    <span class="keyword">byte</span>[] cipherByte = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 得到加密/解密器</span></span><br><span class="line">        Cipher cipher = Cipher.getInstance(algorithm);</span><br><span class="line">        <span class="comment">// 用指定的密钥和模式初始化Cipher对象</span></span><br><span class="line">        <span class="comment">// 参数:(ENCRYPT_MODE, DECRYPT_MODE, WRAP_MODE,UNWRAP_MODE)</span></span><br><span class="line">        cipher.init(Cipher.ENCRYPT_MODE, key, secureRandom);</span><br><span class="line">        <span class="comment">// 对要加密的内容进行编码处理,</span></span><br><span class="line">        cipherByte = cipher.doFinal(info.getBytes());</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 返回密文的十六进制形式</span></span><br><span class="line">    <span class="keyword">return</span> EncodingUtils.byte2hex(cipherByte);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="解密"><a href="#解密" class="headerlink" title="解密"></a>解密</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 根据密匙进行DES解密</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> key   密匙</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> sInfo 要解密的密文</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> String 返回解密后信息</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">decryptByDES</span><span class="params">(SecretKey key, String sInfo)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 定义 加密算法,</span></span><br><span class="line">    String algorithm = <span class="string">&quot;DES&quot;</span>;</span><br><span class="line">    <span class="comment">// 加密随机数生成器 (RNG)</span></span><br><span class="line">    SecureRandom secureRandom = <span class="keyword">new</span> SecureRandom();</span><br><span class="line">    <span class="keyword">byte</span>[] cipherByte = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 得到加密/解密器</span></span><br><span class="line">        Cipher cipher = Cipher.getInstance(algorithm);</span><br><span class="line">        <span class="comment">// 用指定的密钥和模式初始化Cipher对象</span></span><br><span class="line">        cipher.init(Cipher.DECRYPT_MODE, key, secureRandom);</span><br><span class="line">        <span class="comment">// 对要解密的内容进行编码处理</span></span><br><span class="line">        cipherByte = cipher.doFinal(EncodingUtils.hex2byte(sInfo));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// return byte2hex(cipherByte);</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> String(cipherByte);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="秘钥共享"><a href="#秘钥共享" class="headerlink" title="秘钥共享"></a>秘钥共享</h2><p>不使用随机因子</p>
-<p>//TODO 待完善</p>
-<h1 id="非对称加密"><a href="#非对称加密" class="headerlink" title="非对称加密"></a>非对称加密</h1><p>加密的密钥<code>e</code>和解密的密钥<code>d</code>是不同的（<code>e!=d</code>）, 并且加密的密钥<code>e</code>是公开的, 叫做 <code>公钥</code>, 而解密的密钥<code>d</code>是保密的, 叫<code>私钥</code>.</p>
-<p>速度很慢（比对称加密慢100到1000倍），公钥的主要算法有RSA，还包括Blowfish,Diffie-Helman 等，jdk1.5种提供了对RSA的支持，是一个改进的地方</p>
-<p>RSA算法（由发明者Rivest，Shmir和Adleman姓氏首字母缩写而来）是著名的公开密钥加密算法。</p>
-<p>非对称加密的另一用途是身份验证：用私钥加密的信息，可以用公钥对其解密，接收者由此可知这条信息确实来自于拥有私钥的某人。私钥加密的过程即数字签名。</p>
-<p>用公钥加密的数据只有私钥才能解密；相反的，用私钥加密的数据只有公钥才能解密，正是这种不对称性才使得公用密钥密码系统被广泛应用。</p>
-<p><strong>过程</strong></p>
-<p>加密一方使用接收方的公钥<code>e</code> <strong>(如何找到呢？大部分的公钥传递工作实际上都是通过数字证书来实现的)</strong>, 然后用公钥<code>e</code>对明文<code>p</code>进行加密后得到密文<code>c</code>, 并将得到的密文发送给接收方, 接收方收到密文后, 用自己保留的私钥<code>d</code>进行解密, 得到明文<code>p</code>, 需要注意的是：用公钥加密的密文, 只有拥有私钥的一方才能解密, 这样就可以解决加密的各方可以统一使用一个公钥即可.</p>
-<p><strong>优点</strong></p>
-<ol>
-<li>不存在密钥分发的问题, 解码方可以自己生成密钥对, 一个做私钥存起来, 另外一个作为公钥进行发布.</li>
-<li>解决了密钥管理的复杂度问题, 多个加密方都可以使用一个已知的公钥进行加密, 但只有拥有私钥的一方才能解密.</li>
-</ol>
-<p><strong>不足</strong></p>
-<p>加解密的速度没有对称加密快.</p>
-<p><strong>常见的非对称加密算法</strong></p>
-<p>最常见的非对称加密算法就是RSA</p>
-<h2 id="RSA"><a href="#RSA" class="headerlink" title="RSA"></a>RSA</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.security.Key;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.Cipher;</span><br><span class="line"><span class="keyword">import</span> java.security.KeyPairGenerator;</span><br><span class="line"><span class="keyword">import</span> java.security.KeyPair;</span><br><span class="line"></span><br><span class="line"><span class="keyword">byte</span>[] plainText=originString.getBytes(<span class="string">&quot;UTF8&quot;</span>);　　</span><br><span class="line"><span class="comment">//构成一个RSA密钥　</span></span><br><span class="line">System.out.println(<span class="string">&quot;Start generating RSA key&quot;</span>);</span><br><span class="line">KeyPairGenerator keyGen=KeyPairGenerator.getInstance(<span class="string">&quot;RSA&quot;</span>);</span><br><span class="line">keyGen.initialize(<span class="number">1024</span>);　　</span><br><span class="line">KeyPair key=keyGen.generateKeyPair();　</span><br><span class="line">System.out.println(<span class="string">&quot;Finish generating RSA key&quot;</span>);　　</span><br><span class="line"><span class="comment">//获得一个RSA的Cipher类，使用公鈅加密　　</span></span><br><span class="line">Cipher cipher=Cipher.getInstance(<span class="string">&quot;RSA/ECB/PKCS1Padding&quot;</span>);　</span><br><span class="line">System.out.println(<span class="string">&quot;\n&quot;</span>+cipher.getProvider().getInfo());　</span><br><span class="line">System.out.println(<span class="string">&quot;\nStart encryption&quot;</span>);　</span><br><span class="line">cipher.init(Cipher.ENCRYPT_MODE,key.getPublic());　　</span><br><span class="line"><span class="keyword">byte</span>[] cipherText=cipher.doFinal(plainText);　　</span><br><span class="line">System.out.println(<span class="string">&quot;Finish encryption:&quot;</span>);　　</span><br><span class="line">System.out.println(<span class="keyword">new</span> String(cipherText,<span class="string">&quot;UTF8&quot;</span>));　　</span><br><span class="line"><span class="comment">//使用私鈅解密　　</span></span><br><span class="line">System.out.println(<span class="string">&quot;\nStart decryption&quot;</span>);　</span><br><span class="line">cipher.init(Cipher.DECRYPT_MODE,key.getPrivate());　　</span><br><span class="line"><span class="keyword">byte</span>[] newPlainText=cipher.doFinal(cipherText);　　</span><br><span class="line">System.out.println(<span class="string">&quot;Finish decryption:&quot;</span>);　　</span><br><span class="line">String(newPlainText,<span class="string">&quot;UTF8&quot;</span>);</span><br></pre></td></tr></table></figure>
-
-<h1 id="混合加密"><a href="#混合加密" class="headerlink" title="混合加密"></a>混合加密</h1><p>混合加密系统, 比如在两个节点间通过便捷的公开密码加密技术建立起安全通信, 然后再用安全的通信产生并发送临时的随机对称密钥, 通过更快的对称加密技术对剩余的数据进行加密.</p>
-<h1 id="Cipher"><a href="#Cipher" class="headerlink" title="Cipher"></a>Cipher</h1><p>KeyGenerator</p>
-<p>javax.crypto.KeyGenerator<br>public final SecretKey generateKey()<br>//生成一个密钥</p>
-<p>public static final KeyGenerator getInstance(String algorithm)<br>//返回生成指定算法的秘密密钥的KeyGenerator对象。</p>
-<p>javax.crypto 接口 SecretKey</p>
-<p>javax.crypto.Cipher 此类为加密和解密提供密码功能。它构成了 Java Cryptographic Extension (JCE) 框架的核心</p>
-<p>public final void init(int opmode,Key key)</p>
-<p>public final byte[] doFinal(byte[] input) 按单部分操作加密或解密数据，或者结束一个多部分操作</p>
-<p>java.security.KeyPairGenerator</p>
-<p>static KeyPairGenerator getInstance(String algorithm)<br>返回生成指定算法的 public/private 密钥对的 KeyPairGenerator 对象。</p>
-<p>java.security.Signature</p>
-<p>使用 Signature 对象签名数据或验证签名包括以下三个阶段：</p>
-<ol>
-<li>初始化，使用<br>初始化验证签名的公钥（请参见 initVerify），或使用<br>初始化签署签名的私钥（也可以选择“安全随机数生成器”）initSign(PrivateKey)和initSign(PrivateKey, SecureRandom)）。</li>
-<li>更新<br>根据初始化类型，这可更新要签名或验证的字节。请参见 update 方法。</li>
-<li>签署或验证所有更新字节的签名。请参见 sign 方法和 verify 方法。</li>
-</ol>
-<h1 id="数字签名"><a href="#数字签名" class="headerlink" title="数字签名"></a>数字签名</h1><p>上面讨论了非对称加密技术在编码中的使用, 解决的是传送数据的私密性, 一般是用公钥作为<code>加密key</code>, 而私钥作为解密<code>key</code>, 那假如是用私钥作为加密key, 而公钥作为解密key呢？<br>java中为数字签名提供了良好的支持，<code>java.security.Signature</code> 类提供了消息签名：</p>
-<blockquote>
-<p>这里要求私钥加密后公钥可解密</p>
-</blockquote>
-<p>由于私钥只有对应一方才知道, 因此若通过对应的公钥可以验证对方是用对应的私钥进行加密的, 则可以说明对方的身份, 这就是<strong>数字签名</strong>.</p>
-<p> 数字签名需要解决的两个任务是：</p>
-<ol>
-<li>谁编写的报文；</li>
-<li>报文的内容是否被篡改过；</li>
-</ol>
-<p>数字签名的过程一般如下：</p>
-<ol>
-<li><em>发送方A</em> 首先对变长的报文提取成一个定长的摘要, 一般是<code>md5</code>等</li>
-<li><em>A</em> 对摘要应用了一个签名函数, 并且用自己的私钥作为参数, 因为只有<em>A</em>才知道私钥, 所以正确的签名会说明签名者就是其所有者.</li>
-<li>一旦计算出签名, 节点<em>A</em>就将其附加到报文的末尾, 并将报文和签名一起都发送给<em>B</em></li>
-<li>在<em>接收端B</em>, 首先会按照同样的算法计算出报文的摘要, 然后对签名用<em>A</em>的公钥进行解码, 得出解码后的摘要, 两个摘要进行比较, 则可以<strong>判断是否是<em>A</em>发送的且内容没被篡改过</strong>.</li>
-</ol>
-<p><img src="/images/network/security/validateSign.png" alt="数字签名"></p>
-<h2 id="创建公钥和私钥"><a href="#创建公钥和私钥" class="headerlink" title="创建公钥和私钥"></a>创建公钥和私钥</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 创建密匙组，并将公匙，私匙放入到指定文件中</span></span><br><span class="line"><span class="comment"> * &lt;p&gt;</span></span><br><span class="line"><span class="comment"> * 默认放入mykeys.bat文件中</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">createPairKeyWithDSA</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 根据特定的算法一个密钥对生成器</span></span><br><span class="line">        KeyPairGenerator keygen = KeyPairGenerator.getInstance(<span class="string">&quot;DSA&quot;</span>);</span><br><span class="line">        <span class="comment">// 加密随机数生成器 (RNG)</span></span><br><span class="line">        SecureRandom random = <span class="keyword">new</span> SecureRandom();</span><br><span class="line">        <span class="comment">// 重新设置此随机对象的种子</span></span><br><span class="line">        random.setSeed(<span class="number">1000</span>);</span><br><span class="line">        <span class="comment">// 使用给定的随机源（和默认的参数集合）初始化确定密钥大小的密钥对生成器</span></span><br><span class="line">        keygen.initialize(<span class="number">512</span>, random);<span class="comment">// keygen.initialize(512);</span></span><br><span class="line">        <span class="comment">// 生成密钥组</span></span><br><span class="line">        KeyPair keys = keygen.generateKeyPair();</span><br><span class="line">        <span class="comment">// 得到公匙</span></span><br><span class="line">        PublicKey pubkey = keys.getPublic();</span><br><span class="line">        <span class="comment">// 得到私匙</span></span><br><span class="line">        PrivateKey prikey = keys.getPrivate();        </span><br><span class="line">    &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="DSA签名"><a href="#DSA签名" class="headerlink" title="DSA签名"></a>DSA签名</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 利用私匙对信息进行签名 把签名后的信息放入到指定的文件中</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> info     要签名的信息</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> signfile 存入的文件</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">signWithDSA</span><span class="params">(String info, String signfile)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 从文件当中读取私匙</span></span><br><span class="line">    PrivateKey myprikey = ...;</span><br><span class="line">    <span class="comment">// 从文件中读取公匙</span></span><br><span class="line">    PublicKey mypubkey = ...;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// Signature 对象可用来生成和验证数字签名</span></span><br><span class="line">        Signature signet = Signature.getInstance(<span class="string">&quot;DSA&quot;</span>);</span><br><span class="line">        <span class="comment">// 初始化签署签名的私钥</span></span><br><span class="line">        signet.initSign(myprikey);</span><br><span class="line">        <span class="comment">// 更新要由字节签名或验证的数据</span></span><br><span class="line">        signet.update(info.getBytes());</span><br><span class="line">        <span class="comment">// 签署或验证所有更新字节的签名，返回签名</span></span><br><span class="line">        <span class="keyword">byte</span>[] signed = signet.sign();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="验证DSA签名"><a href="#验证DSA签名" class="headerlink" title="验证DSA签名"></a>验证DSA签名</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 读取数字签名文件 根据公匙，签名，信息验证信息的合法性</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> true 验证成功 false 验证失败</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">validateSignWithDSA</span><span class="params">(String signfile)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 读取公匙</span></span><br><span class="line">    PublicKey mypubkey = ...;</span><br><span class="line">    <span class="comment">// 读取签名</span></span><br><span class="line">    <span class="keyword">byte</span>[] signed =...;</span><br><span class="line">    <span class="comment">// 读取信息</span></span><br><span class="line">    String info = ...;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 初始一个Signature对象,并用公钥和签名进行验证</span></span><br><span class="line">        Signature signetcheck = Signature.getInstance(<span class="string">&quot;DSA&quot;</span>);</span><br><span class="line">        <span class="comment">// 初始化验证签名的公钥</span></span><br><span class="line">        signetcheck.initVerify(mypubkey);</span><br><span class="line">        <span class="comment">// 使用指定的 byte 数组更新要签名或验证的数据</span></span><br><span class="line">        signetcheck.update(info.getBytes());</span><br><span class="line">        System.out.println(info);</span><br><span class="line">        <span class="comment">// 验证传入的签名</span></span><br><span class="line">        <span class="keyword">return</span> signetcheck.verify(signed);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<h1 id="数字证书和CA"><a href="#数字证书和CA" class="headerlink" title="数字证书和CA"></a>数字证书和CA</h1><h2 id="3-1-确认主机的真实性"><a href="#3-1-确认主机的真实性" class="headerlink" title="3.1. 确认主机的真实性"></a>3.1. 确认主机的真实性</h2><p>**采用https 的server（服务器）必须从CA（Certificate Authority）申请一个用于证明服务器用途类型的数字证书（或者叫CA证书）.该证书只有用于对应的server 时，客户端才信任此主机. **</p>
-<p>CA（Certificate Authority）即”认证机构”，是负责签发证书、认证证书、管理已颁发证书的机构，是PKI（Public Key Infrastructure，公钥基础设施）的核心。它要制定政策和具体步骤来验证、识别用户身份，并对用户证书进行签名，以确保证书持有者的身份和公钥的拥有权。</p>
-<p><strong>CA 也拥有一个证书（内含公钥）和私钥</strong>。网上的公众用户通过验证 CA 的签字从而信任CA ，任何人都可以得到 CA 的证书（含公钥），用以验证它所签发的证书。</p>
-<p> </p>
-<h2 id="3-2-什么是数字证书"><a href="#3-2-什么是数字证书" class="headerlink" title="3.2. 什么是数字证书"></a>3.2. 什么是数字证书</h2><p><strong>数字证书（</strong>CA证书是经过认证的数字证书<strong>）</strong>是一个用于互联网通讯中认证身份的工具，由权威机构——CA机构（Certificate Authority）发行。其作用类似于司机的驾驶执照和公民身份证。CA作为公正的第三方来确保证书的有效性[6]。全国存在多个CA机构（只要你有公信力你也可以成立一家CA机构）。</p>
-<p><strong>数字证书包含一个公钥以及该密钥所有者的信息。证书还标明有有效期，并通过另一密钥（CA私钥）进行签名，</strong>该密钥能保证这些属性的真实性，最重要的是，保证公钥本身的真实性[14]。最简单的证书包含一个<strong>公钥</strong>、名称以及证书授权中心的数字签名（<strong>公开密钥只是证书的一部分内容</strong>）。目前，证书的格式和验证方法普遍遵循<strong>X.509</strong> 国际标准。</p>
-<p>CA机构自身也拥有一个<strong>证书</strong>（<strong>内含公钥</strong>）和一个<strong>私钥。</strong></p>
-<p><strong>用户如果想得到一个数字证书，他应先向 CA申请，CA审查申请者的身份后，给他分配一个公钥，并将公钥与申请者的身份信息绑在一起，同时用自己的私钥签字，最终生成一个证书，发给申请者；同时还将一个与公钥关联的私钥也发给申请者。证书的内容主要有：CA信息、CA签字、证书拥有者信息、证书公钥和证书有效期等。</strong></p>
-<p>某人需要验证一个证书时，用签发该证书的CA的公钥来解密其签名信息，以验证证书是否可信。CA证书也需要验证，验证CA证书是一个递归上溯的过程，验证过程终止于根证书。<strong>根证书是一份特殊的证书，它的签发者是它本身，下载根证书就表明用户对该根证书，以及其所签发的证书都信任。</strong></p>
-<p><img src="http://img.blog.csdn.net/20141109225903192?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvdGVuZnlndW8=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p> </p>
-<h2 id="3-3-数字证书基本原理"><a href="#3-3-数字证书基本原理" class="headerlink" title="3.3. 数字证书基本原理"></a>3.3. 数字证书基本原理</h2><p>数字证书采用<strong>公开密钥加密体制</strong>，利用一个强关联的密钥对进行加、解密。证书拥有者保存好自己的私钥，用它进行解密和签名；并把公钥公开，供一组用户所共享，用于加密和验证签名。</p>
-<p>1、<strong>加密：</strong>发送数据时，发送方使用接收方的公钥对数据加密，接收方用私钥解密，还原消息。算法保证公钥加密的数据只有对应的<strong>私钥</strong>才能解密。</p>
-<p>2、<strong>数字签名：</strong>证书拥有者用私钥对信息进行加密，由于私钥仅为本人所有，这样就生成了别人无法伪造的数据，该数据即<strong>数字签名</strong>。采用数字签名，能够确认以下两点：</p>
-<p>（1）保证信息是由签名者所发送，签名者不能否认或者难以否认；</p>
-<p>（2）保证信息自签发后到收到为止，未曾做过任何修改，签发的文件是真实的文件。</p>
-<p>算法保证只有公钥才能解开私钥加密的信息。</p>
-<h2 id="3-4-如何生成数字证书"><a href="#3-4-如何生成数字证书" class="headerlink" title="3.4. 如何生成数字证书"></a>3.4. 如何生成数字证书</h2><p>略</p>
-<p> </p>
-<p>A用私钥加密了，那么B接受到消息后，用A提供的公钥解密；那么现在有个讨厌的C，他把消息拦截了，然后用自己的私 钥加密，同时把自己的公钥发给B，并告诉B，那是A的公钥，结果….，这时候就需要一个中间机构出来说话了（相信权威，我是正确的），就出现了 Certificate Authority(也即CA），有名的CA机构有Verisign等，目前数字认证的工业标准是：CCITT的X.509：数字证书：它将一个身份标识连同公钥一起进行封装，并由称为认证中心或 CA 的第三方进行数字签名。</p>
-<p><strong>实际上, 好多的公钥都是通过数字证书进行发布的</strong>, 数字证书类似一个人的身份证一样, 由对应的官方的颁发结构颁发的, 类似一个人的身份证有姓名, 身份证ID, 有效期, 颁发机构-一般是某某派出所等, 数字证书也有类似的形式.</p>
-<p>基本的数字证书包括了一些常见的信息：</p>
-<ol>
-<li>对象的名称（人, 服务器, 组织等）</li>
-<li>过期时间</li>
-<li>对象的公钥</li>
-<li>证书发布者（由谁为证书担保）</li>
-<li>来自证书发布者的数字签名.<br>…</li>
-</ol>
-<p>需要注意的是, 任何人都可以创建一个证书, 但不是所有人都能够获得受人尊敬的签发权从而为证书信息提供担保, 并用其私人密钥签发证书.</p>
-<p>不幸的是, 数字证书没有单一的全球标准, 但现在使用的大多数证书是以一种标准格式– <code>X.509 v3</code>, 来存储它们的信息.</p>
-<p>x.509证书格式：</p>
-<table>
-<thead>
-<tr>
-<th><strong>字段</strong></th>
-<th><strong>描述</strong></th>
-</tr>
-</thead>
-<tbody><tr>
-<td>版本号</td>
-<td>这个证书的X.509证书版本号, 现在通常是版本3</td>
-</tr>
-<tr>
-<td>序列号</td>
-<td>证书颁发机构CA生成的唯一整数, CA生成的每个证书都要有一个唯一的系列号, 类似身份证号码</td>
-</tr>
-<tr>
-<td>签名算法ID</td>
-<td>签名使用是算法, 如用RSA加密的MD2摘要</td>
-</tr>
-<tr>
-<td>证书颁发者</td>
-<td>以X.500格式说明的CA的组织名称</td>
-</tr>
-<tr>
-<td>有效期</td>
-<td>证书的有效期, 由一个起始日期和一个结束日期来表示</td>
-</tr>
-<tr>
-<td>对象名称</td>
-<td>证书中描述的实体, 比如一个人或者一个组织, 对象名称以x.500格式表示</td>
-</tr>
-<tr>
-<td>对象的公开密钥信息</td>
-<td>证书对象的公钥, 公钥使用的算法, 以及所有附加的参数</td>
-</tr>
-<tr>
-<td>发布者唯一的ID(可选)</td>
-<td>可选的证书发布者唯一ID, 这样可以重用相同的发布者名称了</td>
-</tr>
-<tr>
-<td>对象唯一的ID（可选)</td>
-<td>可选的证书对象唯一ID, 这样就可以重用相同的对象名称了</td>
-</tr>
-<tr>
-<td>扩展</td>
-<td>一些扩展信息</td>
-</tr>
-<tr>
-<td>证书的颁发机构签名</td>
-<td>CA用指定的签名算法对上述所有字段的数字签名</td>
-</tr>
-</tbody></table>
-<p>x.509证书有很多种, 如服务器端证书, 个人证书等. 每个证书均有对应于证书公钥的私钥, 私钥不能被导出, 访问一般需要密码等. 浏览器会默认存储一些受信任的根证书颁发机构的证书.</p>
-<h2 id="认证"><a href="#认证" class="headerlink" title="认证"></a>认证</h2><h3 id="客户端对服务器认证"><a href="#客户端对服务器认证" class="headerlink" title="客户端对服务器认证"></a>客户端对服务器认证</h3><p>在支付网站中, 用户需要确认他们输入支付密码的站点是真正的经过认证的站点, 而不是被钓鱼的网站, 因此用户有必要认证对应的服务器, 而这种方式是通过服务器证书来进行的. 过程大概如下：</p>
-<ol>
-<li><p>通过https建立一个安全web事务之后, 浏览器会自动获取所连服务器的数字证书；</p>
-<p> 其中服务器证书包括了：</p>
-<p> Web站点名称和主机名<br> Web站点的公钥<br> 颁发机构的名称<br> 颁发机构给证书的签名</p>
-</li>
-<li><p>若服务器<strong>没有证书</strong>, 则安全连接失败.</p>
-</li>
-<li><p>浏览器首先检查服务器<strong>证书是否还在有效期</strong>内, 若过期, 则提示失效；</p>
-</li>
-<li><p>浏览器查看服务器证书对应的CA, 若该CA是很权威的机构, 则浏览器可能已经知道了对应的公钥了（<strong>浏览器会预先安装很多签名颁发机构的证书并认为是受信任的</strong>）, 这时, 浏览器用CA的数字证书里面的公钥来<strong>验证</strong>该CA颁发的服务器<strong>证书</strong>的有效性. 类似去公安局验证某人的身份证是否是真的.</p>
-</li>
-<li><p>若浏览器对签名颁发机构CA一无所知, 浏览器<strong>无法确定</strong>是否该信任这个签名颁发机构, 它通常会向用户<strong>提示</strong>一个对话框, 看看他是否相信这个签名发布者.</p>
-</li>
-<li><p>一旦完成了对服务器证书的验证, 接下来就可以<strong>使用服务器证书</strong>里面的<strong>公钥</strong>进行服务器身份的<strong>验证</strong>；</p>
-</li>
-<li><p>客户端生成一个<strong>随机数</strong>给到服务器, 要求对应服务器用证书的<strong>私钥</strong>进行<strong>签名</strong>.</p>
-</li>
-<li><p>服务器对随机数进行签名, 并回传给到客户端.</p>
-</li>
-<li><p>客户端用服务器证书的<strong>公钥</strong>对<strong>随机数</strong>的<strong>签名</strong>进行<strong>验证</strong>, 若验证通过, 则说明对应的服务器确实拥有对应服务器证书的私钥, 因此判断服务器的身份正常. 否则, 则任务服务器身份被伪造.</p>
-</li>
-</ol>
-<h3 id="服务器对客户端认证"><a href="#服务器对客户端认证" class="headerlink" title="服务器对客户端认证"></a>服务器对客户端认证</h3><p>客户端证书和服务器证书类似, 只是服务器证书增加一些对服务器站点名称和主机名等内容的签注, 客户端证书一般是某个机构针对个人颁发的, 用于标识个人的身份. 如财付通提示用户安装对应的数字证书, 就是一个客户端证书, <strong>在安装客户端证书的时候, 实际上会把用户对应该证书的私钥要保存起来.</strong> 客户端用私钥进行签名, 然后第三方用客户端证书的公钥进行验签实现对客户端身份的认证.</p>
-<h3 id="双向认证"><a href="#双向认证" class="headerlink" title="双向认证"></a>双向认证</h3><p>在发送已加密的HTTP报文前, 客户端和服务器要进行一次SSL握手, 在这个握手的过程中, 它们要完成以下工作：</p>
-<ol>
-<li>  交换协议版本号；</li>
-<li>  选择一个两端都了解的密码；</li>
-<li>  对两端的身份进行验证；</li>
-<li>  生成临时的会话密钥, 后续便用该密钥进行加密信道.</li>
-</ol>
-<h3 id="信任所有的证书"><a href="#信任所有的证书" class="headerlink" title="信任所有的证书"></a>信任所有的证书</h3><h3 id="密钥库"><a href="#密钥库" class="headerlink" title="密钥库"></a>密钥库</h3><p>java平台为你提供了密钥库，用作密钥和证书的资源库。从物理上讲，密钥库是缺省名称为 <code>.keystore</code> 的文件（有一个选项使它成为加密文件）。密钥和证书可以拥有名称（称为别名），每个别名都由唯一的密码保护。密钥库本身也受密码保护；您可以选择让每个别名密码与主密钥库密码匹配。　　</p>
-<p>使用工具keytool，我们来做一件自我认证的事情吧（相信我的认证）：　　</p>
-<ol>
-<li><p>创建密钥库<br><code>keytool -genkey -v -alias feiUserKey -keyalg RSA</code><br>默认在自己的home目录下（windows系统是c:\documents and settings&lt;你的用户名&gt; 目录下的.keystore文件），创建我们用 RSA 算法生成别名为 feiUserKey 的自签名的证书,如果使用了-keystore mm 就在当前目录下创建一个密钥库mm文件来保存密钥和证书。　</p>
-</li>
-<li><p>查看证书：<br><code>keytool -list</code> 列举了密钥库的所有的证书　　也可以在dos下输入<br><code>keytool -help</code> 查看帮助。</p>
-</li>
-<li><p>JAR的签名　　</p>
-</li>
-</ol>
-<p>JAR文件在Java中相当于 ZIP 文件，允许将多个 Java 类文件打包到一个具有 .jar 扩展名的文件中，然后可以对这个jar文件进行数字签名，以证实其来源和真实性。该 JAR 文件的接收方可以根据发送方的签名决定是否信任该代码，并可以确信该内容在接收之前没有被篡改过。同时在部署中，可以通过在策略文件中放置访问控制语句根据签名者的身份分配对机器资源的访问权。这样，有些Applet的安全检验访问就得以进行。　　</p>
-<p>使用<code>jarsigner</code>工具可以对jar文件进行签名：　　</p>
-<p>现在假设我们有个Test.jar文件（可以使用jar命令行工具生成）：　　</p>
-<p><code>jarsigner Test.jar feiUserKey</code> (这里我们上面创建了该别名的证书) ，详细信息可以输入<code>jarsigner</code>查看帮助　　</p>
-<p>验证其真实性：<code>jarsigner -verify　Test.jar</code><br>(注意，验证的是jar是否被修改了，但不检验减少的，如果增加了新的内容，也提示，但减少的不会提示。）　　</p>
-<p>使用Applet中：</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&lt;applet code=&quot;Test.class&quot; archive=&quot;Test.jar&quot; width=&quot;150&quot; height=&quot;100&quot;&gt;&lt;/applet&gt;</span><br></pre></td></tr></table></figure>
-<p>然后浏览器就会提示你：准许这个会话-拒绝-始终准许-查看证书等。　　</p>
-<h2 id="安全套接字层（SSL-Secure-Sockets-Layer）和传输层安全性（TLS-Transport-Layer-Security）"><a href="#安全套接字层（SSL-Secure-Sockets-Layer）和传输层安全性（TLS-Transport-Layer-Security）" class="headerlink" title="安全套接字层（SSL Secure Sockets Layer）和传输层安全性（TLS Transport Layer Security）"></a>安全套接字层（SSL Secure Sockets Layer）和传输层安全性（TLS Transport Layer Security）</h2><p>安全套接字层和传输层安全性是用于在客户机和服务器之间构建安全的通信通道的协议。它也用来为客户机认证服务器，以及（不太常用的）为服务器认证客户机。该协议在浏览器应用程序中比较常见，浏览器窗口底部的锁表明 SSL/TLS 有效：　　</p>
-<p>1）当使用 SSL/TLS（通常使用 https:// URL）向站点进行请求时，从服务器向客户机发送一个证书。客户机使用已安装的公共 CA 证书通过这个证书验证服务器的身份，然后检查 IP 名称（机器名）与客户机连接的机器是否匹配。　　</p>
-<p>2）客户机生成一些可以用来生成对话的私钥（称为会话密钥）的随机信息，然后用服务器的公钥对它加密并将它发送到服务器。服务器用自己的私钥解密消息，然后用该随机信息派生出和客户机一样的私有会话密钥。通常在这个阶段使用 RSA 公钥算法。　　</p>
-<p>3）客户机和服务器使用私有会话密钥和私钥算法（通常是 RC4）进行通信。使用另一个密钥的消息认证码来确保消息的完整性。java中<code>javax.net.ssl.SSLServerSocketFactory</code>类提供了一个很好的SSLServerSocker的工 厂类，熟悉Socket编程的读者可以去练习。当编写完服务器端之后，在浏览器上输入https://主机名:端口就会通过SSL/TLS进行通话了。</p>
-<p>注 意：运行服务端的时候要带系统环境变量运行：<br><code>javax.net.ssl.keyStore=密钥库</code>(创建证书时，名字应该为主机名，<br>比如 localhost)和<br><code>javax.net.ssl.keyStorePassword=你的密码</code></p>
-<hr>
-<h1 id="参考文献"><a href="#参考文献" class="headerlink" title="[参考文献]:"></a>[参考文献]:</h1><ol>
-<li>[安全专题][a-security]</li>
-<li><a target="_blank" rel="noopener" href="http://blog.csdn.net/tenfyguo/article/details/40922813">安全HTTPS-全面详解对称加密，非对称加密，数字签名，数字证书和HTTPS</a></li>
-<li><a href="">Applied Crypotography(Bruce Schneier)</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_3_multitable_join/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/syntax_3_multitable_join/" class="post-title-link" itemprop="url">MySQL多表关联与笛卡尔积</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-10-13 00:00:00" itemprop="dateCreated datePublished" datetime="2016-10-13T00:00:00+08:00">2016-10-13</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="多表关联"><a href="#多表关联" class="headerlink" title="多表关联"></a>多表关联</h1><p>内联接 外联接 左外联接 右外连接 全外连接 自然联接</p>
-<h1 id="笛卡尔"><a href="#笛卡尔" class="headerlink" title="笛卡尔"></a>笛卡尔</h1><p>笛卡尔（Descartes）乘积又叫直积。假设集合A={a,b}，集合B={0,1,2}，则两个集合的笛卡尔积为</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">(a,0),</span><br><span class="line">(a,1),</span><br><span class="line">(a,2),</span><br><span class="line">(b,0),</span><br><span class="line">(b,1),</span><br><span class="line">(b,2)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以扩展到多个集合的情况。</p>
-<h2 id="内连接"><a href="#内连接" class="headerlink" title="内连接"></a>内连接</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a,b <span class="keyword">where</span> a.x <span class="operator">=</span> b.x; <span class="operator">/</span><span class="operator">/</span>内连接</span><br></pre></td></tr></table></figure>
-<p>与</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">inner</span> <span class="keyword">join</span> b <span class="keyword">on</span> a.x<span class="operator">=</span>b.x; <span class="operator">/</span><span class="operator">/</span>内连接</span><br></pre></td></tr></table></figure>
-<p>效果是一样的，都是计算笛卡尔积，对上面笛卡尔积的每一条记录看它是否满足限制条件，如果满足，则它在结果集中。</p>
-<h2 id="外连接"><a href="#外连接" class="headerlink" title="外连接"></a>外连接</h2><p>当外连接，不加任何条件时，也会计算笛卡尔积。如：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">left</span> <span class="keyword">join</span> b <span class="keyword">on</span> <span class="number">1</span><span class="operator">=</span><span class="number">1</span>;</span><br></pre></td></tr></table></figure>
-
-<h2 id="交叉连接-CROSS-JOIN"><a href="#交叉连接-CROSS-JOIN" class="headerlink" title="交叉连接(CROSS JOIN)"></a>交叉连接(CROSS JOIN)</h2><p>没有WHERE 子句，它返回<code>连接表</code>中所有数据行的笛卡尔积<br>先返回 左表所有行，左表行在与右表行一一组合，等于两个表相乘.</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">cross</span> <span class="keyword">join</span> b <span class="keyword">where</span> a.x<span class="operator">=</span>b.x;</span><br></pre></td></tr></table></figure>
-<p>等同于</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">inner</span> <span class="keyword">join</span> b <span class="keyword">on</span> a.x<span class="operator">=</span>b.x;</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>MySQL中不存在交叉连接</p>
-</blockquote>
-<h2 id="避免笛卡尔积的方法"><a href="#避免笛卡尔积的方法" class="headerlink" title="避免笛卡尔积的方法"></a>避免笛卡尔积的方法</h2><p>由于笛卡尔积的结果集是各个查询表规模之积，往往是数量级的差别。</p>
-<h3 id="转换为子查询"><a href="#转换为子查询" class="headerlink" title="转换为子查询"></a>转换为子查询</h3><p>假设存在如下三个表:</p>
-<p>查询方式一:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">DISTINCT</span></span><br><span class="line">	u.user_id <span class="keyword">AS</span> recommendUserId</span><br><span class="line"><span class="keyword">FROM</span></span><br><span class="line">	user_info u</span><br><span class="line"><span class="keyword">WHERE</span></span><br><span class="line">	<span class="number">1</span> <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"><span class="keyword">AND</span> u.user_id <span class="keyword">IN</span> (</span><br><span class="line">	<span class="keyword">SELECT</span></span><br><span class="line">		a.entity_id</span><br><span class="line">	<span class="keyword">FROM</span></span><br><span class="line">		address_info a</span><br><span class="line">	<span class="keyword">WHERE</span></span><br><span class="line">		a.city_code <span class="operator">=</span> <span class="number">10010</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-<p>查询方式二：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">DISTINCT</span></span><br><span class="line">	u.user_id <span class="keyword">AS</span> recommendUserId</span><br><span class="line"><span class="keyword">FROM</span></span><br><span class="line">	user_info u,</span><br><span class="line">	address_info a</span><br><span class="line"><span class="keyword">WHERE</span></span><br><span class="line">	<span class="number">1</span> <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"><span class="keyword">AND</span> a.city_code <span class="operator">=</span> <span class="string">&#x27;10010&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>对比发现： ‘查询方式一’使用了子查询，查询是分两步进行的，第一步先从<code>address_info</code>选出一个结果，然后在<code>user_info</code>中查询，规模为<code>user_info</code>的大小。<br>而<code>查询方式二</code>查询规模是笛卡尔积，即<code>user_info</code>与<code>address_info</code>规模之积。</p>
-<h1 id="内连接-1"><a href="#内连接-1" class="headerlink" title="内连接"></a>内连接</h1><p>内连 接只保留交叉积中满足连接条件的那些行。如果某行在一个表中存在，但在另一个表中不存在，则结果表中不包括该信息。</p>
-<h1 id="外连接-1"><a href="#外连接-1" class="headerlink" title="外连接"></a>外连接</h1><p>左外连 接包括内连 接和左表中未包括在内连 接中的那些行。</p>
-<p>右外连 接包括内连 接和右表中未包括在内连 接中的那些行。</p>
-<p>全外连 接包括内连 接以及左表和右表中未包括在内连 接中的行。<br>内连 接一般是检索两个表里连接字段都存在的数据。<br>左连接的意思是，查询左（语句前面）表里的所有内容，无论右边表里有没有。右边表里没有的内容用NULL代替。<br>右连接和左连接相反。</p>
-<h2 id="左外连接"><a href="#左外连接" class="headerlink" title="左外连接"></a>左外连接</h2><h2 id="右外连接"><a href="#右外连接" class="headerlink" title="右外连接"></a>右外连接</h2><h2 id="全外连接"><a href="#全外连接" class="headerlink" title="全外连接"></a>全外连接</h2><h1 id="交叉连接"><a href="#交叉连接" class="headerlink" title="交叉连接"></a>交叉连接</h1><hr>
-<p>[参考文献]：</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_8250c39a0101k74c.html">SQL中—-SELECT语句中内连接,左连接,右连接,自连接和全连接 </a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/Quartz/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -639,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -754,7 +329,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -916,7 +491,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -993,7 +568,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1089,7 +664,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1176,7 +751,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1287,7 +862,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1314,6 +889,133 @@
 <p>Elasticsearch 是一个分布式、可扩展、实时的搜索与数据分析引擎。</p>
 <p><a target="_blank" rel="noopener" href="https://github.com/oldratlee/useful-scripts">ES分析脚本</a></p>
 
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/HBase/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/HBase/HBase/" class="post-title-link" itemprop="url">HBase基础与开发实践</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="HBase"><a href="#HBase" class="headerlink" title="HBase"></a>HBase</h1><h2 id="最佳实践"><a href="#最佳实践" class="headerlink" title="最佳实践"></a>最佳实践</h2><h3 id="避免数据热点"><a href="#避免数据热点" class="headerlink" title="避免数据热点"></a>避免数据热点</h3><p>加盐的过程本质上是对原有的主键加上一个字节的前缀，<br>如下面公式所示：<br>new_row_key = (++index % BUCKETS_NUMBER) + original_key</p>
+<p>BUCKETS_NUMBER 为桶的个数。主键的分布决定了数据的分布，把主键<br>打散也就意味着数据打散。具体使用时，一般建议桶的数目等于 RegionServer 的<br>数目。</p>
+<h3 id="多租户"><a href="#多租户" class="headerlink" title="多租户"></a>多租户</h3><p>我们开发了 DHS 系统（Didi HBase Service）进行项目管理，并且在 HBase 上通过 Namespace、RS Group 等技术来分割用户的资源、数据和权限。通过计算开销并计费的方法来管控资源分配</p>
+<p>HBase 自带的 jxm 信息会汇总到 Region 和 RegionServer 级别的数据，管理员会经常用到，但是用户却很少关注这个级别。根据这种情况我们开发了 HBase 表级别的监控，并且会有权限控制，让业务 RD 只能看到和自己相关的表，清楚自己项目表的吞吐及存储占用情况</p>
+<p>RegionServer Group，实现细节可以参照 HBase HBASE-6721 这个 Patch。滴滴在这个基础上作了一些分配策略上的优化，以便适合滴滴业务场景的修改。RS Group简单概括是指通过分配一批指定的RegionServer列表，成为一个RS Group，每个 Group 可以按需挂载不同的表，并且当 Group 内的表发生异常后，Region不会迁移到其他的 Group。这样，每个 Group 就相当于一个逻辑上的子集群，通过这种方式达到资源隔离的效果，降低管理成本，不必为每个高 SLA 的业务线单独搭集群。</p>
+<h2 id="HDFS中文件的存储"><a href="#HDFS中文件的存储" class="headerlink" title="HDFS中文件的存储"></a>HDFS中文件的存储</h2><p><a target="_blank" rel="noopener" href="https://hbase.apache.org/book.html#trouble.namenode.hbase.objects">Browsing HDFS for HBase Objects</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/hbase/data/default/&lt;table_name&gt;/ab0ba9f7e0d2898a0f61aa687d3d4886/&lt;column_family&gt;/&lt;HFile_name&gt;</span><br></pre></td></tr></table></figure>
+<p>如</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/hbase/data/default/my_table/d177ff7276d2e46d69dc50f67f92643a/cf/</span><br></pre></td></tr></table></figure>
+<p>HFile每bulkload一次，新增加的HFile序列号增加1</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"> ./hadoop fs -ls /hbase/data/default/recommend_result/d177ff7276d2e46d69dc50f67f92643a/cf</span><br><span class="line">Found 2 items</span><br><span class="line">-rw-rw-rw-   3 tdw_hectorhe g_cdg_cft_data__cft 2791972087 2019-04-11 07:06 /hbase/data/default/recommend_result/d177ff7276d2e46d69dc50f67f92643a/cf/accd28866e6d40738849b4efb08ea154_SeqId_312_</span><br><span class="line">-rw-r--r--   3 hbaseadmin   users               2941438650 2019-04-11 04:07 /hbase/data/default/recommend_result/d177ff7276d2e46d69dc50f67f92643a/cf/ee29f8ad0fa14f508793108234242de4</span><br></pre></td></tr></table></figure>
+<p>如上面的<code>seqId_1</code>，代表序列号为1，在major compact时，将合并成一个文件</p>
+<p>如果存在多个HFile，就需要同时查询多个列族。</p>
+<ol>
+<li>一个region只保存在一个region server中，不会跨越region server，由hdfs保证高可用</li>
+</ol>
+<h3 id="client写入"><a href="#client写入" class="headerlink" title="client写入"></a>client写入</h3><p>通过client写入数据时，首先会把数据写入到memstore和WAL，数据到达一定的阈值，才会溢写到StoreFile，StoreFile也就是HFile</p>
+<h2 id="zk存储"><a href="#zk存储" class="headerlink" title="zk存储"></a>zk存储</h2><h2 id="hbase-meta"><a href="#hbase-meta" class="headerlink" title="hbase meta"></a>hbase meta</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">hbase(main):053:0&gt; list_namespace_tables &#x27;hbase&#x27;</span><br><span class="line">TABLE </span><br><span class="line">meta      </span><br><span class="line">namespace </span><br><span class="line">rsgroup  </span><br><span class="line">3 row(s) in 0.0040 seconds</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="GET的过程"><a href="#GET的过程" class="headerlink" title="GET的过程"></a>GET的过程</h2><h2 id="Coprocessor"><a href="#Coprocessor" class="headerlink" title="Coprocessor"></a>Coprocessor</h2><h2 id="Phoenix"><a href="#Phoenix" class="headerlink" title="Phoenix"></a>Phoenix</h2><p>在没有 Phoenix 之前，用户如果需要分析 HBase 数据，只能从 HBase 拖出去或者绕过 HBase 直接读取 HDFS 上面的HFile 的方式进行，前者浪费了大量的网络IO，后者用不到 HBase 本身做的大量缓存和索引优化。Phoenix 使用 HBase 的协处理器机制，直接在 RegionServer 上执行算子逻辑，然后将算子的结果返回即可，也就是大数据中的“Move Operator to Data”理念。比如，用户执行“ <code>select count(*) from mytable where mytime &gt; timestamp’2018-11-11 0:00:00’</code> ”，在实际执行中，会先找到符合过滤条件的region，然后在RegionServer本地计算count，最后再对各个 Region 上的结果进行汇总。</p>
+<p>索引是传统数据库中常见的技术，HBase 表中可以指定主键，对主键使用 LSM 算<br>法构建索引。Phoenix 中，用户在创建表的时候，可以指定索引列，可以是单列，<br>也可以是组合列。很多时候仅有主键索引是不够的，特别是对于列特别多的宽表，<br>为此，Phoenix 提供二级索引功能，用户能够对表中非主键的列添加索引，并可<br>以加入其它相关列到索引表中，如果某个查询涉及到的列全部在索引表中，直接<br>查询索引表即可，无需访问原数据表。索引表跟原表做到实时同步更新，以保证<br>数据一致性。</p>
+<p><a target="_blank" rel="noopener" href="https://www.imooc.com/video/15575">imooc</a></p>
+<p>@Controller<br>    @SessionAttributes({ “credentials”, “user” })</p>
+<h2 id="shell"><a href="#shell" class="headerlink" title="shell"></a>shell</h2><h3 id="HFile文件的元数据"><a href="#HFile文件的元数据" class="headerlink" title="HFile文件的元数据"></a>HFile文件的元数据</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">hdfs dfs -du -h /hbase/data/default/dal_hx_lct_700_800/999fdd6a2ed426fcb33d202195fdd7d2/i/</span><br><span class="line">16.0 G  /hbase/data/default/dal_hx_lct_700_800/999fdd6a2ed426fcb33d202195fdd7d2/i/0e950ca090d54eb2b98abffc2e285cfa_SeqId_4_</span><br><span class="line">16.0 G  /hbase/data/default/dal_hx_lct_700_800/999fdd6a2ed426fcb33d202195fdd7d2/i/bfc0c2e4fae84ba19ad1eaf78ea04967_SeqId_4_</span><br><span class="line">16.0 G  /hbase/data/default/dal_hx_lct_700_800/999fdd6a2ed426fcb33d202195fdd7d2/i/e5f3675a6b0040faa695ec3b35b2e951_SeqId_4_</span><br><span class="line">6.1 G   /hbase/data/default/dal_hx_lct_700_800/999fdd6a2ed426fcb33d202195fdd7d2/i/f5c2d2461e0f4eb58ed6c75aa1ae9ffa_SeqId_4_</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">hbase hfile -m -f /hbase/data/default/dal_hx_lct_700_800/999fdd6a2ed426fcb33d202195fdd7d2/i/0e950ca090d54eb2b98abffc2e285cfa_SeqId_4_</span><br><span class="line"></span><br><span class="line">2020-03-18 14:19:37,389 INFO  [main] hfile.CacheConfig: Created cacheConfig: CacheConfig:disabled</span><br><span class="line">Block index size as per heapsize: 5288</span><br><span class="line">reader=/hbase/data/default/dal_hx_lct_700_800/999fdd6a2ed426fcb33d202195fdd7d2/i/0e950ca090d54eb2b98abffc2e285cfa_SeqId_4_,</span><br><span class="line">    compression=none,</span><br><span class="line">    cacheConf=CacheConfig:disabled,</span><br><span class="line">    firstKey=0632079511/i:v/1584411652893/Put,</span><br><span class="line">    lastKey=0938227441/i:v/1584411652893/Put,</span><br><span class="line">    avgKeyLen=23,</span><br><span class="line">    avgValueLen=1837,</span><br><span class="line">    entries=9189138,</span><br><span class="line">    length=17212333944</span><br><span class="line">Trailer:</span><br><span class="line">    fileinfoOffset=17212333262,</span><br><span class="line">    loadOnOpenDataOffset=17212330707,</span><br><span class="line">    dataIndexCount=73,</span><br><span class="line">    metaIndexCount=0,</span><br><span class="line">    totalUncomressedBytes=17207143638,</span><br><span class="line">    entryCount=9189138,</span><br><span class="line">    compressionCodec=NONE,</span><br><span class="line">    uncompressedDataIndexSize=9529760,</span><br><span class="line">    numDataIndexLevels=2,</span><br><span class="line">    firstDataBlockOffset=0,</span><br><span class="line">    lastDataBlockOffset=17212236283,</span><br><span class="line">    comparatorClassName=org.apache.hadoop.hbase.KeyValue$KeyComparator,</span><br><span class="line">    majorVersion=2,</span><br><span class="line">    minorVersion=3</span><br><span class="line">Fileinfo:</span><br><span class="line">    BULKLOAD_SOURCE_TASK = attempt_20200317094633_0002_r_000001_0</span><br><span class="line">    BULKLOAD_TIMESTAMP = \x00\x00\x01p\xE6\x81\x87\xD0</span><br><span class="line">    DELETE_FAMILY_COUNT = \x00\x00\x00\x00\x00\x00\x00\x00</span><br><span class="line">    EARLIEST_PUT_TS = \x00\x00\x01p\xE6K3\x1D</span><br><span class="line">    EXCLUDE_FROM_MINOR_COMPACTION = \x00</span><br><span class="line">    KEY_VALUE_VERSION = \x00\x00\x00\x01</span><br><span class="line">    MAJOR_COMPACTION_KEY = \xFF</span><br><span class="line">    MAX_MEMSTORE_TS_KEY = \x00\x00\x00\x00\x00\x00\x00\x00</span><br><span class="line">    TIMERANGE = 1584411652893....1584411652893</span><br><span class="line">    hfile.AVG_KEY_LEN = 23</span><br><span class="line">    hfile.AVG_VALUE_LEN = 1837</span><br><span class="line">    hfile.LASTKEY = \x00\x0A0938227441\x01iv\x00\x00\x01p\xE6K3\x1D\x04</span><br><span class="line">Mid-key: \x00\x09078540676\x00\x7F\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF</span><br><span class="line">Bloom filter:</span><br><span class="line">    Not present</span><br><span class="line">Delete Family Bloom filter:</span><br><span class="line">    Not present</span><br></pre></td></tr></table></figure>
+
+<h2 id="WAL"><a href="#WAL" class="headerlink" title="WAL"></a>WAL</h2><h3 id="写入模型优化"><a href="#写入模型优化" class="headerlink" title="写入模型优化"></a>写入模型优化</h3><p>WAL写入模型</p>
+<p>了解了HLog的结构之后，我们就开始研究HLog的写入模型。HLog的写入可以分为三个阶段，首先将数据对&lt;HLogKey,WALEdit&gt;写入本地缓存，然后再将本地缓存写入文件系统，最后执行sync操作同步到磁盘。在以前老的写入模型中，上述三步都由工作线程独自完成，如下图所示：</p>
+<p><img src="_v_images/20200815154403071_1496305947.png" alt="103"></p>
+<p>上图中，本地缓存写入文件系统那个步骤工作线程需要持有updateLock执行，不同工作线程之间必然会恶性竞争；不仅如此，在Sync HDFS这步中，工作线程之间需要抢占flushLock，因为Sync操作是一个耗时操作，抢占这个锁会导致写入性能大幅降低。</p>
+<p>所幸的是，来自中国（准确的来说，是来自小米，鼓掌）的3位工程师意识到了这个问题，进而提出了一种新的写入模型并被官方采纳。根据官方测试，新写入模型的吞吐量比之前提升3倍多，单台RS写入吞吐量介于12150～31520，5台RS组成的集群写入吞吐量介于22000～70000（见HBASE-8755）。下图是小米官方给出来的对比测试结果：</p>
+<p><img src="_v_images/20200815154402968_1974951896.png" alt="104"></p>
+<p>在新写入模型中，本地缓存写入文件系统以及Sync HDFS都交给了新的独立线程完成，并引入一个Notify线程通知工作线程是否已经Sync成功，采用这种机制消除上述锁竞争，具体如下图所示：</p>
+<p><img src="_v_images/20200815154402863_279526558.png" alt="105"></p>
+<p>1. 上文中提到工作线程在写入WALEdit之后并没有进行Sync，而是等到释放行锁阻塞在syncedTillHere变量上，等待AsyncNotifier线程唤醒。</p>
+<p>2. 工作线程将WALEdit写入本地Buffer之后，会生成一个自增变量txid，携带此txid唤醒AsyncWriter线程</p>
+<p>3. AsyncWriter线程会取出本地Buffer中的所有WALEdit，写入HDFS。注意该线程会比较传入的txid和已经写入的最大txid（writtenTxid），如果传入的txid小于writteTxid，表示该txid对应的WALEdit已经写入，直接跳过</p>
+<p>4. AsyncWriter线程将所有WALEdit写入HDFS之后携带maxTxid唤醒AsyncFlusher线程</p>
+<p>5. AsyncFlusher线程将所有写入文件系统的WALEdit统一Sync刷新到磁盘</p>
+<p>6. 数据全部落盘之后调用setFlushedTxid方法唤醒AyncNotifier线程</p>
+<p>7. AyncNotifier线程会唤醒所有阻塞在变量syncedTillHere的工作线程，工作线程被唤醒之后表示WAL写入完成，后面再执行MVCC结束写事务，推进全局读取点，本次更新才会对用户可见</p>
+<p>通过上述过程的梳理可以知道，新写入模型采取了多线程模式独立完成写文件系统、sync磁盘操作，避免了之前多工作线程恶性抢占锁的问题。同时，工作线程在将WALEdit写入本地Buffer之后并没有马上阻塞，而是释放行锁之后阻塞等待WALEdit落盘，这样可以尽可能地避免行锁竞争，提高写入性能。</p>
+<p>wal写入数据写入经历三步:</p>
+<ol>
+<li>写入本地缓存</li>
+<li>写入hdfs</li>
+<li>flush hdfs</li>
+</ol>
+<p>旧的写入模型，工作线程自己写入hdfs和flush，为了避免一致性问题，需要分别竞争updateLock和flushLock, 工作线程在单个线程中完成，写了hdfs，立即直接flush</p>
+<p>新的写入模型，将写hdfs和flush hdfs分别由两个单独的线程(AsyncWriter和AsyncFlusher)处理，落盘后回调工作线程；<br>为了避免多个线程同时写入冲突，给每个要写入的文件生成一个自增的txid，写hdfs的线程会把所有的文件全部写入到hdfs，<br>如果工作线程要写的txid小于max txid，代表已经写过了。</p>
+<h2 id="memstore"><a href="#memstore" class="headerlink" title="memstore"></a>memstore</h2><h3 id="MSLAB"><a href="#MSLAB" class="headerlink" title="MSLAB"></a>MSLAB</h3><p>LAB 对 GC 的优化</p>
+<h3 id="ConcurrentSkipListMap"><a href="#ConcurrentSkipListMap" class="headerlink" title="ConcurrentSkipListMap"></a>ConcurrentSkipListMap</h3><h3 id="CompactingMemStore"><a href="#CompactingMemStore" class="headerlink" title="CompactingMemStore"></a>CompactingMemStore</h3><h2 id="HBase-clonesnapshot-限流实现原理"><a href="#HBase-clonesnapshot-限流实现原理" class="headerlink" title="HBase clonesnapshot 限流实现原理"></a>HBase clonesnapshot 限流实现原理</h2><h2 id="scanner"><a href="#scanner" class="headerlink" title="scanner"></a>scanner</h2>
       
     </div>
 
@@ -1363,7 +1065,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1398,6 +1100,104 @@
 <h2 id="Http-Client"><a href="#Http-Client" class="headerlink" title="Http Client"></a>Http Client</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpclient<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.5.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpcore<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.4.5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpcore-nio<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.4.5<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.httpcomponents<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>httpasyncclient<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>4.1.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
 <h2 id="AsyncApiScalaSink"><a href="#AsyncApiScalaSink" class="headerlink" title="AsyncApiScalaSink"></a>AsyncApiScalaSink</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.<span class="type">IOException</span></span><br><span class="line"><span class="keyword">import</span> java.util</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.apache.flink.configuration.<span class="type">Configuration</span></span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.functions.sink.&#123;<span class="type">RichSinkFunction</span>, <span class="type">SinkFunction</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http._</span><br><span class="line"><span class="keyword">import</span> org.apache.http.client.entity.<span class="type">UrlEncodedFormEntity</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.client.methods.&#123;<span class="type">HttpEntityEnclosingRequestBase</span>, <span class="type">HttpPost</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http.concurrent.<span class="type">FutureCallback</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.impl.client.<span class="type">DefaultConnectionKeepAliveStrategy</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.impl.nio.client.&#123;<span class="type">CloseableHttpAsyncClient</span>, <span class="type">HttpAsyncClients</span>&#125;</span><br><span class="line"><span class="keyword">import</span> org.apache.http.message.<span class="type">BasicNameValuePair</span></span><br><span class="line"><span class="keyword">import</span> org.apache.http.util.<span class="type">EntityUtils</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AsyncApiScalaSink</span>[<span class="type">E</span>](<span class="params">httpInvoker: <span class="type">HttpInvoker</span>[<span class="type">E</span>]</span>) <span class="keyword">extends</span> <span class="title">RichSinkFunction</span>[<span class="type">E</span>] </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">var</span> httpClient: <span class="type">CloseableHttpAsyncClient</span> = _</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">open</span></span>(parameters: <span class="type">Configuration</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    httpClient = <span class="type">HttpAsyncClients</span>.custom.setKeepAliveStrategy(<span class="type">DefaultConnectionKeepAliveStrategy</span>.<span class="type">INSTANCE</span>).build</span><br><span class="line">    httpClient.start()</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">invoke</span></span>(value: <span class="type">E</span>, context: <span class="type">SinkFunction</span>.<span class="type">Context</span>[_]): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">var</span> httpEntity: <span class="type">HttpEntityEnclosingRequestBase</span> = <span class="literal">null</span></span><br><span class="line">    <span class="keyword">val</span> method: <span class="type">String</span> = httpInvoker.getMethod</span><br><span class="line">    <span class="keyword">val</span> url: <span class="type">String</span> = httpInvoker.getUrl</span><br><span class="line">    <span class="keyword">if</span> (<span class="string">&quot;GET&quot;</span> == method) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">&quot;POST&quot;</span> == method) &#123;</span><br><span class="line">      <span class="keyword">val</span> params1: util.<span class="type">Map</span>[<span class="type">String</span>, <span class="type">String</span>] = httpInvoker.getParams(value)</span><br><span class="line">      <span class="keyword">val</span> params: util.<span class="type">List</span>[<span class="type">NameValuePair</span>] = <span class="keyword">new</span> util.<span class="type">ArrayList</span>[<span class="type">NameValuePair</span>]</span><br><span class="line">      <span class="keyword">if</span> (params1 != <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">import</span> scala.collection.<span class="type">JavaConversions</span>._</span><br><span class="line">        <span class="keyword">for</span> (entry &lt;- params1.entrySet) &#123;</span><br><span class="line">          <span class="keyword">val</span> key: <span class="type">String</span> = entry.getKey</span><br><span class="line">          <span class="keyword">val</span> value1: <span class="type">String</span> = entry.getValue</span><br><span class="line">          params.add(<span class="keyword">new</span> <span class="type">BasicNameValuePair</span>(key, value1))</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">val</span> entity: <span class="type">UrlEncodedFormEntity</span> = <span class="keyword">new</span> <span class="type">UrlEncodedFormEntity</span>(params, <span class="type">Consts</span>.<span class="type">UTF_8</span>)</span><br><span class="line">      httpEntity = <span class="keyword">new</span> <span class="type">HttpPost</span>(url)</span><br><span class="line">      httpEntity.setEntity(entity)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    httpClient.execute(httpEntity, <span class="keyword">new</span> <span class="type">FutureCallback</span>[<span class="type">HttpResponse</span>]() &#123;</span><br><span class="line">      <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">completed</span></span>(response: <span class="type">HttpResponse</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">        <span class="keyword">val</span> statusLine: <span class="type">StatusLine</span> = response.getStatusLine</span><br><span class="line">        <span class="keyword">val</span> httpStatusCode: <span class="type">Int</span> = statusLine.getStatusCode</span><br><span class="line">        <span class="keyword">var</span> content: <span class="type">String</span> = <span class="literal">null</span></span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="keyword">val</span> entity: <span class="type">HttpEntity</span> = response.getEntity</span><br><span class="line">          content = <span class="type">EntityUtils</span>.toString(entity)</span><br><span class="line">        &#125; <span class="keyword">catch</span> &#123;</span><br><span class="line">          <span class="keyword">case</span> e: <span class="type">IOException</span> =&gt;</span><br><span class="line">            <span class="type">System</span>.err.print(e.getMessage)</span><br><span class="line">        &#125;</span><br><span class="line">        httpInvoker.onCompleted(value, httpStatusCode, content)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">override</span></span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">def</span> <span class="title">failed</span></span>(ex: <span class="type">Exception</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">        httpInvoker.onFailed(value, ex)</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">override</span></span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">def</span> <span class="title">cancelled</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">        httpInvoker.onCanceled(value)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">close</span></span>(): <span class="type">Unit</span> = &#123;</span><br><span class="line">    httpClient.close()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <h2 id="HttpInvoker"><a href="#HttpInvoker" class="headerlink" title="HttpInvoker"></a>HttpInvoker</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.<span class="type">Serializable</span>;</span><br><span class="line"><span class="keyword">import</span> java.util.<span class="type">Map</span>;</span><br><span class="line"></span><br><span class="line">public interface <span class="type">HttpInvoker</span>&lt;<span class="type">E</span>&gt; <span class="keyword">extends</span> <span class="type">Serializable</span> &#123;</span><br><span class="line">    <span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">String</span>&gt; getParams(<span class="type">E</span> e);</span><br><span class="line"></span><br><span class="line">    <span class="type">String</span> getMethod();</span><br><span class="line"></span><br><span class="line">    <span class="type">String</span> getUrl();</span><br><span class="line"></span><br><span class="line">    void onCompleted(<span class="type">E</span> value, int httpStatusCode, <span class="type">String</span> content);</span><br><span class="line"></span><br><span class="line">    void onFailed(<span class="type">E</span> value, <span class="type">Exception</span> ex);</span><br><span class="line"></span><br><span class="line">    void onCanceled(<span class="type">E</span> value);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-base/" class="post-title-link" itemprop="url">Flink核心知识点梳理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink"><a href="#Flink" class="headerlink" title="Flink"></a>Flink</h1><p><img src="_v_images/flink-structure.svg" alt="The processes involved in executing a Flink dataflow"></p>
+<h2 id="stateful-stream-processing"><a href="#stateful-stream-processing" class="headerlink" title="stateful stream processing"></a>stateful stream processing</h2><p>processFunction</p>
+<p>低阶API<br>构建一些新的组件<br>比如 利用定时做一定情况下的匹配和缓存<br>灵活，开发比较复杂</p>
+<p>凌晨更新  注册定时器 </p>
+<h2 id="state"><a href="#state" class="headerlink" title="state"></a>state</h2><p>状态托管<br>operator state 算子状态<br>keyed state<br>State Backend (rocksdb + hdfs)</p>
+<h2 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h2><p>barrier</p>
+<h2 id="DataStream-广播"><a href="#DataStream-广播" class="headerlink" title="DataStream 广播"></a>DataStream 广播</h2><h2 id="CoLocationGroup"><a href="#CoLocationGroup" class="headerlink" title="CoLocationGroup"></a>CoLocationGroup</h2><h2 id="SlotSharingGroup"><a href="#SlotSharingGroup" class="headerlink" title="SlotSharingGroup"></a>SlotSharingGroup</h2><h3 id="如何自定义-Window？"><a href="#如何自定义-Window？" class="headerlink" title="如何自定义 Window？"></a>如何自定义 Window？</h3><p>1、Window Assigner</p>
+<p>负责将元素分配到不同的 window。</p>
+<p>Window API 提供了自定义的 WindowAssigner 接口，我们可以实现 WindowAssigner 的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public abstract Collection&lt;W&gt; assignWindows(T element, long timestamp)</span><br></pre></td></tr></table></figure>
+<p>方法。同时，对于基于 Count 的 window 而言，默认采用了 GlobalWindow 的 window assigner，例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">keyBy.window(GlobalWindows.create())</span><br></pre></td></tr></table></figure>
+<p>2、Trigger</p>
+<p>Trigger 即触发器，定义何时或什么情况下移除 window</p>
+<p>我们可以指定触发器来覆盖 WindowAssigner 提供的默认触发器。 请注意，指定的触发器不会添加其他触发条件，但会替换当前触发器。</p>
+<p>3、Evictor（可选）</p>
+<p>驱逐者，即保留上一 window 留下的某些元素</p>
+<p>4、通过 apply WindowFunction 来返回 DataStream 类型数据。</p>
+<p>利用 Flink 的内部窗口机制和 DataStream API 可以实现自定义的窗口逻辑，例如 session window。</p>
+<h3 id="EventTime-amp-ProcessTime-amp-IngestionTime"><a href="#EventTime-amp-ProcessTime-amp-IngestionTime" class="headerlink" title="EventTime &amp; ProcessTime &amp; IngestionTime"></a>EventTime &amp; ProcessTime &amp; IngestionTime</h3><p> Event time programs must specify how to generate <em>Event Time Watermarks</em>, which is the mechanism that signals progress in event time</p>
+<p>Internally, <em>ingestion time</em> is treated much like <em>event time</em>, but with automatic timestamp assignment and automatic watermark generation.</p>
+<h2 id="watermark"><a href="#watermark" class="headerlink" title="watermark"></a>watermark</h2><p>kafka的每个分区event-time到来的时间不一致</p>
+<p>using Flink’s Kafka-partition-aware watermark generation. watermarks are generated inside the Kafka consumer, per Kafka partition, and the per-partition watermarks are merged in the same way as watermarks are merged on stream shuffles.</p>
+<p>watermark在每个kafka分区的kafka消费者中产生，每个分区的watermark合并起来，如在stream shuffle中合并watermark一样</p>
+<h2 id="HadoopOutputFormat"><a href="#HadoopOutputFormat" class="headerlink" title="HadoopOutputFormat"></a>HadoopOutputFormat</h2><p>flink hbase connector</p>
+<h2 id="算子之间数据传递，是如何序列化的"><a href="#算子之间数据传递，是如何序列化的" class="headerlink" title="算子之间数据传递，是如何序列化的"></a>算子之间数据传递，是如何序列化的</h2>
       
     </div>
 
@@ -1481,7 +1281,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">224</span>
+          <span class="site-state-item-count">222</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

@@ -183,285 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/hadoop-cluser-in-docker/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/docker/hadoop-cluser-in-docker/" class="post-title-link" itemprop="url">在Docker上搭建Hadoop集群container</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>为了学习Hadoop，尝试使用Vbox搭建环境，不是很方便。后面转向Docker。本文将使用Docker搭建Hadoop集群记录下来，以备后用</p>
-</blockquote>
-<p>基础环境</p>
-<ul>
-<li>MacOS 10.12</li>
-<li>Docker 17.03.1-ce</li>
-</ul>
-<p>网易镜像 <a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/home/">https://c.163yun.com/hub#/m/home/</a></p>
-<h1 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h1><p>在MacOS 上安装Docker即为简单，从官网上下载dmg包，拖到应用目录启动即可。</p>
-<p>安装完成后 查看docker 版本:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker version</span></span><br><span class="line"></span><br><span class="line">Client:</span><br><span class="line"> Version:      17.03.1-ce</span><br><span class="line"> API version:  1.27</span><br><span class="line"> Go version:   go1.7.5</span><br><span class="line"> Git commit:   c6d412e</span><br><span class="line"> Built:        Tue Mar 28 00:40:02 2017</span><br><span class="line"> OS/Arch:      darwin/amd64</span><br><span class="line"></span><br><span class="line">Server:</span><br><span class="line"> Version:      17.03.1-ce</span><br><span class="line"> API version:  1.27 (minimum version 1.12)</span><br><span class="line"> Go version:   go1.7.5</span><br><span class="line"> Git commit:   c6d412e</span><br><span class="line"> Built:        Fri Mar 24 00:00:50 2017</span><br><span class="line"> OS/Arch:      linux/amd64</span><br><span class="line"> Experimental: true</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-
-
-<h1 id="docker-建立镜像"><a href="#docker-建立镜像" class="headerlink" title="docker 建立镜像"></a>docker 建立镜像</h1><p>建立三个镜像，存储目录如下:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> tree</span></span><br><span class="line">.</span><br><span class="line">├── centos-ssh-root</span><br><span class="line">│   └── Dockerfile</span><br><span class="line">├── centos-ssh-root-jdk</span><br><span class="line">│   ├── Dockerfile</span><br><span class="line">│   └── jdk-7u79.tar.gz</span><br><span class="line">└── centos-ssh-root-jdk-hadoop</span><br><span class="line">    ├── Dockerfile</span><br><span class="line">    └── hadoop-2.7.3.tar.gz</span><br></pre></td></tr></table></figure>
-<h2 id="建立CentOS-SSH-root基础镜像"><a href="#建立CentOS-SSH-root基础镜像" class="headerlink" title="建立CentOS-SSH-root基础镜像"></a>建立CentOS-SSH-root基础镜像</h2><p>建立一个带有ssh和root账户的CentOS镜像</p>
-<ol>
-<li>新建Dockerfile文件<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir  centos-ssh-root</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 新建 Dockerfile 文件</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> vi  Dockerfile</span></span><br></pre></td></tr></table></figure>
-Dockerfile的内容为:</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 选择一个已有的os镜像作为基础  国内首选仓库 c.163.com</span></span><br><span class="line">FROM hub.c.163.com/public/centos:7.2.1511 </span><br><span class="line">RUN yum clean all</span><br><span class="line">RUN yum install -y yum-plugin-ovl || true</span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装基础的工具包</span></span><br><span class="line">RUN yum install -y vim tar wget curl rsync bzip2 iptables tcpdump less telnet net-tools lsof sysstat cronie python-setuptools</span><br><span class="line">RUN yum clean all</span><br><span class="line">RUN easy_install supervisor</span><br><span class="line">RUN cp -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span><br><span class="line">EXPOSE 22</span><br><span class="line">RUN mkdir -p /etc/supervisor/conf.d/</span><br><span class="line">RUN /usr/bin/echo_supervisord_conf &gt; /etc/supervisord.conf</span><br><span class="line">RUN echo [include] &gt;&gt; /etc/supervisord.conf</span><br><span class="line">RUN echo &#x27;files = /etc/supervisor/conf.d/*.conf&#x27; &gt;&gt; /etc/supervisord.conf</span><br><span class="line"><span class="meta">#</span><span class="bash">COPY sshd.conf /etc/supervisor/conf.d/sshd.conf</span></span><br><span class="line">CMD [&quot;/usr/bin/supervisord&quot;]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 镜像的作者</span>  </span><br><span class="line">MAINTAINER avery </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装openssh-server和sudo软件包，并且将sshd的UsePAM参数设置成no</span>  </span><br><span class="line">RUN yum install -y openssh-server sudo  </span><br><span class="line">RUN sed -i &#x27;s/UsePAM yes/UsePAM no/g&#x27; /etc/ssh/sshd_config  </span><br><span class="line"><span class="meta">#</span><span class="bash">安装openssh-clients</span></span><br><span class="line">RUN yum  install -y openssh-clients</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加测试用户root，密码abc.123，并且将此用户添加到sudoers里</span>  </span><br><span class="line">RUN echo &quot;root:abc.123&quot; | chpasswd  </span><br><span class="line">RUN echo &quot;root   ALL=(ALL)       ALL&quot; &gt;&gt; /etc/sudoers  </span><br><span class="line"><span class="meta">#</span><span class="bash"> 下面这两句比较特殊，</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 在centos6上必须要有，否则创建出来的容器sshd不能登录</span>  </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为了避免文件已存在报错，首先删掉私钥文件</span></span><br><span class="line">RUN rm -rf /etc/ssh/ssh_host_rsa_key</span><br><span class="line">RUN rm -rf /etc/ssh/ssh_host_dsa_key</span><br><span class="line"></span><br><span class="line">RUN ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key  </span><br><span class="line">RUN ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key  </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动sshd服务并且暴露22端口</span>  </span><br><span class="line"><span class="meta">#</span><span class="bash"> RUN mkdir /var/run/sshd</span>  </span><br><span class="line">EXPOSE 22  </span><br><span class="line">CMD [&quot;/usr/sbin/sshd&quot;, &quot;-D&quot;]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<ol start="2">
-<li>创建镜像</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 在Dockerfile同级目录下执行下面的命令，最后的.必须有</span></span><br><span class="line">docker build -t=&quot;avery/centos-ssh-root&quot; .</span><br></pre></td></tr></table></figure>
-<p>查看刚刚创建成功的镜像</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        35 hours ago        776 MB</span><br></pre></td></tr></table></figure>
-<h1 id="创建带有JDK的镜像"><a href="#创建带有JDK的镜像" class="headerlink" title="创建带有JDK的镜像"></a>创建带有JDK的镜像</h1><ol>
-<li>准备 下载JDK<br>此处使用JDK7u79<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir centos-ssh-root-jdk</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root-jdk</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> cp ~/Download/jdk-7u79.tar.gz .</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> vi Dockerfile</span></span><br></pre></td></tr></table></figure></li>
-<li>Dockerfile文件</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FROM avery/centos-ssh-root</span><br><span class="line">ADD jdk-7u79.tar.gz /usr/local/</span><br><span class="line">RUN mv /usr/local/jdk1.7.0_79 /usr/local/jdk1.7</span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加环境变量</span></span><br><span class="line">ENV JAVA_HOME /usr/local/jdk1.7</span><br><span class="line">ENV PATH $JAVA_HOME/bin:$PATH</span><br><span class="line"><span class="meta">#</span><span class="bash"> 可能上面的设置不会生效</span></span><br><span class="line">RUN echo &#x27;JAVA_HOME=/usr/local/jdk1.7/&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;PATH=$JAVA_HOME/bin:$PATH&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;export JAVA_HOME&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;export PATH&#x27; &gt;&gt; .bash_profile</span><br></pre></td></tr></table></figure>
-<ol start="3">
-<li>创建镜像</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t=&quot;avery/centos-ssh-root&quot; .</span><br></pre></td></tr></table></figure>
-<ol start="4">
-<li>查看镜像</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root-jdk          latest              e773519d0452        34 hours ago        1.39 GB</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        35 hours ago        776 MB</span><br></pre></td></tr></table></figure>
-<h2 id="构建hadoop镜像"><a href="#构建hadoop镜像" class="headerlink" title="构建hadoop镜像"></a>构建hadoop镜像</h2><ol>
-<li>准备</li>
-</ol>
-<p>官网下载 hadoop-2.7.3.tar.gz</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir centos-ssh-root-jdk-hadoop</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root-jdk-hadoop</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> cp ../hadoop-2.7.3.tar.gz .</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> vi Dockerfile</span></span><br></pre></td></tr></table></figure>
-<ol start="2">
-<li>Dockerfile</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FROM avery/centos-ssh-root-jdk</span><br><span class="line">ADD hadoop-2.7.3.tar.gz /usr/local</span><br><span class="line">RUN mv /usr/local/hadoop-2.7.3 usr/local/hadoop</span><br><span class="line">ENV HADOOP_HOME /usr/local/hadoop</span><br><span class="line">ENV PATH $HADOOP_HOME/bin:$PATH</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为了防止环境变量失效</span></span><br><span class="line">RUN  echo &#x27;HADOOP_HOME=/usr/local/hadoop/&#x27; &gt;&gt;.bash_profile</span><br><span class="line">RUN  echo &#x27;PATH=$HADOOP_HOME/bin:$PATH&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN  echo &#x27;export HADOOP_HOME&#x27; &gt;&gt; .bash_profile</span><br><span class="line">RUN  echo &#x27;export PATH&#x27; &gt;&gt; .bash_profile</span><br></pre></td></tr></table></figure>
-<ol start="3">
-<li>创建镜像<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t=&quot;avery/centos-ssh-root-jdk-hadoop&quot; .</span><br></pre></td></tr></table></figure></li>
-<li>查看</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root-jdk-hadoop   latest              c93aadf2b6c5        1 hours ago        2.05 GB</span><br><span class="line">avery/centos-ssh-root-jdk          latest              e773519d0452        1 hours ago        1.39 GB</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        1 hours ago        776 MB</span><br></pre></td></tr></table></figure>
-<h1 id="docker-搭建-Hadoop集群"><a href="#docker-搭建-Hadoop集群" class="headerlink" title="docker 搭建 Hadoop集群"></a>docker 搭建 Hadoop集群</h1><p>此处搭建的集群只在本机使用，各个Docker container没有独立的ip，如需要通过IP访问可以参考<a target="_blank" rel="noopener" href="http://blog.csdn.net/xu470438000/article/details/50512442">使用docker搭建hadoop分布式集群</a></p>
-<p>在MacOS上修改系统文件，需要关闭Rootless:</p>
-<p>重启按住 Command+R，进入恢复模式，打开Terminal。</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil disable</span><br></pre></td></tr></table></figure>
-<p>重启即可。如果要恢复默认，那么</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil enable</span><br></pre></td></tr></table></figure>
-
-<h2 id="创建3台container"><a href="#创建3台container" class="headerlink" title="创建3台container"></a>创建3台container</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker run --name hadoop0 --hostname hadoop0 -d -P -p 50070:50070 -p 8088:8088 avery/centos-ssh-root-jdk-hadoop</span><br><span class="line"></span><br><span class="line">docker run --name hadoop1 --hostname hadoop1 -d -P avery/centos-ssh-root-jdk-hadoop</span><br><span class="line"></span><br><span class="line">docker run --name hadoop2 --hostname hadoop2 -d -P avery/centos-ssh-root-jdk-hadoop</span><br></pre></td></tr></table></figure>
-<p>查看三个container的信息</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker container ls</span><br><span class="line">CONTAINER ID        IMAGE                              COMMAND               CREATED             STATUS              PORTS                                                                     NAMES</span><br><span class="line">78e5e35adfa4        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:32776-&gt;22/tcp                                                     hadoop2</span><br><span class="line">5f27fd91c7ba        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:32775-&gt;22/tcp                                                     hadoop1</span><br><span class="line">1d7fd37371cc        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:8088-&gt;8088/tcp, 0.0.0.0:50070-&gt;50070/tcp, 0.0.0.0:32774-&gt;22/tcp   hadoop0</span><br></pre></td></tr></table></figure>
-<p>查看三个container的ip:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop0</span></span><br><span class="line">172.17.0.2</span><br><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop1</span></span><br><span class="line">172.17.0.3</span><br><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop2</span></span><br><span class="line">172.17.0.4</span><br></pre></td></tr></table></figure>
-
-<h2 id="集群规划"><a href="#集群规划" class="headerlink" title="集群规划"></a>集群规划</h2><p>准备搭建一个具有三个节点的集群，一主两从 </p>
-<ul>
-<li>主节点：hadoop0 ip：172.17.0.2</li>
-<li>从节点1：hadoop1 ip：172.17.0.3</li>
-<li>从节点2：hadoop2 ip：172.17.0.4</li>
-</ul>
-<h2 id="连接container"><a href="#连接container" class="headerlink" title="连接container"></a>连接container</h2><p>验证ssh连接</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32774</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32775</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32776</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br></pre></td></tr></table></figure>
-<p>使用exec</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker exec -it hadoop0 /bin/bash</span><br></pre></td></tr></table></figure>
-
-<h2 id="修改container的主机名"><a href="#修改container的主机名" class="headerlink" title="修改container的主机名"></a>修改container的主机名</h2><p>分别修改三个container的hosts</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/hosts </span><br></pre></td></tr></table></figure>
-<p>添加下面配置</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">172.17.0.2    hadoop0</span><br><span class="line">172.17.0.3    hadoop1</span><br><span class="line">172.17.0.4    hadoop2</span><br></pre></td></tr></table></figure>
-<h2 id="ssh-免密"><a href="#ssh-免密" class="headerlink" title="ssh 免密"></a>ssh 免密</h2><p>设置ssh免密码登录<br>在hadoop0上执行下面操作</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">mkdir .ssh</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop0</span><br><span class="line">ssh-copy-id -i hadoop1</span><br><span class="line">ssh-copy-id -i hadoop2</span><br></pre></td></tr></table></figure>
-<p>在hadoop1上执行下面操作</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop1</span><br></pre></td></tr></table></figure>
-<p>在hadoop2上执行下面操作</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop2</span><br></pre></td></tr></table></figure>
-<p>至此，Docker搭建Hadoop集群的准备工作</p>
-<hr>
-<p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="http://blog.csdn.net/xu470438000/article/details/50512442">使用docker搭建hadoop分布式集群</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/dubbo/base/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/dubbo/base/" class="post-title-link" itemprop="url">Dubbo基础</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Dubbo-分布式服务治理框架"><a href="#Dubbo-分布式服务治理框架" class="headerlink" title="Dubbo-分布式服务治理框架"></a>Dubbo-分布式服务治理框架</h1><blockquote>
-<p>学习dubbo教程 笔记整理</p>
-<p><a target="_blank" rel="noopener" href="http://dubbo.io/Developer+Guide-zh.htm">Dubbo官方文档</a></p>
-</blockquote>
-<p>关键词：分布式治理</p>
-<p>Dubbo是阿里巴巴推出的一款分布式服务治理框架（虽然现在阿里内部一些部门已经不再使用）。</p>
-<p>Dubbo将分布式服务分为四个角色：服务提供者、服务消费者、注册中心和监控中心。</p>
-<h1 id="Dubbo角色"><a href="#Dubbo角色" class="headerlink" title="Dubbo角色"></a>Dubbo角色</h1><p>![][dubbo-roles]</p>
-<ol>
-<li>服务提供者注册到服务注册中心</li>
-<li>服务消费者从服务提供者订阅服务</li>
-<li>当服务提供者发生变化（出现新服务提供者、旧的服务提供者死掉等），注册中心通知服务消费者</li>
-<li>当服务消费者调用服务时，首先从注册中心查找服务，注册中心直接将选定的服务提供者的ip和端口等信息返回给服务消费者，服务消费者直接调用服务提供者</li>
-<li>服务提供者和服务消费者每个一分钟将收集的运行信息上报到监控中心</li>
-</ol>
-<p>只有服务消费者调用服务生成者是同步调用，其他都是异步的。</p>
-<p>Provider与Registry、Consumer与Register之间都保持着长连接，用于保持信息同步</p>
-<h1 id="简洁的项目结构"><a href="#简洁的项目结构" class="headerlink" title="简洁的项目结构"></a>简洁的项目结构</h1><h1 id="Dubbo支持的RPC协议"><a href="#Dubbo支持的RPC协议" class="headerlink" title="Dubbo支持的RPC协议"></a>Dubbo支持的RPC协议</h1><ol>
-<li>支持常见的传输协议：RMI、Dubbo、Hessain、WebService、Http等，<br> 其中Dubbo和RMI协议基于TCP实现，Hessian和WebService基于HTTP实现。</li>
-<li>传输框架：Netty、Mina、以及基于servlet等方式。</li>
-<li>序列化方式：Hessian2、dubbo、JSON（ fastjson 实现）、JAVA、SOAP 等。</li>
-<li>注册中心可以选择 zooKeeper Redis Dubbo Multicast</li>
-</ol>
-<h1 id="Dubbo-服务降级"><a href="#Dubbo-服务降级" class="headerlink" title="Dubbo 服务降级"></a>Dubbo 服务降级</h1><p><a target="_blank" rel="noopener" href="http://blog.csdn.net/zuoanyinxiang/article/details/51027576">Dubbo学习(七)：服务的升级和降级</a></p>
-<p>服务降级方式：</p>
-<ul>
-<li>服务接口拒绝服务：无用户特定信息，页面能访问，但是添加删除提示服务器繁忙。页面内容也可在Varnish或CDN内获取。</li>
-<li>页面拒绝服务：页面提示由于服务繁忙此服务暂停。跳转到varnish或nginx的一个静态页面。</li>
-<li>延迟持久化：页面访问照常，但是涉及记录变更，会提示稍晚能看到结果，将数据记录到异步队列或log，服务恢复后执行。</li>
-<li>随机拒绝服务：服务接口随机拒绝服务，让用户重试，目前较少有人采用。因为用户体验不佳。</li>
-</ul>
-<p>服务降级埋点的地方：</p>
-<ul>
-<li>消息中间件：所有API调用可以使用消息中间件进行控制</li>
-<li>前端页面：指定网址不可访问（NGINX+LUA）</li>
-<li>底层数据驱动：拒绝所有增删改动作，只允许查询</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_2_in_or/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -493,7 +214,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -560,6 +281,107 @@ Dockerfile的内容为:</li>
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/PhantomJS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/PhantomJS/" class="post-title-link" itemprop="url">PhamtomJs</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>PhamtomJs 是服务端的无界面的Chrome浏览器，提供JS API和shell命令行，方便操作</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://phantomjs.org/quick-start.html">官方的文档</a></p>
+</blockquote>
+<h1 id="Java-操作"><a href="#Java-操作" class="headerlink" title="Java 操作"></a>Java 操作</h1><h2 id="阻塞式"><a href="#阻塞式" class="headerlink" title="阻塞式"></a>阻塞式</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">openWithPhanatomjs</span><span class="params">(String viewUrl)</span> </span>&#123;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs start&quot;</span> + viewUrl);</span><br><span class="line">      InputStreamReader inReader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">      BufferedReader reader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream errorStream = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">          String path = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              path = Thread.currentThread().getContextClassLoader().getResource(<span class="string">&quot;/&quot;</span>).toURI().getPath();</span><br><span class="line">          &#125; <span class="keyword">catch</span> (URISyntaxException e) &#123;</span><br><span class="line">              e.printStackTrace();</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">final</span> String s = path + File.separator + <span class="string">&quot;otwp.js&quot;</span>;</span><br><span class="line"><span class="comment">//            logger.info(s);</span></span><br><span class="line">          Process process = Runtime.getRuntime().exec(phanatomjsHome + <span class="string">&quot; &quot;</span> + s + <span class="string">&quot; &quot;</span> + viewUrl);</span><br><span class="line">          inputStream = process.getInputStream();</span><br><span class="line">          inReader = <span class="keyword">new</span> InputStreamReader(inputStream, <span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">          reader = <span class="keyword">new</span> BufferedReader(inReader);</span><br><span class="line">          String line = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">while</span> ((line = reader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">          errorStream = process.getErrorStream();</span><br><span class="line">          <span class="keyword">final</span> BufferedReader bufferedReader = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> InputStreamReader(errorStream));</span><br><span class="line">          <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">      &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              <span class="keyword">if</span> (inReader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inReader.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (inputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inputStream.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (reader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  reader.close();</span><br><span class="line">              &#125;</span><br><span class="line">          &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">              logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs end&quot;</span> + viewUrl);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="样例"><a href="#样例" class="headerlink" title="样例"></a>样例</h1><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// run this js with command:</span></span><br><span class="line"><span class="comment">// phantomjs openTableauWithPhantomjs.js &lt;Tableau view url&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">&quot;start open with Phantomjs&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> system = <span class="built_in">require</span>(<span class="string">&#x27;system&#x27;</span>);</span><br><span class="line"><span class="keyword">if</span> (system.args.length === <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Please input view url&#x27;</span>);</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">    phantom.exit();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> viewUrl = system.args[<span class="number">1</span>];</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Open url: &#x27;</span> + viewUrl);</span><br><span class="line">    <span class="keyword">var</span> page = <span class="built_in">require</span>(<span class="string">&#x27;webpage&#x27;</span>).create();</span><br><span class="line">    <span class="keyword">var</span> t = <span class="built_in">Date</span>.now();</span><br><span class="line"></span><br><span class="line">    page.onConsoleMessage = <span class="function"><span class="keyword">function</span> (<span class="params">msg</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(msg);</span><br><span class="line">    &#125;;</span><br><span class="line">    page.onLoadFinished = <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;加载完毕, 状态: &#x27;</span> + status);</span><br><span class="line"></span><br><span class="line">    &#125;;</span><br><span class="line">    page.settings.resourceTimeout=<span class="number">100000</span>;</span><br><span class="line"></span><br><span class="line">    page.open(viewUrl, <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> title = page.evaluate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">document</span>.title;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="built_in">console</span>.log(status + <span class="string">&#x27;\ttitle:&#x27;</span> + title);</span><br><span class="line">        <span class="keyword">if</span> (status !== <span class="string">&#x27;success&#x27;</span>) &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;Fail to load the address!&#x27;</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            t = <span class="built_in">Date</span>.now() - t;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;open success: elase time : &#x27;</span> + t);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">        phantom.exit();</span><br><span class="line"></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<hr>
+<p>[参考文献]</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.qcloud.com/community/article/743451001489391682">PhantomJS 基础及示例</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/RPC/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -591,7 +413,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -686,107 +508,6 @@ Dockerfile的内容为:</li>
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/PhantomJS/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/PhantomJS/" class="post-title-link" itemprop="url">PhamtomJs</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>PhamtomJs 是服务端的无界面的Chrome浏览器，提供JS API和shell命令行，方便操作</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="http://phantomjs.org/quick-start.html">官方的文档</a></p>
-</blockquote>
-<h1 id="Java-操作"><a href="#Java-操作" class="headerlink" title="Java 操作"></a>Java 操作</h1><h2 id="阻塞式"><a href="#阻塞式" class="headerlink" title="阻塞式"></a>阻塞式</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">openWithPhanatomjs</span><span class="params">(String viewUrl)</span> </span>&#123;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs start&quot;</span> + viewUrl);</span><br><span class="line">      InputStreamReader inReader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">      BufferedReader reader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream errorStream = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">          String path = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              path = Thread.currentThread().getContextClassLoader().getResource(<span class="string">&quot;/&quot;</span>).toURI().getPath();</span><br><span class="line">          &#125; <span class="keyword">catch</span> (URISyntaxException e) &#123;</span><br><span class="line">              e.printStackTrace();</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">final</span> String s = path + File.separator + <span class="string">&quot;otwp.js&quot;</span>;</span><br><span class="line"><span class="comment">//            logger.info(s);</span></span><br><span class="line">          Process process = Runtime.getRuntime().exec(phanatomjsHome + <span class="string">&quot; &quot;</span> + s + <span class="string">&quot; &quot;</span> + viewUrl);</span><br><span class="line">          inputStream = process.getInputStream();</span><br><span class="line">          inReader = <span class="keyword">new</span> InputStreamReader(inputStream, <span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">          reader = <span class="keyword">new</span> BufferedReader(inReader);</span><br><span class="line">          String line = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">while</span> ((line = reader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">          errorStream = process.getErrorStream();</span><br><span class="line">          <span class="keyword">final</span> BufferedReader bufferedReader = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> InputStreamReader(errorStream));</span><br><span class="line">          <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">      &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              <span class="keyword">if</span> (inReader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inReader.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (inputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inputStream.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (reader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  reader.close();</span><br><span class="line">              &#125;</span><br><span class="line">          &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">              logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs end&quot;</span> + viewUrl);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<h1 id="样例"><a href="#样例" class="headerlink" title="样例"></a>样例</h1><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// run this js with command:</span></span><br><span class="line"><span class="comment">// phantomjs openTableauWithPhantomjs.js &lt;Tableau view url&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">&quot;start open with Phantomjs&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> system = <span class="built_in">require</span>(<span class="string">&#x27;system&#x27;</span>);</span><br><span class="line"><span class="keyword">if</span> (system.args.length === <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Please input view url&#x27;</span>);</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">    phantom.exit();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> viewUrl = system.args[<span class="number">1</span>];</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Open url: &#x27;</span> + viewUrl);</span><br><span class="line">    <span class="keyword">var</span> page = <span class="built_in">require</span>(<span class="string">&#x27;webpage&#x27;</span>).create();</span><br><span class="line">    <span class="keyword">var</span> t = <span class="built_in">Date</span>.now();</span><br><span class="line"></span><br><span class="line">    page.onConsoleMessage = <span class="function"><span class="keyword">function</span> (<span class="params">msg</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(msg);</span><br><span class="line">    &#125;;</span><br><span class="line">    page.onLoadFinished = <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;加载完毕, 状态: &#x27;</span> + status);</span><br><span class="line"></span><br><span class="line">    &#125;;</span><br><span class="line">    page.settings.resourceTimeout=<span class="number">100000</span>;</span><br><span class="line"></span><br><span class="line">    page.open(viewUrl, <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> title = page.evaluate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">document</span>.title;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="built_in">console</span>.log(status + <span class="string">&#x27;\ttitle:&#x27;</span> + title);</span><br><span class="line">        <span class="keyword">if</span> (status !== <span class="string">&#x27;success&#x27;</span>) &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;Fail to load the address!&#x27;</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            t = <span class="built_in">Date</span>.now() - t;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;open success: elase time : &#x27;</span> + t);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">        phantom.exit();</span><br><span class="line"></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<hr>
-<p>[参考文献]</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://www.qcloud.com/community/article/743451001489391682">PhantomJS 基础及示例</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/cluster_deploy/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -818,7 +539,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -919,7 +640,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -993,7 +714,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1067,7 +788,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1151,7 +872,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:28" itemprop="dateModified" datetime="2021-02-09T09:38:28+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1217,6 +938,262 @@ Dockerfile的内容为:</li>
 </ul>
 <p><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html">官方文档-How SolrCloud Works</a></p>
 
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/base/" class="post-title-link" itemprop="url">MySQL</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-27 11:00:00" itemprop="dateCreated datePublished" datetime="2016-12-27T11:00:00+08:00">2016-12-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ol>
+<li>语法<ul>
+<li><a href="/database/MySQL/syntax_1">基础语法1</a></li>
+<li><a href="/database/MySQL/syntax_2_in_or">in与or</a></li>
+<li><a href="/database/MySQL/syntax_3_multitable_join">多表join</a></li>
+<li><a href="/database/MySQL/syntax_4_advanced">高级语法</a></li>
+<li><a href="/database/MySQL/syntax_5_sample">使用样例</a></li>
+</ul>
+</li>
+<li>最佳实践<ul>
+<li><a href="/database/MySQL/best_practices">最佳实践</a></li>
+</ul>
+</li>
+<li>架构<ul>
+<li><a href="/database/MySQL/struct_1">架构</a></li>
+</ul>
+</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_4_advanced/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/syntax_4_advanced/" class="post-title-link" itemprop="url">MySQL高级语法</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-27 11:00:00" itemprop="dateCreated datePublished" datetime="2016-12-27T11:00:00+08:00">2016-12-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="replace-into"><a href="#replace-into" class="headerlink" title="replace into"></a>replace into</h1><p><code>replace into t(id, update_time) values(1, now());</code><br>或<br><code>replace into t(id, update_time) select 1, now();</code></p>
+<p><code>replace into</code> 跟 <code>insert</code> 功能类似，不同点在于：<br><code>replace into</code> 首先尝试插入数据到表中，</p>
+<ol>
+<li>如果发现表中已经有此行数据（根据主键或者唯一索引判断）则先删除此行数据，然后插入新的数据。</li>
+<li>否则，直接插入新数据。</li>
+</ol>
+<p>要注意的是：插入数据的表必须有主键或者是唯一索引！否则的话，<code>replace into</code> 会直接插入数据，这将导致表中出现重复的数据。<br>MySQL replace into 有三种形式：</p>
+<ol>
+<li><code>replace into tbl_name(col_name, ...) values(...)</code></li>
+<li><code>replace into tbl_name(col_name, ...) select ...</code></li>
+<li><code>replace into tbl_name set col_name=value, ...</code></li>
+</ol>
+<p>前两种形式用的多些。其中 “into” 关键字可以省略，不过最好加上 “into”，这样意思更加直观。另外，对于那些没有给予值的列，MySQL 将自动为这些列赋上默认值。</p>
+<h1 id="MySQL高级"><a href="#MySQL高级" class="headerlink" title="MySQL高级"></a>MySQL高级</h1><h1 id="理解SQL语句"><a href="#理解SQL语句" class="headerlink" title="理解SQL语句"></a>理解SQL语句</h1><h1 id="创建外键的SQL语句"><a href="#创建外键的SQL语句" class="headerlink" title="创建外键的SQL语句"></a>创建外键的SQL语句</h1><h2 id="创建数据表"><a href="#创建数据表" class="headerlink" title="创建数据表"></a>创建数据表</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> a(</span><br><span class="line">  id <span class="type">INT</span> <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span>,</span><br><span class="line">  b_id <span class="type">INT</span>,</span><br><span class="line">  <span class="keyword">CONSTRAINT</span> b_fk <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> (b_id) <span class="keyword">REFERENCES</span> b(id)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<h2 id="修改数据表"><a href="#修改数据表" class="headerlink" title="修改数据表"></a>修改数据表</h2><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[<span class="keyword">CONSTRAINT</span> symbol] <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> [id] (index_col_name, ...)  </span><br><span class="line">    <span class="keyword">REFERENCES</span> tbl_name (index_col_name, ...)  </span><br><span class="line">    [ON DELETE &#123;RESTRICT | CASCADE | SET NULL | NO ACTION&#125;]  </span><br><span class="line">    [ON UPDATE &#123;RESTRICT | CASCADE | SET NULL | NO ACTION&#125;]  </span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a</span><br><span class="line"><span class="keyword">ADD</span> <span class="keyword">CONSTRAINT</span> b_fk <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_id <span class="keyword">REFERENCES</span> b(id);</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a</span><br><span class="line"><span class="keyword">ADD</span> <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_fk(b_id)  <span class="keyword">REFERENCES</span> b(id);</span><br></pre></td></tr></table></figure>
+<h2 id="删除外键"><a href="#删除外键" class="headerlink" title="删除外键"></a>删除外键</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a <span class="keyword">DROP</span> <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_fk;</span><br></pre></td></tr></table></figure>
+<p>MySQL <code>KEY...REFERENCES</code>修饰符添加一个<code>ON DELETE</code> 或<code>ON UPDATE</code>子句简化任务，它告诉了数据库在这种情况如何处理孤立任务</p>
+<table>
+<thead>
+<tr>
+<th>关键字</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CASCADE</td>
+<td>删除包含与已删除键值有参照关系的所有记录</td>
+</tr>
+<tr>
+<td>SET NULL</td>
+<td>修改包含与已删除键值有参照关系的所有记录，使用NULL值替换（只能用于已标记为NOT NULL的字段）</td>
+</tr>
+<tr>
+<td>RESTRICT</td>
+<td>拒绝删除要求，直到使用删除键值的辅助表被手工删除，并且没有参照时(这是默认设置，也是最安全的设置)</td>
+</tr>
+<tr>
+<td>NO ACTION</td>
+<td>啥也不做</td>
+</tr>
+</tbody></table>
+<p>请注意，通过ON UPDATE 和 ON DELETE规则，设置MySQL能够实现自动操作时，如果键的关系没有设置好，可能会导致严重的数据破坏，<br>例如：如果一系列的表通过外键关系和ON DELETE CASCADE 规则连接时，任意一个主表的变化都会导致甚至只和原始删除有一些将要联系的记录在没有警告的情况被删除，所以，我们在操作之前还要检查这些规则的，操作之后还要再次检查.</p>
+<h1 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h1><p>事务回滚</p>
+<h1 id="视图"><a href="#视图" class="headerlink" title="视图"></a>视图</h1><h1 id="触发器"><a href="#触发器" class="headerlink" title="触发器"></a>触发器</h1><h1 id="序列号"><a href="#序列号" class="headerlink" title="序列号"></a>序列号</h1><h1 id="权限"><a href="#权限" class="headerlink" title="权限"></a>权限</h1><h2 id="使用技巧"><a href="#使用技巧" class="headerlink" title="使用技巧"></a>使用技巧</h2><ol>
+<li><p>如何更新使用过滤条件中包括自身的表?<br>在MySQL中, 不允许更新的表不能出现在FROM从句中, 但是可以使用JOIN从句中.</p>
+<p>联合更新</p>
+</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> user1 a <span class="keyword">JOIN</span>(</span><br><span class="line">  <span class="keyword">SELECT</span> b.`user_name`</span><br><span class="line">  <span class="keyword">FROM</span> user1 a <span class="keyword">INNER</span> <span class="keyword">JOIN</span> user2 b</span><br><span class="line">  <span class="keyword">ON</span> a.`user_name`<span class="operator">=</span> b.`user_name`</span><br><span class="line">) b <span class="keyword">ON</span> a.`user_name`<span class="operator">=</span>b.`user_name`</span><br><span class="line"><span class="keyword">SET</span> a.`<span class="keyword">over</span>`<span class="operator">=</span>`齐天大圣`;</span><br></pre></td></tr></table></figure>
+<ol>
+<li>优化子查询</li>
+<li>优化聚合查询</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> a.user_name, b.timestr,b.kills  </span><br><span class="line"><span class="keyword">from</span> <span class="keyword">user</span> a  </span><br><span class="line"><span class="keyword">join</span> user_kills b</span><br><span class="line"><span class="keyword">on</span> a.id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">where</span> b.kills<span class="operator">=</span>(</span><br><span class="line">  <span class="keyword">select</span> <span class="built_in">max</span>(c.kills) <span class="keyword">from</span> user_kills c <span class="keyword">where</span> c.user_id<span class="operator">=</span>b.user_id</span><br><span class="line">);  </span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> a.user_name,b.timestr,b.kills</span><br><span class="line"><span class="keyword">FROM</span> user1 a</span><br><span class="line"><span class="keyword">JOIN</span> user_kills b <span class="keyword">ON</span> a.id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">JOIN</span> user_kills c <span class="keyword">ON</span> c.user_id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> a.user_name,b.timestr,c.kills</span><br><span class="line"><span class="keyword">HAVING</span> b.kills<span class="operator">=</span><span class="built_in">MAX</span>(c.kills);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>如何实现分组选择</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> d.user_name, c.timestr , kills</span><br><span class="line"><span class="keyword">FROM</span> (</span><br><span class="line">  <span class="keyword">SELECT</span> user_id,timestr,kills,</span><br><span class="line">  (<span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> user_kills b <span class="keyword">WHERE</span></span><br><span class="line">    b.user_id<span class="operator">=</span>a.user_id <span class="keyword">AND</span> a.kills<span class="operator">&lt;=</span>b.kills) <span class="keyword">AS</span> cnt</span><br><span class="line">    <span class="keyword">FROM</span> user_kills a</span><br><span class="line">    <span class="keyword">GROUP</span> <span class="keyword">BY</span> user_id,timestr,kills</span><br><span class="line">) c <span class="keyword">JOIN</span> user1 d <span class="keyword">ON</span> c.user_id<span class="operator">=</span>d.id</span><br><span class="line"><span class="keyword">WHERE</span> cnt<span class="operator">&lt;=</span><span class="number">2</span></span><br></pre></td></tr></table></figure>
+<ol>
+<li><p>删除重复记录</p>
+</li>
+<li><p>行列转换</p>
+</li>
+</ol>
+<p>MySQL</p>
+<h1 id="SQL语句类型"><a href="#SQL语句类型" class="headerlink" title="SQL语句类型:"></a>SQL语句类型:</h1><ol>
+<li>DDL 数据定义语言</li>
+<li>TPL 事务处理语言</li>
+<li>DCL 数据控制语言</li>
+<li>DML 数据操作语言</li>
+</ol>
+<h1 id="事务-1"><a href="#事务-1" class="headerlink" title="事务"></a>事务</h1><h1 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h1><h1 id="JOIN"><a href="#JOIN" class="headerlink" title="JOIN"></a>JOIN</h1><p>只写JOIN, 默认是inner join</p>
+<ol>
+<li>更新使用过滤条件中包括自身的表?<br>不能更新from从句的表</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> user1 <span class="keyword">set</span> <span class="keyword">over</span><span class="operator">=</span><span class="string">&#x27;齐天大圣&#x27;</span> <span class="keyword">where</span> user1.user_name <span class="keyword">in</span> (</span><br><span class="line">        <span class="keyword">select</span> b.user_name <span class="keyword">from</span> user1 a <span class="keyword">join</span> user2 b <span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line">        );</span><br></pre></td></tr></table></figure>
+<p>会报错!</p>
+<p>使用JOIN可以解决此问题</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> user1 a <span class="keyword">join</span>(</span><br><span class="line">        <span class="keyword">select</span> b.user_name</span><br><span class="line">        <span class="keyword">from</span> user1 a</span><br><span class="line">        <span class="keyword">join</span> user2 b</span><br><span class="line">        <span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line">        ) b</span><br><span class="line"><span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line"><span class="keyword">set</span> a.over<span class="operator">=</span><span class="string">&#x27;齐天大圣&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>表结构：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[Exam](</span><br><span class="line">    [S_date] [datetime] <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Order_Id] [<span class="type">varchar</span>](<span class="number">50</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Product_Id] [<span class="type">varchar</span>](<span class="number">50</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Amt] [<span class="type">numeric</span>](<span class="number">18</span>, <span class="number">0</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span></span><br><span class="line">) <span class="keyword">ON</span> [<span class="keyword">PRIMARY</span>]</span><br></pre></td></tr></table></figure>
+<p>题目一: 写一条Sql语句查询前出100到199的记录<br>题目二: 写一条Sql语句删除重复[除时间外的所有字段字段相同]的记录,保留重复记录中时间最大的记录<br>题目三: 一条Sql语句查出年份,1月,2月,3月….12月的订单总数列表<br>题目四: 一条sql语句查询出年份,本月销量,上月销量,环比%,去年同期销量,同比%列表</p>
+<p>1:</p>
+<pre><code>select * from Exam limit 100,100</code></pre>
+<p>2 :</p>
+<p>3 :</p>
+<p>   select year(s_date) as ‘年’ ,month(s_date) as ‘月’, count(Amt) as ‘订单数’ from Exam group by year(s_date),Month(s_date);</p>
+<h2 id="导入-导出"><a href="#导入-导出" class="headerlink" title="导入/导出"></a>导入/导出</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">#导出整个库的表结构如下：</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename <span class="operator">&gt;</span> createtab.sql，</span><br><span class="line"></span><br><span class="line">#如果只想导出 表 test1，test2，test3 的 表结构 和 数据呢？</span><br><span class="line">#该如何导出？</span><br><span class="line"></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename test1 test2 test3 <span class="operator">&gt;</span> createtab.sql</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 上面的是导出指定表结构，下面这个可以导出指定表结构和数据</span></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="comment">--tables databasename &gt; createtab.sql</span></span><br><span class="line"></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename test1 test2 test3 <span class="operator">&gt;</span> createtab.sql</span><br></pre></td></tr></table></figure>
+<h1 id="exist-与-in的区别"><a href="#exist-与-in的区别" class="headerlink" title="exist 与 in的区别"></a>exist 与 in的区别</h1><h1 id="union与union-all"><a href="#union与union-all" class="headerlink" title="union与union all"></a>union与union all</h1><h1 id="in的长度"><a href="#in的长度" class="headerlink" title="in的长度"></a>in的长度</h1><h1 id="in-与exist是否使用索引"><a href="#in-与exist是否使用索引" class="headerlink" title="in 与exist是否使用索引"></a>in 与exist是否使用索引</h1><h1 id="select-distinct-只能单个字段"><a href="#select-distinct-只能单个字段" class="headerlink" title="select  distinct  只能单个字段"></a>select  distinct  只能单个字段</h1>
       
     </div>
 
@@ -1300,7 +1277,7 @@ Dockerfile的内容为:</li>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">224</span>
+          <span class="site-state-item-count">222</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

@@ -183,217 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/Atomic/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/multithread/Atomic/" class="post-title-link" itemprop="url">Atomic原子变量</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-09-11 14:58:00" itemprop="dateCreated datePublished" datetime="2019-09-11T14:58:00+08:00">2019-09-11</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <blockquote>
-<p>转载自<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_34871626/article/details/81411815">Java并发编程之原子性-Atomic详解</a></p>
-</blockquote>
-<h1 id="Atomic"><a href="#Atomic" class="headerlink" title="Atomic"></a>Atomic</h1><h2 id="atomic包"><a href="#atomic包" class="headerlink" title="atomic包"></a>atomic包</h2><p>JUC中的Atomic包详解：</p>
-<p>Atomic包中提供了很多Atomicxxx的类：</p>
-<p><img src="images/20191201183741334_611136175.png"></p>
-<p>它们都是CAS（compareAndSwap）来实现原子性。</p>
-<h2 id="AtomicInteger样例"><a href="#AtomicInteger样例" class="headerlink" title="AtomicInteger样例"></a>AtomicInteger样例</h2><p>先写一个简单示例如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AtomicExample1</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 请求总数</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> clientTotal = <span class="number">5000</span>;</span><br><span class="line">    <span class="comment">// 同时并发执行的线程数</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> threadTotal = <span class="number">200</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> AtomicInteger count = <span class="keyword">new</span> AtomicInteger(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ExecutorService executorService = Executors.newCachedThreadPool();</span><br><span class="line">        <span class="keyword">final</span> Semaphore semaphore = <span class="keyword">new</span> Semaphore(threadTotal);</span><br><span class="line">        <span class="keyword">final</span> CountDownLatch countDownLatch = <span class="keyword">new</span> CountDownLatch(clientTotal);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; clientTotal ; i++) &#123;</span><br><span class="line">            executorService.execute(() -&gt; &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    semaphore.acquire();</span><br><span class="line">                    add();</span><br><span class="line">                    semaphore.release();</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                    log.error(<span class="string">&quot;exception&quot;</span>, e);</span><br><span class="line">                &#125;</span><br><span class="line">                countDownLatch.countDown();</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">        countDownLatch.await();</span><br><span class="line">        executorService.shutdown();</span><br><span class="line">        log.info(<span class="string">&quot;count:&#123;&#125;&quot;</span>, count.get());</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">add</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        count.incrementAndGet();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以发下每次的运行结果总是我们想要的预期结果5000。<br>说明该计数方法是线程安全的。</p>
-<h2 id="AtomicInteger实现原理"><a href="#AtomicInteger实现原理" class="headerlink" title="AtomicInteger实现原理"></a>AtomicInteger实现原理</h2><p>我们查看下<code>count.incrementAndGet()</code>方法，它的第一个参数为对象本身，第二个参数为valueOffset是用来记录value本身在内存的编译地址的，这个记录，也主要是为了在更新操作在内存中找到value的位置，方便比较，第三个参数为常量1。：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AtomicInteger</span> <span class="keyword">extends</span> <span class="title">Number</span> <span class="keyword">implements</span> <span class="title">java</span>.<span class="title">io</span>.<span class="title">Serializable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> serialVersionUID = <span class="number">6214790243416807050L</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// setup to use Unsafe.compareAndSwapInt for updates</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Unsafe unsafe = Unsafe.getUnsafe();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> valueOffset;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            valueOffset = unsafe.objectFieldOffset</span><br><span class="line">                (AtomicInteger.class.getDeclaredField(<span class="string">&quot;value&quot;</span>));</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception ex) &#123; <span class="keyword">throw</span> <span class="keyword">new</span> Error(ex); &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">int</span> value;</span><br><span class="line">    ... 此处省略多个方法...</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Atomically increments by one the current value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the updated value</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">incrementAndGet</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe.getAndAddInt(<span class="keyword">this</span>, valueOffset, <span class="number">1</span>) + <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>AtomicInteger源码里使用了一个Unsafe的类,它提供了一个<strong>getAndAddInt</strong>的方法，我们继续点看查看它的源码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">Unsafe</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Unsafe theUnsafe;</span><br><span class="line"></span><br><span class="line">    ....此处省略很多方法及成员变量....</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">int</span> <span class="title">getAndAddInt</span><span class="params">(Object var1, <span class="keyword">long</span> var2, <span class="keyword">int</span> var4)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> var5;</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            var5 = <span class="keyword">this</span>.getIntVolatile(var1, var2);</span><br><span class="line">        &#125; <span class="keyword">while</span>(!<span class="keyword">this</span>.compareAndSwapInt(var1, var2, var5, var5 + var4));</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> var5;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">native</span> <span class="keyword">boolean</span> <span class="title">compareAndSwapInt</span><span class="params">(Object var1, <span class="keyword">long</span> var2, <span class="keyword">int</span> var4, <span class="keyword">int</span> var5)</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="function"><span class="keyword">public</span> <span class="keyword">native</span> <span class="keyword">int</span> <span class="title">getIntVolatile</span><span class="params">(Object var1, <span class="keyword">long</span> var2)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>可以看到这里使用了一个do while语句来做主体实现的。而在while语句里它的核心是调用了一个<code>compareAndSwapInt()</code>的方法。它是一个native方法，它是一个底层的方法，不是使用Java来实现的。</p>
-<p>假设我们要执行0+1=0的操作，下面是单线程情况下各参数的值：</p>
-<p><img src="images/20191201180435146_205936933.png"><br><img src="images/20191201180445132_1585877614.png"><br>更新后：</p>
-<p><img src="images/20191201180454442_1425515581.png"></p>
-<p>compareAndSwapInt()方法的第一个参数（var1）是当前的对象，就是代码示例中的count。此时它的值为0（期望值）。<br>第二个值（var2）是传递的valueOffset值，它的值为12。<br>第三个参数（var4）就为常量1。方法中的变量参数（var5）是根据参数一和参数二valueOffset，调用底层getIntVolatile方法得到的值，此时它的值为0 。<br>compareAndSwapInt()想要达到的目标是对于count这个对象，如果当前的期望值var1里的value跟底层的返回的值（var5）相同的话，那么把它更新成var5+var4这个值。<br>不同的话重新循环取期望值（var5）直至当前值与期望值相同才做更新。compareAndSwap方法的核心也就是我们通常所说的CAS。</p>
-<p>Atomic包下其他的类如AtomicLong等的实现原理基本与上述一样。</p>
-<h3 id="AtomicInteger的代码"><a href="#AtomicInteger的代码" class="headerlink" title="AtomicInteger的代码"></a>AtomicInteger的代码</h3><p><img src="images/20191201191519348_1356001936" title="image.png"></p>
-<p>他的值是存在一个volatile的int里面。volatile只能保证这个变量的可见性。不能保证他的原子性。</p>
-<p>可以看看getAndIncrement这个类似i++的函数，可以发现，是调用了UnSafe中的getAndAddInt。  </p>
-<p><img src="images/20191201191518930_1459996071" title="image.png"></p>
-<h3 id="UnSafe"><a href="#UnSafe" class="headerlink" title="UnSafe"></a>UnSafe</h3><p>UnSafe是何方神圣？UnSafe提供了java可以直接操作底层的能力。</p>
-<p>进一步，我们可以发现实现方式：  </p>
-<p><img src="images/20191201191518602_784980377" title="image.png"></p>
-<p>如何保证原子性：<strong>自旋 + <a target="_blank" rel="noopener" href="http://mp.weixin.qq.com/s?__biz=MzI3NzE0NjcwMg==&mid=2650121285&idx=1&sn=7cf9b5badd6d38b57ccfbfed63d3aad1&chksm=f36bb964c41c307218914cab6c1592f649281460e4ec1f85627c1311441c8a43ee1854440552&scene=21#wechat_redirect">CAS</a>（乐观锁）</strong>。在这个过程中，通过compareAndSwapInt比较更新value值，如果更新失败，重新获取旧值，然后更新。</p>
-<p><strong>优缺点</strong></p>
-<p>CAS相对于其他锁，不会进行内核态操作，有着一些性能的提升。但同时引入自旋，<strong>当锁竞争较大的时候，自旋次数会增多。cpu资源会消耗很高</strong>。  </p>
-<p>换句话说，CAS+自旋适合使用在低并发有同步数据的应用场景。</p>
-<h3 id="Java-8做出的改进和努力"><a href="#Java-8做出的改进和努力" class="headerlink" title="Java 8做出的改进和努力"></a>Java 8做出的改进和努力</h3><p>在Java 8中引入了4个新的计数器类型，<code>LongAdder</code>、<code>LongAccumulator</code>、<code>DoubleAdder</code>、<code>DoubleAccumulator</code>。他们都是继承于<code>Striped64</code></p>
-<h4 id="在LongAdder-与AtomicLong有什么区别"><a href="#在LongAdder-与AtomicLong有什么区别" class="headerlink" title="在LongAdder 与AtomicLong有什么区别?"></a>在LongAdder 与AtomicLong有什么区别?</h4><p>这里再介绍下LongAdder这个类，通过上述的分析，我们已经知道了AtomicLong使用CAS：<br><strong>在一个死循环内不断尝试修改目标值直到修改成功。如果在竞争不激烈的情况下，它修改成功概率很高。反之，如果在竞争激烈的情况下，修改失败的概率会很高，它就会进行多次的循环尝试，因此性能会受到一些影响。</strong><br>对于普通类型的long和double变量，jvm允许将64位的读操作或写操作拆成两个32位的操作。</p>
-<p>LongAdder的核心思想是将热点数据分离，它可以将AtomicLong内部核心数据value分离成一个数组，每个线程访问时通过hash等算法映射到其中一个数字进行计数。而最终的计数结果则为这个数组的求和累加，其中热点数据value，它会被分离成多个单元的cell，每个cell独自维护内部的值,当前对象的实际值由所有的cell累计合成。这样,热点就进行了有效的分离,提高了并行度。LongAdder相当于在AtomicLong的基础上将单点的更新压力分散到各个节点上，在低并发的时候对base的直接更新可以很好的保障跟Atomic的性能基本一致。而在高并发的时候，通过分散提高了性能。但是如果在统计的时候有并发更新，可能会导致统计的数据有误差。</p>
-<p>在实际高并发计数的时候，可以优先使用LongAdder。在低并行度或者需要准确数值的时候可以优先使用AtomicLong，这样反而效率更高。</p>
-<p>下面简单的演示下Atomic包下AtomicReference简单的用法：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AtomicExample4</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> AtomicReference&lt;Integer&gt; count = <span class="keyword">new</span> AtomicReference&lt;&gt;(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        count.compareAndSet(<span class="number">0</span>, <span class="number">2</span>);</span><br><span class="line">        count.compareAndSet(<span class="number">0</span>, <span class="number">1</span>);</span><br><span class="line">        log.info(<span class="string">&quot;count:&#123;&#125;&quot;</span>, count.get());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>compareAndSet()分别传入的是预期值跟更新值，只有当预期值跟当前值相等时，才会将值更新为更新值；</p>
-<p>上面的第一个方法可以将值更新为2，而第二个步中无法将值更新为1。</p>
-<p>Atomic*遇到的问题是，只能运用于低并发场景。因此LongAddr在这基础上引入了<strong>分段锁</strong>的概念。可以参考《JDK8系列之LongAdder解析》一起看看做了什么。</p>
-<p>**大概就是当竞争不激烈的时候，所有线程都是通过CAS对同一个变量（Base）进行修改，当竞争激烈的时候，会将根据当前线程哈希到对于Cell上进行修改（多段锁）。  **</p>
-<p><img src="images/20191201191517305_1368784593" title="image.png"></p>
-<p>可以看到大概实现原理是：通过<strong>CAS乐观锁</strong>保证原子性，通过<strong>自旋</strong>保证当次修改的最终修改成功，通过<strong>降低锁粒度（多段锁）</strong>增加并发性能。</p>
-<h2 id="AtomicIntegerFieldUpdater"><a href="#AtomicIntegerFieldUpdater" class="headerlink" title="AtomicIntegerFieldUpdater"></a>AtomicIntegerFieldUpdater</h2><p>下面简单介绍下AtomicIntegerFieldUpdater 用法（利用原子性去更新某个类的实例）：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AtomicExample5</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> AtomicIntegerFieldUpdater&lt;AtomicExample5&gt; updater =</span><br><span class="line">            AtomicIntegerFieldUpdater.newUpdater(AtomicExample5.class, <span class="string">&quot;count&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Getter</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">int</span> count = <span class="number">100</span>;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">        AtomicExample5 example5 = <span class="keyword">new</span> AtomicExample5();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (updater.compareAndSet(example5, <span class="number">100</span>, <span class="number">120</span>)) &#123;</span><br><span class="line">            log.info(<span class="string">&quot;update success 1, &#123;&#125;&quot;</span>, example5.getCount());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (updater.compareAndSet(example5, <span class="number">100</span>, <span class="number">120</span>)) &#123;</span><br><span class="line">            log.info(<span class="string">&quot;update success 2, &#123;&#125;&quot;</span>, example5.getCount());</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            log.info(<span class="string">&quot;update failed, &#123;&#125;&quot;</span>, example5.getCount());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>它可以更新某个类中指定成员变量的值。注意：修改的成员变量需要用volatile关键字来修饰，并且不能是static描述的字段。</p>
-<h2 id="AtomicStampReference"><a href="#AtomicStampReference" class="headerlink" title="AtomicStampReference"></a>AtomicStampReference</h2><p>AtomicStampReference 这个类它的核心是要解决CAS的ABA问题（CAS操作的时候，其他线程将变量的值A改成了B，接着又改回了A，等线程使用期望值A与当前变量进行比较的时候，发现A变量没有变，于是CAS就将A值进行了交换操作。实际上该值已经被其他线程改变过）。ABA问题的解决思路就是每次变量变更的时候，就将版本号加一。看一下它的一个核心方法compareAndSet()：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AtomicStampedReference</span>&lt;<span class="title">V</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Pair</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">        <span class="keyword">final</span> T reference;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> stamp;</span><br><span class="line">        <span class="function"><span class="keyword">private</span> <span class="title">Pair</span><span class="params">(T reference, <span class="keyword">int</span> stamp)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.reference = reference;</span><br><span class="line">            <span class="keyword">this</span>.stamp = stamp;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">static</span> &lt;T&gt; <span class="function">Pair&lt;T&gt; <span class="title">of</span><span class="params">(T reference, <span class="keyword">int</span> stamp)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> Pair&lt;T&gt;(reference, stamp);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">   ... 此处省略多个方法 ....</span><br><span class="line"> </span><br><span class="line">   <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">compareAndSet</span><span class="params">(V   expectedReference,</span></span></span><br><span class="line"><span class="function"><span class="params">                                 V   newReference,</span></span></span><br><span class="line"><span class="function"><span class="params">                                 <span class="keyword">int</span> expectedStamp,</span></span></span><br><span class="line"><span class="function"><span class="params">                                 <span class="keyword">int</span> newStamp)</span> </span>&#123;</span><br><span class="line">        Pair&lt;V&gt; current = pair;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">            expectedReference == current.reference &amp;&amp;</span><br><span class="line">            expectedStamp == current.stamp &amp;&amp;</span><br><span class="line">            ((newReference == current.reference &amp;&amp;</span><br><span class="line">              newStamp == current.stamp) ||</span><br><span class="line">             casPair(current, Pair.of(newReference, newStamp)));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看到它多了一个stamp的比较，stamp的值是由每次更新的时候进行维护的。</p>
-<h2 id="AtomicLongArray"><a href="#AtomicLongArray" class="headerlink" title="AtomicLongArray"></a>AtomicLongArray</h2><p>再介绍下 AtomicLongArray ， 它维护了一个数组。在该数组下，我们可以选择性的已原子性操作更新某个索引对应的值。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AtomicLongArray</span> <span class="keyword">implements</span> <span class="title">java</span>.<span class="title">io</span>.<span class="title">Serializable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> serialVersionUID = -<span class="number">2308431214976778248L</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> Unsafe unsafe = Unsafe.getUnsafe();</span><br><span class="line"> </span><br><span class="line">    ...此处省略....</span><br><span class="line"> </span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Atomically sets the element at position &#123;<span class="doctag">@code</span> i&#125; to the given value</span></span><br><span class="line"><span class="comment">     * and returns the old value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> i the index</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> newValue the new value</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> the previous value</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">long</span> <span class="title">getAndSet</span><span class="params">(<span class="keyword">int</span> i, <span class="keyword">long</span> newValue)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe.getAndSetLong(array, checkedByteOffset(i), newValue);</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Atomically sets the element at position &#123;<span class="doctag">@code</span> i&#125; to the given</span></span><br><span class="line"><span class="comment">     * updated value if the current value &#123;<span class="doctag">@code</span> ==&#125; the expected value.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> i the index</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> expect the expected value</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> update the new value</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> &#123;<span class="doctag">@code</span> true&#125; if successful. False return indicates that</span></span><br><span class="line"><span class="comment">     * the actual value was not equal to the expected value.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">boolean</span> <span class="title">compareAndSet</span><span class="params">(<span class="keyword">int</span> i, <span class="keyword">long</span> expect, <span class="keyword">long</span> update)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> compareAndSetRaw(checkedByteOffset(i), expect, update);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="AtomcBoolean"><a href="#AtomcBoolean" class="headerlink" title="AtomcBoolean"></a>AtomcBoolean</h2><p>最后再写一个AtomcBoolean的简单使用：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">AtomicExample6</span> </span>&#123;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> AtomicBoolean isHappened = <span class="keyword">new</span> AtomicBoolean(<span class="keyword">false</span>);</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 请求总数</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> clientTotal = <span class="number">5000</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// 同时并发执行的线程数</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> threadTotal = <span class="number">200</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ExecutorService executorService = Executors.newCachedThreadPool();</span><br><span class="line">        <span class="keyword">final</span> Semaphore semaphore = <span class="keyword">new</span> Semaphore(threadTotal);</span><br><span class="line">        <span class="keyword">final</span> CountDownLatch countDownLatch = <span class="keyword">new</span> CountDownLatch(clientTotal);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; clientTotal ; i++) &#123;</span><br><span class="line">            executorService.execute(() -&gt; &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    semaphore.acquire();</span><br><span class="line">                    test();</span><br><span class="line">                    semaphore.release();</span><br><span class="line">                &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                    log.error(<span class="string">&quot;exception&quot;</span>, e);</span><br><span class="line">                &#125;</span><br><span class="line">                countDownLatch.countDown();</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">        countDownLatch.await();</span><br><span class="line">        executorService.shutdown();</span><br><span class="line">        log.info(<span class="string">&quot;isHappened:&#123;&#125;&quot;</span>, isHappened.get());</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">test</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (isHappened.compareAndSet(<span class="keyword">false</span>, <span class="keyword">true</span>)) &#123;</span><br><span class="line">            log.info(<span class="string">&quot;execute&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>总结：以上就是Atomic包的基本原理及主要的使用方法。它是使用CAS来保证原子性操作，从而达到线程安全的目的。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.concurrent.Semaphore;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">RunningInTurn</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Worker</span> <span class="title">extendsThread</span></span>&#123;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> String name;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Semaphore thisSemaphore;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Semaphore nextSemaphore;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> value;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">Worker</span><span class="params">(String name, Semaphore thisSemaphore, Semaphore nextSemaphore, <span class="keyword">int</span> initialValue)</span> </span>&#123;</span><br><span class="line"><span class="keyword">this</span>.name= name;</span><br><span class="line"><span class="keyword">this</span>.thisSemaphore= thisSemaphore;</span><br><span class="line"><span class="keyword">this</span>.nextSemaphore= nextSemaphore;</span><br><span class="line"><span class="keyword">this</span>.value= initialValue;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line"><span class="keyword">while</span>(value &lt;= <span class="number">100</span>) &#123;</span><br><span class="line"><span class="keyword">try</span>&#123;</span><br><span class="line">thisSemaphore.acquire();</span><br><span class="line">System.out.println(name + <span class="string">&quot;:\t&quot;</span>+ value);</span><br><span class="line">value += <span class="number">2</span>;</span><br><span class="line">nextSemaphore.release();</span><br><span class="line">&#125; <span class="keyword">catch</span>(InterruptedExceptione) &#123;</span><br><span class="line">e.printStackTrace();</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException</span>&#123;</span><br><span class="line"></span><br><span class="line">Semaphorea Semaphore = newSemaphore(<span class="number">1</span>);</span><br><span class="line">Semaphore bSemaphore = newSemaphore(<span class="number">1</span>);</span><br><span class="line">Worker workerA = newWorker(<span class="string">&quot;a&quot;</span>, aSemaphore, bSemaphore, <span class="number">1</span>);</span><br><span class="line">Worker workerB = newWorker(<span class="string">&quot;b&quot;</span>, bSemaphore, aSemaphore, <span class="number">2</span>);</span><br><span class="line">bSemaphore.acquire();</span><br><span class="line">workerA.start();</span><br><span class="line">workerB.start();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Arrays;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">PrimeNumberWithRoll</span> </span>&#123;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> rowNum = <span class="number">21</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> colNum = <span class="number">10000_0000</span>;</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">byte</span>[][] bytes = newbyte[rowNum][colNum];</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">init();</span><br><span class="line">start();</span><br><span class="line">print();</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">print</span><span class="params">()</span> </span>&#123;</span><br><span class="line">intcount = <span class="number">0</span>;</span><br><span class="line">longi;</span><br><span class="line"><span class="keyword">for</span>(i = <span class="number">1</span>; count &lt;= <span class="number">10000_0000</span>&amp;&amp; i &lt;= rowNum * colNum; i++) &#123;</span><br><span class="line"><span class="keyword">if</span>(getValue(i)) &#123;</span><br><span class="line">count++;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">System.out.println(count - <span class="number">1</span>+ <span class="string">&quot;\t&quot;</span>+ i);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">()</span> </span>&#123;</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">byte</span>[] aByte :bytes) &#123;</span><br><span class="line">Arrays.fill(aByte, (<span class="keyword">byte</span>) <span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">start</span><span class="params">()</span> </span>&#123;</span><br><span class="line">longindex = <span class="number">2</span>;</span><br><span class="line"><span class="keyword">while</span>(index * index &lt; (<span class="keyword">long</span>) rowNum * colNum) &#123;</span><br><span class="line"><span class="keyword">boolean</span> prime = getValue(index);</span><br><span class="line">System.out.println(index + <span class="string">&quot;\t&quot;</span>+ prime);</span><br><span class="line"><span class="keyword">if</span>(prime) &#123;</span><br><span class="line">setPrimeRoll(index, <span class="keyword">false</span>);</span><br><span class="line">&#125;</span><br><span class="line">index++;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">setPrimeRoll</span><span class="params">(longindex, booleanpri)</span> </span>&#123;</span><br><span class="line"><span class="keyword">for</span>(longi = index + index; i &lt; bytes.length* bytes[<span class="number">0</span>].length; i += index) &#123;</span><br><span class="line">setValue(i, pri);</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">setValue</span><span class="params">(longindex, booleanpri)</span> </span>&#123;</span><br><span class="line"><span class="keyword">long</span> localIndex = index - <span class="number">1</span>;</span><br><span class="line"><span class="keyword">long</span> rowNo = localIndex / colNum;</span><br><span class="line"><span class="keyword">long</span> colNo = localIndex % colNum;</span><br><span class="line">bytes[(<span class="keyword">int</span>) rowNo][(<span class="keyword">int</span>) colNo] = pri ?(<span class="keyword">byte</span>) <span class="number">1</span>:(<span class="keyword">byte</span>) <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">getValue</span><span class="params">(longindex)</span> </span>&#123;</span><br><span class="line"><span class="keyword">long</span> localIndex = index - <span class="number">1</span>;</span><br><span class="line"><span class="keyword">if</span>(localIndex == <span class="number">1</span>|| localIndex == <span class="number">0</span>) &#123;</span><br><span class="line"><span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">long</span> rowNo = localIndex / colNum;</span><br><span class="line"><span class="keyword">long</span> colNo = localIndex % colNum;</span><br><span class="line"><span class="keyword">return</span> bytes[(<span class="keyword">int</span>) rowNo][(<span class="keyword">int</span>) colNo] == <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/GraalVM/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/GraalVM/" class="post-title-link" itemprop="url">GraalVM: run programs faster anywhere</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="GraalVM-run-programs-faster-anywhere"><a href="#GraalVM-run-programs-faster-anywhere" class="headerlink" title="GraalVM: run programs faster anywhere"></a>GraalVM: run programs faster anywhere</h1><p>Yudi Zheng 郑雨迪</p>
-<p>Graal Compiler Team， Oracle Labs</p>
-<p>为什么快？</p>
-<p>支持哪些程序</p>
-<p>跑在哪里？</p>
-<p>compiler optimization ， performace tuning， X64 backend</p>
-<p>ahead-of-time<br>experimental java-based JIT Compiler</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Druid/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -425,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -454,164 +243,6 @@
 <h3 id="pyspark"><a href="#pyspark" class="headerlink" title="pyspark"></a>pyspark</h3><p>Druid是一款高性能的列式存储时序数据库，其支持实时数据分析并在OLAP数据分析领域有其特有的优势。Druid除了支持实时摄入数据外也支持离线批量导入数据，主要通过离线MR任务去HDFS上拉取数据并做聚合roll up处理入库。<br>该脚本可作为通用的druid入库离线任务脚本，方便在配置离线任务流即数据写到HDFS后起对应的入库任务。该脚本可运行在tesla平台作为pyspark任务执行。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> print_function</span><br><span class="line"><span class="keyword">from</span> pyspark <span class="keyword">import</span> SparkContext</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> urllib2</span><br><span class="line"><span class="keyword">import</span> urlparse</span><br><span class="line"><span class="keyword">import</span> datetime</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">read_task_file</span>(<span class="params">filename</span>):</span></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(filename, <span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        contents = f.read()</span><br><span class="line">        <span class="comment"># We don&#x27;t use the parsed data, but we want to throw early if it&#x27;s invalid</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            json.loads(contents)</span><br><span class="line">        <span class="keyword">except</span> Exception, e:</span><br><span class="line">            print(<span class="string">&#x27;Invalid JSON in task file &quot;&#123;0&#125;&quot;: &#123;1&#125;\n&#x27;</span>.<span class="built_in">format</span>(filename, <span class="built_in">repr</span>(e)))</span><br><span class="line">            sys.exit(<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> contents</span><br><span class="line"></span><br><span class="line"><span class="comment"># Keep trying until timeout_at, maybe die then</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">post_task</span>(<span class="params">url, task_json, timeout_at</span>):</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        task_url = url.rstrip(<span class="string">&quot;/&quot;</span>) + <span class="string">&quot;/druid/indexer/v1/task&quot;</span></span><br><span class="line">        req = urllib2.Request(task_url, task_json, &#123;<span class="string">&#x27;Content-Type&#x27;</span> : <span class="string">&#x27;application/json&#x27;</span>&#125;)</span><br><span class="line">        timeleft = timeout_at - time.time()</span><br><span class="line">        response_timeout = <span class="built_in">min</span>(<span class="built_in">max</span>(timeleft, <span class="number">5</span>), <span class="number">10</span>)</span><br><span class="line">        response = urllib2.urlopen(req, <span class="literal">None</span>, response_timeout)</span><br><span class="line">        <span class="keyword">return</span> response.read().rstrip()</span><br><span class="line">    <span class="keyword">except</span> urllib2.URLError <span class="keyword">as</span> e:</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">isinstance</span>(e, urllib2.HTTPError) <span class="keyword">and</span> e.code &gt;= <span class="number">400</span> <span class="keyword">and</span> e.code &lt;= <span class="number">500</span>:</span><br><span class="line">            <span class="comment"># 4xx (problem with the request) or 500 (something wrong on the server)</span></span><br><span class="line">            raise_friendly_error(e)</span><br><span class="line">        <span class="keyword">elif</span> time.time() &gt;= timeout_at:</span><br><span class="line">            <span class="comment"># No futher retries</span></span><br><span class="line">            raise_friendly_error(e)</span><br><span class="line">        <span class="keyword">elif</span> <span class="built_in">isinstance</span>(e, urllib2.HTTPError) <span class="keyword">and</span> e.code <span class="keyword">in</span> [<span class="number">301</span>, <span class="number">302</span>, <span class="number">303</span>, <span class="number">305</span>, <span class="number">307</span>] <span class="keyword">and</span> \</span><br><span class="line">                        e.info().getheader(<span class="string">&quot;Location&quot;</span>) <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="comment"># Set the new location in args.url so it can be used by await_task_completion and re-issue the request</span></span><br><span class="line">            location = urlparse.urlparse(e.info().getheader(<span class="string">&quot;Location&quot;</span>))</span><br><span class="line">            url = <span class="string">&quot;&#123;0&#125;://&#123;1&#125;&quot;</span>.<span class="built_in">format</span>(location.scheme, location.netloc)</span><br><span class="line">            print(<span class="string">&quot;Redirect response received, setting url to [&#123;0&#125;]\n&quot;</span>.<span class="built_in">format</span>(url))</span><br><span class="line">            <span class="keyword">return</span> post_task(url, task_json, timeout_at)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="comment"># If at first you don&#x27;t succeed, try, try again!</span></span><br><span class="line">            sleep_time = <span class="number">30</span></span><br><span class="line">            extra = <span class="string">&#x27;&#x27;</span></span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">hasattr</span>(e, <span class="string">&#x27;read&#x27;</span>):</span><br><span class="line">                extra = e.read().rstrip()</span><br><span class="line">            print(<span class="string">&quot;Waiting up to &#123;0&#125;s for indexing service to become available. [Got: &#123;1&#125; &#123;2&#125;]&quot;</span>.<span class="built_in">format</span>(<span class="built_in">max</span>(sleep_time, <span class="built_in">int</span>(timeout_at - time.time())), <span class="built_in">str</span>(e), extra).rstrip())</span><br><span class="line">            print(<span class="string">&quot;\n&quot;</span>)</span><br><span class="line">            time.sleep(sleep_time)</span><br><span class="line">            <span class="keyword">return</span> post_task(url, task_json, timeout_at)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Keep trying until timeout_at, maybe die then</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">await_task_completion</span>(<span class="params">url, task_id, timeout_at</span>):</span></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        task_url = url.rstrip(<span class="string">&quot;/&quot;</span>) + <span class="string">&quot;/druid/indexer/v1/task/&#123;0&#125;/status&quot;</span>.<span class="built_in">format</span>(task_id)</span><br><span class="line">        req = urllib2.Request(task_url)</span><br><span class="line">        timeleft = timeout_at - time.time()</span><br><span class="line">        response_timeout = <span class="built_in">min</span>(<span class="built_in">max</span>(timeleft, <span class="number">5</span>), <span class="number">30</span>)</span><br><span class="line">        response = urllib2.urlopen(req, <span class="literal">None</span>, response_timeout)</span><br><span class="line">        response_obj = json.loads(response.read())</span><br><span class="line">        response_status_code = response_obj[<span class="string">&quot;status&quot;</span>][<span class="string">&quot;status&quot;</span>]</span><br><span class="line">        <span class="keyword">if</span> response_status_code <span class="keyword">in</span> [<span class="string">&#x27;SUCCESS&#x27;</span>, <span class="string">&#x27;FAILED&#x27;</span>]:</span><br><span class="line">            <span class="keyword">return</span> response_status_code</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">if</span> time.time() &lt; timeout_at:</span><br><span class="line">                print(<span class="string">&quot;Task &#123;0&#125; still running...&quot;</span>.<span class="built_in">format</span>(task_id))</span><br><span class="line">                timeleft = timeout_at - time.time()</span><br><span class="line">                time.sleep(<span class="built_in">min</span>(<span class="number">30</span>, timeleft))</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">raise</span> Exception(<span class="string">&quot;Task &#123;0&#125; did not finish in time!&quot;</span>.<span class="built_in">format</span>(task_id))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">raise_friendly_error</span>(<span class="params">e</span>):</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">isinstance</span>(e, urllib2.HTTPError):</span><br><span class="line">        text = e.read().strip()</span><br><span class="line">        reresult = re.search(<span class="string">r&#x27;&lt;pre&gt;(.*?)&lt;/pre&gt;&#x27;</span>, text, re.DOTALL)</span><br><span class="line">        <span class="keyword">if</span> reresult:</span><br><span class="line">            text = reresult.group(<span class="number">1</span>).strip()</span><br><span class="line">        <span class="keyword">raise</span> Exception(<span class="string">&quot;HTTP Error &#123;0&#125;: &#123;1&#125;, check overlord log for more details.\n&#123;2&#125;&quot;</span>.<span class="built_in">format</span>(e.code, e.reason, text))</span><br><span class="line">    <span class="keyword">raise</span> e</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_task_json</span>(<span class="params">content, hdfspath, data_source, date, segment, query</span>):</span></span><br><span class="line">    input_json = json.loads(content)</span><br><span class="line">    input_json[<span class="string">&quot;spec&quot;</span>][<span class="string">&quot;ioConfig&quot;</span>][<span class="string">&quot;inputSpec&quot;</span>][<span class="string">&quot;paths&quot;</span>] = hdfspath + <span class="string">&quot;/&quot;</span> + date</span><br><span class="line">    input_json[<span class="string">&quot;spec&quot;</span>][<span class="string">&quot;dataSchema&quot;</span>][<span class="string">&quot;dataSource&quot;</span>] = data_source</span><br><span class="line"></span><br><span class="line">    date_array = []</span><br><span class="line">    date_time = datetime.datetime(<span class="built_in">int</span>(date[<span class="number">0</span>:<span class="number">4</span>]),<span class="built_in">int</span>(date[<span class="number">4</span>:<span class="number">6</span>]),<span class="built_in">int</span>(date[<span class="number">6</span>:<span class="number">8</span>]))</span><br><span class="line">    date_time_next = date_time + datetime.timedelta(days=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    date_array.append(date_time.strftime(<span class="string">&#x27;%Y-%m-%dT%H:%M:%S+08:00&#x27;</span>) + <span class="string">&quot;/&quot;</span> + date_time_next.strftime(<span class="string">&#x27;%Y-%m-%dT%H:%M:%S+08:00&#x27;</span>))</span><br><span class="line">    input_json[<span class="string">&quot;spec&quot;</span>][<span class="string">&quot;dataSchema&quot;</span>][<span class="string">&quot;granularitySpec&quot;</span>][<span class="string">&quot;segmentGranularity&quot;</span>] = segment</span><br><span class="line">    input_json[<span class="string">&quot;spec&quot;</span>][<span class="string">&quot;dataSchema&quot;</span>][<span class="string">&quot;granularitySpec&quot;</span>][<span class="string">&quot;queryGranularity&quot;</span>] = query</span><br><span class="line">    input_json[<span class="string">&quot;spec&quot;</span>][<span class="string">&quot;dataSchema&quot;</span>][<span class="string">&quot;granularitySpec&quot;</span>][<span class="string">&quot;intervals&quot;</span>] = date_array</span><br><span class="line">    <span class="keyword">return</span> json.dumps(input_json, indent=<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span>():</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Usage: druid_task.py &lt;url&gt; &lt;task_file&gt; &lt;date&gt; &lt;submit_timeout&gt; &lt;complete_timeout&gt; &lt;hdfs_path&gt; &lt;data_source&gt;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &lt; <span class="number">10</span>:</span><br><span class="line">        print(<span class="string">&quot;Usage: druid_task.py &lt;url&gt; &lt;task_file&gt; &lt;date&gt; &lt;submit_timeout&gt; &lt;complete_timeout&gt; &lt;hdfs_path&gt; &lt;data_source&gt; &lt;segment&gt; &lt;query&gt;&quot;</span>)</span><br><span class="line">        exit(<span class="number">1</span>)</span><br><span class="line">    print(sys.argv)</span><br><span class="line"></span><br><span class="line">    url = sys.argv[<span class="number">1</span>].strip()</span><br><span class="line">    task_file = sys.argv[<span class="number">2</span>].strip()</span><br><span class="line">    date = sys.argv[<span class="number">3</span>].strip()</span><br><span class="line">    submit_timeout = sys.argv[<span class="number">4</span>].strip()</span><br><span class="line">    complete_timeout = sys.argv[<span class="number">5</span>].strip()</span><br><span class="line">    hdfspath = sys.argv[<span class="number">6</span>].strip()</span><br><span class="line">    data_source = sys.argv[<span class="number">7</span>].strip()</span><br><span class="line">    date_segment = sys.argv[<span class="number">8</span>].strip()</span><br><span class="line">    date_query = sys.argv[<span class="number">9</span>].strip()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># data path</span></span><br><span class="line">    datapath = hdfspath + <span class="string">&quot;/&quot;</span> + date</span><br><span class="line"></span><br><span class="line">    <span class="comment"># init spark context</span></span><br><span class="line">    sc = SparkContext(appName=<span class="string">&quot;druid_index_task_day&quot;</span>)</span><br><span class="line"></span><br><span class="line">    datafiles_rdd = sc.wholeTextFiles(datapath)</span><br><span class="line">    is_empty = datafiles_rdd.isEmpty()</span><br><span class="line">    print(is_empty)</span><br><span class="line">    print(<span class="string">&quot;datapath:&quot;</span> + datapath)</span><br><span class="line">    <span class="keyword">if</span> is_empty == <span class="literal">False</span>:</span><br><span class="line">        submit_timeout_at = time.time() + <span class="built_in">float</span>(submit_timeout)</span><br><span class="line">        complete_timeout_at = time.time() + <span class="built_in">float</span>(complete_timeout)</span><br><span class="line">        task_json = get_task_json(read_task_file(task_file), hdfspath, data_source, date, date_segment, date_query)</span><br><span class="line">        print(task_json)</span><br><span class="line"></span><br><span class="line">        task_id = json.loads(post_task(url, task_json, submit_timeout_at))[<span class="string">&quot;task&quot;</span>]</span><br><span class="line">        sys.stderr.write(<span class="string">&#x27;\033[1m&#x27;</span> + <span class="string">&quot;Task started: &quot;</span> + <span class="string">&#x27;\033[0m&#x27;</span> + <span class="string">&quot;&#123;0&#125;\n&quot;</span>.<span class="built_in">format</span>(task_id))</span><br><span class="line">        sys.stderr.write(<span class="string">&#x27;\033[1m&#x27;</span> + <span class="string">&quot;Task log:     &quot;</span> + <span class="string">&#x27;\033[0m&#x27;</span> + <span class="string">&quot;&#123;0&#125;/druid/indexer/v1/task/&#123;1&#125;/log\n&quot;</span>.<span class="built_in">format</span>(url.rstrip(<span class="string">&quot;/&quot;</span>),task_id))</span><br><span class="line">        sys.stderr.write(<span class="string">&#x27;\033[1m&#x27;</span> + <span class="string">&quot;Task status:  &quot;</span> + <span class="string">&#x27;\033[0m&#x27;</span> + <span class="string">&quot;&#123;0&#125;/druid/indexer/v1/task/&#123;1&#125;/status\n&quot;</span>.<span class="built_in">format</span>(url.rstrip(<span class="string">&quot;/&quot;</span>),task_id))</span><br><span class="line"></span><br><span class="line">        task_status = await_task_completion(url, task_id, complete_timeout_at)</span><br><span class="line">        print(<span class="string">&quot;Task finished with status: &#123;0&#125;\n&quot;</span>.<span class="built_in">format</span>(task_status))</span><br><span class="line">        <span class="keyword">if</span> task_status != <span class="string">&#x27;SUCCESS&#x27;</span>:</span><br><span class="line">            sys.exit(<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        print(<span class="string">&quot;Task finished with no data.&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
 <p>下钻和聚合</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/01.MySQL/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/01.MySQL/" class="post-title-link" itemprop="url">MacOS中MySQL密码丢失处理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="01-MySQL"><a href="#01-MySQL" class="headerlink" title="01.MySQL"></a>01.MySQL</h1><h2 id="修改root密码-不成功"><a href="#修改root密码-不成功" class="headerlink" title="修改root密码 不成功"></a>修改root密码 不成功</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Open &amp; Edit /etc/my.cnf or /etc/mysql/my.cnf, depending on your distro.</span><br><span class="line">Add skip-grant-tables under [mysqld]</span><br><span class="line">Restart Mysql</span><br><span class="line">You should be able to login to mysql now using the below command mysql -u root -p</span><br><span class="line">Run mysql&gt; flush privileges;</span><br><span class="line">Set new password by ALTER USER &#x27;root&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;NewPassword&#x27;;</span><br><span class="line">Go back to /etc/my.cnf and remove/comment skip-grant-tables</span><br><span class="line">Restart Mysql</span><br><span class="line">Now you will be able to login with the new password mysql -u root -p</span><br></pre></td></tr></table></figure>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> drop user root@localhost;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> flush privileges;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> create user root@localhost identified by <span class="string">&#x27;abc.123&#x27;</span>;</span></span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">grant all privileges on *.* to root@localhost;</span><br><span class="line"></span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
-<h2 id="mac-brew重装-不成功"><a href="#mac-brew重装-不成功" class="headerlink" title="mac brew重装 不成功"></a>mac brew重装 不成功</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">brew uninstall mysql --ignore-dependencies</span><br><span class="line">sudo rm -rf /usr/local/Cellar/mysql</span><br><span class="line">brew cleanup</span><br><span class="line">sudo rm -rf /usr/local/var/mysql</span><br><span class="line">brew install mysql</span><br></pre></td></tr></table></figure>
-<h2 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h2><h3 id="创建索引"><a href="#创建索引" class="headerlink" title="创建索引"></a>创建索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t_zxg_hot_news_result <span class="keyword">add</span> index</span><br><span class="line"> idx_hot_news_cnt (ftype,fcnt,ftime,fnews_id,fmsg_type);</span><br></pre></td></tr></table></figure>
-<h3 id="删除索引"><a href="#删除索引" class="headerlink" title="删除索引"></a>删除索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t_zxg_hot_news_result <span class="keyword">drop</span> index idx_hot_news_cnt ;</span><br></pre></td></tr></table></figure>
-<h3 id="查询索引"><a href="#查询索引" class="headerlink" title="查询索引"></a>查询索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> t_zxg_hot_news_result;</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+------------+------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">Table</span>                 <span class="operator">|</span> Non_unique <span class="operator">|</span> Key_name         <span class="operator">|</span> Seq_in_index <span class="operator">|</span> Column_name <span class="operator">|</span> <span class="keyword">Collation</span> <span class="operator">|</span> <span class="keyword">Cardinality</span> <span class="operator">|</span> Sub_part <span class="operator">|</span> Packed <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Index_type <span class="operator">|</span> Comment <span class="operator">|</span> Index_comment <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+------------+------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">0</span>          <span class="operator">|</span> <span class="keyword">PRIMARY</span>          <span class="operator">|</span> <span class="number">1</span>            <span class="operator">|</span> fid         <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">765715</span>      <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">1</span>            <span class="operator">|</span> ftype       <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">5</span>           <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">2</span>            <span class="operator">|</span> fcnt        <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">4072</span>        <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">3</span>            <span class="operator">|</span> ftime       <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">49236</span>       <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">4</span>            <span class="operator">|</span> fnews_id    <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">800020</span>      <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">5</span>            <span class="operator">|</span> fmsg_type   <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">792176</span>      <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+------------+------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+</span></span><br></pre></td></tr></table></figure>
-
-
-
-
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/02.InnoDBLocks/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/02.InnoDBLocks/" class="post-title-link" itemprop="url">InnoDB中的锁机制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="InnoDB中的锁机制"><a href="#InnoDB中的锁机制" class="headerlink" title="InnoDB中的锁机制"></a>InnoDB中的锁机制</h1><p>获取锁争用情况</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">mysql root<span class="variable">@localhost</span>:dlock<span class="operator">&gt;</span> <span class="keyword">show</span> status <span class="keyword">like</span> <span class="string">&#x27;innodb_row_lock%&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="operator">+</span><span class="comment">-------------------------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Variable_name                 <span class="operator">|</span> <span class="keyword">Value</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------------------------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_current_waits <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_time          <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_time_avg      <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_time_max      <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_waits         <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------------------------------+-------+</span></span><br><span class="line"><span class="number">5</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"><span class="type">Time</span>: <span class="number">0.012</span>s</span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -662,7 +293,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -754,7 +385,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -853,7 +484,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1105,7 +736,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1471,7 +1102,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:38:26" itemprop="dateModified" datetime="2021-02-09T09:38:26+08:00">2021-02-09</time>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1495,6 +1126,391 @@
 
       
           <h1 id="Raid"><a href="#Raid" class="headerlink" title="Raid"></a>Raid</h1>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/04.Mac/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/tool/04.Mac/" class="post-title-link" itemprop="url">MacOS操作经验</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="MySQL"><a href="#MySQL" class="headerlink" title="MySQL"></a>MySQL</h1><p>因为苹果在OS X 10.11中引入的SIP特性使得即使加了sudo（也就是具有root权限）也无法修改系统级的目录，其中就包括了/usr/bin。要解决这个问题有两种做法：</p>
+<p>一种是比较不安全的就是关闭SIP，也就是rootless特性；</p>
+<p>另一种是将本要链接到/usr/bin下的改链接到/usr/local/bin下就好了。</p>
+<p>解决办法</p>
+<p>sudo ln -s /usr/local/mysql/bin/mysql /usr/local/bin</p>
+<p>mysql 启动</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqld --user mysql</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/Linux-shell/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/tool/Linux-shell/" class="post-title-link" itemprop="url">Linux常用shell</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Linux-shell"><a href="#Linux-shell" class="headerlink" title="Linux-shell"></a>Linux-shell</h1><h2 id="curl"><a href="#curl" class="headerlink" title="curl"></a>curl</h2><p>curl是一个很棒的命令.<br>例如目标网站Url:</p>
+<pre><code>127.0.0.1:8080/check_your_status?user=Summer&amp;passwd=12345678</code></pre>
+<h3 id="通过Get方法请求"><a href="#通过Get方法请求" class="headerlink" title="通过Get方法请求:"></a>通过Get方法请求:</h3><pre><code>curl protocol://address:port/url?args
+curl http://127.0.0.1:8080/check_your_status?user=Summer&amp;passwd=12345678</code></pre>
+<p>发送数组参数</p>
+<pre><code>curl http://127.0.0.1:8080/check_yours_status?user[]=avery&amp;user[]=zhangsan</code></pre>
+<p>发送包含特殊字符的参数</p>
+<pre><code>curl -G --data-urlencode &#39;user[]=avery@tencent#td&#39; --data-urlencode &#39;user[]=zhangsan@tencent#bf&#39; -d &#39;tableId=913&#39; http://127.0.0.1:8080/check_yours_status</code></pre>
+<p>“-G”等价于”—get”，”-d”等价于”—data”</p>
+<p>从文件中获取参数</p>
+<pre><code>curl --get --data @data.txt http://aiezu.com/test.php</code></pre>
+<h3 id="通过Post方法请求"><a href="#通过Post方法请求" class="headerlink" title="通过Post方法请求:"></a>通过Post方法请求:</h3><pre><code>curl -d “args” “protocol://address:port/url”
+curl -d “user=Summer&amp;passwd=12345678” “http://127.0.0.1:8080/check_your_status“</code></pre>
+<h3 id="自定义header"><a href="#自定义header" class="headerlink" title="自定义header"></a>自定义header</h3><p>这种方法是参数直接在header里面的<br>如需将输出指定到文件可以通过重定向进行操作.</p>
+<pre><code>curl -H &quot;Content-Type:application/json&quot; -X POST --data (json.data) URL
+curl -H &quot;Content-Type:application/json&quot; -X POST --data &#39;&#123;&quot;message&quot;: &quot;sunshine&quot;&#125;&#39; http://localhost:8000/</code></pre>
+<p>这种方法是json数据直接在body里面的</p>
+<h3 id="输出到文件"><a href="#输出到文件" class="headerlink" title="输出到文件"></a>输出到文件</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -o tank_pos_meta.json &#x27;http://9.22.24.233:8080/ec/v1/listTable?pageNum=1&amp;pageSize=999&amp;type=hippo&amp;dbName=bank-pos-info&amp;name=t_bank_pos_yyyymmdd&#x27;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>URL必须带分号</p>
+</blockquote>
+<h2 id="date"><a href="#date" class="headerlink" title="date"></a>date</h2><p>两天前</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/typesafe.config/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/tool/typesafe.config/" class="post-title-link" itemprop="url">typesafe.config与HOCON</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="typesafe-config"><a href="#typesafe-config" class="headerlink" title="typesafe.config"></a>typesafe.config</h1><h1 id="Typesafe-Config介绍"><a href="#Typesafe-Config介绍" class="headerlink" title="Typesafe Config介绍"></a>Typesafe Config介绍</h1><h3 id="Why-Typesafe-Config"><a href="#Why-Typesafe-Config" class="headerlink" title="Why Typesafe Config"></a>Why Typesafe Config</h3><p><strong>THE config library</strong> 非常好用的API，用过之后不会再想使用其他配置工具</p>
+<ul>
+<li>纯java实现，无任何依赖</li>
+<li>支持各种格式配置的融合: Java properties, JSON, and a human-friendly JSON superset</li>
+<li>可以通过文件、urls、classpath加载配置</li>
+<li>支持多层嵌套的配置方式：树形配置</li>
+<li>识别Java system properties, 如java -Dmyapp.foo.bar=10</li>
+<li>可以转换时间，大小等单位。如 “512k”、”10 seconds”</li>
+<li>类型转换，比如yes可以转换为true，数字之间也可以在内部做转换</li>
+<li>JSON superset features:<ul>
+<li>comments</li>
+<li>includes</li>
+<li>substitutions (“foo” : ${bar}, “foo” : Hello ${who})</li>
+<li>properties-like notation (a.b=c)</li>
+<li>less noisy, more lenient syntax</li>
+<li>substitute environment variables (logdir=${HOME}/logs)</li>
+</ul>
+</li>
+<li>基于不可变对象，不用担心多线程问题</li>
+</ul>
+<h4 id="获取"><a href="#获取" class="headerlink" title="获取"></a>获取</h4><p>使用gradle</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">compile &#39;com.typesafe:config:1.2.1&#39;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="HOCON-Human-Optimized-Config-Object-Notation"><a href="#HOCON-Human-Optimized-Config-Object-Notation" class="headerlink" title="HOCON (Human-Optimized Config Object Notation)"></a>HOCON (Human-Optimized Config Object Notation)</h3><p>config使用的是HOCON的文件格式，这种文件格式类似于json，很灵活但没有歧义，能引用，能替换，能注释，能兼容老的properties等格式</p>
+<p>The following features are desirable, to support human usage:</p>
+<ul>
+<li>less noisy / less pedantic syntax</li>
+<li>ability to refer to another part of the configuration (set a value to another value)</li>
+<li>import/include another configuration file into the current file</li>
+<li>a mapping to a flat properties list such as Java’s system properties</li>
+<li>ability to get values from environment variables</li>
+<li>ability to write comments</li>
+</ul>
+<p>约束：utf8编码</p>
+<h4 id="注释"><a href="#注释" class="headerlink" title="注释"></a>注释</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 单行注释</span><br><span class="line">a &#x3D; 1 &#x2F;&#x2F; 单行注释</span><br><span class="line">b &#x3D; 2 # 单行注释</span><br><span class="line">c &#x3D; [3, # 行内注释 # 4]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="赋值与嵌套"><a href="#赋值与嵌套" class="headerlink" title="赋值与嵌套"></a>赋值与嵌套</h4><h5 id="普通赋值"><a href="#普通赋值" class="headerlink" title="普通赋值"></a>普通赋值</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">a : 1</span><br><span class="line">a &#x3D; 1</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h5 id="（对象）嵌套赋值"><a href="#（对象）嵌套赋值" class="headerlink" title="（对象）嵌套赋值"></a>（对象）嵌套赋值</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;foo&quot; : &#123; &quot;a&quot; : 42 &#125;,</span><br><span class="line">    &quot;foo&quot; : &#123; &quot;b&quot; : 43 &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">    &quot;foo&quot; : &#123; &quot;a&quot; : 42, &quot;b&quot; : 43 &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">foo.bar : 42</span><br><span class="line">foo &#123; bar : 42 &#125;</span><br><span class="line"></span><br><span class="line">foo.bar.baz : 42</span><br><span class="line">foo &#123; bar &#123; baz : 42 &#125; &#125;</span><br><span class="line"></span><br><span class="line">a.x : 42, a.y : 43</span><br><span class="line">a &#123; x : 42, y : 43 &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h5 id="多种格式"><a href="#多种格式" class="headerlink" title="多种格式"></a>多种格式</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;foo&quot; : &#123;</span><br><span class="line">        &quot;bar&quot; : 10,</span><br><span class="line">        &quot;baz&quot; : 12</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">foo : &#123;</span><br><span class="line">    bar : 10,</span><br><span class="line">    baz : 12</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">foo &#123;</span><br><span class="line">    bar &#x3D; 10</span><br><span class="line">    baz &#x3D; 12</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">foo.bar&#x3D;10</span><br><span class="line">foo.baz&#x3D;12</span><br><span class="line"></span><br><span class="line">foo.bar&#x3D;10, foo.baz&#x3D;12</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h5 id="多行赋值"><a href="#多行赋值" class="headerlink" title="多行赋值"></a>多行赋值</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">logo &#x3D; &quot;&quot;&quot;hello</span><br><span class="line">world&quot;&quot;&quot;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h5 id="数组与对象合并"><a href="#数组与对象合并" class="headerlink" title="数组与对象合并"></a>数组与对象合并</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; one object</span><br><span class="line">a : &#123; b : 1, c : 2 &#125;</span><br><span class="line">&#x2F;&#x2F; two objects that are merged via concatenation rules</span><br><span class="line">a : &#123; b : 1 &#125; &#123; c : 2 &#125;</span><br><span class="line">&#x2F;&#x2F; two fields that are merged</span><br><span class="line">a : &#123; b : 1 &#125;</span><br><span class="line">a : &#123; c : 2 &#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; one array</span><br><span class="line">a : [ 1, 2, 3, 4 ]</span><br><span class="line">&#x2F;&#x2F; two arrays that are concatenated</span><br><span class="line">a : [ 1, 2 ] [ 3, 4 ]</span><br><span class="line">&#x2F;&#x2F; a later definition referring to an earlier</span><br><span class="line">&#x2F;&#x2F; (see &quot;self-referential substitutions&quot; below)</span><br><span class="line">a : [ 1, 2 ]</span><br><span class="line">a : $&#123;a&#125; [ 3, 4 ]</span><br><span class="line"></span><br><span class="line">path &#x3D; [ &#x2F;bin ]</span><br><span class="line">path &#x3D; $&#123;path&#125; [ &#x2F;usr&#x2F;bin ]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h5 id="对象的继承"><a href="#对象的继承" class="headerlink" title="对象的继承"></a>对象的继承</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">data-center-generic &#x3D; &#123; cluster-size &#x3D; 6 &#125;</span><br><span class="line">data-center-east &#x3D; $&#123;data-center-generic&#125; &#123; name &#x3D; &quot;east&quot; &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h5 id="合并还是覆盖"><a href="#合并还是覆盖" class="headerlink" title="合并还是覆盖"></a>合并还是覆盖</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#123; a : &#123; x : 1 &#125; &#125; (first priority)</span><br><span class="line">&#123; a : 42 &#125; (fallback)</span><br><span class="line">&#123; a : &#123; y : 2 &#125; &#125; (another fallback)</span><br><span class="line"># result in &#123; a : &#123; x : 1 &#125; &#125;</span><br><span class="line"></span><br><span class="line">&#123; a : &#123; x : 1 &#125; &#125; (first priority)</span><br><span class="line">&#123; a : &#123; y : 2 &#125; &#125; (fallback)</span><br><span class="line">&#123; a : 42 &#125; (another fallback)</span><br><span class="line"># result in &#123; a : &#123; x : 1, y : 2 &#125; &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="替换"><a href="#替换" class="headerlink" title="替换"></a>替换</h4><p>使用这样的语法 <code>$&#123;pathexpression&#125; or $&#123;?pathexpression&#125;</code></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">animal.favorite &#x3D; dog</span><br><span class="line">key : $&#123;animal.favorite&#125; is my favorite animal</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><code>pathexpression</code>是绝对路径，替换是config对象构建的最后一步。</p>
+<h4 id="Include"><a href="#Include" class="headerlink" title="Include"></a>Include</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">include &quot;foo&quot;</span><br><span class="line"></span><br><span class="line">include &quot;foo.properties&quot;</span><br><span class="line">include &quot;foo.json&quot;</span><br><span class="line">include &quot;foo.conf&quot;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="内置转换API"><a href="#内置转换API" class="headerlink" title="内置转换API"></a>内置转换API</h4><p>自动转换，<a target="_blank" rel="noopener" href="https://github.com/typesafehub/config/blob/master/HOCON.md#duration-format">时间单位</a>（ns、ms、s、m、h etc），<a target="_blank" rel="noopener" href="https://github.com/typesafehub/config/blob/master/HOCON.md#size-in-bytes-format">文件大小</a>（kB、MB etc）</p>
+<h3 id="文件载入顺序"><a href="#文件载入顺序" class="headerlink" title="文件载入顺序"></a>文件载入顺序</h3><p>依次载入合并</p>
+<ul>
+<li>引用 jar 包中的 reference.conf 库引用配置</li>
+<li>引用 jar 包中的 application.{conf,json,properties} 应用配置</li>
+<li>本地 reference.conf 库引用配置</li>
+<li>本地 application.{conf,json,properties} 应用配置</li>
+<li>system properties</li>
+</ul>
+<h3 id="在java代码中使用"><a href="#在java代码中使用" class="headerlink" title="在java代码中使用"></a>在java代码中使用</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"># 配置内容</span><br><span class="line">foo&#x3D;42</span><br><span class="line">dev.foo&#x3D;57</span><br><span class="line">prod.foo&#x3D;10</span><br><span class="line"></span><br><span class="line">import com.typesafe.config.ConfigFactory</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 载入根配置</span><br><span class="line">Config conf &#x3D; ConfigFactory.load();</span><br><span class="line">int foo1 &#x3D; conf.getInt(&quot;dev.foo&quot;);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 载入某个对象</span><br><span class="line">Config prod &#x3D; conf.getConfig(&quot;prod&quot;);</span><br><span class="line">int foo2 &#x3D; foo.getInt(&quot;foo&quot;);</span><br><span class="line"></span><br><span class="line">Config devConfig &#x3D; conf</span><br><span class="line">                     .getConfig(&quot;dev&quot;)</span><br><span class="line">                     .withFallback(originalConfig)</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; handle default</span><br><span class="line">&#x2F;&#x2F; boolean getBoolean(String path, boolean fallback)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h3><p>使用下面的方法，会把最终所有的配置信息打印出来</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">logger.debug(myConfig.root().render())</span><br></pre></td></tr></table></figure>
+<p>输出结果中包含所有载入的配置，如果使用了conf文件，会将对应文件的行信息也打印出来：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    # system properties</span><br><span class="line">    &quot;awt&quot; : &#123;</span><br><span class="line">        # system properties</span><br><span class="line">        &quot;toolkit&quot; : &quot;sun.awt.windows.WToolkit&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    # complex1.conf: 2</span><br><span class="line">    # these are our own config values defined by the app</span><br><span class="line">    &quot;complex-app&quot; : &#123;</span><br><span class="line">        # complex1.conf: 3</span><br><span class="line">        &quot;something&quot; : &quot;This value comes from complex-app&#39;s complex1.conf&quot;</span><br><span class="line">    &#125;,</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="源代码"><a href="#源代码" class="headerlink" title="源代码"></a>源代码</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/typesafehub/config">https://github.com/typesafehub/config</a></li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/%E5%8A%A0%E5%AF%86%E4%B8%8E%E8%A7%A3%E5%AF%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/tool/%E5%8A%A0%E5%AF%86%E4%B8%8E%E8%A7%A3%E5%AF%86/" class="post-title-link" itemprop="url">Java中优雅的加解密</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-02-09 09:52:14" itemprop="dateModified" datetime="2021-02-09T09:52:14+08:00">2021-02-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/tool/" itemprop="url" rel="index"><span itemprop="name">tool</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="加密与解密"><a href="#加密与解密" class="headerlink" title="加密与解密"></a>加密与解密</h1><h2 id="AES"><a href="#AES" class="headerlink" title="AES"></a>AES</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.io.UnsupportedEncodingException;</span><br><span class="line"><span class="keyword">import</span> java.security.InvalidKeyException;</span><br><span class="line"><span class="keyword">import</span> java.security.NoSuchAlgorithmException;</span><br><span class="line"><span class="keyword">import</span> java.security.SecureRandom;</span><br><span class="line"><span class="keyword">import</span> java.util.Base64;</span><br><span class="line"><span class="keyword">import</span> java.util.Scanner;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.crypto.BadPaddingException;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.Cipher;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.IllegalBlockSizeException;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.KeyGenerator;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.NoSuchPaddingException;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.SecretKey;</span><br><span class="line"><span class="keyword">import</span> javax.crypto.spec.SecretKeySpec;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> sun.misc.BASE64Decoder;</span><br><span class="line"><span class="keyword">import</span> sun.misc.BASE64Encoder;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * AES对称加密和解密</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SymmetricEncoder</span> </span>&#123;</span><br><span class="line">  <span class="comment">/*</span></span><br><span class="line"><span class="comment">   * 加密</span></span><br><span class="line"><span class="comment">   * 1.构造密钥生成器</span></span><br><span class="line"><span class="comment">   * 2.根据ecnodeRules规则初始化密钥生成器</span></span><br><span class="line"><span class="comment">   * 3.产生密钥</span></span><br><span class="line"><span class="comment">   * 4.创建和初始化密码器</span></span><br><span class="line"><span class="comment">   * 5.内容加密</span></span><br><span class="line"><span class="comment">   * 6.返回字符串</span></span><br><span class="line"><span class="comment">   */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">AESEncode</span><span class="params">(String encodeRules,String content)</span></span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//1.构造密钥生成器，指定为AES算法,不区分大小写</span></span><br><span class="line">            KeyGenerator keygen=KeyGenerator.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">            <span class="comment">//2.根据ecnodeRules规则初始化密钥生成器</span></span><br><span class="line">            <span class="comment">//生成一个128位的随机源,根据传入的字节数组</span></span><br><span class="line">            keygen.init(<span class="number">128</span>, <span class="keyword">new</span> SecureRandom(encodeRules.getBytes()));</span><br><span class="line">              <span class="comment">//3.产生原始对称密钥</span></span><br><span class="line">            SecretKey original_key=keygen.generateKey();</span><br><span class="line">              <span class="comment">//4.获得原始对称密钥的字节数组</span></span><br><span class="line">            <span class="keyword">byte</span> [] raw=original_key.getEncoded();</span><br><span class="line">            <span class="comment">//5.根据字节数组生成AES密钥</span></span><br><span class="line">            SecretKey key=<span class="keyword">new</span> SecretKeySpec(raw, <span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//6.根据指定算法AES自成密码器</span></span><br><span class="line">            Cipher cipher=Cipher.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//7.初始化密码器，第一个参数为加密(Encrypt_mode)或者解密解密(Decrypt_mode)操作，第二个参数为使用的KEY</span></span><br><span class="line">            cipher.init(Cipher.ENCRYPT_MODE, key);</span><br><span class="line">            <span class="comment">//8.获取加密内容的字节数组(这里要设置为utf-8)不然内容中如果有中文和英文混合中文就会解密为乱码</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_encode=content.getBytes(<span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">            <span class="comment">//9.根据密码器的初始化方式--加密：将数据加密</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_AES=cipher.doFinal(byte_encode);</span><br><span class="line">          <span class="comment">//10.将加密后的数据转换为字符串</span></span><br><span class="line">            <span class="comment">//这里用Base64Encoder中会找不到包</span></span><br><span class="line">            <span class="comment">//解决办法：</span></span><br><span class="line">            <span class="comment">//在项目的Build path中先移除JRE System Library，再添加库JRE System Library，重新编译后就一切正常了。</span></span><br><span class="line">            String AES_encode=<span class="keyword">new</span> String(<span class="keyword">new</span> BASE64Encoder().encode(byte_AES));</span><br><span class="line">          <span class="comment">//11.将字符串返回</span></span><br><span class="line">            <span class="keyword">return</span> AES_encode;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InvalidKeyException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IllegalBlockSizeException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (BadPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (UnsupportedEncodingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//如果有错就返加nulll</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * 解密</span></span><br><span class="line"><span class="comment">     * 解密过程：</span></span><br><span class="line"><span class="comment">     * 1.同加密1-4步</span></span><br><span class="line"><span class="comment">     * 2.将加密后的字符串反纺成byte[]数组</span></span><br><span class="line"><span class="comment">     * 3.将加密内容解密</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> String <span class="title">AESDncode</span><span class="params">(String encodeRules,String content)</span></span>&#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">//1.构造密钥生成器，指定为AES算法,不区分大小写</span></span><br><span class="line">            KeyGenerator keygen=KeyGenerator.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">            <span class="comment">//2.根据ecnodeRules规则初始化密钥生成器</span></span><br><span class="line">            <span class="comment">//生成一个128位的随机源,根据传入的字节数组</span></span><br><span class="line">            keygen.init(<span class="number">128</span>, <span class="keyword">new</span> SecureRandom(encodeRules.getBytes()));</span><br><span class="line">              <span class="comment">//3.产生原始对称密钥</span></span><br><span class="line">            SecretKey original_key=keygen.generateKey();</span><br><span class="line">              <span class="comment">//4.获得原始对称密钥的字节数组</span></span><br><span class="line">            <span class="keyword">byte</span> [] raw=original_key.getEncoded();</span><br><span class="line">            <span class="comment">//5.根据字节数组生成AES密钥</span></span><br><span class="line">            SecretKey key=<span class="keyword">new</span> SecretKeySpec(raw, <span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//6.根据指定算法AES自成密码器</span></span><br><span class="line">            Cipher cipher=Cipher.getInstance(<span class="string">&quot;AES&quot;</span>);</span><br><span class="line">              <span class="comment">//7.初始化密码器，第一个参数为加密(Encrypt_mode)或者解密(Decrypt_mode)操作，第二个参数为使用的KEY</span></span><br><span class="line">            cipher.init(Cipher.DECRYPT_MODE, key);</span><br><span class="line">            <span class="comment">//8.将加密并编码后的内容解码成字节数组</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_content= <span class="keyword">new</span> BASE64Decoder().decodeBuffer(content);</span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * 解密</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">byte</span> [] byte_decode=cipher.doFinal(byte_content);</span><br><span class="line">            String AES_decode=<span class="keyword">new</span> String(byte_decode,<span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">            <span class="keyword">return</span> AES_decode;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (InvalidKeyException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IllegalBlockSizeException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (BadPaddingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//如果有错就返加nulll</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        SymmetricEncoder se=<span class="keyword">new</span> SymmetricEncoder();</span><br><span class="line">        Scanner scanner=<span class="keyword">new</span> Scanner(System.in);</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 加密</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        System.out.println(<span class="string">&quot;使用AES对称加密，请输入加密的规则&quot;</span>);</span><br><span class="line">        String encodeRules=scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;请输入要加密的内容:&quot;</span>);</span><br><span class="line">        String content = scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;根据输入的规则&quot;</span>+encodeRules+<span class="string">&quot;加密后的密文是:&quot;</span>+se.AESEncode(encodeRules, content));</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 解密</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        System.out.println(<span class="string">&quot;使用AES对称解密，请输入加密的规则：(须与加密相同)&quot;</span>);</span><br><span class="line">         encodeRules=scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;请输入要解密的内容（密文）:&quot;</span>);</span><br><span class="line">         content = scanner.next();</span><br><span class="line">        System.out.println(<span class="string">&quot;根据输入的规则&quot;</span>+encodeRules+<span class="string">&quot;解密后的明文是:&quot;</span>+se.AESDncode(encodeRules, content));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Apache-commons-codec"><a href="#Apache-commons-codec" class="headerlink" title="Apache commons codec"></a>Apache commons codec</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-codec<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-codec<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">version</span>&gt;</span>1.9<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//1、MD5加密</span></span><br><span class="line">String md5Str = DigestUtils.md5Hex(str);</span><br><span class="line">System.out.println(<span class="string">&quot;MD5--&gt;&quot;</span> + md5Str);</span><br><span class="line"></span><br><span class="line"><span class="comment">//SHA1加密</span></span><br><span class="line">String sha1Str = DigestUtils.sha1Hex(str);</span><br><span class="line">System.out.println(<span class="string">&quot;SHA1--&gt;&quot;</span> + sha1Str);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Base64加密</span></span><br><span class="line">String base64Str = Base64.encodeBase64String(str.getBytes());</span><br><span class="line">System.out.println(<span class="string">&quot;base64加密--&gt;&quot;</span> + base64Str);</span><br><span class="line"></span><br><span class="line"><span class="comment">//Base64解密</span></span><br><span class="line">String base64DecodeStr = <span class="keyword">new</span> String(Base64.decodeBase64(base64Str));</span><br><span class="line">System.out.println(<span class="string">&quot;base64解密--&gt;&quot;</span> + base64DecodeStr);</span><br></pre></td></tr></table></figure>
       
     </div>
 
@@ -1578,7 +1594,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">224</span>
+          <span class="site-state-item-count">222</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
