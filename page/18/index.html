@@ -183,7 +183,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/network/security/vx/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/HDFS-Java-API/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/network/security/vx/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/bigdata/Hadoop/HDFS-Java-API/" class="post-title-link" itemprop="url">HDFS Java API</a>
         </h2>
 
         <div class="post-meta">
@@ -207,7 +207,23 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:25:36" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:36+08:00">2021-04-04</time>
+              <time title="Created: 2017-02-25 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-25T00:00:00+08:00">2017-02-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
             </span>
 
           
@@ -221,121 +237,82 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"encrypt-decrypt-signature-certificate.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"HTTPS-SSL.md","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
-      
-    </div>
+          <p>Hadoop是采用Java实现的，所有的命令和操作全部采用Java完成。<br>HDFS: Hadoop Distributed File System 是Hadoop提供的分布式文件系统。</p>
+<p>本文介绍HDFS的Java API </p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.hadoop<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hadoop-core<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>首先，看一个例子:</p>
+<h1 id="putMerge-本地文件合并并保存到HDFS"><a href="#putMerge-本地文件合并并保存到HDFS" class="headerlink" title="putMerge: 本地文件合并并保存到HDFS"></a>putMerge: 本地文件合并并保存到HDFS</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * copy files in &lt;code&gt;srcDir&lt;/code&gt; </span></span><br><span class="line"><span class="comment"> * and merge to &lt;code&gt;objectFileName&lt;/code&gt; in HDFS</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> srcDir    本地文件夹</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> objectFileName HDFS文件名</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">putMerge</span><span class="params">(String srcDir, String objectFileName)</span> </span>&#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;srcDir:&quot;</span> + srcDir+<span class="string">&quot;\t objDir:&quot;</span> + objectFileName);</span><br><span class="line">    <span class="comment">// 读取HDFS的默认配置, 配置文件主要包括: </span></span><br><span class="line">    <span class="comment">// core-default.xml, core-site.xml, mapred-default.xml, mapred-site.xml, yarn-default.xml, yarn-site.xml, hdfs-default.xml, hdfs-site.xml</span></span><br><span class="line">    Configuration conf = <span class="keyword">new</span> Configuration();</span><br><span class="line">    FileSystem hdfs = <span class="keyword">null</span>;</span><br><span class="line">    LocalFileSystem local = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        hdfs = FileSystem.get(conf);<span class="comment">// 获取HDFS配置的FileSystem</span></span><br><span class="line">        local = FileSystem.getLocal(conf);<span class="comment">// 获取本地配置FileSystem</span></span><br><span class="line">        Path inputDir = <span class="keyword">new</span> Path(srcDir); <span class="comment">// 设定输入目录</span></span><br><span class="line">        System.out.println(<span class="string">&quot;inputDir: &quot;</span> + inputDir);</span><br><span class="line">        System.out.println(<span class="string">&quot;local.homeDirectory: &quot;</span> + local.getHomeDirectory());</span><br><span class="line">        System.out.println(<span class="string">&quot;local.workingDirectory: &quot;</span> + local.getWorkingDirectory());</span><br><span class="line">        System.out.println(<span class="string">&quot;local.uri: &quot;</span> + local.getUri());</span><br><span class="line">        System.out.println(<span class="string">&quot;local.conf: &quot;</span> + local.getConf());</span><br><span class="line"></span><br><span class="line">        FileStatus[] inputFiles = local.listStatus(inputDir);</span><br><span class="line">        System.out.println(<span class="string">&quot;inputFiles: &quot;</span> + inputFiles);</span><br><span class="line">        <span class="keyword">for</span> (FileStatus inputFile : inputFiles) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;inputFile: &quot;</span> + inputFile);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (inputFiles.length == <span class="number">0</span>) &#123;</span><br><span class="line">            System.err.println(<span class="string">&quot;input file path is empty!&quot;</span>);</span><br><span class="line">            System.exit(<span class="number">1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        Path hdfsFile = <span class="keyword">new</span> Path(objectFileName); <span class="comment">// 设定输出文件名称</span></span><br><span class="line">        FSDataOutputStream out = hdfs.create(hdfsFile, <span class="keyword">new</span> Progressable() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">progress</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                System.out.print(<span class="string">&quot;*&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="keyword">for</span> (FileStatus inputFile : inputFiles) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;inputFile.path.name: &quot;</span> + inputFile.getPath().getName());</span><br><span class="line">            FSDataInputStream in = local.open(inputFile.getPath());</span><br><span class="line">            <span class="keyword">byte</span> buffer[] = <span class="keyword">new</span> <span class="keyword">byte</span>[<span class="number">256</span>];</span><br><span class="line">            <span class="keyword">int</span> bytesRead = <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">while</span> ((bytesRead = in.read(buffer)) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                out.write(buffer, <span class="number">0</span>, bytesRead);</span><br><span class="line">            &#125;</span><br><span class="line">            in.close();</span><br><span class="line">            System.out.println();</span><br><span class="line">        &#125;</span><br><span class="line">        out.close();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    System.out.println();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行:</p>
+<ol>
+<li>打包</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mvn package</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>复制到container</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker cp ~/IdeaProjects/MyTest/out/artifacts/HadoopTest_jar/HadoopTest.jar hadoop0:/root/putMerge.jar</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>执行</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop jar putMerge.jar en002 en002.txt</span><br></pre></td></tr></table></figure>
+<p>执行结果</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">version 1</span><br><span class="line">args:en002</span><br><span class="line">args:en002.txt</span><br><span class="line">srcDir:en002</span><br><span class="line">objDir:en002.txt</span><br><span class="line">inputDir: en002</span><br><span class="line">local.homeDirectory: file:/root</span><br><span class="line">local.workingDirectory: file:/root</span><br><span class="line">local.uri: file:///</span><br><span class="line">local.conf: Configuration: core-default.xml, core-site.xml, mapred-default.xml, mapred-site.xml, yarn-default.xml, yarn-site.xml, hdfs-default.xml, hdfs-site.xml</span><br><span class="line">inputFiles: [Lorg.apache.hadoop.fs.FileStatus;@4073c6c9</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/shengjing.txt; isDirectory=false; length=4467663; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/at.txt; isDirectory=false; length=829203; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/abc.txt; isDirectory=false; length=0; replication=1; blocksize=33554432; modification_time=1495543277000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/a.txt; isDirectory=false; length=18516; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/av.txt; isDirectory=false; length=189407; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/David.txt; isDirectory=false; length=1519616; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/Oliver.txt; isDirectory=false; length=981553; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/Jane.txt; isDirectory=false; length=1114997; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/Romeo.txt; isDirectory=false; length=145397; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile.path.name: shengjing.txt</span><br><span class="line"></span><br><span class="line">inputFile.path.name: at.txt</span><br><span class="line">*******</span><br><span class="line">inputFile.path.name: abc.txt</span><br><span class="line"></span><br><span class="line">inputFile.path.name: a.txt</span><br><span class="line"></span><br><span class="line">inputFile.path.name: av.txt</span><br><span class="line">*******</span><br><span class="line">inputFile.path.name: David.txt</span><br><span class="line">******************************************************************</span><br><span class="line">inputFile.path.name: Oliver.txt</span><br><span class="line">***************************</span><br><span class="line">inputFile.path.name: Jane.txt</span><br><span class="line">**********************************</span><br><span class="line">inputFile.path.name: Romeo.txt</span><br><span class="line">**</span><br><span class="line">**</span><br></pre></td></tr></table></figure>
+<p>可能出现的问题:</p>
+<ol>
+<li><code>LocalFileSystem.listStatus</code>返回为 <code>empty</code>, 可能的原因有:<ul>
+<li>Hadoop没有权限读取目录或目录中的文件</li>
+<li>本地目录中的文件是中文的，而系统不支持显示中文</li>
+</ul>
+</li>
+</ol>
+<h1 id="FileSystem"><a href="#FileSystem" class="headerlink" title="FileSystem"></a>FileSystem</h1><p><a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/fs/FileSystem.html">DOCS-FileSystem</a><br>FileSystem 是Hadoop提供的操作本地文件和HDFS中文件的API，可以实现CRUD等操作</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Append to an existing file.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> FSDataOutputStream <span class="title">append</span><span class="params">(Path f)</span> <span class="keyword">throws</span> IOException</span></span><br><span class="line"><span class="function"><span class="comment">/**</span></span></span><br><span class="line"><span class="function"><span class="comment">* Concat existing files together.</span></span></span><br><span class="line"><span class="function"><span class="comment">*/</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">concat</span><span class="params">(Path trg,Path[] psrcs)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> IOException</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="comment">/** </span></span></span><br><span class="line"><span class="function"><span class="comment">* Renames Path src to Path dst. </span></span></span><br><span class="line"><span class="function"><span class="comment">* Can take place on local fs or remote DFS.</span></span></span><br><span class="line"><span class="function"><span class="comment">*/</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">boolean</span> <span class="title">rename</span><span class="params">(Path src, Path dst)</span> <span class="keyword">throws</span> IOException</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span></span><br></pre></td></tr></table></figure>
 
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/network/HTTPS/vx/">
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
 
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/network/HTTPS/vx/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:25:36" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:36+08:00">2021-04-04</time>
-            </span>
 
-          
 
-        </div>
-      </header>
+<h2 id="创建目录"><a href="#创建目录" class="headerlink" title="创建目录"></a>创建目录</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/20130709&quot;</span>);  </span><br><span class="line">fs.create(path);  </span><br><span class="line">fs.close();  </span><br></pre></td></tr></table></figure>
 
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
 
-      
-          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"optimization.md","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
-      
-    </div>
+<h2 id="删除目录"><a href="#删除目录" class="headerlink" title="删除目录"></a>删除目录</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/20130710&quot;</span>);  </span><br><span class="line">fs.delete(path);  </span><br><span class="line">fs.close(); </span><br></pre></td></tr></table></figure>
+<h2 id="写文件"><a href="#写文件" class="headerlink" title="写文件"></a>写文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/write.txt&quot;</span>);  </span><br><span class="line">FSDataOutputStream out = fs.create(path);  </span><br><span class="line">out.writeUTF(<span class="string">&quot;da jia hao,cai shi zhen de hao!&quot;</span>);  </span><br><span class="line">fs.close();</span><br></pre></td></tr></table></figure>
+<h2 id="读文件"><a href="#读文件" class="headerlink" title="读文件"></a>读文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/write.txt&quot;</span>);  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">if</span>(fs.exists(path))&#123;  </span><br><span class="line">    FSDataInputStream is = fs.open(path);  </span><br><span class="line">    FileStatus status = fs.getFileStatus(path);  </span><br><span class="line">    <span class="comment">// status.getLen() 返回文件的长度 字节长度</span></span><br><span class="line">    <span class="keyword">byte</span>[] buffer = <span class="keyword">new</span> <span class="keyword">byte</span>[Integer.parseInt(String.valueOf(status.getLen()))];  </span><br><span class="line">    is.readFully(<span class="number">0</span>, buffer);  </span><br><span class="line">    is.close();  </span><br><span class="line">    fs.close();  </span><br><span class="line">    System.out.println(buffer.toString());  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
 
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/Maven/">
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
+<h2 id="上传本地文件到HDFS"><a href="#上传本地文件到HDFS" class="headerlink" title="上传本地文件到HDFS"></a>上传本地文件到HDFS</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path src = <span class="keyword">new</span> Path(<span class="string">&quot;/home/hadoop/word.txt&quot;</span>);  </span><br><span class="line">Path dst = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/&quot;</span>);  </span><br><span class="line"><span class="comment">// FileSystem可以直接将本地文件复制到HDFS的制定目录</span></span><br><span class="line">fs.copyFromLocalFile(src, dst);  </span><br><span class="line">fs.close(); </span><br></pre></td></tr></table></figure>
+<h2 id="删除文件"><a href="#删除文件" class="headerlink" title="删除文件"></a>删除文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line"><span class="comment">// 删除文件和目录均是通过FileSystem.delete(Path path)</span></span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/word.txt&quot;</span>);  </span><br><span class="line">fs.delete(path);  </span><br><span class="line">fs.close();</span><br></pre></td></tr></table></figure>
 
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/tool/Maven/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
+<h2 id="获取给定目录下的所有子目录以及子文件"><a href="#获取给定目录下的所有子目录以及子文件" class="headerlink" title="获取给定目录下的所有子目录以及子文件"></a>获取给定目录下的所有子目录以及子文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration(); </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop&quot;</span>);  </span><br><span class="line">getFile(path,fs);  </span><br><span class="line"><span class="comment">//fs.close();   </span></span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">getFile</span><span class="params">(Path path,FileSystem fs)</span> <span class="keyword">throws</span> IOException </span>&#123;  </span><br><span class="line">    FileStatus[] fileStatus = fs.listStatus(path);  </span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;fileStatus.length;i++)&#123;  </span><br><span class="line">        <span class="keyword">if</span>(fileStatus[i].isDir())&#123;  </span><br><span class="line">            Path p = <span class="keyword">new</span> Path(fileStatus[i].getPath().toString());  </span><br><span class="line">            getFile(p,fs);  </span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;  </span><br><span class="line">            System.out.println(fileStatus[i].getPath().toString());  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
+<h2 id="查找某个文件在HDFS集群的位置"><a href="#查找某个文件在HDFS集群的位置" class="headerlink" title="查找某个文件在HDFS集群的位置"></a>查找某个文件在HDFS集群的位置</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * 查找某个文件在HDFS集群的位置 </span></span><br><span class="line"><span class="comment"> */</span>  </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">getFileLocal</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;  </span><br><span class="line">    Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">    FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">    Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/write.txt&quot;</span>);  </span><br><span class="line">      </span><br><span class="line">    FileStatus status = fs.getFileStatus(path);  </span><br><span class="line">    BlockLocation[] locations = fs.getFileBlockLocations(status, <span class="number">0</span>, status.getLen());  </span><br><span class="line">      </span><br><span class="line">    <span class="keyword">int</span> length = locations.length;  </span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;length;i++)&#123;  </span><br><span class="line">        String[] hosts = locations[i].getHosts();  </span><br><span class="line">        System.out.println(<span class="string">&quot;block_&quot;</span> + i + <span class="string">&quot;_location:&quot;</span> + hosts[i]);  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
 
-              <time title="Created: 2021-04-04 08:25:36" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:36+08:00">2021-04-04</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Maven"><a href="#Maven" class="headerlink" title="Maven"></a>Maven</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 打印插件的所有命令详情</span></span><br><span class="line">mvn help:describe -Dplugin=javafx -Ddetail</span><br></pre></td></tr></table></figure>
+<h2 id="HDFS集群上所有节点名称信息"><a href="#HDFS集群上所有节点名称信息" class="headerlink" title="HDFS集群上所有节点名称信息"></a>HDFS集群上所有节点名称信息</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * HDFS集群上所有节点名称信息 </span></span><br><span class="line"><span class="comment"> */</span>  </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">getHDFSNode</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;  </span><br><span class="line">    Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">    FileSystem fs = FileSystem.get(conf);  </span><br><span class="line"></span><br><span class="line">    DistributedFileSystem  dfs = (DistributedFileSystem)fs;  </span><br><span class="line">    DatanodeInfo[] dataNodeStats = dfs.getDataNodeStats();  </span><br><span class="line">      </span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;dataNodeStats.length;i++)&#123;  </span><br><span class="line">        System.out.println(<span class="string">&quot;DataNode_&quot;</span> + i + <span class="string">&quot;_Node:&quot;</span> + dataNodeStats[i].getHostName());  </span><br><span class="line">    &#125;  </span><br><span class="line">      </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
+<h1 id="读写"><a href="#读写" class="headerlink" title="读写"></a>读写</h1><p><code>FSDataInputStream</code> 与 <code>FSDataOutputStream</code></p>
+<p><code>FSDataInputStream</code> 扩展了 <code>DataInputStream</code> 以支持随机读</p>
+<h2 id="InputFormat"><a href="#InputFormat" class="headerlink" title="InputFormat"></a>InputFormat</h2><ul>
+<li><p>TextInputFormat 是 InputFormat 的默认实现, TextInputFormat<br>返回的键是每行的字节偏移量，返回的值是该行的数据。<br>key: LongWritable<br>value: Text</p>
+</li>
+<li><p><code>KeyValueTextInputFormat</code> 使用分隔符分割每行，分隔符之前的是键，之后的是值。默认的分隔符是制表符(\T)，分离器的属性通过<br><code>key.value.separator.in.input.line</code>中指定</p>
+</li>
+</ul>
+<p>key: Text<br>value: Text</p>
+<ul>
+<li><code>SequenceFileInputFormat&lt;K,V&gt;</code> 用户自定义的序列化格式, 序列化文件为Hadoop专用的压缩二进制文件格式</li>
+</ul>
+<p>key: K 用户定义<br>value: V 用户定义</p>
+<ul>
+<li><code>NLineInputFormat</code> key为分片的偏移量，value为包含N行数据的片段，N通过属性 <code>mapred.line.inout.format.linespermap</code>中指定，默认为1<br>key: LongWritable<br>value: Text</li>
+</ul>
+<hr>
+<p>【参考文献】</p>
+<ol>
+<li><a href="ref-url" title="ref-alt-title"></a></li>
+</ol>
 
       
     </div>
@@ -355,7 +332,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/vx/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/base(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)(AVERYZHANG-PC1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -369,7 +346,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java/tool/vx/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/bigdata/Hadoop/base(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)(AVERYZHANG-PC1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/" class="post-title-link" itemprop="url">Hadoop专题</a>
         </h2>
 
         <div class="post-meta">
@@ -379,7 +356,23 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:25:36" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:36+08:00">2021-04-04</time>
+              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
             </span>
 
           
@@ -393,7 +386,161 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"01.正则表达式.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"02.RAID.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"04.Mac.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"JavaFx-3D.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"Linux-shell.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"Maven.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"typesafe.config.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"加密与解密.md","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
+          <p>从本篇开始，陆续对常用大数据平台的原理和部分核心源码进行解读和整理。<br>这里的常用大数据平台包括Hadoop(HDFS、MR)、Spark、Kylin、Flink、HBase、Flume、Elastic Search等</p>
+<h1 id="Hadoop专题"><a href="#Hadoop专题" class="headerlink" title="Hadoop专题"></a>Hadoop专题</h1><ol>
+<li><a href="/distributed/docker/hadoop-cluser-in-docker/">在Docker上搭建Hadoop集群container</a></li>
+<li><a href="/distributed/hadoop/hadoop-cluser-configuration/">Hadoop集群节点配置及搭建</a></li>
+<li><a href="/distributed/hadoop/HDFS-Java-API/">HDFS Java API</a></li>
+</ol>
+<h2 id="HDFS架构"><a href="#HDFS架构" class="headerlink" title="HDFS架构"></a>HDFS架构</h2><ul>
+<li>HDFS的架构</li>
+<li>数据存储与交互</li>
+</ul>
+<h2 id="MR架构"><a href="#MR架构" class="headerlink" title="MR架构"></a>MR架构</h2><p>对于MapReduce作业，完整的作业运行流程，这里借用刘军老师的<a target="_blank" rel="noopener" href="http://item.jd.com/11315351.html">Hadoop大数据处理</a>中的一张图：</p>
+<p><img src="_v_images/20191210133913040_1367150948.png" alt="hadoop"></p>
+<p>完整过程应该是分为7部分，分别是：</p>
+<ol>
+<li>作业启动：开发者通过控制台启动作业；</li>
+<li>作业初始化：这里主要是切分数据、创建作业和提交作业，与第三步紧密相联；</li>
+<li>作业/任务调度：对于1.0版的Hadoop来说就是JobTracker来负责任务调度，对于2.0版的Hadoop来说就是Yarn中的Resource Manager负责整个系统的资源管理与分配，<br>Yarn可以参考IBM的一篇博客<a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/opensource/os-cn-hadoop-yarn/">Hadoop新MapReduce框架Yarn详解</a>；</li>
+<li>Map任务；</li>
+<li>Shuffle；</li>
+<li>Reduce任务；</li>
+<li>作业完成：通知开发者任务完成。</li>
+</ol>
+<p>而这其中最主要的MapReduce过程，主要是第4、5、6步三部分，这也是本篇博客重点讨论的地方，详细作用如下：</p>
+<ol>
+<li><strong>Map</strong>: 数据输入,做初步的处理,输出形式的中间结果；</li>
+<li><strong>Shuffle</strong>: 按照partition、key对中间结果进行排序合并,输出给reduce线程；</li>
+<li><strong>Reduce</strong>: 对相同key的输入进行最终的处理,并将结果写入到文件中。</li>
+</ol>
+<p>这里先给出官网上关于这个过程的经典流程图：</p>
+<p><img src="_v_images/20191210133912634_295276182.png" alt="mapreduce"><br>mapreduce</p>
+<p>上图是把MapReduce过程分为两个部分，而实际上从两边的Map和Reduce到中间的那一大块都属于Shuffle过程，也就是说，Shuffle过程有一部分是在Map端，有一部分是在Reduce端，下文也将会分两部分来介绍Shuffle过程。</p>
+<p>大部分的情况下，map task与reduce task的执行是分布在不同的节点上的，因此，很多情况下，reduce执行时需要跨节点去拉取其他节点上的map task结果，这样造成了集群内部的网络资源消耗很严重，而且在节点的内部，相比于内存，磁盘IO对性能的影响是非常严重的。如果集群中运行的作业有很多，那么task的执行对于集群内部网络的资源消费非常大。因此，我们对于MapRedue作业Shuffle过程的期望是：</p>
+<ul>
+<li>完整地从map task端拉取数据到Reduce端；</li>
+<li>在跨节点拉取数据时，尽可能地减少对带宽的不必要消耗；</li>
+<li>减少磁盘IO对task执行的影响。</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://matt33.com/2016/03/02/hadoop-shuffle/">MapReduce之Shuffle过程详述</a></p>
+<h2 id="Map"><a href="#Map" class="headerlink" title="Map"></a>Map</h2><p>在进行海量数据处理时，外存文件数据<strong>I/O访问</strong>会成为一个制约系统性能的瓶颈，因此，Hadoop的Map过程实现的一个重要原则就是：<strong>近数据计算</strong>，这里主要指两个方面：</p>
+<ol>
+<li>代码靠近数据：<ul>
+<li>原则：本地化数据处理（locality），即一个计算节点尽可能处理本地磁盘上所存储的数据；</li>
+<li>尽量选择数据所在<code>DataNode</code>启动<code>Map</code>任务；</li>
+<li>这样可以减少数据通信，提高计算效率；</li>
+</ul>
+</li>
+<li>数据靠近代码：<ul>
+<li>当本地没有数据处理时，尽可能从同一机架或最近其他节点传输数据进行处理（host选择算法）。</li>
+</ul>
+</li>
+</ol>
+<p>下面，我们分块去介绍Hadoop的Map过程，map的经典流程图如下：</p>
+<p><img src="_v_images/20191210133912228_1057323278.png" alt="map-shuffle"></p>
+<h3 id="输入"><a href="#输入" class="headerlink" title="输入"></a>输入</h3><ol>
+<li>map task只读取split分片，split与block（hdfs的最小存储单位，默认为64MB）可能是一对一也能是一对多，但是对于一个split只会对应一个文件的一个block或多个block，不允许一个split对应多个文件的多个block；</li>
+<li>这里切分和输入数据时会涉及到InputFormat的文件切分算法和host选择算法。</li>
+</ol>
+<h4 id="文件切分算法"><a href="#文件切分算法" class="headerlink" title="文件切分算法"></a>文件切分算法</h4><p><strong>文件切分算法</strong>，主要用于确定<code>InputSplit</code>的个数以及每个<code>InputSplit</code>对应的数据段。<code>FileInputFormat</code>以文件为单位切分生成<code>InputSplit</code>，对于每个文件，由以下三个属性值决定其对应的<code>InputSplit</code>的个数：、、、🤣、、、、、😍😱😱😮</p>
+<ul>
+<li><code>goalSize</code>： 它是根据用户期望的InputSplit数目计算出来的，即<code>totalSize/numSplits</code>。其中，<code>totalSize</code>为文件的总大小；<code>numSplits</code>为用户设定的Map Task个数，默认情况下是1；</li>
+<li><code>minSize</code>：InputSplit的最小值，由配置参数<code>mapred.min.split.size</code>确定，默认是1；</li>
+<li><code>blockSize</code>：文件在hdfs中存储的block大小，不同文件可能不同，默认是64MB。</li>
+</ul>
+<p>这三个参数共同决定InputSplit的最终大小，计算方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">splitSize&#x3D;max&#123;minSize, min&#123;gogalSize,blockSize&#125;&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="host选择算法"><a href="#host选择算法" class="headerlink" title="host选择算法"></a>host选择算法</h4><p>FileInputFormat的host选择算法参考《Hadoop技术内幕-深入解析MapReduce架构设计与实现原理》的p50.</p>
+<h3 id="Partition"><a href="#Partition" class="headerlink" title="Partition"></a>Partition</h3><ul>
+<li>作用：将map的结果发送到相应的reduce端，总的partition的数目等于reducer的数量。</li>
+<li>实现功能：<ol>
+<li>map输出的是<code>key/value</code>对，决定于当前的mapper的part交给哪个reduce的方法是：<br>mapreduce提供的Partitioner接口，对key进行hash后，再以reducetask数量取模，然后到指定的job上（<strong>HashPartitioner</strong>，可以通过<code>job.setPartitionerClass(MyPartition.class)</code>自定义）。</li>
+<li>然后将数据写入到内存缓冲区，缓冲区的作用是批量收集map结果，减少磁盘IO的影响。key/value对以及Partition的结果都会被写入缓冲区。在写入之前，key与value值都会被序列化成字节数组。</li>
+</ol>
+</li>
+<li>要求：负载均衡，效率；</li>
+</ul>
+<h3 id="spill（溢写）：sort-amp-combiner"><a href="#spill（溢写）：sort-amp-combiner" class="headerlink" title="spill（溢写）：sort &amp; combiner"></a>spill（溢写）：sort &amp; combiner</h3><ul>
+<li>作用：把内存缓冲区中的数据写入到本地磁盘，在写入本地磁盘时先按照partition、再按照key进行排序（<code>quick sort</code>）；</li>
+<li>注意：<ol>
+<li>这个spill是由<strong>另外单独的线程</strong>来完成，不影响往缓冲区写map结果的线程；</li>
+<li>内存缓冲区默认大小限制为100MB，它有个溢写比例（<code>spill.percent</code>），默认为0.8，当缓冲区的数据达到阈值时，溢写线程就会启动，先锁定这80MB的内存，执行溢写过程，<code>map task</code>的输出结果还可以往剩下的20MB内存中写，互不影响。然后再重新利用这块缓冲区，因此Map的内存缓冲区又叫做<strong>环形缓冲区</strong>（两个指针的方向不会变，下面会详述）；</li>
+<li>在将数据写入磁盘之前，先要对要写入磁盘的数据进行一次<strong>排序</strong>操作，先按<code>&lt;key,value,partition&gt;</code>中的partition分区号排序，然后再按key排序，这个就是<strong>sort操作</strong>，最后溢出的小文件是分区的，且同一个分区内是保证key有序的；</li>
+</ol>
+</li>
+</ul>
+<p><strong>combine</strong>：执行combine操作要求开发者必须在程序中设置了combine（程序中通过<code>job.setCombinerClass(myCombine.class)</code>自定义combine操作）。</p>
+<ul>
+<li>程序中有两个阶段可能会执行combine操作：<ol>
+<li>map输出数据根据分区排序完成后，在写入文件之前会执行一次combine操作（前提是作业中设置了这个操作）；</li>
+<li>如果map输出比较大，溢出文件个数大于3（此值可以通过属性<code>min.num.spills.for.combine</code>配置）时，在merge的过程（多个spill文件合并为一个大文件）中还会执行combine操作；</li>
+</ol>
+</li>
+<li>combine主要是把形如<code>&lt;aa,1&gt;,&lt;aa,2&gt;</code>这样的key值相同的数据进行计算，计算规则与reduce一致，比如：当前计算是求key对应的值求和，则combine操作后得到<code>&lt;aa,3&gt;</code>这样的结果。</li>
+<li>注意事项：不是每种作业都可以做combine操作的，只有满足以下条件才可以：<ol>
+<li>reduce的输入输出类型都一样，因为combine本质上就是reduce操作；</li>
+<li>计算逻辑上，combine操作后不会影响计算结果，像求和就不会影响；</li>
+</ol>
+</li>
+</ul>
+<h3 id="merge"><a href="#merge" class="headerlink" title="merge"></a>merge</h3><ul>
+<li>merge过程：当map很大时，每次溢写会产生一个spill_file，这样会有多个spill_file，而最终的一个map task输出只有一个文件，因此，最终的结果输出之前会对多个中间过程进行多次溢写文件（spill_file）的合并，此过程就是merge过程。也即是，待Map Task任务的所有数据都处理完后，会对任务产生的所有中间数据文件做一次合并操作，以确保一个Map Task最终只生成一个中间数据文件。</li>
+<li>注意：<ol>
+<li>如果生成的文件太多，可能会执行多次合并，每次最多能合并的文件数默认为10，可以通过属性<code>min.num.spills.for.combine</code>配置；</li>
+<li>多个溢出文件合并时，会进行一次排序，排序算法是<strong>多路归并排序</strong>；</li>
+<li>是否还需要做combine操作，一是看是否设置了combine，二是看溢出的文件数是否大于等于3；</li>
+<li>最终生成的文件格式与单个溢出文件一致，也是按分区顺序存储，并且输出文件会有一个对应的索引文件，记录每个分区数据的起始位置，长度以及压缩长度，这个索引文件名叫做<code>file.out.index</code>。</li>
+</ol>
+</li>
+</ul>
+<h3 id="内存缓冲区"><a href="#内存缓冲区" class="headerlink" title="内存缓冲区"></a>内存缓冲区</h3><ol>
+<li>在Map Task任务的业务处理方法map()中，最后一步通过<code>OutputCollector.collect(key,value)</code>或<code>context.write(key,value)</code>输出Map Task的中间处理结果，在相关的<code>collect(key,value)</code>方法中，会调用<code>Partitioner.getPartition(K2 key, V2 value, int numPartitions)</code>方法获得输出的key/value对应的分区号(分区号可以认为对应着一个要执行Reduce Task的节点)，然后将<code>&lt;key,value,partition&gt;</code>暂时保存在内存中的MapOutputBuffe内部的环形数据缓冲区，该缓冲区的默认大小是100MB，可以通过参数<code>io.sort.mb</code>来调整其大小。</li>
+<li>当缓冲区中的数据使用率达到一定阀值后，触发一次Spill操作，将环形缓冲区中的部分数据写到磁盘上，生成一个临时的Linux本地数据的spill文件；然后在缓冲区的使用率再次达到阀值后，再次生成一个spill文件。直到数据处理完毕，在磁盘上会生成很多的临时文件。</li>
+<li>缓存有一个阀值比例配置，当达到整个缓存的这个比例时，会触发spill操作；触发时，map输出还会接着往剩下的空间写入，但是写满的空间会被锁定，数据溢出写入磁盘。当这部分溢出的数据写完后，空出的内存空间可以接着被使用，形成像环一样的被循环使用的效果，所以又叫做<strong>环形内存缓冲区</strong>；</li>
+<li>MapOutputBuffe内部存数的数据采用了两个索引结构，涉及三个环形内存缓冲区。下来看一下两级索引结构：</li>
+</ol>
+<p><img src="_v_images/20191210133911922_22828392.jpg" alt="buffer"></p>
+<p><a target="_blank" rel="noopener" href="http://www.cnblogs.com/edisonchou/p/4298423.html">写入到缓冲区的数据采取了压缩算法</a><br>这三个环形缓冲区的含义分别如下：</p>
+<ol>
+<li><strong>kvoffsets</strong>缓冲区：也叫偏移量索引数组，用于保存<code>key/value</code>信息在位置索引 <code>kvindices</code> 中的偏移量。当 <code>kvoffsets</code> 的使用率超过 <code>io.sort.spill.percent</code> (默认为80%)后，便会触发一次 SpillThread 线程的“溢写”操作，也就是开始一次 Spill 阶段的操作。</li>
+<li><strong>kvindices</strong>缓冲区：也叫位置索引数组，用于保存 <code>key/value</code> 在数据缓冲区 <code>kvbuffer</code> 中的起始位置。</li>
+<li><strong>kvbuffer</strong>即数据缓冲区：用于保存实际的 <code>key/value</code> 的值。默认情况下该缓冲区最多可以使用 <code>io.sort.mb</code> 的95%，当 <code>kvbuffer</code> 使用率超过 <code>io.sort.spill.percent</code> (默认为80%)后，便会出发一次 SpillThread 线程的“溢写”操作，也就是开始一次 Spill 阶段的操作。</li>
+</ol>
+<p>写入到本地磁盘时，对数据进行排序，实际上是对<strong>kvoffsets</strong>这个偏移量索引数组进行排序。</p>
+<h2 id="Reduce"><a href="#Reduce" class="headerlink" title="Reduce"></a>Reduce</h2><p>Reduce过程的经典流程图如下：</p>
+<p><img src="_v_images/20191210133911614_1936741169.png" alt="reduce-shuffle"></p>
+<h3 id="copy过程"><a href="#copy过程" class="headerlink" title="copy过程"></a>copy过程</h3><ul>
+<li>作用：拉取数据；</li>
+<li>过程：Reduce进程启动一些数据copy线程(<code>Fetcher</code>)，通过HTTP方式请求map task所在的TaskTracker获取map task的输出文件。因为这时map task早已结束，这些文件就归TaskTracker管理在本地磁盘中。</li>
+<li>默认情况下，当整个MapReduce作业的所有已执行完成的Map Task任务数超过Map Task总数的5%后，JobTracker便会开始调度执行Reduce Task任务。然后Reduce Task任务默认启动<code>mapred.reduce.parallel.copies</code>(默认为5）个MapOutputCopier线程到已完成的Map Task任务节点上分别copy一份属于自己的数据。 这些copy的数据会首先保存的内存缓冲区中，当内冲缓冲区的使用率达到一定阀值后，则写到磁盘上。</li>
+</ul>
+<p><strong>内存缓冲区</strong></p>
+<ul>
+<li>这个内存缓冲区大小的控制就不像map那样可以通过<code>io.sort.mb</code>来设定了，而是通过另外一个参数来设置：<code>mapred.job.shuffle.input.buffer.percent（default 0.7）</code>， 这个参数其实是一个百分比，意思是说，shuffile在reduce内存中的数据最多使用内存量为：0.7 × <code>maxHeap of reduce task</code>。</li>
+<li>如果该reduce task的最大heap使用量（通常通过<code>mapred.child.java.opts</code>来设置，比如设置为-Xmx1024m）的一定比例用来缓存数据。默认情况下，reduce会使用其heapsize的70%来在内存中缓存数据。如果reduce的heap由于业务原因调整的比较大，相应的缓存大小也会变大，这也是为什么reduce用来做缓存的参数是一个百分比，而不是一个固定的值了。</li>
+</ul>
+<h3 id="merge过程"><a href="#merge过程" class="headerlink" title="merge过程"></a>merge过程</h3><ul>
+<li>Copy过来的数据会先放入内存缓冲区中，这里的缓冲区大小要比 map 端的更为灵活，它基于 JVM 的<code>heap size</code>设置，因为 Shuffle 阶段 Reducer 不运行，所以应该把绝大部分的内存都给 Shuffle 用。</li>
+<li>这里需要强调的是，merge 有三种形式：1)内存到内存 2)内存到磁盘 3)磁盘到磁盘。默认情况下第一种形式是不启用的。当内存中的数据量到达一定阈值，就启动内存到磁盘的 merge（图中的第一个merge，之所以进行merge是因为reduce端在从多个map端copy数据的时候，并没有进行sort，只是把它们加载到内存，当达到阈值写入磁盘时，需要进行merge） 。这和map端的很类似，这实际上就是溢写的过程，在这个过程中如果你设置有Combiner，它也是会启用的，然后在磁盘中生成了众多的溢写文件，这种merge方式一直在运行，直到没有 map 端的数据时才结束，然后才会启动第三种磁盘到磁盘的 merge （图中的第二个merge）方式生成最终的那个文件。</li>
+<li>在远程copy数据的同时，Reduce Task在后台启动了两个后台线程对内存和磁盘上的数据文件做合并操作，以防止内存使用过多或磁盘生的文件过多。</li>
+</ul>
+<h3 id="reducer的输入文件"><a href="#reducer的输入文件" class="headerlink" title="reducer的输入文件"></a>reducer的输入文件</h3><ul>
+<li>merge的最后会生成一个文件，大多数情况下存在于磁盘中，但是需要将其放入内存中。当reducer 输入文件已定，整个 Shuffle 阶段才算结束。然后就是 Reducer 执行，把结果放到 HDFS 上。</li>
+</ul>
+<h3 id="shuffle"><a href="#shuffle" class="headerlink" title="shuffle"></a>shuffle</h3><h3 id="maptask并行度决定机制"><a href="#maptask并行度决定机制" class="headerlink" title="maptask并行度决定机制"></a>maptask并行度决定机制</h3><p>maptask 的并行度决定 map 阶段的任务处理并发度，进而影响到整个 job 的处理速度 那么， mapTask 并行实例是否越多越好呢？其并行度又是如何决定呢？  </p>
+<p>一个 job 的 map 阶段并行度由客户端在提交 job 时决定， 客户端对 map 阶段并行度的规划<br>的基本逻辑为：<br>将待处理数据执行逻辑切片（即按照一个特定切片大小，将待处理数据划分成逻辑上的多 个 split），然后每一个 split 分配一个 mapTask 并行实例处理<br>这段逻辑及形成的切片规划描述文件，是由 FileInputFormat实现类的 getSplits()方法完成的。<br>该方法返回的是 List<InputSplit>， InputSplit 封装了每一个逻辑切片的信息，包括长度和位置  信息，而 getSplits()方法返回一组 InputSplit</p>
+<p> 4、切片机制</p>
+<p><img src="_v_images/20191210125844932_1553710655.png"></p>
+<p>5、maptask并行度经验之谈</p>
+<p>如果硬件配置为 2*12core + 64G，恰当的 map 并行度是大约每个节点 20-100 个 map，最好 每个 map 的执行时间至少一分钟。<br>     （1）如果 job 的每个 map 或者 reduce task 的运行时间都只有 30-40 秒钟，那么就减少该 job 的 map 或者 reduce 数，每一个 task(map|reduce)的 setup 和加入到调度器中进行调度，这个 中间的过程可能都要花费几秒钟，所以如果每个 task 都非常快就跑完了，就会在 task 的开<br>始和结束的时候浪费太多的时间。<br>配置 task 的 JVM 重用可以改善该问题：<br>mapred.job.reuse.jvm.num.tasks，默认是 1，表示一个 JVM 上最多可以顺序执行的 task 数目（属于同一个 Job）是 1。也就是说一个 task 启一个 JVM。这个值可以在 mapred-site.xml 中进行更改， 当设置成多个，就意味着这多个 task 运行在同一个 JVM 上，但不是同时执行，<br>是排队顺序执行<br>   （2）如果 input 的文件非常的大，比如 1TB，可以考虑将 hdfs 上的每个 blocksize 设大，比如 设成 256MB 或者 512MB<br>     6、reducetask并行度决定机制</p>
+<p><img src="_v_images/20191210130405036_148457935.png"></p>
+<p>文件切分算法，主要用于确定InputSplit的个数以及每个InputSplit对应的数据段。FileInputFormat以文件为单位切分生成InputSplit，对于每个文件，由以下三个属性值决定其对应的InputSplit的个数：</p>
+<p>goalSize： 它是根据用户期望的InputSplit数目计算出来的，即totalSize/numSplits。其中，totalSize为文件的总大小；numSplits为用户设定的Map Task个数，默认情况下是1；<br>minSize：InputSplit的最小值，由配置参数mapred.min.split.size确定，默认是1；<br>blockSize：文件在hdfs中存储的block大小，不同文件可能不同，默认是64MB。<br>这三个参数共同决定InputSplit的最终大小，计算方法如下：</p>
+<p>splitSize=max{minSize, min{gogalSize,blockSize}}</p>
+<p>FileInputFormat的host选择算法参考《Hadoop技术内幕-深入解析MapReduce架构设计与实现原理》的p50.</p>
+<h2 id="yarn"><a href="#yarn" class="headerlink" title="yarn"></a>yarn</h2><p><a target="_blank" rel="noopener" href="http://smartsi.club/hadoop-mapReduce2.x-working-principle.html">Hadoop MapReduce 2.x 工作原理</a><br><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/opensource/os-cn-hadoop-yarn/">Hadoop新MapReduce框架Yarn详解</a></p>
+
       
     </div>
 
@@ -412,7 +559,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/JavaFx-3D/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/base(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -426,7 +573,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java/tool/JavaFx-3D/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/bigdata/Hadoop/base(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/" class="post-title-link" itemprop="url">Hadoop专题</a>
         </h2>
 
         <div class="post-meta">
@@ -436,7 +583,23 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:25:36" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:36+08:00">2021-04-04</time>
+              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
             </span>
 
           
@@ -450,8 +613,163 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="JavaFX-3D"><a href="#JavaFX-3D" class="headerlink" title="JavaFX 3D"></a>JavaFX 3D</h1><p><a target="_blank" rel="noopener" href="https://www.genuinecoder.com/javafx-3d-transform-objects-with-keyboard-input/">JavaFX 3D Tutorial</a></p>
-<p><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=TRJ0GqDBDac&list=PLhs1urmduZ295Ryetga7CNOqDymN_rhB_&index=12">more surface detail with bump mapping</a></p>
+          <p>从本篇开始，陆续对常用大数据平台的原理和部分核心源码进行解读和整理。</p>
+<p>这里的常用大数据平台包括Hadoop(HDFS、MR)、Spark、Kylin、Flink、HBase、Flume、Elastic Search等</p>
+<h1 id="Hadoop专题"><a href="#Hadoop专题" class="headerlink" title="Hadoop专题"></a>Hadoop专题</h1><ol>
+<li><a href="/distributed/docker/hadoop-cluser-in-docker/">在Docker上搭建Hadoop集群container</a></li>
+<li><a href="/distributed/hadoop/hadoop-cluser-configuration/">Hadoop集群节点配置及搭建</a></li>
+<li><a href="/distributed/hadoop/HDFS-Java-API/">HDFS Java API</a></li>
+</ol>
+<h2 id="HDFS架构"><a href="#HDFS架构" class="headerlink" title="HDFS架构"></a>HDFS架构</h2><ul>
+<li>HDFS的架构</li>
+<li>数据存储与交互</li>
+</ul>
+<h2 id="MR架构"><a href="#MR架构" class="headerlink" title="MR架构"></a>MR架构</h2><p>对于MapReduce作业，完整的作业运行流程，这里借用刘军老师的<a target="_blank" rel="noopener" href="http://item.jd.com/11315351.html">Hadoop大数据处理</a>中的一张图：</p>
+<p><img src="_v_images/20191210133913040_1367150948.png" alt="hadoop"></p>
+<p>完整过程应该是分为7部分，分别是：</p>
+<ol>
+<li>作业启动：开发者通过控制台启动作业；</li>
+<li>作业初始化：这里主要是切分数据、创建作业和提交作业，与第三步紧密相联；</li>
+<li>作业/任务调度：对于1.0版的Hadoop来说就是JobTracker来负责任务调度，对于2.0版的Hadoop来说就是Yarn中的Resource Manager负责整个系统的资源管理与分配，<br>Yarn可以参考IBM的一篇博客<a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/opensource/os-cn-hadoop-yarn/">Hadoop新MapReduce框架Yarn详解</a>；</li>
+<li>Map任务；</li>
+<li>Shuffle；</li>
+<li>Reduce任务；</li>
+<li>作业完成：通知开发者任务完成。</li>
+</ol>
+<p>而这其中最主要的MapReduce过程，主要是第4、5、6步三部分，这也是本篇博客重点讨论的地方，详细作用如下：</p>
+<ol>
+<li><strong>Map</strong>: 数据输入,做初步的处理,输出形式的中间结果；</li>
+<li><strong>Shuffle</strong>: 按照partition、key对中间结果进行排序合并,输出给reduce线程；</li>
+<li><strong>Reduce</strong>: 对相同key的输入进行最终的处理,并将结果写入到文件中。</li>
+</ol>
+<p>这里先给出官网上关于这个过程的经典流程图：</p>
+<p><img src="_v_images/20191210133912634_295276182.png" alt="mapreduce"><br>mapreduce</p>
+<p>上图是把MapReduce过程分为两个部分，而实际上从两边的Map和Reduce到中间的那一大块都属于Shuffle过程，也就是说，Shuffle过程有一部分是在Map端，有一部分是在Reduce端，下文也将会分两部分来介绍Shuffle过程。</p>
+<p>大部分的情况下，map task与reduce task的执行是分布在不同的节点上的，因此，很多情况下，reduce执行时需要跨节点去拉取其他节点上的map task结果，这样造成了集群内部的网络资源消耗很严重，而且在节点的内部，相比于内存，磁盘IO对性能的影响是非常严重的。如果集群中运行的作业有很多，那么task的执行对于集群内部网络的资源消费非常大。因此，我们对于MapRedue作业Shuffle过程的期望是：</p>
+<ul>
+<li>完整地从map task端拉取数据到Reduce端；</li>
+<li>在跨节点拉取数据时，尽可能地减少对带宽的不必要消耗；</li>
+<li>减少磁盘IO对task执行的影响。</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://matt33.com/2016/03/02/hadoop-shuffle/">MapReduce之Shuffle过程详述</a></p>
+<h2 id="Map"><a href="#Map" class="headerlink" title="Map"></a>Map</h2><p>在进行海量数据处理时，外存文件数据<strong>I/O访问</strong>会成为一个制约系统性能的瓶颈，因此，Hadoop的Map过程实现的一个重要原则就是：<strong>近数据计算</strong>，这里主要指两个方面：</p>
+<ol>
+<li>代码靠近数据：<ul>
+<li>原则：本地化数据处理（locality），即一个计算节点尽可能处理本地磁盘上所存储的数据；</li>
+<li>尽量选择数据所在<code>DataNode</code>启动<code>Map</code>任务；</li>
+<li>这样可以减少数据通信，提高计算效率；</li>
+</ul>
+</li>
+<li>数据靠近代码：<ul>
+<li>当本地没有数据处理时，尽可能从同一机架或最近其他节点传输数据进行处理（host选择算法）。</li>
+</ul>
+</li>
+</ol>
+<p>下面，我们分块去介绍Hadoop的Map过程，map的经典流程图如下：</p>
+<p><img src="_v_images/20191210133912228_1057323278.png" alt="map-shuffle"></p>
+<h3 id="输入"><a href="#输入" class="headerlink" title="输入"></a>输入</h3><ol>
+<li>map task只读取split分片，split与block（hdfs的最小存储单位，默认为64MB）可能是一对一也能是一对多，但是对于一个split只会对应一个文件的一个block或多个block，不允许一个split对应多个文件的多个block；</li>
+<li>这里切分和输入数据时会涉及到InputFormat的文件切分算法和host选择算法。</li>
+</ol>
+<h4 id="文件切分算法"><a href="#文件切分算法" class="headerlink" title="文件切分算法"></a>文件切分算法</h4><p><strong>文件切分算法</strong>，主要用于确定<code>InputSplit</code>的个数以及每个<code>InputSplit</code>对应的数据段。<code>FileInputFormat</code>以文件为单位切分生成<code>InputSplit</code>，对于每个文件，由以下三个属性值决定其对应的<code>InputSplit</code>的个数：、、、🤣、、、、、😍😱😱😮</p>
+<ul>
+<li><code>goalSize</code>： 它是根据用户期望的InputSplit数目计算出来的，即<code>totalSize/numSplits</code>。其中，<code>totalSize</code>为文件的总大小；<code>numSplits</code>为用户设定的Map Task个数，默认情况下是1；</li>
+<li><code>minSize</code>：InputSplit的最小值，由配置参数<code>mapred.min.split.size</code>确定，默认是1；</li>
+<li><code>blockSize</code>：文件在hdfs中存储的block大小，不同文件可能不同，默认是64MB。</li>
+</ul>
+<p>这三个参数共同决定InputSplit的最终大小，计算方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">splitSize&#x3D;max&#123;minSize, min&#123;gogalSize,blockSize&#125;&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="host选择算法"><a href="#host选择算法" class="headerlink" title="host选择算法"></a>host选择算法</h4><p>FileInputFormat的host选择算法参考《Hadoop技术内幕-深入解析MapReduce架构设计与实现原理》的p50.</p>
+<h3 id="Partition"><a href="#Partition" class="headerlink" title="Partition"></a>Partition</h3><ul>
+<li>作用：将map的结果发送到相应的reduce端，总的partition的数目等于reducer的数量。</li>
+<li>实现功能：<ol>
+<li>map输出的是<code>key/value</code>对，决定于当前的mapper的part交给哪个reduce的方法是：<br>mapreduce提供的Partitioner接口，对key进行hash后，再以reducetask数量取模，然后到指定的job上（<strong>HashPartitioner</strong>，可以通过<code>job.setPartitionerClass(MyPartition.class)</code>自定义）。</li>
+<li>然后将数据写入到内存缓冲区，缓冲区的作用是批量收集map结果，减少磁盘IO的影响。key/value对以及Partition的结果都会被写入缓冲区。在写入之前，key与value值都会被序列化成字节数组。</li>
+</ol>
+</li>
+<li>要求：负载均衡，效率；</li>
+</ul>
+<h3 id="spill（溢写）：sort-amp-combiner"><a href="#spill（溢写）：sort-amp-combiner" class="headerlink" title="spill（溢写）：sort &amp; combiner"></a>spill（溢写）：sort &amp; combiner</h3><ul>
+<li>作用：把内存缓冲区中的数据写入到本地磁盘，在写入本地磁盘时先按照partition、再按照key进行排序（<code>quick sort</code>）；</li>
+<li>注意：<ol>
+<li>这个spill是由<strong>另外单独的线程</strong>来完成，不影响往缓冲区写map结果的线程；</li>
+<li>内存缓冲区默认大小限制为100MB，它有个溢写比例（<code>spill.percent</code>），默认为0.8，当缓冲区的数据达到阈值时，溢写线程就会启动，先锁定这80MB的内存，执行溢写过程，<code>map task</code>的输出结果还可以往剩下的20MB内存中写，互不影响。然后再重新利用这块缓冲区，因此Map的内存缓冲区又叫做<strong>环形缓冲区</strong>（两个指针的方向不会变，下面会详述）；</li>
+<li>在将数据写入磁盘之前，先要对要写入磁盘的数据进行一次<strong>排序</strong>操作，先按<code>&lt;key,value,partition&gt;</code>中的partition分区号排序，然后再按key排序，这个就是<strong>sort操作</strong>，最后溢出的小文件是分区的，且同一个分区内是保证key有序的；</li>
+</ol>
+</li>
+</ul>
+<p><strong>combine</strong>：执行combine操作要求开发者必须在程序中设置了combine（程序中通过<code>job.setCombinerClass(myCombine.class)</code>自定义combine操作）。</p>
+<ul>
+<li>程序中有两个阶段可能会执行combine操作：<ol>
+<li>map输出数据根据分区排序完成后，在写入文件之前会执行一次combine操作（前提是作业中设置了这个操作）；</li>
+<li>如果map输出比较大，溢出文件个数大于3（此值可以通过属性<code>min.num.spills.for.combine</code>配置）时，在merge的过程（多个spill文件合并为一个大文件）中还会执行combine操作；</li>
+</ol>
+</li>
+<li>combine主要是把形如<code>&lt;aa,1&gt;,&lt;aa,2&gt;</code>这样的key值相同的数据进行计算，计算规则与reduce一致，比如：当前计算是求key对应的值求和，则combine操作后得到<code>&lt;aa,3&gt;</code>这样的结果。</li>
+<li>注意事项：不是每种作业都可以做combine操作的，只有满足以下条件才可以：<ol>
+<li>reduce的输入输出类型都一样，因为combine本质上就是reduce操作；</li>
+<li>计算逻辑上，combine操作后不会影响计算结果，像求和就不会影响；</li>
+</ol>
+</li>
+</ul>
+<h3 id="merge"><a href="#merge" class="headerlink" title="merge"></a>merge</h3><ul>
+<li>merge过程：当map很大时，每次溢写会产生一个spill_file，这样会有多个spill_file，而最终的一个map task输出只有一个文件，因此，最终的结果输出之前会对多个中间过程进行多次溢写文件（spill_file）的合并，此过程就是merge过程。也即是，待Map Task任务的所有数据都处理完后，会对任务产生的所有中间数据文件做一次合并操作，以确保一个Map Task最终只生成一个中间数据文件。</li>
+<li>注意：<ol>
+<li>如果生成的文件太多，可能会执行多次合并，每次最多能合并的文件数默认为10，可以通过属性<code>min.num.spills.for.combine</code>配置；</li>
+<li>多个溢出文件合并时，会进行一次排序，排序算法是<strong>多路归并排序</strong>；</li>
+<li>是否还需要做combine操作，一是看是否设置了combine，二是看溢出的文件数是否大于等于3；</li>
+<li>最终生成的文件格式与单个溢出文件一致，也是按分区顺序存储，并且输出文件会有一个对应的索引文件，记录每个分区数据的起始位置，长度以及压缩长度，这个索引文件名叫做<code>file.out.index</code>。</li>
+</ol>
+</li>
+</ul>
+<h3 id="内存缓冲区"><a href="#内存缓冲区" class="headerlink" title="内存缓冲区"></a>内存缓冲区</h3><ol>
+<li>在Map Task任务的业务处理方法map()中，最后一步通过<code>OutputCollector.collect(key,value)</code>或<code>context.write(key,value)</code>输出Map Task的中间处理结果，在相关的<code>collect(key,value)</code>方法中，会调用<code>Partitioner.getPartition(K2 key, V2 value, int numPartitions)</code>方法获得输出的key/value对应的分区号(分区号可以认为对应着一个要执行Reduce Task的节点)，然后将<code>&lt;key,value,partition&gt;</code>暂时保存在内存中的MapOutputBuffe内部的环形数据缓冲区，该缓冲区的默认大小是100MB，可以通过参数<code>io.sort.mb</code>来调整其大小。</li>
+<li>当缓冲区中的数据使用率达到一定阀值后，触发一次Spill操作，将环形缓冲区中的部分数据写到磁盘上，生成一个临时的Linux本地数据的spill文件；然后在缓冲区的使用率再次达到阀值后，再次生成一个spill文件。直到数据处理完毕，在磁盘上会生成很多的临时文件。</li>
+<li>缓存有一个阀值比例配置，当达到整个缓存的这个比例时，会触发spill操作；触发时，map输出还会接着往剩下的空间写入，但是写满的空间会被锁定，数据溢出写入磁盘。当这部分溢出的数据写完后，空出的内存空间可以接着被使用，形成像环一样的被循环使用的效果，所以又叫做<strong>环形内存缓冲区</strong>；</li>
+<li>MapOutputBuffe内部存数的数据采用了两个索引结构，涉及三个环形内存缓冲区。下来看一下两级索引结构：</li>
+</ol>
+<p><img src="_v_images/20191210133911922_22828392.jpg" alt="buffer"></p>
+<p><a target="_blank" rel="noopener" href="http://www.cnblogs.com/edisonchou/p/4298423.html">写入到缓冲区的数据采取了压缩算法</a><br>这三个环形缓冲区的含义分别如下：</p>
+<ol>
+<li><strong>kvoffsets</strong>缓冲区：也叫偏移量索引数组，用于保存<code>key/value</code>信息在位置索引 <code>kvindices</code> 中的偏移量。当 <code>kvoffsets</code> 的使用率超过 <code>io.sort.spill.percent</code> (默认为80%)后，便会触发一次 SpillThread 线程的“溢写”操作，也就是开始一次 Spill 阶段的操作。</li>
+<li><strong>kvindices</strong>缓冲区：也叫位置索引数组，用于保存 <code>key/value</code> 在数据缓冲区 <code>kvbuffer</code> 中的起始位置。</li>
+<li><strong>kvbuffer</strong>即数据缓冲区：用于保存实际的 <code>key/value</code> 的值。默认情况下该缓冲区最多可以使用 <code>io.sort.mb</code> 的95%，当 <code>kvbuffer</code> 使用率超过 <code>io.sort.spill.percent</code> (默认为80%)后，便会出发一次 SpillThread 线程的“溢写”操作，也就是开始一次 Spill 阶段的操作。</li>
+</ol>
+<p>写入到本地磁盘时，对数据进行排序，实际上是对<strong>kvoffsets</strong>这个偏移量索引数组进行排序。</p>
+<h2 id="Reduce"><a href="#Reduce" class="headerlink" title="Reduce"></a>Reduce</h2><p>Reduce过程的经典流程图如下：</p>
+<p><img src="_v_images/20191210133911614_1936741169.png" alt="reduce-shuffle"></p>
+<h3 id="copy过程"><a href="#copy过程" class="headerlink" title="copy过程"></a>copy过程</h3><ul>
+<li>作用：拉取数据；</li>
+<li>过程：Reduce进程启动一些数据copy线程(<code>Fetcher</code>)，通过HTTP方式请求map task所在的TaskTracker获取map task的输出文件。因为这时map task早已结束，这些文件就归TaskTracker管理在本地磁盘中。</li>
+<li>默认情况下，当整个MapReduce作业的所有已执行完成的Map Task任务数超过Map Task总数的5%后，JobTracker便会开始调度执行Reduce Task任务。然后Reduce Task任务默认启动<code>mapred.reduce.parallel.copies</code>(默认为5）个MapOutputCopier线程到已完成的Map Task任务节点上分别copy一份属于自己的数据。 这些copy的数据会首先保存的内存缓冲区中，当内冲缓冲区的使用率达到一定阀值后，则写到磁盘上。</li>
+</ul>
+<p><strong>内存缓冲区</strong></p>
+<ul>
+<li>这个内存缓冲区大小的控制就不像map那样可以通过<code>io.sort.mb</code>来设定了，而是通过另外一个参数来设置：<code>mapred.job.shuffle.input.buffer.percent（default 0.7）</code>， 这个参数其实是一个百分比，意思是说，shuffile在reduce内存中的数据最多使用内存量为：0.7 × <code>maxHeap of reduce task</code>。</li>
+<li>如果该reduce task的最大heap使用量（通常通过<code>mapred.child.java.opts</code>来设置，比如设置为-Xmx1024m）的一定比例用来缓存数据。默认情况下，reduce会使用其heapsize的70%来在内存中缓存数据。如果reduce的heap由于业务原因调整的比较大，相应的缓存大小也会变大，这也是为什么reduce用来做缓存的参数是一个百分比，而不是一个固定的值了。</li>
+</ul>
+<h3 id="merge过程"><a href="#merge过程" class="headerlink" title="merge过程"></a>merge过程</h3><ul>
+<li>Copy过来的数据会先放入内存缓冲区中，这里的缓冲区大小要比 map 端的更为灵活，它基于 JVM 的<code>heap size</code>设置，因为 Shuffle 阶段 Reducer 不运行，所以应该把绝大部分的内存都给 Shuffle 用。</li>
+<li>这里需要强调的是，merge 有三种形式：1)内存到内存 2)内存到磁盘 3)磁盘到磁盘。默认情况下第一种形式是不启用的。当内存中的数据量到达一定阈值，就启动内存到磁盘的 merge（图中的第一个merge，之所以进行merge是因为reduce端在从多个map端copy数据的时候，并没有进行sort，只是把它们加载到内存，当达到阈值写入磁盘时，需要进行merge） 。这和map端的很类似，这实际上就是溢写的过程，在这个过程中如果你设置有Combiner，它也是会启用的，然后在磁盘中生成了众多的溢写文件，这种merge方式一直在运行，直到没有 map 端的数据时才结束，然后才会启动第三种磁盘到磁盘的 merge （图中的第二个merge）方式生成最终的那个文件。</li>
+<li>在远程copy数据的同时，Reduce Task在后台启动了两个后台线程对内存和磁盘上的数据文件做合并操作，以防止内存使用过多或磁盘生的文件过多。</li>
+</ul>
+<h3 id="reducer的输入文件"><a href="#reducer的输入文件" class="headerlink" title="reducer的输入文件"></a>reducer的输入文件</h3><ul>
+<li>merge的最后会生成一个文件，大多数情况下存在于磁盘中，但是需要将其放入内存中。当reducer 输入文件已定，整个 Shuffle 阶段才算结束。然后就是 Reducer 执行，把结果放到 HDFS 上。</li>
+</ul>
+<h3 id="shuffle"><a href="#shuffle" class="headerlink" title="shuffle"></a>shuffle</h3><h3 id="maptask并行度决定机制"><a href="#maptask并行度决定机制" class="headerlink" title="maptask并行度决定机制"></a>maptask并行度决定机制</h3><p>maptask 的并行度决定 map 阶段的任务处理并发度，进而影响到整个 job 的处理速度 那么， mapTask 并行实例是否越多越好呢？其并行度又是如何决定呢？  </p>
+<p>一个 job 的 map 阶段并行度由客户端在提交 job 时决定， 客户端对 map 阶段并行度的规划<br>的基本逻辑为：<br>将待处理数据执行逻辑切片（即按照一个特定切片大小，将待处理数据划分成逻辑上的多 个 split），然后每一个 split 分配一个 mapTask 并行实例处理<br>这段逻辑及形成的切片规划描述文件，是由 FileInputFormat实现类的 getSplits()方法完成的。<br>该方法返回的是 List<InputSplit>， InputSplit 封装了每一个逻辑切片的信息，包括长度和位置  信息，而 getSplits()方法返回一组 InputSplit</p>
+<p> 4、切片机制</p>
+<p><img src="_v_images/20191210125844932_1553710655.png"></p>
+<p>5、maptask并行度经验之谈</p>
+<p>如果硬件配置为 2*12core + 64G，恰当的 map 并行度是大约每个节点 20-100 个 map，最好 每个 map 的执行时间至少一分钟。<br>     （1）如果 job 的每个 map 或者 reduce task 的运行时间都只有 30-40 秒钟，那么就减少该 job 的 map 或者 reduce 数，每一个 task(map|reduce)的 setup 和加入到调度器中进行调度，这个 中间的过程可能都要花费几秒钟，所以如果每个 task 都非常快就跑完了，就会在 task 的开<br>始和结束的时候浪费太多的时间。<br>配置 task 的 JVM 重用可以改善该问题：<br>mapred.job.reuse.jvm.num.tasks，默认是 1，表示一个 JVM 上最多可以顺序执行的 task 数目（属于同一个 Job）是 1。也就是说一个 task 启一个 JVM。这个值可以在 mapred-site.xml 中进行更改， 当设置成多个，就意味着这多个 task 运行在同一个 JVM 上，但不是同时执行，<br>是排队顺序执行<br>   （2）如果 input 的文件非常的大，比如 1TB，可以考虑将 hdfs 上的每个 blocksize 设大，比如 设成 256MB 或者 512MB<br>     6、reducetask并行度决定机制</p>
+<p><img src="_v_images/20191210130405036_148457935.png"></p>
+<p>文件切分算法，主要用于确定InputSplit的个数以及每个InputSplit对应的数据段。FileInputFormat以文件为单位切分生成InputSplit，对于每个文件，由以下三个属性值决定其对应的InputSplit的个数：</p>
+<p>goalSize： 它是根据用户期望的InputSplit数目计算出来的，即totalSize/numSplits。其中，totalSize为文件的总大小；numSplits为用户设定的Map Task个数，默认情况下是1；<br>minSize：InputSplit的最小值，由配置参数mapred.min.split.size确定，默认是1；<br>blockSize：文件在hdfs中存储的block大小，不同文件可能不同，默认是64MB。<br>这三个参数共同决定InputSplit的最终大小，计算方法如下：</p>
+<p>splitSize=max{minSize, min{gogalSize,blockSize}}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. 用户设置了numSplit，那么goalSize&#x3D;totalSize&#x2F;numSplit</span><br><span class="line">2. minSize&#x3D;max(1,minSplitSize)</span><br><span class="line">3. splitSize&#x3D;max(minSplitSize, min(goalSize,blockSize))</span><br><span class="line">4. task个数&#x3D;totalSize除以splitSize</span><br></pre></td></tr></table></figure>
+<p>FileInputFormat的host选择算法参考《Hadoop技术内幕-深入解析MapReduce架构设计与实现原理》的p50.</p>
+<h2 id="yarn"><a href="#yarn" class="headerlink" title="yarn"></a>yarn</h2><p><a target="_blank" rel="noopener" href="http://smartsi.club/hadoop-mapReduce2.x-working-principle.html">Hadoop MapReduce 2.x 工作原理</a><br><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/opensource/os-cn-hadoop-yarn/">Hadoop新MapReduce框架Yarn详解</a></p>
+<h2 id="hadoop-优缺点"><a href="#hadoop-优缺点" class="headerlink" title="hadoop 优缺点"></a>hadoop 优缺点</h2><p>与许多伟大的系统一样，Hadoop开启了我们对一个新的空间的问题。具体来说，Hadoop在存储和提供对大量数据的访问方面表现优异，然而，它并没有提供关于数据访问速度的性能保证。此外，尽管Hadoop是高可用性系统，但在高并发负载下性能下降。最后，虽然Hadoop在存储数据方面表现良好，但它并未针对提取数据和使数据立即可读而进行优化。</p>
 
       
     </div>
@@ -471,7 +789,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/vx/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/base/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -485,7 +803,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java/multithread/vx/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/bigdata/Hadoop/base/" class="post-title-link" itemprop="url">Hadoop专题</a>
         </h2>
 
         <div class="post-meta">
@@ -495,7 +813,23 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:25:36" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:36+08:00">2021-04-04</time>
+              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
             </span>
 
           
@@ -509,7 +843,164 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"01.1.monitor-synchronized.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"01.thread-lifecycle.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"02.Lock-Semaphore-Atomic.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"03.volatile.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"04.thread-synchronization.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"05.ThreadPool-principle.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"05.ThreadPool.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"06.BlockingQueue.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"07.Fork-Join.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"08.Thread-Native.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"09.JStack.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"10.async-wait-with-latch.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"11.async-wait-with-cycleBarrier.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"12.google-guava-concurrency.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"13.BlockingQueue.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"31.multithreadWaitedSample01.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"32.multithreadWaitedSample02.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"Atomic.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"CWaitAB.java","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"lockless-disruptor.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"ProducerConsumerWithWaitNotify.java","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"running-in-turn.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"RunningInOrderWithSemaphore.java","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"RunningInTurnWithLock.java","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"RunningInTurnWithSemaphore.java","tags":[]}],"folders":[{"name":"images"}],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
+          <p>从本篇开始，陆续对常用大数据平台的原理和部分核心源码进行解读和整理。</p>
+<p>这里的常用大数据平台包括Hadoop(HDFS、MR)、Spark、Kylin、Flink、HBase、Flume、Elastic Search等</p>
+<h1 id="Hadoop专题"><a href="#Hadoop专题" class="headerlink" title="Hadoop专题"></a>Hadoop专题</h1><ol>
+<li><a href="/distributed/docker/hadoop-cluser-in-docker/">在Docker上搭建Hadoop集群container</a></li>
+<li><a href="/distributed/hadoop/hadoop-cluser-configuration/">Hadoop集群节点配置及搭建</a></li>
+<li><a href="/distributed/hadoop/HDFS-Java-API/">HDFS Java API</a></li>
+</ol>
+<h2 id="HDFS架构"><a href="#HDFS架构" class="headerlink" title="HDFS架构"></a>HDFS架构</h2><ul>
+<li>HDFS的架构</li>
+<li>数据存储与交互</li>
+</ul>
+<h2 id="MR架构"><a href="#MR架构" class="headerlink" title="MR架构"></a>MR架构</h2><p>对于MapReduce作业，完整的作业运行流程，这里借用刘军老师的<a target="_blank" rel="noopener" href="http://item.jd.com/11315351.html">Hadoop大数据处理</a>中的一张图：</p>
+<p><img src="_v_images/20191210133913040_1367150948.png" alt="hadoop"></p>
+<p>完整过程应该是分为7部分，分别是：</p>
+<ol>
+<li>作业启动：开发者通过控制台启动作业；</li>
+<li>作业初始化：这里主要是切分数据、创建作业和提交作业，与第三步紧密相联；</li>
+<li>作业/任务调度：对于1.0版的Hadoop来说就是JobTracker来负责任务调度，对于2.0版的Hadoop来说就是Yarn中的Resource Manager负责整个系统的资源管理与分配，<br>Yarn可以参考IBM的一篇博客<a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/opensource/os-cn-hadoop-yarn/">Hadoop新MapReduce框架Yarn详解</a>；</li>
+<li>Map任务；</li>
+<li>Shuffle；</li>
+<li>Reduce任务；</li>
+<li>作业完成：通知开发者任务完成。</li>
+</ol>
+<p>而这其中最主要的MapReduce过程，主要是第4、5、6步三部分，这也是本篇博客重点讨论的地方，详细作用如下：</p>
+<ol>
+<li><strong>Map</strong>: 数据输入,做初步的处理,输出形式的中间结果；</li>
+<li><strong>Shuffle</strong>: 按照partition、key对中间结果进行排序合并,输出给reduce线程；</li>
+<li><strong>Reduce</strong>: 对相同key的输入进行最终的处理,并将结果写入到文件中。</li>
+</ol>
+<p>这里先给出官网上关于这个过程的经典流程图：</p>
+<p><img src="_v_images/20191210133912634_295276182.png" alt="mapreduce"><br>mapreduce</p>
+<p>上图是把MapReduce过程分为两个部分，而实际上从两边的Map和Reduce到中间的那一大块都属于Shuffle过程，也就是说，Shuffle过程有一部分是在Map端，有一部分是在Reduce端，下文也将会分两部分来介绍Shuffle过程。</p>
+<p>大部分的情况下，map task与reduce task的执行是分布在不同的节点上的，因此，很多情况下，reduce执行时需要跨节点去拉取其他节点上的map task结果，这样造成了集群内部的网络资源消耗很严重，而且在节点的内部，相比于内存，磁盘IO对性能的影响是非常严重的。如果集群中运行的作业有很多，那么task的执行对于集群内部网络的资源消费非常大。因此，我们对于MapRedue作业Shuffle过程的期望是：</p>
+<ul>
+<li>完整地从map task端拉取数据到Reduce端；</li>
+<li>在跨节点拉取数据时，尽可能地减少对带宽的不必要消耗；</li>
+<li>减少磁盘IO对task执行的影响。</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://matt33.com/2016/03/02/hadoop-shuffle/">MapReduce之Shuffle过程详述</a></p>
+<h2 id="Map"><a href="#Map" class="headerlink" title="Map"></a>Map</h2><p>在进行海量数据处理时，外存文件数据<strong>I/O访问</strong>会成为一个制约系统性能的瓶颈，因此，Hadoop的Map过程实现的一个重要原则就是：<strong>近数据计算</strong>，这里主要指两个方面：</p>
+<ol>
+<li>代码靠近数据：<ul>
+<li>原则：本地化数据处理（locality），即一个计算节点尽可能处理本地磁盘上所存储的数据；</li>
+<li>尽量选择数据所在<code>DataNode</code>启动<code>Map</code>任务；</li>
+<li>这样可以减少数据通信，提高计算效率；</li>
+</ul>
+</li>
+<li>数据靠近代码：<ul>
+<li>当本地没有数据处理时，尽可能从同一机架或最近其他节点传输数据进行处理（host选择算法）。</li>
+</ul>
+</li>
+</ol>
+<p>下面，我们分块去介绍Hadoop的Map过程，map的经典流程图如下：</p>
+<p><img src="_v_images/20191210133912228_1057323278.png" alt="map-shuffle"></p>
+<h3 id="输入"><a href="#输入" class="headerlink" title="输入"></a>输入</h3><ol>
+<li>map task只读取split分片，split与block（hdfs的最小存储单位，默认为64MB）可能是一对一也能是一对多，但是对于一个split只会对应一个文件的一个block或多个block，不允许一个split对应多个文件的多个block；</li>
+<li>这里切分和输入数据时会涉及到InputFormat的文件切分算法和host选择算法。</li>
+</ol>
+<h4 id="文件切分算法"><a href="#文件切分算法" class="headerlink" title="文件切分算法"></a>文件切分算法</h4><p><strong>文件切分算法</strong>，主要用于确定<code>InputSplit</code>的个数以及每个<code>InputSplit</code>对应的数据段。<code>FileInputFormat</code>以文件为单位切分生成<code>InputSplit</code>，对于每个文件，由以下三个属性值决定其对应的<code>InputSplit</code>的个数：、、、🤣、、、、、😍😱😱😮</p>
+<ul>
+<li><code>goalSize</code>： 它是根据用户期望的InputSplit数目计算出来的，即<code>totalSize/numSplits</code>。其中，<code>totalSize</code>为文件的总大小；<code>numSplits</code>为用户设定的Map Task个数，默认情况下是1；</li>
+<li><code>minSize</code>：InputSplit的最小值，由配置参数<code>mapred.min.split.size</code>确定，默认是1；</li>
+<li><code>blockSize</code>：文件在hdfs中存储的block大小，不同文件可能不同，默认是64MB。</li>
+</ul>
+<p>这三个参数共同决定InputSplit的最终大小，计算方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">splitSize&#x3D;max&#123;minSize, min&#123;gogalSize,blockSize&#125;&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="host选择算法"><a href="#host选择算法" class="headerlink" title="host选择算法"></a>host选择算法</h4><p>FileInputFormat的host选择算法参考《Hadoop技术内幕-深入解析MapReduce架构设计与实现原理》的p50.</p>
+<h3 id="Partition"><a href="#Partition" class="headerlink" title="Partition"></a>Partition</h3><ul>
+<li>作用：将map的结果发送到相应的reduce端，总的partition的数目等于reducer的数量。</li>
+<li>实现功能：<ol>
+<li>map输出的是<code>key/value</code>对，决定于当前的mapper的part交给哪个reduce的方法是：<br>mapreduce提供的Partitioner接口，对key进行hash后，再以reducetask数量取模，然后到指定的job上（<strong>HashPartitioner</strong>，可以通过<code>job.setPartitionerClass(MyPartition.class)</code>自定义）。</li>
+<li>然后将数据写入到内存缓冲区，缓冲区的作用是批量收集map结果，减少磁盘IO的影响。key/value对以及Partition的结果都会被写入缓冲区。在写入之前，key与value值都会被序列化成字节数组。</li>
+</ol>
+</li>
+<li>要求：负载均衡，效率；</li>
+</ul>
+<h3 id="spill（溢写）：sort-amp-combiner"><a href="#spill（溢写）：sort-amp-combiner" class="headerlink" title="spill（溢写）：sort &amp; combiner"></a>spill（溢写）：sort &amp; combiner</h3><ul>
+<li>作用：把内存缓冲区中的数据写入到本地磁盘，在写入本地磁盘时先按照partition、再按照key进行排序（<code>quick sort</code>）；</li>
+<li>注意：<ol>
+<li>这个spill是由<strong>另外单独的线程</strong>来完成，不影响往缓冲区写map结果的线程；</li>
+<li>内存缓冲区默认大小限制为100MB，它有个溢写比例（<code>spill.percent</code>），默认为0.8，当缓冲区的数据达到阈值时，溢写线程就会启动，先锁定这80MB的内存，执行溢写过程，<code>map task</code>的输出结果还可以往剩下的20MB内存中写，互不影响。然后再重新利用这块缓冲区，因此Map的内存缓冲区又叫做<strong>环形缓冲区</strong>（两个指针的方向不会变，下面会详述）；</li>
+<li>在将数据写入磁盘之前，先要对要写入磁盘的数据进行一次<strong>排序</strong>操作，先按<code>&lt;key,value,partition&gt;</code>中的partition分区号排序，然后再按key排序，这个就是<strong>sort操作</strong>，最后溢出的小文件是分区的，且同一个分区内是保证key有序的；</li>
+</ol>
+</li>
+</ul>
+<p><strong>combine</strong>：执行combine操作要求开发者必须在程序中设置了combine（程序中通过<code>job.setCombinerClass(myCombine.class)</code>自定义combine操作）。</p>
+<ul>
+<li>程序中有两个阶段可能会执行combine操作：<ol>
+<li>map输出数据根据分区排序完成后，在写入文件之前会执行一次combine操作（前提是作业中设置了这个操作）；</li>
+<li>如果map输出比较大，溢出文件个数大于3（此值可以通过属性<code>min.num.spills.for.combine</code>配置）时，在merge的过程（多个spill文件合并为一个大文件）中还会执行combine操作；</li>
+</ol>
+</li>
+<li>combine主要是把形如<code>&lt;aa,1&gt;,&lt;aa,2&gt;</code>这样的key值相同的数据进行计算，计算规则与reduce一致，比如：当前计算是求key对应的值求和，则combine操作后得到<code>&lt;aa,3&gt;</code>这样的结果。</li>
+<li>注意事项：不是每种作业都可以做combine操作的，只有满足以下条件才可以：<ol>
+<li>reduce的输入输出类型都一样，因为combine本质上就是reduce操作；</li>
+<li>计算逻辑上，combine操作后不会影响计算结果，像求和就不会影响；</li>
+</ol>
+</li>
+</ul>
+<h3 id="merge"><a href="#merge" class="headerlink" title="merge"></a>merge</h3><ul>
+<li>merge过程：当map很大时，每次溢写会产生一个spill_file，这样会有多个spill_file，而最终的一个map task输出只有一个文件，因此，最终的结果输出之前会对多个中间过程进行多次溢写文件（spill_file）的合并，此过程就是merge过程。也即是，待Map Task任务的所有数据都处理完后，会对任务产生的所有中间数据文件做一次合并操作，以确保一个Map Task最终只生成一个中间数据文件。</li>
+<li>注意：<ol>
+<li>如果生成的文件太多，可能会执行多次合并，每次最多能合并的文件数默认为10，可以通过属性<code>min.num.spills.for.combine</code>配置；</li>
+<li>多个溢出文件合并时，会进行一次排序，排序算法是<strong>多路归并排序</strong>；</li>
+<li>是否还需要做combine操作，一是看是否设置了combine，二是看溢出的文件数是否大于等于3；</li>
+<li>最终生成的文件格式与单个溢出文件一致，也是按分区顺序存储，并且输出文件会有一个对应的索引文件，记录每个分区数据的起始位置，长度以及压缩长度，这个索引文件名叫做<code>file.out.index</code>。</li>
+</ol>
+</li>
+</ul>
+<h3 id="内存缓冲区"><a href="#内存缓冲区" class="headerlink" title="内存缓冲区"></a>内存缓冲区</h3><ol>
+<li>在Map Task任务的业务处理方法map()中，最后一步通过<code>OutputCollector.collect(key,value)</code>或<code>context.write(key,value)</code>输出Map Task的中间处理结果，在相关的<code>collect(key,value)</code>方法中，会调用<code>Partitioner.getPartition(K2 key, V2 value, int numPartitions)</code>方法获得输出的key/value对应的分区号(分区号可以认为对应着一个要执行Reduce Task的节点)，然后将<code>&lt;key,value,partition&gt;</code>暂时保存在内存中的MapOutputBuffe内部的环形数据缓冲区，该缓冲区的默认大小是100MB，可以通过参数<code>io.sort.mb</code>来调整其大小。</li>
+<li>当缓冲区中的数据使用率达到一定阀值后，触发一次Spill操作，将环形缓冲区中的部分数据写到磁盘上，生成一个临时的Linux本地数据的spill文件；然后在缓冲区的使用率再次达到阀值后，再次生成一个spill文件。直到数据处理完毕，在磁盘上会生成很多的临时文件。</li>
+<li>缓存有一个阀值比例配置，当达到整个缓存的这个比例时，会触发spill操作；触发时，map输出还会接着往剩下的空间写入，但是写满的空间会被锁定，数据溢出写入磁盘。当这部分溢出的数据写完后，空出的内存空间可以接着被使用，形成像环一样的被循环使用的效果，所以又叫做<strong>环形内存缓冲区</strong>；</li>
+<li>MapOutputBuffe内部存数的数据采用了两个索引结构，涉及三个环形内存缓冲区。下来看一下两级索引结构：</li>
+</ol>
+<p><img src="_v_images/20191210133911922_22828392.jpg" alt="buffer"></p>
+<p><a target="_blank" rel="noopener" href="http://www.cnblogs.com/edisonchou/p/4298423.html">写入到缓冲区的数据采取了压缩算法</a><br>这三个环形缓冲区的含义分别如下：</p>
+<ol>
+<li><strong>kvoffsets</strong>缓冲区：也叫偏移量索引数组，用于保存<code>key/value</code>信息在位置索引 <code>kvindices</code> 中的偏移量。当 <code>kvoffsets</code> 的使用率超过 <code>io.sort.spill.percent</code> (默认为80%)后，便会触发一次 SpillThread 线程的“溢写”操作，也就是开始一次 Spill 阶段的操作。</li>
+<li><strong>kvindices</strong>缓冲区：也叫位置索引数组，用于保存 <code>key/value</code> 在数据缓冲区 <code>kvbuffer</code> 中的起始位置。</li>
+<li><strong>kvbuffer</strong>即数据缓冲区：用于保存实际的 <code>key/value</code> 的值。默认情况下该缓冲区最多可以使用 <code>io.sort.mb</code> 的95%，当 <code>kvbuffer</code> 使用率超过 <code>io.sort.spill.percent</code> (默认为80%)后，便会出发一次 SpillThread 线程的“溢写”操作，也就是开始一次 Spill 阶段的操作。</li>
+</ol>
+<p>写入到本地磁盘时，对数据进行排序，实际上是对<strong>kvoffsets</strong>这个偏移量索引数组进行排序。</p>
+<h2 id="Reduce"><a href="#Reduce" class="headerlink" title="Reduce"></a>Reduce</h2><p>Reduce过程的经典流程图如下：</p>
+<p><img src="_v_images/20191210133911614_1936741169.png" alt="reduce-shuffle"></p>
+<h3 id="copy过程"><a href="#copy过程" class="headerlink" title="copy过程"></a>copy过程</h3><ul>
+<li>作用：拉取数据；</li>
+<li>过程：Reduce进程启动一些数据copy线程(<code>Fetcher</code>)，通过HTTP方式请求map task所在的TaskTracker获取map task的输出文件。因为这时map task早已结束，这些文件就归TaskTracker管理在本地磁盘中。</li>
+<li>默认情况下，当整个MapReduce作业的所有已执行完成的Map Task任务数超过Map Task总数的5%后，JobTracker便会开始调度执行Reduce Task任务。然后Reduce Task任务默认启动<code>mapred.reduce.parallel.copies</code>(默认为5）个MapOutputCopier线程到已完成的Map Task任务节点上分别copy一份属于自己的数据。 这些copy的数据会首先保存的内存缓冲区中，当内冲缓冲区的使用率达到一定阀值后，则写到磁盘上。</li>
+</ul>
+<p><strong>内存缓冲区</strong></p>
+<ul>
+<li>这个内存缓冲区大小的控制就不像map那样可以通过<code>io.sort.mb</code>来设定了，而是通过另外一个参数来设置：<code>mapred.job.shuffle.input.buffer.percent（default 0.7）</code>， 这个参数其实是一个百分比，意思是说，shuffile在reduce内存中的数据最多使用内存量为：0.7 × <code>maxHeap of reduce task</code>。</li>
+<li>如果该reduce task的最大heap使用量（通常通过<code>mapred.child.java.opts</code>来设置，比如设置为-Xmx1024m）的一定比例用来缓存数据。默认情况下，reduce会使用其heapsize的70%来在内存中缓存数据。如果reduce的heap由于业务原因调整的比较大，相应的缓存大小也会变大，这也是为什么reduce用来做缓存的参数是一个百分比，而不是一个固定的值了。</li>
+</ul>
+<h3 id="merge过程"><a href="#merge过程" class="headerlink" title="merge过程"></a>merge过程</h3><ul>
+<li>Copy过来的数据会先放入内存缓冲区中，这里的缓冲区大小要比 map 端的更为灵活，它基于 JVM 的<code>heap size</code>设置，因为 Shuffle 阶段 Reducer 不运行，所以应该把绝大部分的内存都给 Shuffle 用。</li>
+<li>这里需要强调的是，merge 有三种形式：1)内存到内存 2)内存到磁盘 3)磁盘到磁盘。默认情况下第一种形式是不启用的。当内存中的数据量到达一定阈值，就启动内存到磁盘的 merge（图中的第一个merge，之所以进行merge是因为reduce端在从多个map端copy数据的时候，并没有进行sort，只是把它们加载到内存，当达到阈值写入磁盘时，需要进行merge） 。这和map端的很类似，这实际上就是溢写的过程，在这个过程中如果你设置有Combiner，它也是会启用的，然后在磁盘中生成了众多的溢写文件，这种merge方式一直在运行，直到没有 map 端的数据时才结束，然后才会启动第三种磁盘到磁盘的 merge （图中的第二个merge）方式生成最终的那个文件。</li>
+<li>在远程copy数据的同时，Reduce Task在后台启动了两个后台线程对内存和磁盘上的数据文件做合并操作，以防止内存使用过多或磁盘生的文件过多。</li>
+</ul>
+<h3 id="reducer的输入文件"><a href="#reducer的输入文件" class="headerlink" title="reducer的输入文件"></a>reducer的输入文件</h3><ul>
+<li>merge的最后会生成一个文件，大多数情况下存在于磁盘中，但是需要将其放入内存中。当reducer 输入文件已定，整个 Shuffle 阶段才算结束。然后就是 Reducer 执行，把结果放到 HDFS 上。</li>
+</ul>
+<h3 id="shuffle"><a href="#shuffle" class="headerlink" title="shuffle"></a>shuffle</h3><h3 id="maptask并行度决定机制"><a href="#maptask并行度决定机制" class="headerlink" title="maptask并行度决定机制"></a>maptask并行度决定机制</h3><p>maptask 的并行度决定 map 阶段的任务处理并发度，进而影响到整个 job 的处理速度 那么， mapTask 并行实例是否越多越好呢？其并行度又是如何决定呢？  </p>
+<p>一个 job 的 map 阶段并行度由客户端在提交 job 时决定， 客户端对 map 阶段并行度的规划<br>的基本逻辑为：<br>将待处理数据执行逻辑切片（即按照一个特定切片大小，将待处理数据划分成逻辑上的多 个 split），然后每一个 split 分配一个 mapTask 并行实例处理<br>这段逻辑及形成的切片规划描述文件，是由 FileInputFormat实现类的 getSplits()方法完成的。<br>该方法返回的是 List<InputSplit>， InputSplit 封装了每一个逻辑切片的信息，包括长度和位置  信息，而 getSplits()方法返回一组 InputSplit</p>
+<p> 4、切片机制</p>
+<p><img src="_v_images/20191210125844932_1553710655.png"></p>
+<p>5、maptask并行度经验之谈</p>
+<p>如果硬件配置为 2*12core + 64G，恰当的 map 并行度是大约每个节点 20-100 个 map，最好 每个 map 的执行时间至少一分钟。<br>     （1）如果 job 的每个 map 或者 reduce task 的运行时间都只有 30-40 秒钟，那么就减少该 job 的 map 或者 reduce 数，每一个 task(map|reduce)的 setup 和加入到调度器中进行调度，这个 中间的过程可能都要花费几秒钟，所以如果每个 task 都非常快就跑完了，就会在 task 的开<br>始和结束的时候浪费太多的时间。<br>配置 task 的 JVM 重用可以改善该问题：<br>mapred.job.reuse.jvm.num.tasks，默认是 1，表示一个 JVM 上最多可以顺序执行的 task 数目（属于同一个 Job）是 1。也就是说一个 task 启一个 JVM。这个值可以在 mapred-site.xml 中进行更改， 当设置成多个，就意味着这多个 task 运行在同一个 JVM 上，但不是同时执行，<br>是排队顺序执行<br>   （2）如果 input 的文件非常的大，比如 1TB，可以考虑将 hdfs 上的每个 blocksize 设大，比如 设成 256MB 或者 512MB<br>     6、reducetask并行度决定机制</p>
+<p><img src="_v_images/20191210130405036_148457935.png"></p>
+<p>文件切分算法，主要用于确定InputSplit的个数以及每个InputSplit对应的数据段。FileInputFormat以文件为单位切分生成InputSplit，对于每个文件，由以下三个属性值决定其对应的InputSplit的个数：</p>
+<p>goalSize： 它是根据用户期望的InputSplit数目计算出来的，即totalSize/numSplits。其中，totalSize为文件的总大小；numSplits为用户设定的Map Task个数，默认情况下是1；<br>minSize：InputSplit的最小值，由配置参数mapred.min.split.size确定，默认是1；<br>blockSize：文件在hdfs中存储的block大小，不同文件可能不同，默认是64MB。<br>这三个参数共同决定InputSplit的最终大小，计算方法如下：</p>
+<p>splitSize=max{minSize, min{gogalSize,blockSize}}</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. 用户设置了numSplit，那么goalSize&#x3D;totalSize&#x2F;numSplit</span><br><span class="line">2. minSize&#x3D;max(1,minSplitSize)</span><br><span class="line">3. splitSize&#x3D;max(minSplitSize, min(goalSize,blockSize))</span><br><span class="line">4. task个数&#x3D;totalSize除以splitSize</span><br></pre></td></tr></table></figure>
+<p>FileInputFormat的host选择算法参考《Hadoop技术内幕-深入解析MapReduce架构设计与实现原理》的p50.</p>
+<h2 id="yarn"><a href="#yarn" class="headerlink" title="yarn"></a>yarn</h2><p><a target="_blank" rel="noopener" href="http://smartsi.club/hadoop-mapReduce2.x-working-principle.html">Hadoop MapReduce 2.x 工作原理</a><br><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/opensource/os-cn-hadoop-yarn/">Hadoop新MapReduce框架Yarn详解</a></p>
+<h2 id="hadoop-优缺点"><a href="#hadoop-优缺点" class="headerlink" title="hadoop 优缺点"></a>hadoop 优缺点</h2><p>与许多伟大的系统一样，Hadoop开启了我们对一个新的空间的问题。具体来说，Hadoop在存储和提供对大量数据的访问方面表现优异，然而，它并没有提供关于数据访问速度的性能保证。此外，尽管Hadoop是高可用性系统，但在高并发负载下性能下降。最后，虽然Hadoop在存储数据方面表现良好，但它并未针对提取数据和使数据立即可读而进行优化。</p>
+
       
     </div>
 
@@ -528,7 +1019,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/images/vx/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/hadoop-cluser-configuration/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -542,7 +1033,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java/multithread/images/vx/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/bigdata/Hadoop/hadoop-cluser-configuration/" class="post-title-link" itemprop="url">Hadoop集群节点配置及搭建</a>
         </h2>
 
         <div class="post-meta">
@@ -552,7 +1043,23 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:25:36" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:36+08:00">2021-04-04</time>
+              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
             </span>
 
           
@@ -566,7 +1073,22 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"20190728100942815_354006932.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"20190728105849426_741235393.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"20190728110132556_948612836.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"20190728111407141_1843885222.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"20191201180435146_205936933.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"20191201180445132_1585877614.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"20191201180454442_1425515581.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"20191201183741334_611136175.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"20191201214259668_108772893.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"20191201214440080_637429054.png","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
+          <p>[&lt;&lt;] Hadoop专题</p>
+<p>在<a href="hadoop-01">上一篇</a>中介绍了在Docker搭建三个节点的Hadoop集群，本文主要介绍hadoop集群节点的配置</p>
+<p>NameNode<br>SecondNameNode<br>DataNode</p>
+<p>JobTracker<br>JobTask</p>
+<p>移动计算 而非 移动数据</p>
+<h2 id="查看classpath"><a href="#查看classpath" class="headerlink" title="查看classpath"></a>查看classpath</h2><p>hadoop命令行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hadoop classpath</span><br><span class="line">/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
+<p>配置文件</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.application.classpath<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>[参考文献]</p>
+<ol>
+<li></li>
+</ol>
+
       
     </div>
 
@@ -585,7 +1107,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/String.split/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/storm/base/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -599,7 +1121,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java/String.split/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/bigdata/storm/base/" class="post-title-link" itemprop="url">Apache Storm专题</a>
         </h2>
 
         <div class="post-meta">
@@ -609,7 +1131,23 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:25:36" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:36+08:00">2021-04-04</time>
+              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
             </span>
 
           
@@ -623,136 +1161,291 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="String-split"><a href="#String-split" class="headerlink" title="String.split"></a>String.split</h1><h2 id="正则表达式分割字符串"><a href="#正则表达式分割字符串" class="headerlink" title="正则表达式分割字符串"></a>正则表达式分割字符串</h2><h3 id="保留末尾空格与空字符串情形"><a href="#保留末尾空格与空字符串情形" class="headerlink" title="保留末尾空格与空字符串情形"></a>保留末尾空格与空字符串情形</h3><p><code>split(delimiter)</code> 默认会从结果数组中去掉空字符串. 要关闭这个机制，将重载方法 <code>split(delimiter, limit)</code> 的 <code>limit</code> 设置为负值，如</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String[] split = data.split(<span class="string">&quot;\\|&quot;</span>, -<span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+          <h1 id="大数据流式计算及应用实践"><a href="#大数据流式计算及应用实践" class="headerlink" title="大数据流式计算及应用实践"></a>大数据流式计算及应用实践</h1><p>面向感知的数据流处理模型<br>R树、B+树</p>
+<p>CAP（Consistency，Availability，tolerance to network Partitions） 理论说明，分布式系统中的一致性、可用性、分区容错性三者不可兼得。</p>
+<p>所以，并行关系数据库必然无法获得较强的扩展性和良好的系统可用性。<br>面对这些挑战，以Google的BigTable为代表的NoSQL（notonlySQL）数据库发展起来。BigTable是一个多维稀疏排序表，由行和列组成，每个存储单元都有一个时间戳，形成三维结构。同一个数据单元的多个操作形成数据的多个版本，由时间戳来区分。</p>
+<p>高性能批数据处理模式、流式数据处理模式和两者混合的模式。</p>
+<p>批处理模式就是修改以Hadoop为代表的批处理框架，减少中间结果的写盘次数，增加作业间的流水化程度来提高单位时间的吞吐量。流处理模式，是针对流式数据的一种天然适合的处理方法，将到达的数据在维护的滑动窗口内进行处理，这将在下一章详细说明，典型系统如YahooS4和Storm。而两者混合的模式，主要思路是基于MapReduce模型增加或改变其中的某些处理步骤，以实现流处理。</p>
+<p>四个时间点？<br>契税 多少？<br>查封 离婚 继承</p>
+<p>距离 环境 学校</p>
+<p>高性能批数据处理模式、流式数据处理模式和两者混合的模式。其中，批处理模式就是修改以Hadoop为代表的批处理框架，减少中间结果的写盘次数，增加作业间的流水化程度来提高单位时间的吞吐量。流处理模式，是针对流式数据的一种天然适合的处理方法，将到达的数据在维护的滑动窗口内进行处理，这将在下一章详细说明，典型系统如Yahoo S4和Storm。而两者混合的模式，主要思路是基于MapReduce模型增加或改变其中的某些处理步骤，以实现流处理。例如，DEDUCE系统扩展了IBM的流式数据处理System S，使其支持MapReduce。此外，SparkStreaming通过引入离散流（discretized streams）编程模型，改进了批处理模式，大幅提高了处理速度，并在Spark系统上实现了集成。</p>
+<p>Storm 作为 一种 分布式 系统 的 体系 结构、 分布式 通信、 作业、 接 入/ 处理 组件 和 若干 进阶 的 概念。</p>
+<p>丁维龙; 等. Storm：大数据流式计算及应用实践 (高端云计算与大数据丛书) (Kindle 位置 1278-1279). 电子工业出版社. Kindle 版本. </p>
+<p>supervisor</p>
+<p>工作进程执行指定topology的子集，而同一个topology可以由多个工作进程完成；一个工作进程由多个工作线程组成，工作线程是spout/bolt的运行时实例，数量由spout/bolt的数目及其配置确定。supervisor是分布式部署的，在Storm中的地位类似于Hadoop中的TaskTracker。</p>
+<p>首先是作业在Storm系统中的部署。<br>    ① 用户将作业打包（即将topology的代码组织为jar文件），通过Storm的客户端命令或者控制台节点的Web接口，提交至Storm系统的主控节点；<br>    ② 主控节点根据系统的全局配置和作业中的局部配置，将接收的代码分发至调度的工作节点；<br>    ③ 工作节点下载来自主控节点的代码包，并根据主控节点的调度生成相关的工作进程和线程。</p>
+<p>其次是系统节点状态的协调，包括如下几个部分。<br>    ①主控节点与协调节点之间：主控节点将系统全局的配置、节点局部的配置、主控节点运行时的状态，通过服务接口交由Zookeeper维护，由协调节点实现配置管理与状态监控；<br>    ②工作节点与协调节点之间：工作节点将自身的状态、工作进程和工作线程的状态，通过服务接口交由Zookeeper维护，由协调节点实现状态获取与更新；<br>    ③主控节点与控制台节点之间：控制台节点调用主控节点开放相关的接口，可以获取系统、作业、工作进程、工作线程和任务的运行时状态。</p>
+<p>最后是工作节点间作业计算结果的数据传输，包括如下几个部分。<br>    ①组件间线程级的数据传递：在同一进程内，spout/bolt的工作线程将处理结果向作业的下游组件传递；<br>    ②组件间进程级的数据传递：在不同进程间（无论是否在同一台机器中），spout/bolt的工作线程将处理的结果向作业的下游组件传递。进程是操作系统中程序运行时的基本单元，线程是进程的最小调度单位，Storm的分布式数据处理，也是通过进程线程的调度实现的。<br>    注意：考虑到作业的独立性与安全性，Storm不支持跨作业的数据传递，故这里工作节点间的数据传输，一定存在于同一作业（隶属同一topology）的运行时实例进程/线程之间。</p>
 
-<p>更详细的介绍:</p>
-<p><code>split(regex)</code> 内部是调用<code>split(regex, 0)</code>的返回结果，参考官方文档 <a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html#split-java.lang.String-int-">documentation</a> 有这个方法的详细介绍</p>
-<blockquote>
-<p><code>limit</code>参数控制应用pattern的次数，因此会影响所得数组的长度。<br>如果限制<code>n</code><strong>大于零</strong>，则将最多应用<code>n-1</code>次该pattern，该数组的长度将不大于n，并且该数组的最后一个条目将包含除最后一个匹配的定界符之外的所有输入。<br>如果<code>n</code>为<strong>非正数</strong>，则该pattern将被尽可能多地应用，并且数组可以具有任何长度。<br>如果<code>n</code>为<strong>零</strong>，则该pattern将被尽可能多地应用，该数组可以具有任何长度，并且<strong>尾随的空字符串将被丢弃</strong>。</p>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/Jenkins_Docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/docker/Jenkins_Docker/" class="post-title-link" itemprop="url">在Docker上搭建Jenkins环境</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:26:30" itemprop="dateModified" datetime="2021-04-04T08:26:30+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ol>
+<li>从网易镜像仓库下载Jenkins</li>
+</ol>
+<p><a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/search/?keyword=jenkins">网易镜像仓库</a></p>
+<p>拉取到本地</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull hub.c.163.com/library/jenkins:latest</span><br></pre></td></tr></table></figure>
+<p>查看镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker images</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY                      TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">hub.c.163.com&#x2F;library&#x2F;jenkins   latest              88d9d8a30b47        8 months ago        810MB</span><br></pre></td></tr></table></figure>
+<p>从官网下载最新的Jenkins</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://updates.jenkins-ci.org/download/war/2.107.2/jenkins.war</span><br></pre></td></tr></table></figure>
+<p>DockerFile</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FROM hub.c.163.com/library/jenkins</span><br><span class="line"><span class="meta">#</span><span class="bash"> 将最新的Jenkins拷贝到`/usr/share/jenkins/`目录</span></span><br><span class="line">ADD jenkins.war /usr/share/jenkins/</span><br></pre></td></tr></table></figure>
+<p>常见镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t avery/jenkins .</span><br></pre></td></tr></table></figure>
+<p>启动一个Container</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run --name prod_jenkins2 -d -p 9005:8080 -p 9006:50000 -v  /Users/avery/docker/jenkins/backup/jenkins_home:/var/jenkins_home avery/jenkins</span><br></pre></td></tr></table></figure>
+<ol>
+<li>创建本地Jenkins数据目录，将该目录映射到docker中的Jenkins目录，方便备份数据</li>
+<li>8080端口是Jenkins web service的默认端口，将宿主机的端口映射到8080端口，可以直接访问</li>
+<li>–name 命名为prod_jenkins2</li>
+<li>-d 后台运行</li>
+<li>-p 端口映射</li>
+<li>-v 文件目录映射</li>
+</ol>
+<p>查看</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker container ls -a</span><br><span class="line">CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                     PORTS                   NAMES</span><br><span class="line">cb8cdf3be078        avery/jenkins       &quot;/bin/tini -- /usr/l…&quot;   3 hours ago         Exited (143) 3 hours ago                           prod_jenkins2</span><br></pre></td></tr></table></figure>
+<p>启动后，可以直接通过url ‘<a href="http://localhost:9001&#39;">http://localhost:9001&#39;</a> 访问，Jenkins首次打开，需要获取随机密码</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 获取jenkins密码</span></span><br><span class="line">docker container exec cb8cdf3be078 cat /var/jenkins_home/secrets/initialAdminPassword</span><br><span class="line">a7cefff7d2634cc6a9542491f465eb52</span><br><span class="line"><span class="meta">#</span><span class="bash"> 或者直接进入shell查看</span></span><br><span class="line">docker exec -it cb8cdf3be078 bash</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/hadoop-cluser-in-docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/docker/hadoop-cluser-in-docker/" class="post-title-link" itemprop="url">在Docker上搭建Hadoop集群container</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:26:30" itemprop="dateModified" datetime="2021-04-04T08:26:30+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>为了学习Hadoop，尝试使用Vbox搭建环境，不是很方便。后面转向Docker。本文将使用Docker搭建Hadoop集群记录下来，以备后用</p>
 </blockquote>
-<p><strong>Exception</strong>:</p>
-<p><strong>空字符串分拆的情况</strong></p>
-<p>值得一提的是，只有在拆分机制创建了空字符串，删除尾随的空字符串才有意义。 因此，对于空字符串的分拆<code>&quot;&quot;.split(任何东西)</code>，因为我们无法进一步拆分<code>&quot;&quot;</code>，所以我们将得到结果<code>[&quot;&quot;]</code>数组。发生这种情况是因为此处未发生拆分，因此尽管存在空白，但<code>&quot;&quot;</code>还是尾随表示原始字符串，而不是拆分过程创建的空字符串。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"> ~ jshell</span><br><span class="line">|  欢迎使用 JShell -- 版本 <span class="number">15</span></span><br><span class="line">|  要大致了解该版本, 请键入: /help intro</span><br><span class="line"></span><br><span class="line">jshell&gt; String demo=<span class="string">&quot;&quot;</span>;</span><br><span class="line">demo ==&gt; <span class="string">&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">jshell&gt; String[] demoSplit = demo.split(<span class="string">&quot;[,;]&quot;</span>);</span><br><span class="line">demoSplit ==&gt; String[<span class="number">1</span>] &#123; <span class="string">&quot;&quot;</span> &#125;</span><br></pre></td></tr></table></figure>
+<p>基础环境</p>
+<ul>
+<li>MacOS 10.12</li>
+<li>Docker 17.03.1-ce</li>
+</ul>
+<p>网易镜像 <a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/home/">https://c.163yun.com/hub#/m/home/</a></p>
+<h1 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h1><p>在MacOS 上安装Docker即为简单，从官网上下载dmg包，拖到应用目录启动即可。</p>
+<p>安装完成后 查看docker 版本:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker version</span></span><br><span class="line"></span><br><span class="line">Client:</span><br><span class="line"> Version:      17.03.1-ce</span><br><span class="line"> API version:  1.27</span><br><span class="line"> Go version:   go1.7.5</span><br><span class="line"> Git commit:   c6d412e</span><br><span class="line"> Built:        Tue Mar 28 00:40:02 2017</span><br><span class="line"> OS/Arch:      darwin/amd64</span><br><span class="line"></span><br><span class="line">Server:</span><br><span class="line"> Version:      17.03.1-ce</span><br><span class="line"> API version:  1.27 (minimum version 1.12)</span><br><span class="line"> Go version:   go1.7.5</span><br><span class="line"> Git commit:   c6d412e</span><br><span class="line"> Built:        Fri Mar 24 00:00:50 2017</span><br><span class="line"> OS/Arch:      linux/amd64</span><br><span class="line"> Experimental: true</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
-<h3 id="踢掉空格"><a href="#踢掉空格" class="headerlink" title="踢掉空格"></a>踢掉空格</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; list = Splitter.on(pattern).omitEmptyStrings().splitToList(<span class="string">&quot;&quot;</span>);</span><br><span class="line">System.out.println(list.size());  <span class="comment">// 0</span></span><br></pre></td></tr></table></figure>
-<h3 id="StringUtils-split"><a href="#StringUtils-split" class="headerlink" title="StringUtils.split"></a>StringUtils.split</h3><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">org.apache.commons.lang.StringUtils#splitByWholeSeparator(java.lang.String, java.lang.String, int)</span><br></pre></td></tr></table></figure>
-<p>分割字符串，正则表达式作为普通字符串</p>
 
-      
-    </div>
 
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
+<h1 id="docker-建立镜像"><a href="#docker-建立镜像" class="headerlink" title="docker 建立镜像"></a>docker 建立镜像</h1><p>建立三个镜像，存储目录如下:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> tree</span></span><br><span class="line">.</span><br><span class="line">├── centos-ssh-root</span><br><span class="line">│   └── Dockerfile</span><br><span class="line">├── centos-ssh-root-jdk</span><br><span class="line">│   ├── Dockerfile</span><br><span class="line">│   └── jdk-7u79.tar.gz</span><br><span class="line">└── centos-ssh-root-jdk-hadoop</span><br><span class="line">    ├── Dockerfile</span><br><span class="line">    └── hadoop-2.7.3.tar.gz</span><br></pre></td></tr></table></figure>
+<h2 id="建立CentOS-SSH-root基础镜像"><a href="#建立CentOS-SSH-root基础镜像" class="headerlink" title="建立CentOS-SSH-root基础镜像"></a>建立CentOS-SSH-root基础镜像</h2><p>建立一个带有ssh和root账户的CentOS镜像</p>
+<ol>
+<li>新建Dockerfile文件<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir  centos-ssh-root</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 新建 Dockerfile 文件</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> vi  Dockerfile</span></span><br></pre></td></tr></table></figure>
+Dockerfile的内容为:</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 选择一个已有的os镜像作为基础  国内首选仓库 c.163.com</span></span><br><span class="line">FROM hub.c.163.com/public/centos:7.2.1511 </span><br><span class="line">RUN yum clean all</span><br><span class="line">RUN yum install -y yum-plugin-ovl || true</span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装基础的工具包</span></span><br><span class="line">RUN yum install -y vim tar wget curl rsync bzip2 iptables tcpdump less telnet net-tools lsof sysstat cronie python-setuptools</span><br><span class="line">RUN yum clean all</span><br><span class="line">RUN easy_install supervisor</span><br><span class="line">RUN cp -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span><br><span class="line">EXPOSE 22</span><br><span class="line">RUN mkdir -p /etc/supervisor/conf.d/</span><br><span class="line">RUN /usr/bin/echo_supervisord_conf &gt; /etc/supervisord.conf</span><br><span class="line">RUN echo [include] &gt;&gt; /etc/supervisord.conf</span><br><span class="line">RUN echo &#x27;files = /etc/supervisor/conf.d/*.conf&#x27; &gt;&gt; /etc/supervisord.conf</span><br><span class="line"><span class="meta">#</span><span class="bash">COPY sshd.conf /etc/supervisor/conf.d/sshd.conf</span></span><br><span class="line">CMD [&quot;/usr/bin/supervisord&quot;]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 镜像的作者</span>  </span><br><span class="line">MAINTAINER avery </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装openssh-server和sudo软件包，并且将sshd的UsePAM参数设置成no</span>  </span><br><span class="line">RUN yum install -y openssh-server sudo  </span><br><span class="line">RUN sed -i &#x27;s/UsePAM yes/UsePAM no/g&#x27; /etc/ssh/sshd_config  </span><br><span class="line"><span class="meta">#</span><span class="bash">安装openssh-clients</span></span><br><span class="line">RUN yum  install -y openssh-clients</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加测试用户root，密码abc.123，并且将此用户添加到sudoers里</span>  </span><br><span class="line">RUN echo &quot;root:abc.123&quot; | chpasswd  </span><br><span class="line">RUN echo &quot;root   ALL=(ALL)       ALL&quot; &gt;&gt; /etc/sudoers  </span><br><span class="line"><span class="meta">#</span><span class="bash"> 下面这两句比较特殊，</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 在centos6上必须要有，否则创建出来的容器sshd不能登录</span>  </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为了避免文件已存在报错，首先删掉私钥文件</span></span><br><span class="line">RUN rm -rf /etc/ssh/ssh_host_rsa_key</span><br><span class="line">RUN rm -rf /etc/ssh/ssh_host_dsa_key</span><br><span class="line"></span><br><span class="line">RUN ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key  </span><br><span class="line">RUN ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key  </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动sshd服务并且暴露22端口</span>  </span><br><span class="line"><span class="meta">#</span><span class="bash"> RUN mkdir /var/run/sshd</span>  </span><br><span class="line">EXPOSE 22  </span><br><span class="line">CMD [&quot;/usr/sbin/sshd&quot;, &quot;-D&quot;]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>创建镜像</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 在Dockerfile同级目录下执行下面的命令，最后的.必须有</span></span><br><span class="line">docker build -t=&quot;avery/centos-ssh-root&quot; .</span><br></pre></td></tr></table></figure>
+<p>查看刚刚创建成功的镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        35 hours ago        776 MB</span><br></pre></td></tr></table></figure>
+<h1 id="创建带有JDK的镜像"><a href="#创建带有JDK的镜像" class="headerlink" title="创建带有JDK的镜像"></a>创建带有JDK的镜像</h1><ol>
+<li>准备 下载JDK<br>此处使用JDK7u79<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir centos-ssh-root-jdk</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root-jdk</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> cp ~/Download/jdk-7u79.tar.gz .</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> vi Dockerfile</span></span><br></pre></td></tr></table></figure></li>
+<li>Dockerfile文件</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FROM avery/centos-ssh-root</span><br><span class="line">ADD jdk-7u79.tar.gz /usr/local/</span><br><span class="line">RUN mv /usr/local/jdk1.7.0_79 /usr/local/jdk1.7</span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加环境变量</span></span><br><span class="line">ENV JAVA_HOME /usr/local/jdk1.7</span><br><span class="line">ENV PATH $JAVA_HOME/bin:$PATH</span><br><span class="line"><span class="meta">#</span><span class="bash"> 可能上面的设置不会生效</span></span><br><span class="line">RUN echo &#x27;JAVA_HOME=/usr/local/jdk1.7/&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;PATH=$JAVA_HOME/bin:$PATH&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;export JAVA_HOME&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;export PATH&#x27; &gt;&gt; .bash_profile</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>创建镜像</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t=&quot;avery/centos-ssh-root&quot; .</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>查看镜像</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root-jdk          latest              e773519d0452        34 hours ago        1.39 GB</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        35 hours ago        776 MB</span><br></pre></td></tr></table></figure>
+<h2 id="构建hadoop镜像"><a href="#构建hadoop镜像" class="headerlink" title="构建hadoop镜像"></a>构建hadoop镜像</h2><ol>
+<li>准备</li>
+</ol>
+<p>官网下载 hadoop-2.7.3.tar.gz</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir centos-ssh-root-jdk-hadoop</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root-jdk-hadoop</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> cp ../hadoop-2.7.3.tar.gz .</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> vi Dockerfile</span></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>Dockerfile</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FROM avery/centos-ssh-root-jdk</span><br><span class="line">ADD hadoop-2.7.3.tar.gz /usr/local</span><br><span class="line">RUN mv /usr/local/hadoop-2.7.3 usr/local/hadoop</span><br><span class="line">ENV HADOOP_HOME /usr/local/hadoop</span><br><span class="line">ENV PATH $HADOOP_HOME/bin:$PATH</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为了防止环境变量失效</span></span><br><span class="line">RUN  echo &#x27;HADOOP_HOME=/usr/local/hadoop/&#x27; &gt;&gt;.bash_profile</span><br><span class="line">RUN  echo &#x27;PATH=$HADOOP_HOME/bin:$PATH&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN  echo &#x27;export HADOOP_HOME&#x27; &gt;&gt; .bash_profile</span><br><span class="line">RUN  echo &#x27;export PATH&#x27; &gt;&gt; .bash_profile</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>创建镜像<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t=&quot;avery/centos-ssh-root-jdk-hadoop&quot; .</span><br></pre></td></tr></table></figure></li>
+<li>查看</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root-jdk-hadoop   latest              c93aadf2b6c5        1 hours ago        2.05 GB</span><br><span class="line">avery/centos-ssh-root-jdk          latest              e773519d0452        1 hours ago        1.39 GB</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        1 hours ago        776 MB</span><br></pre></td></tr></table></figure>
+<h1 id="docker-搭建-Hadoop集群"><a href="#docker-搭建-Hadoop集群" class="headerlink" title="docker 搭建 Hadoop集群"></a>docker 搭建 Hadoop集群</h1><p>此处搭建的集群只在本机使用，各个Docker container没有独立的ip，如需要通过IP访问可以参考<a target="_blank" rel="noopener" href="http://blog.csdn.net/xu470438000/article/details/50512442">使用docker搭建hadoop分布式集群</a></p>
+<p>在MacOS上修改系统文件，需要关闭Rootless:</p>
+<p>重启按住 Command+R，进入恢复模式，打开Terminal。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil disable</span><br></pre></td></tr></table></figure>
+<p>重启即可。如果要恢复默认，那么</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil enable</span><br></pre></td></tr></table></figure>
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D%E4%B8%8ETLAB/">
+<h2 id="创建3台container"><a href="#创建3台container" class="headerlink" title="创建3台container"></a>创建3台container</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker run --name hadoop0 --hostname hadoop0 -d -P -p 50070:50070 -p 8088:8088 avery/centos-ssh-root-jdk-hadoop</span><br><span class="line"></span><br><span class="line">docker run --name hadoop1 --hostname hadoop1 -d -P avery/centos-ssh-root-jdk-hadoop</span><br><span class="line"></span><br><span class="line">docker run --name hadoop2 --hostname hadoop2 -d -P avery/centos-ssh-root-jdk-hadoop</span><br></pre></td></tr></table></figure>
+<p>查看三个container的信息</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker container ls</span><br><span class="line">CONTAINER ID        IMAGE                              COMMAND               CREATED             STATUS              PORTS                                                                     NAMES</span><br><span class="line">78e5e35adfa4        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:32776-&gt;22/tcp                                                     hadoop2</span><br><span class="line">5f27fd91c7ba        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:32775-&gt;22/tcp                                                     hadoop1</span><br><span class="line">1d7fd37371cc        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:8088-&gt;8088/tcp, 0.0.0.0:50070-&gt;50070/tcp, 0.0.0.0:32774-&gt;22/tcp   hadoop0</span><br></pre></td></tr></table></figure>
+<p>查看三个container的ip:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop0</span></span><br><span class="line">172.17.0.2</span><br><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop1</span></span><br><span class="line">172.17.0.3</span><br><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop2</span></span><br><span class="line">172.17.0.4</span><br></pre></td></tr></table></figure>
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
+<h2 id="集群规划"><a href="#集群规划" class="headerlink" title="集群规划"></a>集群规划</h2><p>准备搭建一个具有三个节点的集群，一主两从 </p>
+<ul>
+<li>主节点：hadoop0 ip：172.17.0.2</li>
+<li>从节点1：hadoop1 ip：172.17.0.3</li>
+<li>从节点2：hadoop2 ip：172.17.0.4</li>
+</ul>
+<h2 id="连接container"><a href="#连接container" class="headerlink" title="连接container"></a>连接container</h2><p>验证ssh连接</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32774</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32775</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32776</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br></pre></td></tr></table></figure>
+<p>使用exec</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker exec -it hadoop0 /bin/bash</span><br></pre></td></tr></table></figure>
 
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/metric/%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D%E4%B8%8ETLAB/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-04 08:25:36" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:36+08:00">2021-04-04</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="栈上分配与TLAB"><a href="#栈上分配与TLAB" class="headerlink" title="栈上分配与TLAB"></a>栈上分配与TLAB</h1><h2 id="逃逸分析-Escape-Analysis"><a href="#逃逸分析-Escape-Analysis" class="headerlink" title="逃逸分析(Escape Analysis)"></a>逃逸分析(Escape Analysis)</h2><h2 id="栈上分配"><a href="#栈上分配" class="headerlink" title="栈上分配"></a>栈上分配</h2><p>针对那些作用域不会逃逸出方法的对象，在分配内存时不再将对象分配在堆内存中，而是将对象属性打散后分配在栈（线程私有的，属于栈内存）上，这样，随着方法的调用结束，栈空间的回收就会随着将栈上分配的打散后的对象回收掉，不再给gc增加额外的无用负担，从而提升应用程序整体的性能</p>
-<p>优点：</p>
-<p>　　　　1）可以在函数调用结束后自行销毁对象，不需要垃圾回收器的介入，有效避免垃圾回收带来的负面影响</p>
-<p>　　　　2）栈上分配速度快，提高系统性能</p>
-<p>线程私有变量，大对象虚拟机会分配到TLAB中，<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/a7414c0ebb17">TLAB（Thread Local Allocation Buffer）要不要了解下？</a></p>
-<p>在栈上分配该对象的内存,当栈帧从Java虚拟机栈中弹出，就自动销毁这个对象。减小垃圾回收器压力。</p>
-<h2 id="TLAB"><a href="#TLAB" class="headerlink" title="TLAB"></a>TLAB</h2><p>TLAB全称ThreadLocalAllocBuffer，是线程的一块私有内存，如果设置了虚拟机参数 -XX:UseTLAB，在线程初始化时，同时也会申请一块指定大小的内存，只给当前线程使用，这样每个线程都单独拥有一个Buffer，如果需要分配内存，就在自己的Buffer上分配，这样就不存在竞争的情况，可以大大提升分配效率，当Buffer容量不够的时候，再重新从Eden区域申请一块继续使用，这个申请动作还是需要原子操作的。</p>
-<p>TLAB的目的是在为新对象分配内存空间时，让每个Java应用线程能使用自己专属的分配指针来分配空间，均摊对GC堆（eden区）里共享的分配指针做更新而带来的同步开销。</p>
-<p>TLAB只是让每个线程有私有的分配指针，但底下存对象的内存空间还是给所有线程访问的，只是其它线程无法在这个区域分配而已。当一个TLAB用满（分配指针top撞上分配极限end了），就新申请一个TLAB，而在老TLAB里的对象还留在原地什么都不用管——它们无法感知自己是否是曾经从TLAB分配出来的，而只关心自己是在eden里分配的。</p>
-<table>
-<thead>
-<tr>
-<th>启动参数</th>
-<th>JVM内存分配模式</th>
-<th>Eden区</th>
-<th>YoungGC</th>
-<th>耗时</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>-XX:+DoEscapeAnalysis（开逃逸分析）-XX:+UseTLAB （开启TLAB）</td>
-<td>虚拟机栈上分配模式(小对象)</td>
-<td>较少使用</td>
-<td>较少使用</td>
-<td>很低</td>
-</tr>
-<tr>
-<td>-XX:-DoEscapeAnalysis（关闭逃逸分析）-XX:+UseTLAB（开启TLAB）</td>
-<td>TLAB区分配模式</td>
-<td>大量使用</td>
-<td>大量使用</td>
-<td>较高</td>
-</tr>
-<tr>
-<td>-XX:-DoEscapeAnalysis（关闭逃逸分析）-XX:-UseTLAB（关闭TLAB）</td>
-<td>Eden区分配模式</td>
-<td>大量使用</td>
-<td>大量使用</td>
-<td>特别高</td>
-</tr>
-</tbody></table>
-<p>在学习Java的过程中，一般认为new出来的对象都是被分配在堆上的，其实这个结论不完全正确，因为是大部分new出来的对象被分配在堆上，而不是全部。通过对Java对象分配的过程分析，可以知道有另外两个地方也是可以存放对象的。这两个地方分别栈 （涉及逃逸分析相关知识）和TLAB（Thread Local Allocation Buffer）。我们首先对这两者进行介绍，而后对Java对象分配过程进行介绍。</p>
-<h3 id="栈上分配-1"><a href="#栈上分配-1" class="headerlink" title="栈上分配"></a><strong>栈上分配</strong></h3><p>在JVM中，堆是线程共享的，因此堆上的对象对于各个线程都是共享和可见的，只要持有对象的引用，就可以访问堆中存储的对象数据。虚拟机的垃圾收集系统可以回收堆中不再使用的对象，但对于垃圾收集器来说，无论筛选可回收对象，还是回收和整理内存都需要耗费时间。</p>
-<p>如果确定一个对象的作用域不会逃逸出方法之外，那可以将这个对象分配在栈上，这样，对象所占用的内存空间就可以随栈帧出栈而销毁。在一般应用中，不会逃逸的局部对象所占的比例很大，如果能使用栈上分配，那大量的对象就会随着方法的结束而自动销毁了，无须通过垃圾收集器回收，可以减小垃圾收集器的负载。</p>
-<p>JVM允许将线程私有的对象打散分配在栈上，而不是分配在堆上。分配在栈上的好处是可以在函数调用结束后自行销毁，而不需要垃圾回收器的介入，从而提高系统性能。<br><strong>栈上分配的技术基础：</strong><br><strong>一是逃逸分析：</strong>逃逸分析的目的是判断对象的作用域是否有可能逃逸出函数体。关于逃逸分析的问题可以看我另一篇文章：</p>
-<p><strong>二是标量替换：</strong>允许将对象打散分配在栈上，比如若一个对象拥有两个字段，会将这两个字段视作局部变量进行分配。</p>
-<p>只能在server模式下才能启用逃逸分析，参数-XX:DoEscapeAnalysis启用逃逸分析，参数-XX:+EliminateAllocations开启标量替换（默认打开）。Java SE 6u23版本之后，HotSpot中默认就开启了逃逸分析，可以通过选项-XX:+PrintEscapeAnalysis查看逃逸分析的筛选结果。</p>
-<h3 id="TLAB-1"><a href="#TLAB-1" class="headerlink" title="TLAB"></a><strong>TLAB</strong></h3><p>TLAB的全称是Thread Local Allocation Buffer，即线程本地分配缓存区，这是一个线程专用的内存分配区域。<br>由于对象一般会分配在堆上，而堆是全局共享的。因此在同一时间，可能会有多个线程在堆上申请空间。因此，每次对象分配都必须要进行同步（虚拟机采用CAS配上失败重试的方式保证更新操作的原子性），而在竞争激烈的场合分配的效率又会进一步下降。JVM使用TLAB来避免多线程冲突，在给对象分配内存时，每个线程使用自己的TLAB，这样可以避免线程同步，提高了对象分配的效率。  </p>
-<p>TLAB本身占用eEden区空间，在开启TLAB的情况下，虚拟机会为<strong>每个Java线程分配一块TLAB空间</strong>。参数-XX:+UseTLAB开启TLAB，默认是开启的。TLAB空间的内存非常小，缺省情况下仅占有整个Eden空间的1%，当然可以通过选项-XX:TLABWasteTargetPercent设置TLAB空间所占用Eden空间的百分比大小。<br>由于TLAB空间一般不会很大，因此大对象无法在TLAB上进行分配，总是会直接分配在堆上。TLAB空间由于比较小，因此很容易装满。比如，一个100K的空间，已经使用了80KB，当需要再分配一个30KB的对象时，肯定就无能为力了。这时虚拟机会有两种选择，第一，废弃当前TLAB，这样就会浪费20KB空间；第二，将这30KB的对象直接分配在堆上，保留当前的TLAB，这样可以希望将来有小于20KB的对象分配请求可以直接使用这块空间。实际上虚拟机内部会维护一个叫作refill_waste的值，当请求对象大于refill_waste时，会选择在堆中分配，若小于该值，则会废弃当前TLAB，新建TLAB来分配对象。这个阈值可以使用TLABRefillWasteFraction来调整，它表示TLAB中允许产生这种浪费的比例。默认值为64，即表示使用约为1/64的TLAB空间作为refill_waste。默认情况下，TLAB和refill_waste都会在运行时不断调整的，使系统的运行状态达到最优。如果想要禁用自动调整TLAB的大小，可以使用-XX:-ResizeTLAB禁用ResizeTLAB，并使用-XX:TLABSize手工指定一个TLAB的大小。<br>-XX:+PrintTLAB可以跟踪TLAB的使用情况。一般不建议手工修改TLAB相关参数，推荐使用虚拟机默认行为。</p>
-<h3 id="对象内存分配的两种方法"><a href="#对象内存分配的两种方法" class="headerlink" title="对象内存分配的两种方法"></a><strong>对象内存分配的两种方法</strong></h3><p>为对象分配空间的任务等同于把一块确定大小的内存从Java堆中划分出来。</p>
-<p>指针碰撞(Serial、ParNew等带Compact过程的收集器)<br>假设Java堆中内存是绝对规整的，所有用过的内存都放在一边，空闲的内存放在另一边，中间放着一个指针作为分界点的指示器，那所分配内存就仅仅是把那个指针向空闲空间那边挪动一段与对象大小相等的距离，这种分配方式称为“指针碰撞”（Bump the Pointer）。<br>空闲列表(CMS这种基于Mark-Sweep算法的收集器)<br>如果Java堆中的内存并不是规整的，已使用的内存和空闲的内存相互交错，那就没有办法简单地进行指针碰撞了，虚拟机就必须维护一个列表，记录上哪些内存块是可用的，在分配的时候从列表中找到一块足够大的空间划分给对象实例，并更新列表上的记录，这种分配方式称为“空闲列表”（Free List）。  
-  </p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a><strong>总结</strong></h3><p><strong>总体流程</strong><br><img src="_v_images/20200818211412253_811602284" alt="这里写图片描述"></p>
-<p><strong>对象分配流程</strong><br><img src="_v_images/20200818211412147_1281640355" alt="这里写图片描述"><br>如果开启栈上分配，JVM会先进行栈上分配，如果没有开启栈上分配或则不符合条件的则会进行TLAB分配，如果TLAB分配不成功，再尝试在eden区分配，如果对象满足了直接进入老年代的条件，那就直接分配在老年代。</p>
-<p><strong>对象在内存的引用方式</strong><br><img src="_v_images/20200818211411943_2105805507" alt="这里写图片描述"></p>
-<p><strong>对象在内存中的结构</strong><br><img src="_v_images/20200818211411726_1562017878" alt="这里写图片描述"></p>
-<p><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000004606059">参考</a></p>
+<h2 id="修改container的主机名"><a href="#修改container的主机名" class="headerlink" title="修改container的主机名"></a>修改container的主机名</h2><p>分别修改三个container的hosts</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/hosts </span><br></pre></td></tr></table></figure>
+<p>添加下面配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">172.17.0.2    hadoop0</span><br><span class="line">172.17.0.3    hadoop1</span><br><span class="line">172.17.0.4    hadoop2</span><br></pre></td></tr></table></figure>
+<h2 id="ssh-免密"><a href="#ssh-免密" class="headerlink" title="ssh 免密"></a>ssh 免密</h2><p>设置ssh免密码登录<br>在hadoop0上执行下面操作</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">mkdir .ssh</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop0</span><br><span class="line">ssh-copy-id -i hadoop1</span><br><span class="line">ssh-copy-id -i hadoop2</span><br></pre></td></tr></table></figure>
+<p>在hadoop1上执行下面操作</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop1</span><br></pre></td></tr></table></figure>
+<p>在hadoop2上执行下面操作</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop2</span><br></pre></td></tr></table></figure>
+<p>至此，Docker搭建Hadoop集群的准备工作</p>
+<hr>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://blog.csdn.net/xu470438000/article/details/50512442">使用docker搭建hadoop分布式集群</a></li>
+</ol>
 
       
     </div>
@@ -772,7 +1465,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/vx/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/dubbo/base/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -786,7 +1479,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java/metric/vx/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/bigdata/dubbo/base/" class="post-title-link" itemprop="url">Dubbo基础</a>
         </h2>
 
         <div class="post-meta">
@@ -796,7 +1489,23 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:25:36" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:36+08:00">2021-04-04</time>
+              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
             </span>
 
           
@@ -810,7 +1519,142 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"00_docker构建Java测试环境.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"01_tuner.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"02_CMS_GC.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"02_GC_tuning.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"03.大堆问题定位.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"03_G1_GC.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"Java-微基准测试.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"Java生产环境下性能监控与调优详解笔记.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"Java程序性能优化.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"jdk-inner-tools.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"JMeter.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"jstack.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MAT.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"performance.md","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"企业微信20200616023931.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"企业微信20200616024833.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"企业微信20200616025256.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"企业微信20200616031253.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"企业微信20200616031404.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"企业微信20200616032214.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"企业微信20200616032506.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"企业微信20200616032833.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"栈上分配与TLAB.md","tags":[]}],"folders":[{"name":"images"}],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
+          <h1 id="Dubbo-分布式服务治理框架"><a href="#Dubbo-分布式服务治理框架" class="headerlink" title="Dubbo-分布式服务治理框架"></a>Dubbo-分布式服务治理框架</h1><blockquote>
+<p>学习dubbo教程 笔记整理</p>
+<p><a target="_blank" rel="noopener" href="http://dubbo.io/Developer+Guide-zh.htm">Dubbo官方文档</a></p>
+</blockquote>
+<p>关键词：分布式治理</p>
+<p>Dubbo是阿里巴巴推出的一款分布式服务治理框架（虽然现在阿里内部一些部门已经不再使用）。</p>
+<p>Dubbo将分布式服务分为四个角色：服务提供者、服务消费者、注册中心和监控中心。</p>
+<h1 id="Dubbo角色"><a href="#Dubbo角色" class="headerlink" title="Dubbo角色"></a>Dubbo角色</h1><p>![][dubbo-roles]</p>
+<ol>
+<li>服务提供者注册到服务注册中心</li>
+<li>服务消费者从服务提供者订阅服务</li>
+<li>当服务提供者发生变化（出现新服务提供者、旧的服务提供者死掉等），注册中心通知服务消费者</li>
+<li>当服务消费者调用服务时，首先从注册中心查找服务，注册中心直接将选定的服务提供者的ip和端口等信息返回给服务消费者，服务消费者直接调用服务提供者</li>
+<li>服务提供者和服务消费者每个一分钟将收集的运行信息上报到监控中心</li>
+</ol>
+<p>只有服务消费者调用服务生成者是同步调用，其他都是异步的。</p>
+<p>Provider与Registry、Consumer与Register之间都保持着长连接，用于保持信息同步</p>
+<h1 id="简洁的项目结构"><a href="#简洁的项目结构" class="headerlink" title="简洁的项目结构"></a>简洁的项目结构</h1><h1 id="Dubbo支持的RPC协议"><a href="#Dubbo支持的RPC协议" class="headerlink" title="Dubbo支持的RPC协议"></a>Dubbo支持的RPC协议</h1><ol>
+<li>支持常见的传输协议：RMI、Dubbo、Hessain、WebService、Http等，<br> 其中Dubbo和RMI协议基于TCP实现，Hessian和WebService基于HTTP实现。</li>
+<li>传输框架：Netty、Mina、以及基于servlet等方式。</li>
+<li>序列化方式：Hessian2、dubbo、JSON（ fastjson 实现）、JAVA、SOAP 等。</li>
+<li>注册中心可以选择 zooKeeper Redis Dubbo Multicast</li>
+</ol>
+<h1 id="Dubbo-服务降级"><a href="#Dubbo-服务降级" class="headerlink" title="Dubbo 服务降级"></a>Dubbo 服务降级</h1><p><a target="_blank" rel="noopener" href="http://blog.csdn.net/zuoanyinxiang/article/details/51027576">Dubbo学习(七)：服务的升级和降级</a></p>
+<p>服务降级方式：</p>
+<ul>
+<li>服务接口拒绝服务：无用户特定信息，页面能访问，但是添加删除提示服务器繁忙。页面内容也可在Varnish或CDN内获取。</li>
+<li>页面拒绝服务：页面提示由于服务繁忙此服务暂停。跳转到varnish或nginx的一个静态页面。</li>
+<li>延迟持久化：页面访问照常，但是涉及记录变更，会提示稍晚能看到结果，将数据记录到异步队列或log，服务恢复后执行。</li>
+<li>随机拒绝服务：服务接口随机拒绝服务，让用户重试，目前较少有人采用。因为用户体验不佳。</li>
+</ul>
+<p>服务降级埋点的地方：</p>
+<ul>
+<li>消息中间件：所有API调用可以使用消息中间件进行控制</li>
+<li>前端页面：指定网址不可访问（NGINX+LUA）</li>
+<li>底层数据驱动：拒绝所有增删改动作，只允许查询</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_2_in_or/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/syntax_2_in_or/" class="post-title-link" itemprop="url">MySQL in or优化</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-16 22:40:00" itemprop="dateCreated datePublished" datetime="2017-02-16T22:40:00+08:00">2017-02-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:26:30" itemprop="dateModified" datetime="2021-04-04T08:26:30+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>MySQL会对sql语句做优化， </p>
+<ol>
+<li>in 后面的条件不超过一定数量仍然会使用索引。mysql 会根据索引长度和in后面条件数量判断是否使用索引。</li>
+<li>如果是in后面是子查询，则不会使用索引。此时采用<code>join</code>来替换</li>
+<li>使用<code>union all</code>代替<code>in</code>和<code>or</code></li>
+</ol>
+<h1 id="使用union-all优化的样例"><a href="#使用union-all优化的样例" class="headerlink" title="使用union all优化的样例"></a>使用<code>union all</code>优化的样例</h1><p>一个文章库，里面有两个表：category和article。category里面有10条分类数据。article里面有 20万条。article里面有一个”article_category”字段是与category里的”category_id”字段相对应的。 article表里面已经把 article_category字义为了索引。数据库大小为1.3G。</p>
+<p><strong>问题描述：</strong></p>
+<p>执行一个很普通的查询： </p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Select</span> <span class="operator">*</span> <span class="keyword">FROM</span> `article` <span class="keyword">Where</span> article_category<span class="operator">=</span><span class="number">11</span> <span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">DESC</span> LIMIT <span class="number">5</span> </span><br></pre></td></tr></table></figure>
+<p>执行时间大约要5秒左右</p>
+<p><strong>解决方案：</strong><br>建一个索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> index idx_u <span class="keyword">on</span> article (article_category,article_id);</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Select</span> <span class="operator">*</span> <span class="keyword">FROM</span> `article` <span class="keyword">Where</span> article_category<span class="operator">=</span><span class="number">11</span> <span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">DESC</span> LIMIT <span class="number">5</span> </span><br></pre></td></tr></table></figure>
+<p>减少到0.0027秒</p>
+<p><strong>继续问题：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Select</span> <span class="operator">*</span> <span class="keyword">FROM</span> `article` <span class="keyword">Where</span> article_category <span class="keyword">IN</span> (<span class="number">2</span>,<span class="number">3</span>) <span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">DESC</span> LIMIT <span class="number">5</span> </span><br></pre></td></tr></table></figure>
+<p>执行时间要11.2850秒。</p>
+<p><strong>使用OR:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article</span><br><span class="line"><span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">2</span></span><br><span class="line"><span class="keyword">or</span> article_category<span class="operator">=</span><span class="number">3</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span></span><br><span class="line">limit <span class="number">5</span></span><br></pre></td></tr></table></figure>
+<p>执行时间：11.0777</p>
+<p><strong>解决方案：</strong><br>避免使用in 或者 or (or会导致扫表)，使用union all</p>
+<p><strong>使用UNION ALL：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(<span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article <span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">2</span> <span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span> limit <span class="number">5</span>)</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span> (<span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article <span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">3</span> <span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span> limit <span class="number">5</span>)</span><br><span class="line"><span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">desc</span></span><br><span class="line">limit <span class="number">5</span></span><br></pre></td></tr></table></figure>
+<p>执行时间：0.0261</p>
+
       
     </div>
 
@@ -828,7 +1672,7 @@
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/17/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/17/">17</a><span class="page-number current">18</span><a class="page-number" href="/page/19/">19</a><span class="space">&hellip;</span><a class="page-number" href="/page/42/">42</a><a class="extend next" rel="next" href="/page/19/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/page/17/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/17/">17</a><span class="page-number current">18</span><a class="page-number" href="/page/19/">19</a><span class="space">&hellip;</span><a class="page-number" href="/page/27/">27</a><a class="extend next" rel="next" href="/page/19/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -894,7 +1738,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">411</span>
+          <span class="site-state-item-count">268</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
