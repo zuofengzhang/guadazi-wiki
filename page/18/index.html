@@ -183,155 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/HDFS-Java-API/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Hadoop/HDFS-Java-API/" class="post-title-link" itemprop="url">HDFS Java API</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-25 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-25T00:00:00+08:00">2017-02-25</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Hadoop是采用Java实现的，所有的命令和操作全部采用Java完成。<br>HDFS: Hadoop Distributed File System 是Hadoop提供的分布式文件系统。</p>
-<p>本文介绍HDFS的Java API </p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.hadoop<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hadoop-core<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>首先，看一个例子:</p>
-<h1 id="putMerge-本地文件合并并保存到HDFS"><a href="#putMerge-本地文件合并并保存到HDFS" class="headerlink" title="putMerge: 本地文件合并并保存到HDFS"></a>putMerge: 本地文件合并并保存到HDFS</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * copy files in &lt;code&gt;srcDir&lt;/code&gt; </span></span><br><span class="line"><span class="comment"> * and merge to &lt;code&gt;objectFileName&lt;/code&gt; in HDFS</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> srcDir    本地文件夹</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> objectFileName HDFS文件名</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">putMerge</span><span class="params">(String srcDir, String objectFileName)</span> </span>&#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;srcDir:&quot;</span> + srcDir+<span class="string">&quot;\t objDir:&quot;</span> + objectFileName);</span><br><span class="line">    <span class="comment">// 读取HDFS的默认配置, 配置文件主要包括: </span></span><br><span class="line">    <span class="comment">// core-default.xml, core-site.xml, mapred-default.xml, mapred-site.xml, yarn-default.xml, yarn-site.xml, hdfs-default.xml, hdfs-site.xml</span></span><br><span class="line">    Configuration conf = <span class="keyword">new</span> Configuration();</span><br><span class="line">    FileSystem hdfs = <span class="keyword">null</span>;</span><br><span class="line">    LocalFileSystem local = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        hdfs = FileSystem.get(conf);<span class="comment">// 获取HDFS配置的FileSystem</span></span><br><span class="line">        local = FileSystem.getLocal(conf);<span class="comment">// 获取本地配置FileSystem</span></span><br><span class="line">        Path inputDir = <span class="keyword">new</span> Path(srcDir); <span class="comment">// 设定输入目录</span></span><br><span class="line">        System.out.println(<span class="string">&quot;inputDir: &quot;</span> + inputDir);</span><br><span class="line">        System.out.println(<span class="string">&quot;local.homeDirectory: &quot;</span> + local.getHomeDirectory());</span><br><span class="line">        System.out.println(<span class="string">&quot;local.workingDirectory: &quot;</span> + local.getWorkingDirectory());</span><br><span class="line">        System.out.println(<span class="string">&quot;local.uri: &quot;</span> + local.getUri());</span><br><span class="line">        System.out.println(<span class="string">&quot;local.conf: &quot;</span> + local.getConf());</span><br><span class="line"></span><br><span class="line">        FileStatus[] inputFiles = local.listStatus(inputDir);</span><br><span class="line">        System.out.println(<span class="string">&quot;inputFiles: &quot;</span> + inputFiles);</span><br><span class="line">        <span class="keyword">for</span> (FileStatus inputFile : inputFiles) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;inputFile: &quot;</span> + inputFile);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (inputFiles.length == <span class="number">0</span>) &#123;</span><br><span class="line">            System.err.println(<span class="string">&quot;input file path is empty!&quot;</span>);</span><br><span class="line">            System.exit(<span class="number">1</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        Path hdfsFile = <span class="keyword">new</span> Path(objectFileName); <span class="comment">// 设定输出文件名称</span></span><br><span class="line">        FSDataOutputStream out = hdfs.create(hdfsFile, <span class="keyword">new</span> Progressable() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">progress</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                System.out.print(<span class="string">&quot;*&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="keyword">for</span> (FileStatus inputFile : inputFiles) &#123;</span><br><span class="line">            System.out.println(<span class="string">&quot;inputFile.path.name: &quot;</span> + inputFile.getPath().getName());</span><br><span class="line">            FSDataInputStream in = local.open(inputFile.getPath());</span><br><span class="line">            <span class="keyword">byte</span> buffer[] = <span class="keyword">new</span> <span class="keyword">byte</span>[<span class="number">256</span>];</span><br><span class="line">            <span class="keyword">int</span> bytesRead = <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">while</span> ((bytesRead = in.read(buffer)) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                out.write(buffer, <span class="number">0</span>, bytesRead);</span><br><span class="line">            &#125;</span><br><span class="line">            in.close();</span><br><span class="line">            System.out.println();</span><br><span class="line">        &#125;</span><br><span class="line">        out.close();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">    System.out.println();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>执行:</p>
-<ol>
-<li>打包</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mvn package</span><br></pre></td></tr></table></figure>
-<ol start="2">
-<li>复制到container</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker cp ~/IdeaProjects/MyTest/out/artifacts/HadoopTest_jar/HadoopTest.jar hadoop0:/root/putMerge.jar</span><br></pre></td></tr></table></figure>
-<ol start="3">
-<li>执行</li>
-</ol>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hadoop jar putMerge.jar en002 en002.txt</span><br></pre></td></tr></table></figure>
-<p>执行结果</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">version 1</span><br><span class="line">args:en002</span><br><span class="line">args:en002.txt</span><br><span class="line">srcDir:en002</span><br><span class="line">objDir:en002.txt</span><br><span class="line">inputDir: en002</span><br><span class="line">local.homeDirectory: file:/root</span><br><span class="line">local.workingDirectory: file:/root</span><br><span class="line">local.uri: file:///</span><br><span class="line">local.conf: Configuration: core-default.xml, core-site.xml, mapred-default.xml, mapred-site.xml, yarn-default.xml, yarn-site.xml, hdfs-default.xml, hdfs-site.xml</span><br><span class="line">inputFiles: [Lorg.apache.hadoop.fs.FileStatus;@4073c6c9</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/shengjing.txt; isDirectory=false; length=4467663; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/at.txt; isDirectory=false; length=829203; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/abc.txt; isDirectory=false; length=0; replication=1; blocksize=33554432; modification_time=1495543277000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/a.txt; isDirectory=false; length=18516; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/av.txt; isDirectory=false; length=189407; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/David.txt; isDirectory=false; length=1519616; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/Oliver.txt; isDirectory=false; length=981553; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/Jane.txt; isDirectory=false; length=1114997; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile: DeprecatedRawLocalFileStatus&#123;path=file:/root/en002/Romeo.txt; isDirectory=false; length=145397; replication=1; blocksize=33554432; modification_time=1495535613000; access_time=0; owner=; group=; permission=rw-rw-rw-; isSymlink=false&#125;</span><br><span class="line">inputFile.path.name: shengjing.txt</span><br><span class="line"></span><br><span class="line">inputFile.path.name: at.txt</span><br><span class="line">*******</span><br><span class="line">inputFile.path.name: abc.txt</span><br><span class="line"></span><br><span class="line">inputFile.path.name: a.txt</span><br><span class="line"></span><br><span class="line">inputFile.path.name: av.txt</span><br><span class="line">*******</span><br><span class="line">inputFile.path.name: David.txt</span><br><span class="line">******************************************************************</span><br><span class="line">inputFile.path.name: Oliver.txt</span><br><span class="line">***************************</span><br><span class="line">inputFile.path.name: Jane.txt</span><br><span class="line">**********************************</span><br><span class="line">inputFile.path.name: Romeo.txt</span><br><span class="line">**</span><br><span class="line">**</span><br></pre></td></tr></table></figure>
-<p>可能出现的问题:</p>
-<ol>
-<li><code>LocalFileSystem.listStatus</code>返回为 <code>empty</code>, 可能的原因有:<ul>
-<li>Hadoop没有权限读取目录或目录中的文件</li>
-<li>本地目录中的文件是中文的，而系统不支持显示中文</li>
-</ul>
-</li>
-</ol>
-<h1 id="FileSystem"><a href="#FileSystem" class="headerlink" title="FileSystem"></a>FileSystem</h1><p><a target="_blank" rel="noopener" href="http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/fs/FileSystem.html">DOCS-FileSystem</a><br>FileSystem 是Hadoop提供的操作本地文件和HDFS中文件的API，可以实现CRUD等操作</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Append to an existing file.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> FSDataOutputStream <span class="title">append</span><span class="params">(Path f)</span> <span class="keyword">throws</span> IOException</span></span><br><span class="line"><span class="function"><span class="comment">/**</span></span></span><br><span class="line"><span class="function"><span class="comment">* Concat existing files together.</span></span></span><br><span class="line"><span class="function"><span class="comment">*/</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">concat</span><span class="params">(Path trg,Path[] psrcs)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> IOException</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"><span class="comment">/** </span></span></span><br><span class="line"><span class="function"><span class="comment">* Renames Path src to Path dst. </span></span></span><br><span class="line"><span class="function"><span class="comment">* Can take place on local fs or remote DFS.</span></span></span><br><span class="line"><span class="function"><span class="comment">*/</span></span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">boolean</span> <span class="title">rename</span><span class="params">(Path src, Path dst)</span> <span class="keyword">throws</span> IOException</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function"></span></span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-
-<h2 id="创建目录"><a href="#创建目录" class="headerlink" title="创建目录"></a>创建目录</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/20130709&quot;</span>);  </span><br><span class="line">fs.create(path);  </span><br><span class="line">fs.close();  </span><br></pre></td></tr></table></figure>
-
-
-<h2 id="删除目录"><a href="#删除目录" class="headerlink" title="删除目录"></a>删除目录</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/20130710&quot;</span>);  </span><br><span class="line">fs.delete(path);  </span><br><span class="line">fs.close(); </span><br></pre></td></tr></table></figure>
-<h2 id="写文件"><a href="#写文件" class="headerlink" title="写文件"></a>写文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/write.txt&quot;</span>);  </span><br><span class="line">FSDataOutputStream out = fs.create(path);  </span><br><span class="line">out.writeUTF(<span class="string">&quot;da jia hao,cai shi zhen de hao!&quot;</span>);  </span><br><span class="line">fs.close();</span><br></pre></td></tr></table></figure>
-<h2 id="读文件"><a href="#读文件" class="headerlink" title="读文件"></a>读文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/write.txt&quot;</span>);  </span><br><span class="line">  </span><br><span class="line"><span class="keyword">if</span>(fs.exists(path))&#123;  </span><br><span class="line">    FSDataInputStream is = fs.open(path);  </span><br><span class="line">    FileStatus status = fs.getFileStatus(path);  </span><br><span class="line">    <span class="comment">// status.getLen() 返回文件的长度 字节长度</span></span><br><span class="line">    <span class="keyword">byte</span>[] buffer = <span class="keyword">new</span> <span class="keyword">byte</span>[Integer.parseInt(String.valueOf(status.getLen()))];  </span><br><span class="line">    is.readFully(<span class="number">0</span>, buffer);  </span><br><span class="line">    is.close();  </span><br><span class="line">    fs.close();  </span><br><span class="line">    System.out.println(buffer.toString());  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="上传本地文件到HDFS"><a href="#上传本地文件到HDFS" class="headerlink" title="上传本地文件到HDFS"></a>上传本地文件到HDFS</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path src = <span class="keyword">new</span> Path(<span class="string">&quot;/home/hadoop/word.txt&quot;</span>);  </span><br><span class="line">Path dst = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/&quot;</span>);  </span><br><span class="line"><span class="comment">// FileSystem可以直接将本地文件复制到HDFS的制定目录</span></span><br><span class="line">fs.copyFromLocalFile(src, dst);  </span><br><span class="line">fs.close(); </span><br></pre></td></tr></table></figure>
-<h2 id="删除文件"><a href="#删除文件" class="headerlink" title="删除文件"></a>删除文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line"><span class="comment">// 删除文件和目录均是通过FileSystem.delete(Path path)</span></span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/word.txt&quot;</span>);  </span><br><span class="line">fs.delete(path);  </span><br><span class="line">fs.close();</span><br></pre></td></tr></table></figure>
-
-<h2 id="获取给定目录下的所有子目录以及子文件"><a href="#获取给定目录下的所有子目录以及子文件" class="headerlink" title="获取给定目录下的所有子目录以及子文件"></a>获取给定目录下的所有子目录以及子文件</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="keyword">new</span> Configuration(); </span><br><span class="line">FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop&quot;</span>);  </span><br><span class="line">getFile(path,fs);  </span><br><span class="line"><span class="comment">//fs.close();   </span></span><br><span class="line"></span><br><span class="line">...</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">getFile</span><span class="params">(Path path,FileSystem fs)</span> <span class="keyword">throws</span> IOException </span>&#123;  </span><br><span class="line">    FileStatus[] fileStatus = fs.listStatus(path);  </span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;fileStatus.length;i++)&#123;  </span><br><span class="line">        <span class="keyword">if</span>(fileStatus[i].isDir())&#123;  </span><br><span class="line">            Path p = <span class="keyword">new</span> Path(fileStatus[i].getPath().toString());  </span><br><span class="line">            getFile(p,fs);  </span><br><span class="line">        &#125;<span class="keyword">else</span>&#123;  </span><br><span class="line">            System.out.println(fileStatus[i].getPath().toString());  </span><br><span class="line">        &#125;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125; </span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h2 id="查找某个文件在HDFS集群的位置"><a href="#查找某个文件在HDFS集群的位置" class="headerlink" title="查找某个文件在HDFS集群的位置"></a>查找某个文件在HDFS集群的位置</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * 查找某个文件在HDFS集群的位置 </span></span><br><span class="line"><span class="comment"> */</span>  </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">getFileLocal</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;  </span><br><span class="line">    Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">    FileSystem fs = FileSystem.get(conf);  </span><br><span class="line">    Path path = <span class="keyword">new</span> Path(<span class="string">&quot;/user/hadoop/data/write.txt&quot;</span>);  </span><br><span class="line">      </span><br><span class="line">    FileStatus status = fs.getFileStatus(path);  </span><br><span class="line">    BlockLocation[] locations = fs.getFileBlockLocations(status, <span class="number">0</span>, status.getLen());  </span><br><span class="line">      </span><br><span class="line">    <span class="keyword">int</span> length = locations.length;  </span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;length;i++)&#123;  </span><br><span class="line">        String[] hosts = locations[i].getHosts();  </span><br><span class="line">        System.out.println(<span class="string">&quot;block_&quot;</span> + i + <span class="string">&quot;_location:&quot;</span> + hosts[i]);  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
-
-<h2 id="HDFS集群上所有节点名称信息"><a href="#HDFS集群上所有节点名称信息" class="headerlink" title="HDFS集群上所有节点名称信息"></a>HDFS集群上所有节点名称信息</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * HDFS集群上所有节点名称信息 </span></span><br><span class="line"><span class="comment"> */</span>  </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">getHDFSNode</span><span class="params">()</span> <span class="keyword">throws</span> IOException</span>&#123;  </span><br><span class="line">    Configuration conf = <span class="keyword">new</span> Configuration();  </span><br><span class="line">    FileSystem fs = FileSystem.get(conf);  </span><br><span class="line"></span><br><span class="line">    DistributedFileSystem  dfs = (DistributedFileSystem)fs;  </span><br><span class="line">    DatanodeInfo[] dataNodeStats = dfs.getDataNodeStats();  </span><br><span class="line">      </span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;dataNodeStats.length;i++)&#123;  </span><br><span class="line">        System.out.println(<span class="string">&quot;DataNode_&quot;</span> + i + <span class="string">&quot;_Node:&quot;</span> + dataNodeStats[i].getHostName());  </span><br><span class="line">    &#125;  </span><br><span class="line">      </span><br><span class="line">&#125;  </span><br></pre></td></tr></table></figure>
-<h1 id="读写"><a href="#读写" class="headerlink" title="读写"></a>读写</h1><p><code>FSDataInputStream</code> 与 <code>FSDataOutputStream</code></p>
-<p><code>FSDataInputStream</code> 扩展了 <code>DataInputStream</code> 以支持随机读</p>
-<h2 id="InputFormat"><a href="#InputFormat" class="headerlink" title="InputFormat"></a>InputFormat</h2><ul>
-<li><p>TextInputFormat 是 InputFormat 的默认实现, TextInputFormat<br>返回的键是每行的字节偏移量，返回的值是该行的数据。<br>key: LongWritable<br>value: Text</p>
-</li>
-<li><p><code>KeyValueTextInputFormat</code> 使用分隔符分割每行，分隔符之前的是键，之后的是值。默认的分隔符是制表符(\T)，分离器的属性通过<br><code>key.value.separator.in.input.line</code>中指定</p>
-</li>
-</ul>
-<p>key: Text<br>value: Text</p>
-<ul>
-<li><code>SequenceFileInputFormat&lt;K,V&gt;</code> 用户自定义的序列化格式, 序列化文件为Hadoop专用的压缩二进制文件格式</li>
-</ul>
-<p>key: K 用户定义<br>value: V 用户定义</p>
-<ul>
-<li><code>NLineInputFormat</code> key为分片的偏移量，value为包含N行数据的片段，N通过属性 <code>mapred.line.inout.format.linespermap</code>中指定，默认为1<br>key: LongWritable<br>value: Text</li>
-</ul>
-<hr>
-<p>【参考文献】</p>
-<ol>
-<li><a href="ref-url" title="ref-alt-title"></a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/base(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)(AVERYZHANG-PC1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -363,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -590,7 +441,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -820,7 +671,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1050,7 +901,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1138,7 +989,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1226,7 +1077,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1327,7 +1178,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1496,7 +1347,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1606,7 +1457,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1654,6 +1505,107 @@ Dockerfile的内容为:</li>
 <p><strong>使用UNION ALL：</strong></p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(<span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article <span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">2</span> <span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span> limit <span class="number">5</span>)</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span> (<span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article <span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">3</span> <span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span> limit <span class="number">5</span>)</span><br><span class="line"><span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">desc</span></span><br><span class="line">limit <span class="number">5</span></span><br></pre></td></tr></table></figure>
 <p>执行时间：0.0261</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/PhantomJS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/PhantomJS/" class="post-title-link" itemprop="url">PhamtomJs</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>PhamtomJs 是服务端的无界面的Chrome浏览器，提供JS API和shell命令行，方便操作</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://phantomjs.org/quick-start.html">官方的文档</a></p>
+</blockquote>
+<h1 id="Java-操作"><a href="#Java-操作" class="headerlink" title="Java 操作"></a>Java 操作</h1><h2 id="阻塞式"><a href="#阻塞式" class="headerlink" title="阻塞式"></a>阻塞式</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">openWithPhanatomjs</span><span class="params">(String viewUrl)</span> </span>&#123;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs start&quot;</span> + viewUrl);</span><br><span class="line">      InputStreamReader inReader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">      BufferedReader reader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream errorStream = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">          String path = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              path = Thread.currentThread().getContextClassLoader().getResource(<span class="string">&quot;/&quot;</span>).toURI().getPath();</span><br><span class="line">          &#125; <span class="keyword">catch</span> (URISyntaxException e) &#123;</span><br><span class="line">              e.printStackTrace();</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">final</span> String s = path + File.separator + <span class="string">&quot;otwp.js&quot;</span>;</span><br><span class="line"><span class="comment">//            logger.info(s);</span></span><br><span class="line">          Process process = Runtime.getRuntime().exec(phanatomjsHome + <span class="string">&quot; &quot;</span> + s + <span class="string">&quot; &quot;</span> + viewUrl);</span><br><span class="line">          inputStream = process.getInputStream();</span><br><span class="line">          inReader = <span class="keyword">new</span> InputStreamReader(inputStream, <span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">          reader = <span class="keyword">new</span> BufferedReader(inReader);</span><br><span class="line">          String line = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">while</span> ((line = reader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">          errorStream = process.getErrorStream();</span><br><span class="line">          <span class="keyword">final</span> BufferedReader bufferedReader = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> InputStreamReader(errorStream));</span><br><span class="line">          <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">      &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              <span class="keyword">if</span> (inReader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inReader.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (inputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inputStream.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (reader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  reader.close();</span><br><span class="line">              &#125;</span><br><span class="line">          &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">              logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs end&quot;</span> + viewUrl);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="样例"><a href="#样例" class="headerlink" title="样例"></a>样例</h1><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// run this js with command:</span></span><br><span class="line"><span class="comment">// phantomjs openTableauWithPhantomjs.js &lt;Tableau view url&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">&quot;start open with Phantomjs&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> system = <span class="built_in">require</span>(<span class="string">&#x27;system&#x27;</span>);</span><br><span class="line"><span class="keyword">if</span> (system.args.length === <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Please input view url&#x27;</span>);</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">    phantom.exit();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> viewUrl = system.args[<span class="number">1</span>];</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Open url: &#x27;</span> + viewUrl);</span><br><span class="line">    <span class="keyword">var</span> page = <span class="built_in">require</span>(<span class="string">&#x27;webpage&#x27;</span>).create();</span><br><span class="line">    <span class="keyword">var</span> t = <span class="built_in">Date</span>.now();</span><br><span class="line"></span><br><span class="line">    page.onConsoleMessage = <span class="function"><span class="keyword">function</span> (<span class="params">msg</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(msg);</span><br><span class="line">    &#125;;</span><br><span class="line">    page.onLoadFinished = <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;加载完毕, 状态: &#x27;</span> + status);</span><br><span class="line"></span><br><span class="line">    &#125;;</span><br><span class="line">    page.settings.resourceTimeout=<span class="number">100000</span>;</span><br><span class="line"></span><br><span class="line">    page.open(viewUrl, <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> title = page.evaluate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">document</span>.title;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="built_in">console</span>.log(status + <span class="string">&#x27;\ttitle:&#x27;</span> + title);</span><br><span class="line">        <span class="keyword">if</span> (status !== <span class="string">&#x27;success&#x27;</span>) &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;Fail to load the address!&#x27;</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            t = <span class="built_in">Date</span>.now() - t;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;open success: elase time : &#x27;</span> + t);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">        phantom.exit();</span><br><span class="line"></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<hr>
+<p>[参考文献]</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.qcloud.com/community/article/743451001489391682">PhantomJS 基础及示例</a></li>
+</ol>
 
       
     </div>
@@ -1745,13 +1697,13 @@ Dockerfile的内容为:</li>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">118</span>
+        <span class="site-state-item-count">121</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

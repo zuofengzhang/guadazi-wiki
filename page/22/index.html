@@ -183,293 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Impala/Impala-why-faster-than-hive/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Impala/Impala-why-faster-than-hive/" class="post-title-link" itemprop="url">Impala: why faster than hive</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>[TOC]</p>
-<h1 id="Impala"><a href="#Impala" class="headerlink" title="Impala"></a>Impala</h1><blockquote>
-<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/16755599/how-does-impala-provide-faster-query-response-compared-to-hive">How does impala provide faster query response compared to hive</a></p>
-</blockquote>
-<p>Impala = SQL on HDFS<br>Hive = SQL on Hadoop</p>
-<p>impala darmon running on datanode<br>cache some of the data that is in HDFS</p>
-<h2 id="why-fast"><a href="#why-fast" class="headerlink" title="why fast"></a>why fast</h2><blockquote>
-<p>why Impala is faster than Hive in Query processing? Below are the some key points.</p>
-</blockquote>
-<ul>
-<li>While processing SQL-like queries, Impala does not write intermediate results on disk(like in Hive MapReduce); instead full SQL processing is done in memory, which makes it faster.</li>
-<li>With Impala, the query starts its execution instantly compared to MapReduce, which may take significant time to start processing larger SQL queries and this adds more time in processing.</li>
-<li>Impala Query Planner uses smart algorithms to execute queries in multiple stages in parallel nodes to provide results faster, avoiding sorting and shuffle steps, which may be unnecessary in most of the cases.</li>
-<li>Impala has information about each data block in HDFS, so when processing the query, it takes advantage of this knowledge to distribute queries more evenly in all DataNodes.</li>
-<li>There exists Impala daemon, which runs on each DataNode. These are responsible for processing queries.When query submitted, impalad(Impala daemon) reads and writes to data file and parallelizes the query by distributing the work to all other Impala nodes in the Impala cluster.</li>
-<li>Another key reason for fast performance is that Impala first generates assembly-level code for each query. The assembly code executes faster than any other code framework because while Impala queries are running natively in memory, having a framework will add additional delay in the execution due to the framework overhead.</li>
-</ul>
-<ol>
-<li>在处理类似sql的查询时，Impala不会在磁盘上写入中间结果(如Hive MapReduce);相反，SQL处理完全是在内存中完成的，这使它更快。</li>
-<li>不使用map/reduce, 将数据fork到jvm和流量穿透是非常昂贵的。Impala将查询任务分割成子任务，在数据所在的节点上，各个节点独立并行运行，最后再单个节点上汇总结果。</li>
-<li>与MapReduce相比，Impala查询立即开始执行，MapReduce可能会花费大量时间来开始处理较大的SQL查询，这会增加处理时间。</li>
-<li>Impala Query Planner使用智能算法在并行节点中的多个stage执行查询，以更快地提供结果，避免sortinh和shuffle步骤，这在大多数情况下可能是不必要的。</li>
-<li>Impala拥有关于HDFS每个数据块的信息，因此在处理查询时，它利用这些知识在所有数据节点中更均匀地分布查询。</li>
-<li>存在在每个DataNode上运行的Impala守护进程。它们负责处理查询。当提交查询时，impalad(Impala守护进程)对数据文件进行读写操作，并通过将工作分配给Impala集群中的所有其他Impala节点来并行化查询。</li>
-<li>快速性能的另一个关键原因是Impala首先为每个查询生成汇编级别的代码。汇编代码的执行速度比任何其他代码框架都快，因为Impala查询在本机的内存中运行时，拥有一个框架会由于框架开销而增加额外的执行延迟。</li>
-<li>它使用hdfs存储，对于大文件来说速度很快。它尽可能多地缓存查询、结果和数据。</li>
-<li>它支持新的文件格式，如parquet，即列式存储格式。使用这种格式，数据扫描量更少</li>
-</ol>
-<p>Impala在内存中的处理所有查询，因此节点上的内存限制肯定是一个因素。必须有足够的内存来支持生成的数据集，在复杂的连接操作期间，数据集可能会成倍增长。如果查询开始处理数据，结果数据集无法装入可用内存，则查询将失败。</p>
-<h3 id="disadvantage"><a href="#disadvantage" class="headerlink" title="disadvantage"></a>disadvantage</h3><ol>
-<li>不支持UDF和自定义序列化</li>
-<li>impala查询是HiveSQL的子集</li>
-<li>hive支持存储和查询，而impala只能查询</li>
-</ol>
-<h2 id="Impala-doesn’t-provide-fault-tolerance-compared-to-Hive"><a href="#Impala-doesn’t-provide-fault-tolerance-compared-to-Hive" class="headerlink" title="Impala doesn’t provide fault-tolerance compared to Hive"></a>Impala doesn’t provide fault-tolerance compared to Hive</h2><p>so if there is a problem during your query then it’s gone. </p>
-<blockquote>
-<p>Definitely for ETL type of jobs where failure of one job would be costly I would recommend Hive, but Impala can be awesome for small ad-hoc queries, for example for data scientists or business analysts who just want to take a look and analyze some data without building robust jobs. Also from my personal experience, Impala is still not very mature, and I’ve seen some crashes sometimes when the amount of data is larger than available memory.</p>
-</blockquote>
-<p>对于ETL类型的工作，如果一个工作的失败代价很高，我会推荐Hive，但是Impala对于小的特别查询来说可能是很棒的，例如对于那些只想查看和分析一些数据而不想构建健壮工作的数据科学家或业务分析师来说。从我个人的经验来看，Impala还不太成熟，有时当数据量超过可用内存时，我会看到一些崩溃。</p>
-<blockquote>
-<p>This means if your join, sort, or group by didn’t fit in memory, Impala would just kill the query. No warning. Just dead. Hive would never do that because it’s underlying processing architecture has no problem doing that.</p>
-</blockquote>
-<p>这就意味着，内存不能承载join sort或group运算，Impala会无告警的立即kill掉查询，直接失败。而hive离线处理架构可以轻松处理，不会死掉</p>
-<h2 id="MPP"><a href="#MPP" class="headerlink" title="MPP"></a>MPP</h2><blockquote>
-<p>Impala uses MPP(massively parallel processing) unlike Hive which uses MapReduce under the hood, which involves some initial overheads (as Charles sir has specified). Massively parallel processing is a type of computing that uses many separate CPUs running in parallel to execute a single program where each CPU has it’s own dedicated memory. The very fact that Impala, being MPP based, doesn’t involve the overheads of a MapReduce jobs viz. job setup and creation, slot assignment, split creation, map generation etc., makes it blazingly fast.</p>
-</blockquote>
-<p>Impala提供了更快的响应，因为它使用了MPP(大规模并行处理)，而Hive在底层使用了MapReduce，这涉及到一些初始开销(正如Charles sir所指定的)。大规模并行处理是一种计算类型，它使用许多单独的并行运行的CPU来执行单个程序，其中每个CPU都有自己的专用内存。Impala是基于MPP的，它不涉及MapReduce作业的开销，即作业设置和创建、插槽分配、分割创建、地图生成等，这使得它的运行速度非常快。</p>
-<blockquote>
-<p>But that doesn’t mean that Impala is the solution to all your problems. Being highly memory intensive (MPP), it is not a good fit for tasks that require heavy data operations like joins etc., as you just can’t fit everything into the memory. This is where Hive is a better fit.</p>
-</blockquote>
-<p>MPP 作为高度内存密集型的运算，因为无法将所有的数据放入内存，并不适合需要大数据量的操作(如join)；反而Hive更适合</p>
-<p>实时的对部分数据即时查询适合Impala，对大数据的批处理请求，适合Hive</p>
-<h2 id="Impala-not-always-faster-than-hive"><a href="#Impala-not-always-faster-than-hive" class="headerlink" title="Impala not always faster than hive"></a>Impala not always faster than hive</h2><blockquote>
-<p>In my current job we used to make all the querys with Impala, the biggest query (like 800 million rows after 8 joins) was taking from 2 to 20 mins (depending if the tables where already on memory or not) I migrate that Query to Hive, partitioned the tables and create buckets on them, now it takes 3–4 mins, It may be a few more seconds than the best 2 mins with Impala but it’s much more fast if we consider that most of the time Impala takes 12–18 mins.</p>
-</blockquote>
-<p>在我目前的工作中，使用Impala进行所有的查询，最大的查询(比如8个连接后的8亿行)需要2到20分钟(取决于表是否已经在内存中);我将该查询迁移到Hive，对表进行分区并在其上创建桶，现在需要3到4分钟，这可能比Impala最好的2分钟多几秒钟，但如果我们考虑Impala大部分时间需要12到18分钟，速度会快得多。 </p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/HDFS/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Hadoop/HDFS/" class="post-title-link" itemprop="url">HDFS基础</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <ul>
-<li>NameNode 保存这个文件的数据块信息</li>
-<li>DataNode 存储实际的文件</li>
-<li>当MR启动的时候，首先获取所要处理的文件的块信息和节点信息，然后在这些节点上同时启动任务，在数据所在节点上同时处理</li>
-</ul>
-<p>MapReduce是底层编程语言，您需要专业知识才能在此级别工作。工程师在Map Reduce上开发了一个名为Hive的层，以便用户可以使用SQL来处理HDFS中存储的数据。Hive将这些SQL查询转换为一系列Map Reduce，然后调度执行。因此，Hive极大地简化了数据处理任务。但是Hive使用底层Map Reduce体系结构，这是用于处理数据的另一层</p>
-<p>Impala 一旦部署在Hadoop集群中，它将在每个数据节点上运行自己的进程，并完全跳过MapReduce阶段。一旦收到一个SQL，Impala master节点调度数据所在的节点上直接执行任务。因为它跳过MapReduce转换阶段并直接在节点上执行，所以它可以完成每秒钟的SQL查询</p>
-<p>当您在Hive中启动查询时，在背景地图中，Reduce会出现在启动查询需要花费大量时间的画面中，就像您在Impala中启动查询一样，它使用自己的体系结构，即MPP(大规模并行处理)而不是Map Reduce来从HDFS获取结果。它在内存中执行查询，总是比磁盘快。</p>
-<p>It’s an HDFS quirk. A file that’s currently being written to will appear to have a size of 0 but once it’s closed it will show its true size</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/02.%E4%BA%BF%E7%BA%A7%E6%B5%81%E9%87%8F_%E7%A7%92%E7%BA%A7%E7%BB%9F%E8%AE%A1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/02.%E4%BA%BF%E7%BA%A7%E6%B5%81%E9%87%8F_%E7%A7%92%E7%BA%A7%E7%BB%9F%E8%AE%A1/" class="post-title-link" itemprop="url">亿级流量秒级统计</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>#【亿级流量 秒级统计】</p>
-<p><strong>AI、ML、DL、ANN、CNN</strong> 蛰伏数十年，就为这个大数据时代。</p>
-<p>AI正以前所未有的速度改变世界，影响着我们生活的方方面面，AI走进人们的生活将成为未来的新常态。<br>而大数据和计算能力像水和氧气一样支撑着AI，我们的数据从手机端、服务器日志</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/AsyncApiScalaSink/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -501,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -585,7 +298,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -661,7 +374,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -759,7 +472,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -785,6 +498,217 @@
           <h1 id="flink-table-api"><a href="#flink-table-api" class="headerlink" title="flink-table-api"></a>flink-table-api</h1><h2 id="Hippo和Tube如何实现重放"><a href="#Hippo和Tube如何实现重放" class="headerlink" title="Hippo和Tube如何实现重放?"></a>Hippo和Tube如何实现重放?</h2><h3 id="FlinkHippoConsumer"><a href="#FlinkHippoConsumer" class="headerlink" title="FlinkHippoConsumer"></a>FlinkHippoConsumer</h3><h2 id="举一反三"><a href="#举一反三" class="headerlink" title="举一反三"></a>举一反三</h2><h3 id="org-apache-flink-streaming-api-functions-source-RichParallelSourceFunction"><a href="#org-apache-flink-streaming-api-functions-source-RichParallelSourceFunction" class="headerlink" title="org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction"></a>org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction</h3><p>构建并行数据流的基础类，在执行时，运行时将执行与源配置的并行一样多的该函数的并行实例。</p>
 <h2 id="org-apache-flink-types-Row"><a href="#org-apache-flink-types-Row" class="headerlink" title="org.apache.flink.types.Row"></a>org.apache.flink.types.Row</h2><p>一行数据</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Object[]  fields</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/HDFS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Hadoop/HDFS/" class="post-title-link" itemprop="url">HDFS基础</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ul>
+<li>NameNode 保存这个文件的数据块信息</li>
+<li>DataNode 存储实际的文件</li>
+<li>当MR启动的时候，首先获取所要处理的文件的块信息和节点信息，然后在这些节点上同时启动任务，在数据所在节点上同时处理</li>
+</ul>
+<p>MapReduce是底层编程语言，您需要专业知识才能在此级别工作。工程师在Map Reduce上开发了一个名为Hive的层，以便用户可以使用SQL来处理HDFS中存储的数据。Hive将这些SQL查询转换为一系列Map Reduce，然后调度执行。因此，Hive极大地简化了数据处理任务。但是Hive使用底层Map Reduce体系结构，这是用于处理数据的另一层</p>
+<p>Impala 一旦部署在Hadoop集群中，它将在每个数据节点上运行自己的进程，并完全跳过MapReduce阶段。一旦收到一个SQL，Impala master节点调度数据所在的节点上直接执行任务。因为它跳过MapReduce转换阶段并直接在节点上执行，所以它可以完成每秒钟的SQL查询</p>
+<p>当您在Hive中启动查询时，在背景地图中，Reduce会出现在启动查询需要花费大量时间的画面中，就像您在Impala中启动查询一样，它使用自己的体系结构，即MPP(大规模并行处理)而不是Map Reduce来从HDFS获取结果。它在内存中执行查询，总是比磁盘快。</p>
+<p>It’s an HDFS quirk. A file that’s currently being written to will appear to have a size of 0 but once it’s closed it will show its true size</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Impala/Impala-why-faster-than-hive/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Impala/Impala-why-faster-than-hive/" class="post-title-link" itemprop="url">Impala: why faster than hive</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>[TOC]</p>
+<h1 id="Impala"><a href="#Impala" class="headerlink" title="Impala"></a>Impala</h1><blockquote>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/16755599/how-does-impala-provide-faster-query-response-compared-to-hive">How does impala provide faster query response compared to hive</a></p>
+</blockquote>
+<p>Impala = SQL on HDFS<br>Hive = SQL on Hadoop</p>
+<p>impala darmon running on datanode<br>cache some of the data that is in HDFS</p>
+<h2 id="why-fast"><a href="#why-fast" class="headerlink" title="why fast"></a>why fast</h2><blockquote>
+<p>why Impala is faster than Hive in Query processing? Below are the some key points.</p>
+</blockquote>
+<ul>
+<li>While processing SQL-like queries, Impala does not write intermediate results on disk(like in Hive MapReduce); instead full SQL processing is done in memory, which makes it faster.</li>
+<li>With Impala, the query starts its execution instantly compared to MapReduce, which may take significant time to start processing larger SQL queries and this adds more time in processing.</li>
+<li>Impala Query Planner uses smart algorithms to execute queries in multiple stages in parallel nodes to provide results faster, avoiding sorting and shuffle steps, which may be unnecessary in most of the cases.</li>
+<li>Impala has information about each data block in HDFS, so when processing the query, it takes advantage of this knowledge to distribute queries more evenly in all DataNodes.</li>
+<li>There exists Impala daemon, which runs on each DataNode. These are responsible for processing queries.When query submitted, impalad(Impala daemon) reads and writes to data file and parallelizes the query by distributing the work to all other Impala nodes in the Impala cluster.</li>
+<li>Another key reason for fast performance is that Impala first generates assembly-level code for each query. The assembly code executes faster than any other code framework because while Impala queries are running natively in memory, having a framework will add additional delay in the execution due to the framework overhead.</li>
+</ul>
+<ol>
+<li>在处理类似sql的查询时，Impala不会在磁盘上写入中间结果(如Hive MapReduce);相反，SQL处理完全是在内存中完成的，这使它更快。</li>
+<li>不使用map/reduce, 将数据fork到jvm和流量穿透是非常昂贵的。Impala将查询任务分割成子任务，在数据所在的节点上，各个节点独立并行运行，最后再单个节点上汇总结果。</li>
+<li>与MapReduce相比，Impala查询立即开始执行，MapReduce可能会花费大量时间来开始处理较大的SQL查询，这会增加处理时间。</li>
+<li>Impala Query Planner使用智能算法在并行节点中的多个stage执行查询，以更快地提供结果，避免sortinh和shuffle步骤，这在大多数情况下可能是不必要的。</li>
+<li>Impala拥有关于HDFS每个数据块的信息，因此在处理查询时，它利用这些知识在所有数据节点中更均匀地分布查询。</li>
+<li>存在在每个DataNode上运行的Impala守护进程。它们负责处理查询。当提交查询时，impalad(Impala守护进程)对数据文件进行读写操作，并通过将工作分配给Impala集群中的所有其他Impala节点来并行化查询。</li>
+<li>快速性能的另一个关键原因是Impala首先为每个查询生成汇编级别的代码。汇编代码的执行速度比任何其他代码框架都快，因为Impala查询在本机的内存中运行时，拥有一个框架会由于框架开销而增加额外的执行延迟。</li>
+<li>它使用hdfs存储，对于大文件来说速度很快。它尽可能多地缓存查询、结果和数据。</li>
+<li>它支持新的文件格式，如parquet，即列式存储格式。使用这种格式，数据扫描量更少</li>
+</ol>
+<p>Impala在内存中的处理所有查询，因此节点上的内存限制肯定是一个因素。必须有足够的内存来支持生成的数据集，在复杂的连接操作期间，数据集可能会成倍增长。如果查询开始处理数据，结果数据集无法装入可用内存，则查询将失败。</p>
+<h3 id="disadvantage"><a href="#disadvantage" class="headerlink" title="disadvantage"></a>disadvantage</h3><ol>
+<li>不支持UDF和自定义序列化</li>
+<li>impala查询是HiveSQL的子集</li>
+<li>hive支持存储和查询，而impala只能查询</li>
+</ol>
+<h2 id="Impala-doesn’t-provide-fault-tolerance-compared-to-Hive"><a href="#Impala-doesn’t-provide-fault-tolerance-compared-to-Hive" class="headerlink" title="Impala doesn’t provide fault-tolerance compared to Hive"></a>Impala doesn’t provide fault-tolerance compared to Hive</h2><p>so if there is a problem during your query then it’s gone. </p>
+<blockquote>
+<p>Definitely for ETL type of jobs where failure of one job would be costly I would recommend Hive, but Impala can be awesome for small ad-hoc queries, for example for data scientists or business analysts who just want to take a look and analyze some data without building robust jobs. Also from my personal experience, Impala is still not very mature, and I’ve seen some crashes sometimes when the amount of data is larger than available memory.</p>
+</blockquote>
+<p>对于ETL类型的工作，如果一个工作的失败代价很高，我会推荐Hive，但是Impala对于小的特别查询来说可能是很棒的，例如对于那些只想查看和分析一些数据而不想构建健壮工作的数据科学家或业务分析师来说。从我个人的经验来看，Impala还不太成熟，有时当数据量超过可用内存时，我会看到一些崩溃。</p>
+<blockquote>
+<p>This means if your join, sort, or group by didn’t fit in memory, Impala would just kill the query. No warning. Just dead. Hive would never do that because it’s underlying processing architecture has no problem doing that.</p>
+</blockquote>
+<p>这就意味着，内存不能承载join sort或group运算，Impala会无告警的立即kill掉查询，直接失败。而hive离线处理架构可以轻松处理，不会死掉</p>
+<h2 id="MPP"><a href="#MPP" class="headerlink" title="MPP"></a>MPP</h2><blockquote>
+<p>Impala uses MPP(massively parallel processing) unlike Hive which uses MapReduce under the hood, which involves some initial overheads (as Charles sir has specified). Massively parallel processing is a type of computing that uses many separate CPUs running in parallel to execute a single program where each CPU has it’s own dedicated memory. The very fact that Impala, being MPP based, doesn’t involve the overheads of a MapReduce jobs viz. job setup and creation, slot assignment, split creation, map generation etc., makes it blazingly fast.</p>
+</blockquote>
+<p>Impala提供了更快的响应，因为它使用了MPP(大规模并行处理)，而Hive在底层使用了MapReduce，这涉及到一些初始开销(正如Charles sir所指定的)。大规模并行处理是一种计算类型，它使用许多单独的并行运行的CPU来执行单个程序，其中每个CPU都有自己的专用内存。Impala是基于MPP的，它不涉及MapReduce作业的开销，即作业设置和创建、插槽分配、分割创建、地图生成等，这使得它的运行速度非常快。</p>
+<blockquote>
+<p>But that doesn’t mean that Impala is the solution to all your problems. Being highly memory intensive (MPP), it is not a good fit for tasks that require heavy data operations like joins etc., as you just can’t fit everything into the memory. This is where Hive is a better fit.</p>
+</blockquote>
+<p>MPP 作为高度内存密集型的运算，因为无法将所有的数据放入内存，并不适合需要大数据量的操作(如join)；反而Hive更适合</p>
+<p>实时的对部分数据即时查询适合Impala，对大数据的批处理请求，适合Hive</p>
+<h2 id="Impala-not-always-faster-than-hive"><a href="#Impala-not-always-faster-than-hive" class="headerlink" title="Impala not always faster than hive"></a>Impala not always faster than hive</h2><blockquote>
+<p>In my current job we used to make all the querys with Impala, the biggest query (like 800 million rows after 8 joins) was taking from 2 to 20 mins (depending if the tables where already on memory or not) I migrate that Query to Hive, partitioned the tables and create buckets on them, now it takes 3–4 mins, It may be a few more seconds than the best 2 mins with Impala but it’s much more fast if we consider that most of the time Impala takes 12–18 mins.</p>
+</blockquote>
+<p>在我目前的工作中，使用Impala进行所有的查询，最大的查询(比如8个连接后的8亿行)需要2到20分钟(取决于表是否已经在内存中);我将该查询迁移到Hive，对表进行分区并在其上创建桶，现在需要3到4分钟，这可能比Impala最好的2分钟多几秒钟，但如果我们考虑Impala大部分时间需要12到18分钟，速度会快得多。 </p>
 
       
     </div>
@@ -835,7 +759,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -967,7 +891,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1076,7 +1000,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1137,6 +1061,88 @@
 <li>《深入Java虚拟机——JVM高级特性与最佳实践》</li>
 <li><a target="_blank" rel="noopener" href="http://www.ibm.com/developerworks/cn/java/j-jtp06197.html">Java 理论与实践: 正确使用 Volatile 变量</a></li>
 </ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/skill/Image-zip-square-portrait/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/skill/Image-zip-square-portrait/" class="post-title-link" itemprop="url">Java图片处理一(压缩图片与生成微信头像)</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-07-14 14:58:00" itemprop="dateCreated datePublished" datetime="2016-07-14T14:58:00+08:00">2016-07-14</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:36:17" itemprop="dateModified" datetime="2021-04-04T08:36:17+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="读入图片-本地图片和网络图片"><a href="#读入图片-本地图片和网络图片" class="headerlink" title="读入图片(本地图片和网络图片)"></a>读入图片(本地图片和网络图片)</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">InputStream <span class="title">readImageFromPath</span><span class="params">(String filePath)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (filePath.startsWith(<span class="string">&quot;http&quot;</span>)) &#123;</span><br><span class="line">            URL url = <span class="keyword">null</span>;</span><br><span class="line">            HttpURLConnection conn;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                url = <span class="keyword">new</span> URL(filePath);</span><br><span class="line">                conn = (HttpURLConnection) url.openConnection();</span><br><span class="line">                conn.setDoInput(<span class="keyword">true</span>);</span><br><span class="line">                conn.connect();</span><br><span class="line">                InputStream inputStream = conn.getInputStream();</span><br><span class="line">                <span class="keyword">return</span> inputStream;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (MalformedURLException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> FileInputStream(<span class="keyword">new</span> File(filePath));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// BufferedImage bi = ImageIO.read(readImageFromPath(filePath));</span></span><br></pre></td></tr></table></figure>
+<h1 id="压缩图像"><a href="#压缩图像" class="headerlink" title="压缩图像"></a>压缩图像</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 图片缩放</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> filePath</span></span><br><span class="line"><span class="comment"> *            图片路径</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> height</span></span><br><span class="line"><span class="comment"> *            高度</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> width</span></span><br><span class="line"><span class="comment"> *            宽度</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> bb</span></span><br><span class="line"><span class="comment"> *            比例不对时是否需要补白</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">BufferedImage <span class="title">resize2</span><span class="params">(String filePath, <span class="keyword">int</span> height, <span class="keyword">int</span> width, <span class="keyword">boolean</span> bb)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="keyword">double</span> ratio = <span class="number">0</span>; <span class="comment">// 缩放比例</span></span><br><span class="line">		BufferedImage bi = ImageIO.read(readImageFromPath(filePath));</span><br><span class="line">		Image itemp = bi.getScaledInstance(width, height,</span><br><span class="line">				Image.SCALE_SMOOTH);</span><br><span class="line">		<span class="comment">// 计算比例</span></span><br><span class="line">		<span class="keyword">if</span> ((bi.getHeight() &gt; height) || (bi.getWidth() &gt; width)) &#123;</span><br><span class="line">			<span class="keyword">if</span> (bi.getHeight() &gt; bi.getWidth()) &#123;</span><br><span class="line">				ratio = (<span class="keyword">new</span> Integer(height)).doubleValue()</span><br><span class="line">						/ bi.getHeight();</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				ratio = (<span class="keyword">new</span> Integer(width)).doubleValue() / bi.getWidth();</span><br><span class="line">			&#125;</span><br><span class="line">			AffineTransformOp op = <span class="keyword">new</span> AffineTransformOp(</span><br><span class="line">					AffineTransform.getScaleInstance(ratio, ratio), <span class="keyword">null</span>);</span><br><span class="line">			itemp = op.filter(bi, <span class="keyword">null</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> (bb) &#123;</span><br><span class="line">			BufferedImage image = <span class="keyword">new</span> BufferedImage(width, height,</span><br><span class="line">					BufferedImage.TYPE_INT_RGB);</span><br><span class="line">			Graphics2D g = image.createGraphics();</span><br><span class="line">			g.setColor(Color.white);</span><br><span class="line">			g.fillRect(<span class="number">0</span>, <span class="number">0</span>, width, height);</span><br><span class="line">			<span class="keyword">if</span> (width == itemp.getWidth(<span class="keyword">null</span>))</span><br><span class="line">				g.drawImage(itemp, <span class="number">0</span>, (height - itemp.getHeight(<span class="keyword">null</span>)) / <span class="number">2</span>,</span><br><span class="line">						itemp.getWidth(<span class="keyword">null</span>), itemp.getHeight(<span class="keyword">null</span>),</span><br><span class="line">						Color.white, <span class="keyword">null</span>);</span><br><span class="line">			<span class="keyword">else</span></span><br><span class="line">				g.drawImage(itemp, (width - itemp.getWidth(<span class="keyword">null</span>)) / <span class="number">2</span>, <span class="number">0</span>,</span><br><span class="line">						itemp.getWidth(<span class="keyword">null</span>), itemp.getHeight(<span class="keyword">null</span>),</span><br><span class="line">						Color.white, <span class="keyword">null</span>);</span><br><span class="line">			g.dispose();</span><br><span class="line">			itemp = image;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> (BufferedImage) itemp;</span><br><span class="line">	&#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">		e.printStackTrace();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="生成微信头像"><a href="#生成微信头像" class="headerlink" title="生成微信头像"></a>生成微信头像</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ImageElement</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> left;</span><br><span class="line">	<span class="keyword">int</span> top;</span><br><span class="line">	BufferedImage bufferedImage;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 最多行列数</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> MAX_GRIDS = <span class="number">3</span>;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 行间距</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> spacing = <span class="number">5</span>;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 边距</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> border = <span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 图片的目标大小</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">int</span> width = <span class="number">200</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">ImageCombinationUtil</span><span class="params">()</span> </span>&#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 生成组合头像</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> paths</span></span><br><span class="line"><span class="comment"> *            用户图像</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@throws</span> IOException</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">getCombinationOfhead</span><span class="params">(List&lt;String&gt; paths)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">	<span class="keyword">int</span> pathSize = paths.size();</span><br><span class="line">	<span class="keyword">if</span> (pathSize == <span class="number">0</span>) &#123;</span><br><span class="line">		<span class="keyword">return</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">int</span> maxImageCount = MAX_GRIDS * MAX_GRIDS;</span><br><span class="line">	<span class="keyword">int</span> imageCount = pathSize &gt; maxImageCount ? maxImageCount : pathSize;</span><br><span class="line">	<span class="keyword">int</span> grids = (<span class="keyword">int</span>) Math.ceil(Math.sqrt(imageCount));</span><br><span class="line">	grids = grids &gt; MAX_GRIDS ? MAX_GRIDS : grids;</span><br><span class="line">	<span class="keyword">int</span> hrow = imageCount / grids;</span><br><span class="line">	<span class="keyword">int</span> rows = hrow + (imageCount - hrow * grids &gt; <span class="number">0</span> ? <span class="number">1</span> : <span class="number">0</span>);</span><br><span class="line">	<span class="keyword">int</span> columnCountOfLastRow = imageCount - (rows - <span class="number">1</span>) * grids;</span><br><span class="line">	<span class="keyword">int</span> columns = imageCount / rows;</span><br><span class="line">	columns = imageCount - columns * rows &gt; <span class="number">0</span> ? columns + <span class="number">1</span> : columns;</span><br><span class="line">	System.out.println(<span class="string">&quot;imageCount :&quot;</span> + pathSize + <span class="string">&quot;\t grids :&quot;</span> + grids</span><br><span class="line">			+ <span class="string">&quot;\trows:&quot;</span> + rows + <span class="string">&quot;\t columns:&quot;</span> + columns</span><br><span class="line">			+ <span class="string">&quot;\t columnsOfLastRow:&quot;</span> + columnCountOfLastRow);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">int</span>[] matrix = <span class="keyword">new</span> <span class="keyword">int</span>[rows];</span><br><span class="line">	Arrays.fill(matrix, grids);</span><br><span class="line">	matrix[<span class="number">0</span>] = columnCountOfLastRow;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 计算每个图片的尺寸</span></span><br><span class="line">	<span class="keyword">int</span> imageMeasure = (width - <span class="number">2</span> * border - (grids - <span class="number">1</span>)</span><br><span class="line">			* spacing)</span><br><span class="line">			/ grids;</span><br><span class="line"></span><br><span class="line">	List&lt;ImageElement&gt; imageElements = <span class="keyword">new</span> ArrayList&lt;ImageElement&gt;();</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; imageCount; i++) &#123;</span><br><span class="line">		ImageElement imageMatrix = <span class="keyword">new</span> ImageElement();</span><br><span class="line">		imageMatrix.bufferedImage = ImageCombinationUtil.resize2(paths.get(i),</span><br><span class="line">				imageMeasure, imageMeasure, <span class="keyword">true</span>);</span><br><span class="line">		imageElements.add(imageMatrix);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 计算坐标</span></span><br><span class="line">	<span class="keyword">int</span> top = border;</span><br><span class="line">	top = rows &lt; grids ? top + (spacing + imageMeasure) * (grids - rows)</span><br><span class="line">			/ <span class="number">2</span> : top;</span><br><span class="line">	<span class="keyword">int</span> imageIndex = <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">for</span> (<span class="keyword">int</span> row = <span class="number">0</span>; row &lt; matrix.length; row++) &#123;</span><br><span class="line">		<span class="keyword">int</span> column = <span class="number">0</span>;</span><br><span class="line">		<span class="keyword">int</span> left = border;</span><br><span class="line">		left = matrix[row] &lt; grids ? left + (spacing + imageMeasure)</span><br><span class="line">				* (grids - matrix[row])/<span class="number">2</span> : left;</span><br><span class="line">		<span class="keyword">while</span> (column &lt; matrix[row]) &#123;</span><br><span class="line">			imageElements.get(imageIndex).left = left + column</span><br><span class="line">					* (imageMeasure + spacing);</span><br><span class="line">			imageElements.get(imageIndex).top = top + row</span><br><span class="line">					* (imageMeasure + spacing);</span><br><span class="line">			imageIndex++;</span><br><span class="line">			column++;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 创建画板</span></span><br><span class="line">	BufferedImage outImage1 = <span class="keyword">new</span> BufferedImage(width,</span><br><span class="line">			width, BufferedImage.TYPE_INT_RGB);</span><br><span class="line">	<span class="comment">// 生成画布</span></span><br><span class="line">	Graphics g = outImage1.getGraphics();</span><br><span class="line">	Graphics2D g2d = (Graphics2D) g;</span><br><span class="line">	<span class="comment">// 设置背景色</span></span><br><span class="line">	g2d.setBackground(<span class="keyword">new</span> Color(<span class="number">231</span>, <span class="number">231</span>, <span class="number">231</span>));</span><br><span class="line">	<span class="comment">// 通过使用当前绘图表面的背景色进行填充来清除指定的矩形。</span></span><br><span class="line">	g2d.clearRect(<span class="number">0</span>, <span class="number">0</span>, width, width);</span><br><span class="line">	<span class="comment">// 绘制</span></span><br><span class="line">	<span class="keyword">for</span> (ImageElement imageElement : imageElements) &#123;</span><br><span class="line">		g2d.drawImage(imageElement.bufferedImage, imageElement.left,</span><br><span class="line">				imageElement.top, <span class="keyword">null</span>);</span><br><span class="line">		<span class="comment">// 需要改变颜色的话在这里绘上颜色。可能会用到AlphaComposite类</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	String outPath = <span class="string">&quot;d:\\&quot;</span> + System.currentTimeMillis() + <span class="string">&quot;.jpg&quot;</span>;</span><br><span class="line">	String format = <span class="string">&quot;JPG&quot;</span>;</span><br><span class="line">	ImageIO.write(outImage1, format, <span class="keyword">new</span> File(outPath));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>效果</p>
+<p><img src="/images/java/util/imageCombinResult.png"></p>
+<h1 id="图像转化为InputStream"><a href="#图像转化为InputStream" class="headerlink" title="图像转化为InputStream"></a>图像转化为InputStream</h1><p>方便直接从内存上传到服务器</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">InputStream <span class="title">image2InputStream</span><span class="params">(BufferedImage bufferedImage)</span> </span>&#123;</span><br><span class="line">	InputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">	ByteArrayOutputStream outputStream = <span class="keyword">new</span> ByteArrayOutputStream();</span><br><span class="line">	ImageOutputStream imageOutputStream = <span class="keyword">null</span>;</span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		imageOutputStream = ImageIO.createImageOutputStream(outputStream);</span><br><span class="line">		ImageIO.write(bufferedImage, <span class="string">&quot;JPG&quot;</span>, imageOutputStream);</span><br><span class="line">		inputStream = <span class="keyword">new</span> ByteArrayInputStream(outputStream.toByteArray());</span><br><span class="line">	&#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">		e.printStackTrace();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> inputStream;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
 
       
     </div>
@@ -1228,13 +1234,13 @@
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">118</span>
+        <span class="site-state-item-count">121</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

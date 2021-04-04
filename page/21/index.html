@@ -183,113 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_3_multitable_join/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/syntax_3_multitable_join/" class="post-title-link" itemprop="url">MySQL多表关联与笛卡尔积</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-10-13 00:00:00" itemprop="dateCreated datePublished" datetime="2016-10-13T00:00:00+08:00">2016-10-13</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="多表关联"><a href="#多表关联" class="headerlink" title="多表关联"></a>多表关联</h1><p>内联接 外联接 左外联接 右外连接 全外连接 自然联接</p>
-<h1 id="笛卡尔"><a href="#笛卡尔" class="headerlink" title="笛卡尔"></a>笛卡尔</h1><p>笛卡尔（Descartes）乘积又叫直积。假设集合A={a,b}，集合B={0,1,2}，则两个集合的笛卡尔积为</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">(a,0),</span><br><span class="line">(a,1),</span><br><span class="line">(a,2),</span><br><span class="line">(b,0),</span><br><span class="line">(b,1),</span><br><span class="line">(b,2)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以扩展到多个集合的情况。</p>
-<h2 id="内连接"><a href="#内连接" class="headerlink" title="内连接"></a>内连接</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a,b <span class="keyword">where</span> a.x <span class="operator">=</span> b.x; <span class="operator">/</span><span class="operator">/</span>内连接</span><br></pre></td></tr></table></figure>
-<p>与</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">inner</span> <span class="keyword">join</span> b <span class="keyword">on</span> a.x<span class="operator">=</span>b.x; <span class="operator">/</span><span class="operator">/</span>内连接</span><br></pre></td></tr></table></figure>
-<p>效果是一样的，都是计算笛卡尔积，对上面笛卡尔积的每一条记录看它是否满足限制条件，如果满足，则它在结果集中。</p>
-<h2 id="外连接"><a href="#外连接" class="headerlink" title="外连接"></a>外连接</h2><p>当外连接，不加任何条件时，也会计算笛卡尔积。如：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">left</span> <span class="keyword">join</span> b <span class="keyword">on</span> <span class="number">1</span><span class="operator">=</span><span class="number">1</span>;</span><br></pre></td></tr></table></figure>
-
-<h2 id="交叉连接-CROSS-JOIN"><a href="#交叉连接-CROSS-JOIN" class="headerlink" title="交叉连接(CROSS JOIN)"></a>交叉连接(CROSS JOIN)</h2><p>没有WHERE 子句，它返回<code>连接表</code>中所有数据行的笛卡尔积<br>先返回 左表所有行，左表行在与右表行一一组合，等于两个表相乘.</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">cross</span> <span class="keyword">join</span> b <span class="keyword">where</span> a.x<span class="operator">=</span>b.x;</span><br></pre></td></tr></table></figure>
-<p>等同于</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">inner</span> <span class="keyword">join</span> b <span class="keyword">on</span> a.x<span class="operator">=</span>b.x;</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>MySQL中不存在交叉连接</p>
-</blockquote>
-<h2 id="避免笛卡尔积的方法"><a href="#避免笛卡尔积的方法" class="headerlink" title="避免笛卡尔积的方法"></a>避免笛卡尔积的方法</h2><p>由于笛卡尔积的结果集是各个查询表规模之积，往往是数量级的差别。</p>
-<h3 id="转换为子查询"><a href="#转换为子查询" class="headerlink" title="转换为子查询"></a>转换为子查询</h3><p>假设存在如下三个表:</p>
-<p>查询方式一:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">DISTINCT</span></span><br><span class="line">	u.user_id <span class="keyword">AS</span> recommendUserId</span><br><span class="line"><span class="keyword">FROM</span></span><br><span class="line">	user_info u</span><br><span class="line"><span class="keyword">WHERE</span></span><br><span class="line">	<span class="number">1</span> <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"><span class="keyword">AND</span> u.user_id <span class="keyword">IN</span> (</span><br><span class="line">	<span class="keyword">SELECT</span></span><br><span class="line">		a.entity_id</span><br><span class="line">	<span class="keyword">FROM</span></span><br><span class="line">		address_info a</span><br><span class="line">	<span class="keyword">WHERE</span></span><br><span class="line">		a.city_code <span class="operator">=</span> <span class="number">10010</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-<p>查询方式二：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="keyword">DISTINCT</span></span><br><span class="line">	u.user_id <span class="keyword">AS</span> recommendUserId</span><br><span class="line"><span class="keyword">FROM</span></span><br><span class="line">	user_info u,</span><br><span class="line">	address_info a</span><br><span class="line"><span class="keyword">WHERE</span></span><br><span class="line">	<span class="number">1</span> <span class="operator">=</span> <span class="number">1</span></span><br><span class="line"><span class="keyword">AND</span> a.city_code <span class="operator">=</span> <span class="string">&#x27;10010&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>对比发现： ‘查询方式一’使用了子查询，查询是分两步进行的，第一步先从<code>address_info</code>选出一个结果，然后在<code>user_info</code>中查询，规模为<code>user_info</code>的大小。<br>而<code>查询方式二</code>查询规模是笛卡尔积，即<code>user_info</code>与<code>address_info</code>规模之积。</p>
-<h1 id="内连接-1"><a href="#内连接-1" class="headerlink" title="内连接"></a>内连接</h1><p>内连 接只保留交叉积中满足连接条件的那些行。如果某行在一个表中存在，但在另一个表中不存在，则结果表中不包括该信息。</p>
-<h1 id="外连接-1"><a href="#外连接-1" class="headerlink" title="外连接"></a>外连接</h1><p>左外连 接包括内连 接和左表中未包括在内连 接中的那些行。</p>
-<p>右外连 接包括内连 接和右表中未包括在内连 接中的那些行。</p>
-<p>全外连 接包括内连 接以及左表和右表中未包括在内连 接中的行。<br>内连 接一般是检索两个表里连接字段都存在的数据。<br>左连接的意思是，查询左（语句前面）表里的所有内容，无论右边表里有没有。右边表里没有的内容用NULL代替。<br>右连接和左连接相反。</p>
-<h2 id="左外连接"><a href="#左外连接" class="headerlink" title="左外连接"></a>左外连接</h2><h2 id="右外连接"><a href="#右外连接" class="headerlink" title="右外连接"></a>右外连接</h2><h2 id="全外连接"><a href="#全外连接" class="headerlink" title="全外连接"></a>全外连接</h2><h1 id="交叉连接"><a href="#交叉连接" class="headerlink" title="交叉连接"></a>交叉连接</h1><hr>
-<p>[参考文献]：</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_8250c39a0101k74c.html">SQL中—-SELECT语句中内连接,左连接,右连接,自连接和全连接 </a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/Quartz/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -321,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -436,7 +329,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -598,7 +491,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -675,7 +568,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:17" itemprop="dateModified" datetime="2021-04-04T08:36:17+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -771,7 +664,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -903,7 +796,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -990,7 +883,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:29" itemprop="dateModified" datetime="2021-04-04T08:28:29+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:17" itemprop="dateModified" datetime="2021-04-04T08:36:17+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1101,7 +994,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1177,7 +1070,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1269,6 +1162,82 @@
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/02.%E4%BA%BF%E7%BA%A7%E6%B5%81%E9%87%8F_%E7%A7%92%E7%BA%A7%E7%BB%9F%E8%AE%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/02.%E4%BA%BF%E7%BA%A7%E6%B5%81%E9%87%8F_%E7%A7%92%E7%BA%A7%E7%BB%9F%E8%AE%A1/" class="post-title-link" itemprop="url">亿级流量秒级统计</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-10T14:58:00+08:00">2016-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>#【亿级流量 秒级统计】</p>
+<p><strong>AI、ML、DL、ANN、CNN</strong> 蛰伏数十年，就为这个大数据时代。</p>
+<p>AI正以前所未有的速度改变世界，影响着我们生活的方方面面，AI走进人们的生活将成为未来的新常态。<br>而大数据和计算能力像水和氧气一样支撑着AI，我们的数据从手机端、服务器日志</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
@@ -1345,13 +1314,13 @@
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">118</span>
+        <span class="site-state-item-count">121</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
