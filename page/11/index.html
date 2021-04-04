@@ -183,419 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/01.MySQL/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/01.MySQL/" class="post-title-link" itemprop="url">MacOS中MySQL密码丢失处理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="01-MySQL"><a href="#01-MySQL" class="headerlink" title="01.MySQL"></a>01.MySQL</h1><h2 id="修改root密码-不成功"><a href="#修改root密码-不成功" class="headerlink" title="修改root密码 不成功"></a>修改root密码 不成功</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">Open &amp; Edit /etc/my.cnf or /etc/mysql/my.cnf, depending on your distro.</span><br><span class="line">Add skip-grant-tables under [mysqld]</span><br><span class="line">Restart Mysql</span><br><span class="line">You should be able to login to mysql now using the below command mysql -u root -p</span><br><span class="line">Run mysql&gt; flush privileges;</span><br><span class="line">Set new password by ALTER USER &#x27;root&#x27;@&#x27;localhost&#x27; IDENTIFIED BY &#x27;NewPassword&#x27;;</span><br><span class="line">Go back to /etc/my.cnf and remove/comment skip-grant-tables</span><br><span class="line">Restart Mysql</span><br><span class="line">Now you will be able to login with the new password mysql -u root -p</span><br></pre></td></tr></table></figure>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> drop user root@localhost;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> flush privileges;</span></span><br><span class="line">Query OK, 0 rows affected (0.00 sec)</span><br><span class="line"></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> create user root@localhost identified by <span class="string">&#x27;abc.123&#x27;</span>;</span></span><br><span class="line">Query OK, 0 rows affected (0.02 sec)</span><br><span class="line"></span><br><span class="line">grant all privileges on *.* to root@localhost;</span><br><span class="line"></span><br><span class="line">flush privileges;</span><br></pre></td></tr></table></figure>
-<h2 id="mac-brew重装-不成功"><a href="#mac-brew重装-不成功" class="headerlink" title="mac brew重装 不成功"></a>mac brew重装 不成功</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">brew uninstall mysql --ignore-dependencies</span><br><span class="line">sudo rm -rf /usr/local/Cellar/mysql</span><br><span class="line">brew cleanup</span><br><span class="line">sudo rm -rf /usr/local/var/mysql</span><br><span class="line">brew install mysql</span><br></pre></td></tr></table></figure>
-<h2 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h2><h3 id="创建索引"><a href="#创建索引" class="headerlink" title="创建索引"></a>创建索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t_zxg_hot_news_result <span class="keyword">add</span> index</span><br><span class="line"> idx_hot_news_cnt (ftype,fcnt,ftime,fnews_id,fmsg_type);</span><br></pre></td></tr></table></figure>
-<h3 id="删除索引"><a href="#删除索引" class="headerlink" title="删除索引"></a>删除索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">alter</span> <span class="keyword">table</span> t_zxg_hot_news_result <span class="keyword">drop</span> index idx_hot_news_cnt ;</span><br></pre></td></tr></table></figure>
-<h3 id="查询索引"><a href="#查询索引" class="headerlink" title="查询索引"></a>查询索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> t_zxg_hot_news_result;</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+------------+------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">Table</span>                 <span class="operator">|</span> Non_unique <span class="operator">|</span> Key_name         <span class="operator">|</span> Seq_in_index <span class="operator">|</span> Column_name <span class="operator">|</span> <span class="keyword">Collation</span> <span class="operator">|</span> <span class="keyword">Cardinality</span> <span class="operator">|</span> Sub_part <span class="operator">|</span> Packed <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Index_type <span class="operator">|</span> Comment <span class="operator">|</span> Index_comment <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+------------+------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">0</span>          <span class="operator">|</span> <span class="keyword">PRIMARY</span>          <span class="operator">|</span> <span class="number">1</span>            <span class="operator">|</span> fid         <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">765715</span>      <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">1</span>            <span class="operator">|</span> ftype       <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">5</span>           <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">2</span>            <span class="operator">|</span> fcnt        <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">4072</span>        <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">3</span>            <span class="operator">|</span> ftime       <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">49236</span>       <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> YES  <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">4</span>            <span class="operator">|</span> fnews_id    <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">800020</span>      <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> t_zxg_hot_news_result <span class="operator">|</span> <span class="number">1</span>          <span class="operator">|</span> idx_hot_news_cnt <span class="operator">|</span> <span class="number">5</span>            <span class="operator">|</span> fmsg_type   <span class="operator">|</span> A         <span class="operator">|</span> <span class="number">792176</span>      <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>   <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span>      <span class="operator">|</span> BTREE      <span class="operator">|</span>         <span class="operator">|</span>               <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------+------------+------------------+--------------+-------------+-----------+-------------+----------+--------+------+------------+---------+---------------+</span></span><br></pre></td></tr></table></figure>
-
-
-
-
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/02.InnoDBLocks/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/02.InnoDBLocks/" class="post-title-link" itemprop="url">InnoDB中的锁机制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:18" itemprop="dateModified" datetime="2021-04-04T08:36:18+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="InnoDB中的锁机制"><a href="#InnoDB中的锁机制" class="headerlink" title="InnoDB中的锁机制"></a>InnoDB中的锁机制</h1><p>获取锁争用情况</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">mysql root<span class="variable">@localhost</span>:dlock<span class="operator">&gt;</span> <span class="keyword">show</span> status <span class="keyword">like</span> <span class="string">&#x27;innodb_row_lock%&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="operator">+</span><span class="comment">-------------------------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Variable_name                 <span class="operator">|</span> <span class="keyword">Value</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------------------------------+-------+</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_current_waits <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_time          <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_time_avg      <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_time_max      <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> Innodb_row_lock_waits         <span class="operator">|</span> <span class="number">0</span>     <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------------------------------+-------+</span></span><br><span class="line"><span class="number">5</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"><span class="type">Time</span>: <span class="number">0.012</span>s</span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/DataTypesAndSerialization/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/DataTypesAndSerialization/" class="post-title-link" itemprop="url">Flink:数据类型与序列化</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Flink-Data-Types-amp-Serialization"><a href="#Flink-Data-Types-amp-Serialization" class="headerlink" title="Flink Data Types &amp; Serialization"></a>Flink Data Types &amp; Serialization</h1><h2 id="使用case-class的坑"><a href="#使用case-class的坑" class="headerlink" title="使用case class的坑"></a>使用case class的坑</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="class"><span class="keyword">class</span> <span class="title">Event</span>(<span class="params">id: <span class="type">Int</span></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">val</span> lb = <span class="keyword">new</span> <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">13:00:43,342 INFO  org.apache.flink.api.java.typeutils.TypeExtractor             - class org.myorg.quickstart.Event does not contain a setter for field id</span><br><span class="line">13:00:43,343 INFO  org.apache.flink.api.java.typeutils.TypeExtractor             - Class class org.myorg.quickstart.Event cannot be used as a POJO type because not all fields are valid POJO fields, and must be processed as GenericType. Please read the Flink documentation on &quot;Data Types &amp; Serialization&quot; for details of the effect on performance.</span><br></pre></td></tr></table></figure>
-<p><strong>提示信息：找不到setter，对于POJO类型必须所有的字段必须要有setter和getter</strong><br>命名是case class啊</p>
-<p>再看生产环境的例子： 折腾了一下午</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="class"><span class="keyword">class</span> <span class="title">Event</span>(<span class="params">uin: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 sPid: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 applyId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 bankType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 transactionId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 amount: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 createTime: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 bizType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 modifyTime: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 equ: <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span></span></span><br><span class="line"><span class="class"><span class="params">                </span>) </span>&#123;</span><br><span class="line"></span><br><span class="line">   <span class="function"><span class="keyword">def</span> <span class="title">this</span></span>(uin: <span class="type">String</span>,</span><br><span class="line">           sPid: <span class="type">String</span>,</span><br><span class="line">           applyId: <span class="type">String</span>,</span><br><span class="line">           bankType: <span class="type">Long</span>,</span><br><span class="line">           transactionId: <span class="type">String</span>,</span><br><span class="line">           amount: <span class="type">Long</span>,</span><br><span class="line">           createTime: <span class="type">Long</span>,</span><br><span class="line">           bizType: <span class="type">Long</span>,</span><br><span class="line">           modifyTime: <span class="type">String</span>,</span><br><span class="line">           equ: <span class="type">List</span>[<span class="type">Int</span>]</span><br><span class="line">          ) = &#123;</span><br><span class="line">    <span class="keyword">this</span>(uin, sPid, applyId, bankType, transactionId, amount, createTime, bizType, modifyTime)</span><br><span class="line">    <span class="keyword">if</span> (equ != <span class="literal">null</span>) &#123;</span><br><span class="line">      equities.appendAll(equ)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> _active = <span class="literal">false</span></span><br><span class="line">  <span class="keyword">val</span> equities: <span class="type">ListBuffer</span>[<span class="type">Int</span>] = <span class="keyword">new</span> <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">addEquity</span></span>(id: <span class="type">Int</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    equities.append(id)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">equityString</span></span>(separator: <span class="type">String</span>): <span class="type">String</span> = &#123;</span><br><span class="line">    equities.mkString(separator)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="literal">true</span></span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(active: <span class="type">String</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="string">&quot;1&quot;</span>.equals(active)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">isActive</span></span>() = &#123;</span><br><span class="line">    _active</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>使用的是flink 1.6版本的，case class识别出来了，但是equities没有传递到下一个算子中，始终没有值</p>
-<p>老老实实的修改成普通类</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Event</span>(<span class="params">_uin: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _sPid: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _applyId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _bankType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _transactionId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _amount: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _createTime: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _bizType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _modifyTime: <span class="type">String</span></span></span></span><br><span class="line"><span class="class"><span class="params">           </span>) <span class="keyword">extends</span> <span class="title">Serializable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> equities: <span class="type">ListBuffer</span>[<span class="type">Int</span>] = <span class="keyword">new</span> <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> uin: <span class="type">String</span> = _uin</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> sPid: <span class="type">String</span> = _sPid</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> applyId: <span class="type">String</span> = _applyId</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> bankType: <span class="type">Long</span> = _bankType</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> transactionId: <span class="type">String</span> = _transactionId</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> amount: <span class="type">Long</span> = _amount</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> createTime: <span class="type">Long</span> = _createTime</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> bizType: <span class="type">Long</span> = _bizType</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> modifyTime: <span class="type">String</span> = _modifyTime</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> _active = <span class="literal">false</span></span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">this</span></span>(uin: <span class="type">String</span>,</span><br><span class="line">           sPid: <span class="type">String</span>,</span><br><span class="line">           applyId: <span class="type">String</span>,</span><br><span class="line">           bankType: <span class="type">Long</span>,</span><br><span class="line">           transactionId: <span class="type">String</span>,</span><br><span class="line">           amount: <span class="type">Long</span>,</span><br><span class="line">           createTime: <span class="type">Long</span>,</span><br><span class="line">           bizType: <span class="type">Long</span>,</span><br><span class="line">           modifyTime: <span class="type">String</span>,</span><br><span class="line">           equ: <span class="type">List</span>[<span class="type">Int</span>]</span><br><span class="line">          ) = &#123;</span><br><span class="line">    <span class="keyword">this</span>(uin, sPid, applyId, bankType, transactionId, amount, createTime, bizType, modifyTime)</span><br><span class="line">    <span class="keyword">if</span> (equ != <span class="literal">null</span>) &#123;</span><br><span class="line">      equities.appendAll(equ)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getUin</span></span>: <span class="type">String</span> = uin</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setUin</span></span>(<span class="type">Uin</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.uin = <span class="type">Uin</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getSPid</span></span>: <span class="type">String</span> = sPid</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setSPid</span></span>(<span class="type">SPid</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.sPid = <span class="type">SPid</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getApplyId</span></span>: <span class="type">String</span> = applyId</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setApplyId</span></span>(<span class="type">ApplyId</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.applyId = <span class="type">ApplyId</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getBankType</span></span>: <span class="type">Long</span> = bankType</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setBankType</span></span>(<span class="type">BankType</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.bankType = <span class="type">BankType</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getTransactionId</span></span>: <span class="type">String</span> = transactionId</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setTransactionId</span></span>(<span class="type">TransactionId</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.transactionId = <span class="type">TransactionId</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getAmount</span></span>: <span class="type">Long</span> = amount</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setAmount</span></span>(<span class="type">Amount</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.amount = <span class="type">Amount</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getCreateTime</span></span>: <span class="type">Long</span> = createTime</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setCreateTime</span></span>(<span class="type">CreateTime</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.createTime = <span class="type">CreateTime</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getBizType</span></span>: <span class="type">Long</span> = bizType</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setBizType</span></span>(<span class="type">BizType</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.bizType = <span class="type">BizType</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getModifyTime</span></span>: <span class="type">String</span> = modifyTime</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setModifyTime</span></span>(<span class="type">ModifyTime</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.modifyTime = <span class="type">ModifyTime</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">addEquity</span></span>(id: <span class="type">Int</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    equities.append(id)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">equityString</span></span>(separator: <span class="type">String</span>): <span class="type">String</span> = &#123;</span><br><span class="line">    equities.mkString(separator)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="literal">true</span></span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(active: <span class="type">String</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="string">&quot;1&quot;</span>.equals(active)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">isActive</span></span>() = &#123;</span><br><span class="line">    _active</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">rights</span></span>(split: <span class="type">String</span>) = &#123;</span><br><span class="line">    <span class="type">RightEvent</span>(<span class="keyword">this</span>, equities.mkString(split))</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getEquities</span> </span>= equities</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setEquities</span></span>(equities: <span class="type">ListBuffer</span>[<span class="type">Int</span>]) = &#123;</span><br><span class="line">    <span class="keyword">this</span>.equities = equities</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以了</p>
-<p>初步估计，序列化除了问题</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-DataTypesAndSerialization/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/Flink-DataTypesAndSerialization/" class="post-title-link" itemprop="url">Flink:数据类型与序列化</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:19" itemprop="dateModified" datetime="2021-04-04T08:36:19+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Flink-Data-Types-amp-Serialization"><a href="#Flink-Data-Types-amp-Serialization" class="headerlink" title="Flink Data Types &amp; Serialization"></a>Flink Data Types &amp; Serialization</h1><h2 id="使用case-class的坑"><a href="#使用case-class的坑" class="headerlink" title="使用case class的坑"></a>使用case class的坑</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="class"><span class="keyword">class</span> <span class="title">Event</span>(<span class="params">id: <span class="type">Int</span></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">val</span> lb = <span class="keyword">new</span> <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">13:00:43,342 INFO  org.apache.flink.api.java.typeutils.TypeExtractor             - class org.myorg.quickstart.Event does not contain a setter for field id</span><br><span class="line">13:00:43,343 INFO  org.apache.flink.api.java.typeutils.TypeExtractor             - Class class org.myorg.quickstart.Event cannot be used as a POJO type because not all fields are valid POJO fields, and must be processed as GenericType. Please read the Flink documentation on &quot;Data Types &amp; Serialization&quot; for details of the effect on performance.</span><br></pre></td></tr></table></figure>
-<p><strong>提示信息：找不到setter，对于POJO类型必须所有的字段必须要有setter和getter</strong><br>命名是case class啊</p>
-<p>再看生产环境的例子： 折腾了一下午</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="class"><span class="keyword">class</span> <span class="title">Event</span>(<span class="params">uin: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 sPid: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 applyId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 bankType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 transactionId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 amount: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 createTime: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 bizType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 modifyTime: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 equ: <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span></span></span><br><span class="line"><span class="class"><span class="params">                </span>) </span>&#123;</span><br><span class="line"></span><br><span class="line">   <span class="function"><span class="keyword">def</span> <span class="title">this</span></span>(uin: <span class="type">String</span>,</span><br><span class="line">           sPid: <span class="type">String</span>,</span><br><span class="line">           applyId: <span class="type">String</span>,</span><br><span class="line">           bankType: <span class="type">Long</span>,</span><br><span class="line">           transactionId: <span class="type">String</span>,</span><br><span class="line">           amount: <span class="type">Long</span>,</span><br><span class="line">           createTime: <span class="type">Long</span>,</span><br><span class="line">           bizType: <span class="type">Long</span>,</span><br><span class="line">           modifyTime: <span class="type">String</span>,</span><br><span class="line">           equ: <span class="type">List</span>[<span class="type">Int</span>]</span><br><span class="line">          ) = &#123;</span><br><span class="line">    <span class="keyword">this</span>(uin, sPid, applyId, bankType, transactionId, amount, createTime, bizType, modifyTime)</span><br><span class="line">    <span class="keyword">if</span> (equ != <span class="literal">null</span>) &#123;</span><br><span class="line">      equities.appendAll(equ)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> _active = <span class="literal">false</span></span><br><span class="line">  <span class="keyword">val</span> equities: <span class="type">ListBuffer</span>[<span class="type">Int</span>] = <span class="keyword">new</span> <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">addEquity</span></span>(id: <span class="type">Int</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    equities.append(id)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">equityString</span></span>(separator: <span class="type">String</span>): <span class="type">String</span> = &#123;</span><br><span class="line">    equities.mkString(separator)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="literal">true</span></span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(active: <span class="type">String</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="string">&quot;1&quot;</span>.equals(active)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">isActive</span></span>() = &#123;</span><br><span class="line">    _active</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>使用的是flink 1.6版本的，case class识别出来了，但是equities没有传递到下一个算子中，始终没有值</p>
-<p>老老实实的修改成普通类</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Event</span>(<span class="params">_uin: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _sPid: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _applyId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _bankType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _transactionId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _amount: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _createTime: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _bizType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _modifyTime: <span class="type">String</span></span></span></span><br><span class="line"><span class="class"><span class="params">           </span>) <span class="keyword">extends</span> <span class="title">Serializable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> equities: <span class="type">ListBuffer</span>[<span class="type">Int</span>] = <span class="keyword">new</span> <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> uin: <span class="type">String</span> = _uin</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> sPid: <span class="type">String</span> = _sPid</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> applyId: <span class="type">String</span> = _applyId</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> bankType: <span class="type">Long</span> = _bankType</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> transactionId: <span class="type">String</span> = _transactionId</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> amount: <span class="type">Long</span> = _amount</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> createTime: <span class="type">Long</span> = _createTime</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> bizType: <span class="type">Long</span> = _bizType</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> modifyTime: <span class="type">String</span> = _modifyTime</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> _active = <span class="literal">false</span></span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">this</span></span>(uin: <span class="type">String</span>,</span><br><span class="line">           sPid: <span class="type">String</span>,</span><br><span class="line">           applyId: <span class="type">String</span>,</span><br><span class="line">           bankType: <span class="type">Long</span>,</span><br><span class="line">           transactionId: <span class="type">String</span>,</span><br><span class="line">           amount: <span class="type">Long</span>,</span><br><span class="line">           createTime: <span class="type">Long</span>,</span><br><span class="line">           bizType: <span class="type">Long</span>,</span><br><span class="line">           modifyTime: <span class="type">String</span>,</span><br><span class="line">           equ: <span class="type">List</span>[<span class="type">Int</span>]</span><br><span class="line">          ) = &#123;</span><br><span class="line">    <span class="keyword">this</span>(uin, sPid, applyId, bankType, transactionId, amount, createTime, bizType, modifyTime)</span><br><span class="line">    <span class="keyword">if</span> (equ != <span class="literal">null</span>) &#123;</span><br><span class="line">      equities.appendAll(equ)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getUin</span></span>: <span class="type">String</span> = uin</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setUin</span></span>(<span class="type">Uin</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.uin = <span class="type">Uin</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getSPid</span></span>: <span class="type">String</span> = sPid</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setSPid</span></span>(<span class="type">SPid</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.sPid = <span class="type">SPid</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getApplyId</span></span>: <span class="type">String</span> = applyId</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setApplyId</span></span>(<span class="type">ApplyId</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.applyId = <span class="type">ApplyId</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getBankType</span></span>: <span class="type">Long</span> = bankType</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setBankType</span></span>(<span class="type">BankType</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.bankType = <span class="type">BankType</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getTransactionId</span></span>: <span class="type">String</span> = transactionId</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setTransactionId</span></span>(<span class="type">TransactionId</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.transactionId = <span class="type">TransactionId</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getAmount</span></span>: <span class="type">Long</span> = amount</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setAmount</span></span>(<span class="type">Amount</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.amount = <span class="type">Amount</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getCreateTime</span></span>: <span class="type">Long</span> = createTime</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setCreateTime</span></span>(<span class="type">CreateTime</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.createTime = <span class="type">CreateTime</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getBizType</span></span>: <span class="type">Long</span> = bizType</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setBizType</span></span>(<span class="type">BizType</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.bizType = <span class="type">BizType</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getModifyTime</span></span>: <span class="type">String</span> = modifyTime</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setModifyTime</span></span>(<span class="type">ModifyTime</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.modifyTime = <span class="type">ModifyTime</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">addEquity</span></span>(id: <span class="type">Int</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    equities.append(id)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">equityString</span></span>(separator: <span class="type">String</span>): <span class="type">String</span> = &#123;</span><br><span class="line">    equities.mkString(separator)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="literal">true</span></span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(active: <span class="type">String</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="string">&quot;1&quot;</span>.equals(active)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">isActive</span></span>() = &#123;</span><br><span class="line">    _active</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">rights</span></span>(split: <span class="type">String</span>) = &#123;</span><br><span class="line">    <span class="type">RightEvent</span>(<span class="keyword">this</span>, equities.mkString(split))</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getEquities</span> </span>= equities</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setEquities</span></span>(equities: <span class="type">ListBuffer</span>[<span class="type">Int</span>]) = &#123;</span><br><span class="line">    <span class="keyword">this</span>.equities = equities</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以了</p>
-<p>初步估计，序列化除了问题</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL-active/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/Flink-SQL-active/" class="post-title-link" itemprop="url">Flink-SQL实践</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Flink-SQL-active"><a href="#Flink-SQL-active" class="headerlink" title="Flink-SQL-active"></a>Flink-SQL-active</h1><p>维表同步脚本:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span></span><br><span class="line"><span class="keyword">into</span></span><br><span class="line">    dim_result_lct_activy_config</span><br><span class="line">    <span class="keyword">select</span></span><br><span class="line">        Fact_id,</span><br><span class="line">        <span class="built_in">LAST_VALUE</span>(Fact_name),</span><br><span class="line">        FROM_UNIXTIME(UNIX_TIMESTAMP(<span class="built_in">LAST_VALUE</span>(Fact_start_time)),</span><br><span class="line">        <span class="string">&#x27;yyyyMMddHHmmss&#x27;</span>) <span class="keyword">as</span> startTime,</span><br><span class="line">        FROM_UNIXTIME(UNIX_TIMESTAMP(<span class="built_in">LAST_VALUE</span>(Fact_end_time)),</span><br><span class="line">        <span class="string">&#x27;yyyyMMddHHmmss&#x27;</span>) <span class="keyword">as</span> endTime,</span><br><span class="line">        <span class="built_in">LAST_VALUE</span>(Fstate)</span><br><span class="line">    <span class="keyword">from</span></span><br><span class="line">        db_act_config_t_act_logic_config</span><br><span class="line">    <span class="keyword">group</span> <span class="keyword">by</span></span><br><span class="line">        Fact_id</span><br></pre></td></tr></table></figure>
-<p><a target="_blank" rel="noopener" href="http://apache-flink.147419.n8.nabble.com/FlinkSQL-Upsert-Retraction-MySQL-td2785.html">FlinkSQL Upsert/Retraction 写入 MySQL 的问题 </a></p>
-<p> retract流是算子的特性，不同的算子不同，比如group by聚合算子天生就是会发retract流的，比如你之前算出来的是a, 1, 后面变化了，变成了a,2，所以group by算子会发-a,1, +a,2.</p>
-<p>像join的话也是有retract流的，比如outer join</p>
-<p>当然如果下游sink支持upsert, 这块也会有优化，会优化为update。</p>
-<blockquote>
-<p>INSERT INTO  mysql_sink SELECT  f1, count(*) FROM kafka_src GROUP BY f1<br>每从 kafka 过来一条新的记录，会生成两条记录 Tuple2&lt;Row, Boolean&gt;, 旧的被删除，新的会添加上。这是query是会一个会产生retract stream的query，可以简单理解成每条kafka的数据过来会产生两条记录，但是最终写入下游的系统。需要看下游的系统支持和实现的sink(现在有三种sink AppendStreamSink, UpsertStreamSink, RetractStreamSink)</p>
-</blockquote>
-<blockquote>
-<p>我看 <a target="_blank" rel="noopener" href="https://github.com/apache/flink/tree/master/flink-connectors/flink-jdbc/src/main/java/org/apache/flink/api/java/io/jdbc">https://github.com/apache/flink/tree/master/flink-connectors/flink-jdbc/src/main/java/org/apache/flink/api/java/io/jdbc</a> 没有 Retract 方式<br>实际上使用了 JDBCUpsertTableSink.java 的代码写入 MySQL 吗？<br>现有的sink中，kafka是实现的AppendStreamSink，所以只支持insert 的记录，不支持retract.<br>你用DDL声明的mysql表，对应的jdbc sink 是JDBCUpsertTableSink，所以会按照Upsert的逻辑处理, 也不支持retract。</p>
-</blockquote>
-<blockquote>
-<p>如若不带 group by 直接：<br>INSERT INTO  mysql_sink SELECT  f1,  f2 FROM kafka_src<br>主键冲突写入 mysql 是会出错的，怎么可以用 Upsert 的方式直接覆盖呢？</p>
-</blockquote>
-<p>不带 group by时无法推导出query的 unique key，没法做按照unique key的更新，<br>只需要将 query的 key （你这里是group by 后的字段）和db中主键保持一致即可</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -627,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:19" itemprop="dateModified" datetime="2021-04-04T08:36:19+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -763,7 +350,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:19" itemprop="dateModified" datetime="2021-04-04T08:36:19+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -908,7 +495,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -981,7 +568,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:19" itemprop="dateModified" datetime="2021-04-04T08:36:19+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1244,6 +831,210 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-backpress-ext/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-backpress-ext/" class="post-title-link" itemprop="url">【转发】咱们从头到尾讲一次 Flink 网络流控和反压剖析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>本文根据 Apache Flink 系列直播整理而成，由 Apache Flink Contributor、OPPO 大数据平台研发负责人张俊老师分享。主要内容如下：</p>
+<ul>
+<li><p>网络流控的概念与背景</p>
+</li>
+<li><p>TCP的流控机制</p>
+</li>
+<li><p>Flink TCP-based 反压机制（before V1.5）</p>
+</li>
+<li><p>Flink Credit-based 反压机制 （since V1.5）</p>
+</li>
+<li><p>总结与思考</p>
+</li>
+</ul>
+<h2 id="网络流控的概念与背景"><a href="#网络流控的概念与背景" class="headerlink" title="网络流控的概念与背景"></a>网络流控的概念与背景</h2><h3 id="为什么需要网络流控"><a href="#为什么需要网络流控" class="headerlink" title="为什么需要网络流控"></a>为什么需要网络流控</h3><p><img src="_v_images/20200714171454820_132283117"></p>
+<p>首先我们可以看下这张最精简的网络流控的图，Producer 的吞吐率是 2MB/s，Consumer 是 1MB/s，这个时候我们就会发现在网络通信的时候我们的 Producer 的速度是比 Consumer 要快的，有 1MB/s 的这样的速度差，假定我们两端都有一个 Buffer，Producer 端有一个发送用的 Send Buffer，Consumer 端有一个接收用的 Receive Buffer，在网络端的吞吐率是 2MB/s，过了 5s 后我们的 Receive Buffer 可能就撑不住了，这时候会面临两种情况：</p>
+<ul>
+<li><p>1.如果 Receive Buffer 是有界的，这时候新到达的数据就只能被丢弃掉了。</p>
+</li>
+<li><p>2.如果 Receive Buffer 是无界的，Receive Buffer 会持续的扩张，最终会导致 Consumer 的内存耗尽。</p>
+</li>
+</ul>
+<h3 id="网络流控的实现：静态限速"><a href="#网络流控的实现：静态限速" class="headerlink" title="网络流控的实现：静态限速"></a>网络流控的实现：静态限速</h3><p><img src="_v_images/20200714171454414_685240728"></p>
+<p>为了解决这个问题，我们就需要网络流控来解决上下游速度差的问题，传统的做法可以在 Producer 端实现一个类似 Rate Limiter 这样的静态限流，Producer 的发送速率是 2MB/s，但是经过限流这一层后，往 Send Buffer 去传数据的时候就会降到 1MB/s 了，这样的话 Producer 端的发送速率跟 Consumer 端的处理速率就可以匹配起来了，就不会导致上述问题。但是这个解决方案有两点限制：</p>
+<ul>
+<li><p>1、事先无法预估 Consumer 到底能承受多大的速率</p>
+</li>
+<li><p>2、 Consumer 的承受能力通常会动态地波动</p>
+</li>
+</ul>
+<h3 id="网络流控的实现：动态反馈-自动反压"><a href="#网络流控的实现：动态反馈-自动反压" class="headerlink" title="网络流控的实现：动态反馈/自动反压"></a>网络流控的实现：动态反馈/自动反压</h3><p><img src="_v_images/20200714171454209_1020595047"></p>
+<p>针对静态限速的问题我们就演进到了动态反馈（自动反压）的机制，我们需要 Consumer 能够及时的给 Producer 做一个 feedback，即告知 Producer 能够承受的速率是多少。动态反馈分为两种：</p>
+<ul>
+<li><p>1、负反馈：接受速率小于发送速率时发生，告知 Producer 降低发送速率</p>
+</li>
+<li><p>2、正反馈：发送速率小于接收速率时发生，告知 Producer 可以把发送速率提上来</p>
+</li>
+</ul>
+<p>让我们来看几个经典案例</p>
+<h3 id="案例一：Storm-反压实现"><a href="#案例一：Storm-反压实现" class="headerlink" title="案例一：Storm 反压实现"></a>案例一：Storm 反压实现</h3><p><img src="_v_images/20200714171454004_1684651238"></p>
+<p>上图就是 Storm 里实现的反压机制，可以看到 Storm 在每一个 Bolt 都会有一个监测反压的线程（Backpressure Thread），这个线程一但检测到 Bolt 里的接收队列（recv queue）出现了严重阻塞就会把这个情况写到 ZooKeeper 里，ZooKeeper 会一直被 Spout 监听，监听到有反压的情况就会停止发送，通过这样的方式匹配上下游的发送接收速率。</p>
+<h3 id="案例二：Spark-Streaming-反压实现"><a href="#案例二：Spark-Streaming-反压实现" class="headerlink" title="案例二：Spark Streaming 反压实现"></a>案例二：Spark Streaming 反压实现</h3><p><img src="_v_images/20200714171453699_1486221085"></p>
+<p>Spark Streaming 里也有做类似这样的 feedback 机制，上图 Fecher 会实时的从 Buffer、Processing 这样的节点收集一些指标然后通过 Controller 把速度接收的情况再反馈到 Receiver，实现速率的匹配。</p>
+<h3 id="疑问：为什么-Flink（before-V1-5）里没有用类似的方式实现-feedback-机制？"><a href="#疑问：为什么-Flink（before-V1-5）里没有用类似的方式实现-feedback-机制？" class="headerlink" title="疑问：为什么 Flink（before V1.5）里没有用类似的方式实现 feedback 机制？"></a>疑问：为什么 Flink（before V1.5）里没有用类似的方式实现 feedback 机制？</h3><p>首先在解决这个疑问之前我们需要先了解一下 Flink 的网络传输是一个什么样的架构。</p>
+<p><img src="_v_images/20200714171453393_758272414"></p>
+<p>这张图就体现了 Flink 在做网络传输的时候基本的数据的流向，发送端在发送网络数据前要经历自己内部的一个流程，会有一个自己的 Network Buffer，在底层用 Netty 去做通信，Netty 这一层又有属于自己的 ChannelOutbound Buffer，因为最终是要通过 Socket 做网络请求的发送，所以在 Socket 也有自己的 Send Buffer，同样在接收端也有对应的三级 Buffer。学过计算机网络的时候我们应该了解到，TCP 是自带流量控制的。实际上 Flink （before V1.5）就是通过 TCP 的流控机制来实现 feedback 的。</p>
+<h2 id="TCP-流控机制"><a href="#TCP-流控机制" class="headerlink" title="TCP 流控机制"></a>TCP 流控机制</h2><p>根据下图我们来简单的回顾一下 TCP 包的格式结构。首先，他有 Sequence number 这样一个机制给每个数据包做一个编号，还有 ACK number 这样一个机制来确保 TCP 的数据传输是可靠的，除此之外还有一个很重要的部分就是 Window Size，接收端在回复消息的时候会通过 Window Size 告诉发送端还可以发送多少数据。</p>
+<p><img src="_v_images/20200714171452987_650184722"></p>
+<p>接下来我们来简单看一下这个过程。</p>
+<h3 id="TCP-流控：滑动窗口"><a href="#TCP-流控：滑动窗口" class="headerlink" title="TCP 流控：滑动窗口"></a>TCP 流控：滑动窗口</h3><p><img src="_v_images/20200714171452683_1953611527"></p>
+<p>TCP 的流控就是基于滑动窗口的机制，现在我们有一个 Socket 的发送端和一个 Socket 的接收端，目前我们的发送端的速率是我们接收端的 3 倍，这样会发生什么样的一个情况呢？假定初始的时候我们发送的 window 大小是 3，然后我们接收端的 window 大小是固定的，就是接收端的 Buffer 大小为 5。</p>
+<p><img src="_v_images/20200714171452278_1991948370"></p>
+<p>首先，发送端会一次性发 3 个 packets，将 1，2，3 发送给接收端，接收端接收到后会将这 3 个 packets 放到 Buffer 里去。</p>
+<p><img src="_v_images/20200714171452072_41416741"></p>
+<p>接收端一次消费 1 个 packet，这时候 1 就已经被消费了，然后我们看到接收端的滑动窗口会往前滑动一格，这时候 2，3 还在 Buffer 当中 而 4，5，6 是空出来的，所以接收端会给发送端发送 ACK = 4 ，代表发送端可以从 4 开始发送，同时会将 window 设置为 3 （Buffer 的大小 5 减去已经存下的 2 和 3），发送端接收到回应后也会将他的滑动窗口向前移动到 4，5，6。</p>
+<p><img src="_v_images/20200714171451767_719493078"></p>
+<p>这时候发送端将 4，5，6 发送，接收端也能成功的接收到 Buffer 中去。</p>
+<p><img src="_v_images/20200714171451562_313469730"></p>
+<p>到这一阶段后，接收端就消费到 2 了，同样他的窗口也会向前滑动一个，这时候他的 Buffer 就只剩一个了，于是向发送端发送 ACK = 7、window = 1。发送端收到之后滑动窗口也向前移，但是这个时候就不能移动 3 格了，虽然发送端的速度允许发 3 个 packets 但是 window 传值已经告知只能接收一个，所以他的滑动窗口就只能往前移一格到 7 ，这样就达到了限流的效果，发送端的发送速度从 3 降到 1。</p>
+<p><img src="_v_images/20200714171451057_482639053"></p>
+<p><img src="_v_images/20200714171450752_1192910727"></p>
+<p>我们再看一下这种情况，这时候发送端将 7 发送后，接收端接收到，但是由于接收端的消费出现问题，一直没有从 Buffer 中去取，这时候接收端向发送端发送 ACK = 8、window = 0 ，由于这个时候 window = 0，发送端是不能发送任何数据，也就会使发送端的发送速度降为 0。这个时候发送端不发送任何数据了，接收端也不进行任何的反馈了，那么如何知道消费端又开始消费了呢？</p>
+<p><img src="_v_images/20200714171450147_1390602232"></p>
+<p><img src="_v_images/20200714171449642_832142513"></p>
+<p><img src="_v_images/20200714171449037_394744327"></p>
+<p>TCP 当中有一个 ZeroWindowProbe 的机制，发送端会定期的发送 1 个字节的探测消息，这时候接收端就会把 window 的大小进行反馈。当接收端的消费恢复了之后，接收到探测消息就可以将 window 反馈给发送端端了从而恢复整个流程。TCP 就是通过这样一个滑动窗口的机制实现 feedback。</p>
+<h2 id="Flink-TCP-based-反压机制（before-V1-5）"><a href="#Flink-TCP-based-反压机制（before-V1-5）" class="headerlink" title="Flink TCP-based 反压机制（before V1.5）"></a>Flink TCP-based 反压机制（before V1.5）</h2><h3 id="示例：WindowWordCount"><a href="#示例：WindowWordCount" class="headerlink" title="示例：WindowWordCount"></a>示例：WindowWordCount</h3><p><img src="_v_images/20200714171448732_1736435542"></p>
+<p>大体的逻辑就是从 Socket 里去接收数据，每 5s 去进行一次 WordCount，将这个代码提交后就进入到了编译阶段。</p>
+<h3 id="编译阶段：生成-JobGraph"><a href="#编译阶段：生成-JobGraph" class="headerlink" title="编译阶段：生成 JobGraph"></a>编译阶段：生成 JobGraph</h3><p><img src="_v_images/20200714171448227_116055159"></p>
+<p>这时候还没有向集群去提交任务，在 Client 端会将 StreamGraph 生成 JobGraph，JobGraph 就是做为向集群提交的最基本的单元。在生成 JobGrap 的时候会做一些优化，将一些没有 Shuffle 机制的节点进行合并。有了 JobGraph 后就会向集群进行提交，进入运行阶段。</p>
+<h3 id="运行阶段：调度-ExecutionGraph"><a href="#运行阶段：调度-ExecutionGraph" class="headerlink" title="运行阶段：调度 ExecutionGraph"></a>运行阶段：调度 ExecutionGraph</h3><p><img src="_v_images/20200714171447922_1674684296"></p>
+<p>JobGraph 提交到集群后会生成 ExecutionGraph ，这时候就已经具备基本的执行任务的雏形了，把每个任务拆解成了不同的 SubTask，上图 ExecutionGraph 中的 Intermediate Result Partition 就是用于发送数据的模块，最终会将 ExecutionGraph 交给 JobManager 的调度器，将整个 ExecutionGraph 调度起来。然后我们概念化这样一张物理执行图，可以看到每个 Task 在接收数据时都会通过这样一个 InputGate 可以认为是负责接收数据的，再往前有这样一个 ResultPartition 负责发送数据，在 ResultPartition 又会去做分区跟下游的 Task 保持一致，就形成了 ResultSubPartition 和 InputChannel 的对应关系。这就是从逻辑层上来看的网络传输的通道，基于这么一个概念我们可以将反压的问题进行拆解。</p>
+<h3 id="问题拆解：反压传播两个阶段"><a href="#问题拆解：反压传播两个阶段" class="headerlink" title="问题拆解：反压传播两个阶段"></a>问题拆解：反压传播两个阶段</h3><p><img src="_v_images/20200714171447717_722983245"></p>
+<p>反压的传播实际上是分为两个阶段的，对应着上面的执行图，我们一共涉及 3 个 TaskManager，在每个 TaskManager 里面都有相应的 Task 在执行，还有负责接收数据的 InputGate，发送数据的 ResultPartition，这就是一个最基本的数据传输的通道。在这时候假设最下游的 Task （Sink）出现了问题，处理速度降了下来这时候是如何将这个压力反向传播回去呢？这时候就分为两种情况：</p>
+<ul>
+<li><p>跨 TaskManager ，反压如何从 InputGate 传播到 ResultPartition</p>
+</li>
+<li><p>TaskManager 内，反压如何从 ResultPartition 传播到 InputGate</p>
+</li>
+</ul>
+<h3 id="跨-TaskManager-数据传输"><a href="#跨-TaskManager-数据传输" class="headerlink" title="跨 TaskManager 数据传输"></a>跨 TaskManager 数据传输</h3><p><img src="_v_images/20200714171447411_1651413338"></p>
+<p>前面提到，发送数据需要 ResultPartition，在每个 ResultPartition 里面会有分区 ResultSubPartition，中间还会有一些关于内存管理的 Buffer。 对于一个 TaskManager 来说会有一个统一的 Network BufferPool 被所有的 Task 共享，在初始化时会从 Off-heap Memory 中申请内存，申请到内存的后续内存管理就是同步 Network BufferPool 来进行的，不需要依赖 JVM GC 的机制去释放。有了 Network BufferPool 之后可以为每一个 ResultSubPartition 创建 Local BufferPool 。 如上图左边的 TaskManager 的 Record Writer 写了 &lt;1，2&gt; 这个两个数据进来，因为 ResultSubPartition 初始化的时候为空，没有 Buffer 用来接收，就会向 Local BufferPool 申请内存，这时 Local BufferPool 也没有足够的内存于是将请求转到 Network BufferPool，最终将申请到的 Buffer 按原链路返还给 ResultSubPartition，&lt;1，2&gt; 这个两个数据就可以被写入了。之后会将 ResultSubPartition 的 Buffer 拷贝到 Netty 的 Buffer 当中最终拷贝到 Socket 的 Buffer 将消息发送出去。然后接收端按照类似的机制去处理将消息消费掉。 接下来我们来模拟上下游处理速度不匹配的场景，发送端的速率为 2，接收端的速率为 1，看一下反压的过程是怎样的。</p>
+<h3 id="跨-TaskManager-反压过程"><a href="#跨-TaskManager-反压过程" class="headerlink" title="跨 TaskManager 反压过程"></a>跨 TaskManager 反压过程</h3><p><img src="_v_images/20200714171447006_680735181"></p>
+<p>因为速度不匹配就会导致一段时间后 InputChannel 的 Buffer 被用尽，于是他会向 Local BufferPool 申请新的 Buffer ，这时候可以看到 Local BufferPool 中的一个 Buffer 就会被标记为 Used。</p>
+<p><img src="_v_images/20200714171446799_1194236091"></p>
+<p>发送端还在持续以不匹配的速度发送数据，然后就会导致 InputChannel 向 Local BufferPool 申请 Buffer 的时候发现没有可用的 Buffer 了，这时候就只能向 Network BufferPool 去申请，当然每个 Local BufferPool 都有最大的可用的 Buffer，防止一个 Local BufferPool 把 Network BufferPool 耗尽。这时候看到 Network BufferPool 还是有可用的 Buffer 可以向其申请。</p>
+<p><img src="_v_images/20200714171445992_941635712"></p>
+<p>一段时间后，发现 Network BufferPool 没有可用的 Buffer，或是 Local BufferPool 的最大可用 Buffer 到了上限无法向 Network BufferPool 申请，没有办法去读取新的数据，这时 Netty AutoRead 就会被禁掉，Netty 就不会从 Socket 的 Buffer 中读取数据了。</p>
+<p><img src="_v_images/20200714171444186_160162504"></p>
+<p>显然，再过不久 Socket 的 Buffer 也被用尽，这时就会将 Window = 0 发送给发送端（前文提到的 TCP 滑动窗口的机制）。这时发送端的 Socket 就会停止发送。</p>
+<p><img src="_v_images/20200714171443780_1304730499"></p>
+<p>很快发送端的 Socket 的 Buffer 也被用尽，Netty 检测到 Socket 无法写了之后就会停止向 Socket 写数据。</p>
+<p><img src="_v_images/20200714171443573_720011262"></p>
+<p>Netty 停止写了之后，所有的数据就会阻塞在 Netty 的 Buffer 当中了，但是 Netty 的 Buffer 是无界的，可以通过 Netty 的水位机制中的 high watermark 控制他的上界。当超过了 high watermark，Netty 就会将其 channel 置为不可写，ResultSubPartition 在写之前都会检测 Netty 是否可写，发现不可写就会停止向 Netty 写数据。</p>
+<p><img src="_v_images/20200714171443267_566801867"></p>
+<p>这时候所有的压力都来到了 ResultSubPartition，和接收端一样他会不断的向 Local BufferPool 和 Network BufferPool 申请内存。</p>
+<p><img src="_v_images/20200714171442761_1041985779"></p>
+<p>Local BufferPool 和 Network BufferPool 都用尽后整个 Operator 就会停止写数据，达到跨 TaskManager 的反压。</p>
+<h3 id="TaskManager-内反压过程"><a href="#TaskManager-内反压过程" class="headerlink" title="TaskManager 内反压过程"></a>TaskManager 内反压过程</h3><p>了解了跨 TaskManager 反压过程后再来看 TaskManager 内反压过程就更好理解了，下游的 TaskManager 反压导致本 TaskManager 的 ResultSubPartition 无法继续写入数据，于是 Record Writer 的写也被阻塞住了，因为 Operator 需要有输入才能有计算后的输出，输入跟输出都是在同一线程执行， Record Writer 阻塞了，Record Reader 也停止从 InputChannel 读数据，这时上游的 TaskManager 还在不断地发送数据，最终将这个 TaskManager 的 Buffer 耗尽。具体流程可以参考下图，这就是 TaskManager 内的反压过程。</p>
+<p><img src="_v_images/20200714171442455_926070537"></p>
+<p><img src="_v_images/20200714171442149_493428448"></p>
+<p><img src="_v_images/20200714171441744_1291490922"></p>
+<p><img src="_v_images/20200714171441439_2105575637"></p>
+<h2 id="Flink-Credit-based-反压机制（since-V1-5）"><a href="#Flink-Credit-based-反压机制（since-V1-5）" class="headerlink" title="Flink Credit-based 反压机制（since V1.5）"></a>Flink Credit-based 反压机制（since V1.5）</h2><h3 id="TCP-based-反压的弊端"><a href="#TCP-based-反压的弊端" class="headerlink" title="TCP-based 反压的弊端"></a>TCP-based 反压的弊端</h3><p><img src="_v_images/20200714171441134_1354461165"></p>
+<p>在介绍 Credit-based 反压机制之前，先分析下 TCP 反压有哪些弊端。</p>
+<ul>
+<li><p>在一个 TaskManager 中可能要执行多个 Task，如果多个 Task 的数据最终都要传输到下游的同一个 TaskManager 就会复用同一个 Socket 进行传输，这个时候如果单个 Task 产生反压，就会导致复用的 Socket 阻塞，其余的 Task 也无法使用传输，checkpoint barrier 也无法发出导致下游执行 checkpoint 的延迟增大。</p>
+</li>
+<li><p>依赖最底层的 TCP 去做流控，会导致反压传播路径太长，导致生效的延迟比较大。</p>
+</li>
+</ul>
+<h3 id="引入-Credit-based-反压"><a href="#引入-Credit-based-反压" class="headerlink" title="引入 Credit-based 反压"></a>引入 Credit-based 反压</h3><p>这个机制简单的理解起来就是在 Flink 层面实现类似 TCP 流控的反压机制来解决上述的弊端，Credit 可以类比为 TCP 的 Window 机制。</p>
+<h3 id="Credit-based-反压过程"><a href="#Credit-based-反压过程" class="headerlink" title="Credit-based 反压过程"></a>Credit-based 反压过程</h3><p><img src="_v_images/20200714171440828_629774125"></p>
+<p>如图所示在 Flink 层面实现反压机制，就是每一次 ResultSubPartition 向 InputChannel 发送消息的时候都会发送一个 backlog size 告诉下游准备发送多少消息，下游就会去计算有多少的 Buffer 去接收消息，算完之后如果有充足的 Buffer 就会返还给上游一个 Credit 告知他可以发送消息（图上两个 ResultSubPartition 和 InputChannel 之间是虚线是因为最终还是要通过 Netty 和 Socket 去通信），下面我们看一个具体示例。</p>
+<p><img src="_v_images/20200714171440422_2073806088"></p>
+<p>假设我们上下游的速度不匹配，上游发送速率为 2，下游接收速率为 1，可以看到图上在 ResultSubPartition 中累积了两条消息，10 和 11， backlog 就为 2，这时就会将发送的数据 &lt;8,9&gt; 和 backlog = 2 一同发送给下游。下游收到了之后就会去计算是否有 2 个 Buffer 去接收，可以看到 InputChannel 中已经不足了这时就会从 Local BufferPool 和 Network BufferPool 申请，好在这个时候 Buffer 还是可以申请到的。</p>
+<p><img src="_v_images/20200714171440216_190878629"></p>
+<p>过了一段时间后由于上游的发送速率要大于下游的接受速率，下游的 TaskManager 的 Buffer 已经到达了申请上限，这时候下游就会向上游返回 Credit = 0，ResultSubPartition 接收到之后就不会向 Netty 去传输数据，上游 TaskManager 的 Buffer 也很快耗尽，达到反压的效果，这样在 ResultSubPartition 层就能感知到反压，不用通过 Socket 和 Netty 一层层地向上反馈，降低了反压生效的延迟。同时也不会将 Socket 去阻塞，解决了由于一个 Task 反压导致 TaskManager 和 TaskManager 之间的 Socket 阻塞的问题。</p>
+<h2 id="总结与思考"><a href="#总结与思考" class="headerlink" title="总结与思考"></a>总结与思考</h2><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li><p>网络流控是为了在上下游速度不匹配的情况下，防止下游出现过载</p>
+</li>
+<li><p>网络流控有静态限速和动态反压两种手段</p>
+</li>
+<li><p>Flink 1.5 之前是基于 TCP 流控 + bounded buffer 实现反压</p>
+</li>
+<li><p>Flink 1.5 之后实现了自己托管的 credit - based 流控机制，在应用层模拟 TCP 的流控机制</p>
+</li>
+</ul>
+<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><p>有了动态反压，静态限速是不是完全没有作用了？</p>
+<p><img src="_v_images/20200714171439509_423419298"></p>
+<p>实际上动态反压不是万能的，我们流计算的结果最终是要输出到一个外部的存储（Storage），外部数据存储到 Sink 端的反压是不一定会触发的，这要取决于外部存储的实现，像 Kafka 这样是实现了限流限速的消息中间件可以通过协议将反压反馈给 Sink 端，但是像 ES 无法将反压进行传播反馈给 Sink 端，这种情况下为了防止外部存储在大的数据量下被打爆，我们就可以通过静态限速的方式在 Source 端去做限流。所以说动态反压并不能完全替代静态限速的，需要根据合适的场景去选择处理方案。</p>
+<p>作者：阿里云云栖号<br>链接：<a target="_blank" rel="noopener" href="https://juejin.im/post/5dce4b265188254a2b1faddf">https://juejin.im/post/5dce4b265188254a2b1faddf</a><br>来源：掘金<br>著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-TableAPI/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1275,7 +1066,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:19" itemprop="dateModified" datetime="2021-04-04T08:36:19+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1494,10 +1285,542 @@
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-checkpoint-savepoint-2pc/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-checkpoint-savepoint-2pc/" class="post-title-link" itemprop="url">Flink-checkpoint与数据一致性</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-Flink-checkpoint-与-高可用"><a href="#1-Flink-checkpoint-与-高可用" class="headerlink" title="1. Flink checkpoint 与 高可用"></a>1. Flink checkpoint 与 高可用</h1><p>Flink Checkpoint 受 Chandy-Lamport 分布式快照启发，可以保证数据的高可用。但是有些情况下，不见得一定有效:</p>
+<p>Flink On Yarn 模式，某个 Container 发生 OOM 异常，这种情况程序直接变成失败状态，此时 Flink 程序虽然开启 Checkpoint 也无法恢复，因为程序已经变成失败状态，所以此时可以借助外部参与启动程序，比如外部程序检测到实时任务失败时，从新对实时任务进行拉起。</p>
+<h2 id="1-1-2PC"><a href="#1-1-2PC" class="headerlink" title="1.1. 2PC"></a>1.1. 2PC</h2><h3 id="1-1-1-Exactly-once-VS-At-least-once"><a href="#1-1-1-Exactly-once-VS-At-least-once" class="headerlink" title="1.1.1. Exactly-once VS At-least-once"></a>1.1.1. Exactly-once VS At-least-once</h3><p>算子做快照时，如果等所有输入端的barrier都到了才开始做快照，可保证算子的exactly-once；如果为了降低延时而跳过对齐，从而继续处理数据，那么等barrier都到齐后做快照就是at-least-once了，因为这次的快照掺杂了下一次快照的数据，当作业失败恢复的时候，这些数据会重复作用系统，就好像这些数据被消费了两遍。</p>
+<p>注：对齐只会发生在算子的上端是join操作以及上游存在partition或者shuffle的情况，对于直连操作类似map、flatMap、filter等还是会保证exactly-once的语义。</p>
+<h3 id="1-1-2-端到端的Exactly-once实现"><a href="#1-1-2-端到端的Exactly-once实现" class="headerlink" title="1.1.2. 端到端的Exactly once实现"></a>1.1.2. 端到端的Exactly once实现</h3><p>2PC分为几个阶段: 开始事务-&gt;预提交-&gt;提交(或回滚)</p>
+<p>为了保证Exactly once, source和sink必须支持flink的2PC</p>
+<p>当状态涉及到外部系统时，需要外部系统支持事务操作来配合flink实现2PC协议，从而保证数据的exatly-once。<br>这个时候，sink算子除了将自己的state写到后段，还必须准备好事务提交。</p>
+<ul>
+<li>一旦所有的算子完成了它们的pre-commit，它们会要求一个commit。</li>
+<li>如果存在一个算子pre-commit失败了，本次事务失败，我们回滚到上次的checkpoint。</li>
+<li>一旦master做出了commit的决定，那么这个commit必须得到执行，就算宕机恢复也有继续执行。</li>
+</ul>
+<h4 id="1-1-2-1-pre-commit"><a href="#1-1-2-1-pre-commit" class="headerlink" title="1.1.2.1. pre-commit"></a>1.1.2.1. pre-commit</h4><p>pre-commit阶段起始于一次快照的开始，即master节点将checkpoint的barrier注入source端，barrier随着数据向下流动直到sink端。barrier每到一个算子，都会出发算子做本地快照。</p>
+<p><img src="_v_images/20200710154629243_751269158.png" alt="precommit"></p>
+<p>当所有的算子都做完了本地快照并且回复到master节点时，pre-commit阶段才算结束。这个时候，checkpoint已经成功，并且包含了外部系统的状态。如果作业失败，可以进行恢复。</p>
+<p><img src="_v_images/20200710154750060_1524377793.png" alt="precommit-success"></p>
+<h4 id="1-1-2-2-commit"><a href="#1-1-2-2-commit" class="headerlink" title="1.1.2.2. commit"></a>1.1.2.2. commit</h4><p>通知所有的算子这次checkpoint成功了，即2PC的commit阶段。source节点和window节点没有外部状态，所以这时它们不需要做任何操作。<br>而对于sink节点，需要commit这次事务，将数据写到外部系统。</p>
+<p><img src="_v_images/20200710154844838_737658241.png" alt="commit"></p>
+<h4 id="1-1-2-3-rollback"><a href="#1-1-2-3-rollback" class="headerlink" title="1.1.2.3. rollback"></a>1.1.2.3. rollback</h4><p>一旦任何一个算子的快照保存失败，则触发回滚，同样的sink算子也需要取消写入外部的数据</p>
+<h3 id="1-1-3-TwoPhaseCommitSinkFunction"><a href="#1-1-3-TwoPhaseCommitSinkFunction" class="headerlink" title="1.1.3. TwoPhaseCommitSinkFunction"></a>1.1.3. TwoPhaseCommitSinkFunction</h3><p>为了简化2PC的实现成本，flink抽象了TwoPhaseCommitSinkFunction</p>
+<ul>
+<li>beginTransaction。开始一次事务，在目的文件系统创建一个临时文件。接下来我们就可以将数据写到这个文件。</li>
+<li>preCommit。在这个阶段，将文件flush掉，同时重起一个文件写入，作为下一次事务的开始。</li>
+<li>commit。这个阶段，将文件写到真正的目的目录。值得注意的是，这会增加数据可视的延时。</li>
+<li>abort。如果回滚，那么删除临时文件。</li>
+</ul>
+<p>如果pre-commit成功了，但是commit没有到达算子旧宕机了，flink会将算子恢复到pre-commit时的状态，然后继续commit。</p>
+<p>我们需要做的还有就是保证commit的幂等性，这可以通过检查临时文件是否还在来实现。</p>
+<h2 id="1-2-checkpoint"><a href="#1-2-checkpoint" class="headerlink" title="1.2. checkpoint"></a>1.2. checkpoint</h2><p><strong>保留策略</strong>:</p>
+<ul>
+<li>DELETE_ON_CANCELLATION 表示当程序取消时，删除 Checkpoint 存储文件。</li>
+<li>RETAIN_ON_CANCELLATION 表示当程序取消时，保存之前的 Checkpoint 存储文件</li>
+</ul>
+<p>默认情况下，Flink不会触发一次 Checkpoint 当系统有其他 Checkpoint 在进行时，也就是说 Checkpoint 默认的并发为1。</p>
+<p><strong>CheckpointCoordinator</strong> :</p>
+<p>针对 Flink DataStream 任务，程序需要经历从 StreamGraph -&gt; JobGraph -&gt; ExecutionGraph -&gt; 物理执行图四个步骤，其中在 ExecutionGraph 构建时，会初始化 CheckpointCoordinator。ExecutionGraph通过ExecutionGraphBuilder.buildGraph方法构建，在构建完时，会调用 ExecutionGraph 的enableCheckpointing方法创建CheckpointCoordinator</p>
+<p><strong>Flink Checkpoint 参数配置及建议</strong>:</p>
+<ul>
+<li>当 Checkpoint 时间比设置的 Checkpoint 间隔时间要长时，可以设置 Checkpoint 间最小时间间隔 。这样在上次 Checkpoint 完成时，不会立马进行下一次 Checkpoint，而是会等待一个最小时间间隔，然后在进行该次 Checkpoint。否则，每次 Checkpoint 完成时，就会立马开始下一次 Checkpoint，系统会有很多资源消耗 Checkpoint。</li>
+<li>如果Flink状态很大，在进行恢复时，需要从远程存储读取状态恢复，此时可能导致任务恢复很慢，可以设置 Flink Task 本地状态恢复。任务状态本地恢复默认没有开启，可以设置参数state.backend.local-recovery值为true进行激活。</li>
+<li>Checkpoint保存数，Checkpoint 保存数默认是1，也就是保存最新的 Checkpoint 文件，当进行状态恢复时，如果最新的Checkpoint文件不可用时(比如HDFS文件所有副本都损坏或者其他原因)，那么状态恢复就会失败，如果设置 Checkpoint 保存数2，即使最新的Checkpoint恢复失败，那么Flink 会回滚到之前那一次Checkpoint进行恢复。考虑到这种情况，用户可以增加 Checkpoint 保存数。</li>
+<li>建议设置的 Checkpoint 的间隔时间最好大于 Checkpoint 的完成时间。</li>
+</ul>
+<p>下图是不设置 Checkpoint 最小时间间隔示例图，可以看到，系统一致在进行 Checkpoint，可能对运行的任务产生一定影响：<br><img src="_v_images/20200714095846469_121820659.png"></p>
+<h2 id="1-3-savepoint"><a href="#1-3-savepoint" class="headerlink" title="1.3. savepoint"></a>1.3. savepoint</h2><blockquote>
+<p>注意:<br>使用DataStream进行开发，建议为每个算子定义一个 uid，这样我们在修改作业时，即使导致程序拓扑图改变，由于相关算子 uid 没有变，那么这些算子还能够继续使用之前的状态，如果用户没有定义 uid ， Flink 会为每个算子自动生成 uid，如果用户修改了程序，可能导致之前的状态程序不能再进行复用。</p>
+</blockquote>
+<p>Flink 在触发Savepoint 或者 Checkpoint时，会根据这次触发的类型计算出在HDFS上面的目录:</p>
+<p>如果类型是 Savepoint，那么 其 HDFS 上面的目录为：Savepoint 根目录+savepoint-jobid前六位+随机数字，具体如下格式：</p>
+<p><img src="_v_images/20200714100459823_887900222.png"></p>
+<p>Checkpoint 目录为 chk-checkpoint ID,具体格式如下：</p>
+<p><img src="_v_images/20200714100516223_630729421.png"></p>
+<ul>
+<li>使用 flink cancel -s 命令取消作业同时触发 Savepoint 时，会有一个问题，可能存在触发 Savepoint 失败。比如实时程序处于异常状态(比如 Checkpoint失败)，而此时你停止作业，同时触发 Savepoint,这次 Savepoint 就会失败，这种情况会导致，在实时平台上面看到任务已经停止，但是实际实时作业在 Yarn 还在运行。针对这种情况，需要捕获触发 Savepoint 失败的异常，当抛出异常时，可以直接在 Yarn 上面 Kill 掉该任务。</li>
+<li>使用 DataStream 程序开发时，最好为每个算子分配 uid,这样即使作业拓扑图变了，相关算子还是能够从之前的状态进行恢复，默认情况下，Flink 会为每个算子分配 uid,这种情况下，当你改变了程序的某些逻辑时，可能导致算子的 uid 发生改变，那么之前的状态数据，就不能进行复用，程序在启动的时候，就会报错。</li>
+<li>由于 Savepoint 是程序的全局状态，对于某些状态很大的实时任务，当我们触发 Savepoint，可能会对运行着的实时任务产生影响，个人建议如果对于状态过大的实时任务，触发 Savepoint 的时间，不要太过频繁。根据状态的大小，适当的设置触发时间。</li>
+<li>当我们从 Savepoint 进行恢复时，需要检查这次 Savepoint 目录文件是否可用。可能存在你上次触发 Savepoint 没有成功，导致 HDFS 目录上面 Savepoint 文件不可用或者缺少数据文件等，这种情况下，如果在指定损坏的 Savepoint 的状态目录进行状态恢复，任务会启动不起来。</li>
+</ul>
+<h2 id="1-4-snapshot保存到哪里-应该需要汇总到jobManager？"><a href="#1-4-snapshot保存到哪里-应该需要汇总到jobManager？" class="headerlink" title="1.4. snapshot保存到哪里? 应该需要汇总到jobManager？"></a>1.4. snapshot保存到哪里? 应该需要汇总到jobManager？</h2><h2 id="1-5-state-backend"><a href="#1-5-state-backend" class="headerlink" title="1.5. state backend"></a>1.5. state backend</h2><p><img src="_v_images/20200713183839429_2053265091.png"></p>
+<h3 id="FsStateBackend"><a href="#FsStateBackend" class="headerlink" title="FsStateBackend"></a>FsStateBackend</h3><p>构造方法:<br><code>FsStateBackend(URI checkpointDataUri,boolean asynchronousSnapshots)</code></p>
+<p>1 基于文件系统的状态管理器<br>2 如果使用，默认是异步<br>3 比较稳定，3个副本，比较安全。不会出现任务无法恢复等问题<br>4 状态大小受磁盘容量限制</p>
+<p>存储方式:</p>
+<ul>
+<li>State: TaskManager内存</li>
+<li>checkpoint: 外部文件系统(本地或HDFS)</li>
+</ul>
+<p>容量限制:</p>
+<ul>
+<li>单TaskManager上State总量不超过它的内存</li>
+<li>总大小不超过配置的文件系统容量</li>
+</ul>
+<p>推荐使用场景:</p>
+<ul>
+<li>常规使用状态的作业，例如分钟级窗口聚合、join、窗口比较长、kv状态大；需要开启HA的作业</li>
+<li>可以用于生产场景</li>
+</ul>
+<h3 id="RocksDBStateBackend"><a href="#RocksDBStateBackend" class="headerlink" title="RocksDBStateBackend"></a>RocksDBStateBackend</h3><p>状态数据先写入RocksDB，然后异步的将状态数据写入文件系统。正在进行计算的热数据存储在RocksDB，长时间才更新的数据写入磁盘中（文件系统）存储，体量比较小的元数据状态写入JobManager内存中（将工作state保存在RocksDB中，并且默认将checkpoint数据存在文件系统中）</p>
+<p>目前唯一支持incremental的checkpoints的策略</p>
+<p>构造方法:<br><code>RocksDBStateBackend(URI checkpointDataUri,boolean enableIncrementalCheckpointing)</code></p>
+<p>存储方式:</p>
+<ul>
+<li>State: TaskManager上的KV数据库(实际使用内存+硬盘)</li>
+<li>Checkpoint: 外部文件系统(本地或HDFS)</li>
+</ul>
+<p>容量限制:</p>
+<ul>
+<li>单TaskManager上的State总量不超过他的内存+磁盘</li>
+<li>单key最大2G</li>
+<li>总大小不超过配置的文件系统容量</li>
+</ul>
+<p>推荐使用的场景:</p>
+<ul>
+<li>超大状态的作业，例如天级别窗口聚合；需要开启HA的作业；对状态读写性能要求不高的作业</li>
+<li>可以在生产环境使用</li>
+</ul>
+<h3 id="MemoryStateBackend"><a href="#MemoryStateBackend" class="headerlink" title="MemoryStateBackend"></a>MemoryStateBackend</h3><p>构造方法:<br><code>MemoryStateBackend(int maxStateSize, boolean asynchronousSnapshots)</code></p>
+<p>主机内存中的数据可能会丢失，任务可能无法恢复</p>
+<p>存储方式:</p>
+<ul>
+<li>State: TaskManager内存</li>
+<li>Checkpoint: JobManager内存</li>
+</ul>
+<p>容量限制</p>
+<ul>
+<li>单个State maxStateSize默认5M</li>
+<li>maxStateSize &lt;= akka.frameSize 默认10M</li>
+<li>总大小不超过JobManager的内存</li>
+</ul>
+<p>推荐使用场景：</p>
+<ul>
+<li>本地测试；几乎无状态的作业，比如ETL；JobManager不容易挂，或挂掉影响不大的情况</li>
+<li>不推荐在生产环境使用</li>
+</ul>
+<h2 id="1-6-checkpoint-与-savepoint"><a href="#1-6-checkpoint-与-savepoint" class="headerlink" title="1.6. checkpoint 与 savepoint"></a>1.6. checkpoint 与 savepoint</h2><p>Checkpoint指定触发生成时间间隔后，每当需要触发Checkpoint时，会向Flink程序运行时的多个分布式的Stream Source中插入一个Barrier标记，这些Barrier会根据Stream中的数据记录一起流向下游的各个Operator。<br>当一个Operator接收到一个Barrier时，它会暂停处理Steam中新接收到的数据记录。<br>因为一个Operator可能存在多个输入的Stream，而每个Stream中都会存在对应的Barrier，该Operator要等到所有的输入Stream中的Barrier都到达。(<strong>对齐</strong>)<br>当所有Stream中的Barrier都已经到达该Operator，这时所有的Barrier在时间上看来是同一个时刻点（表示已经对齐），在等待所有Barrier到达的过程中，<br>Operator的Buffer中可能已经缓存了一些比Barrier早到达Operator的数据记录（Outgoing Records），这时该Operator会将数据记录（Outgoing Records）发射（Emit）出去，作为下游Operator的输入，<br>最后将Barrier对应Snapshot发射（Emit）出去作为此次Checkpoint的结果数据。</p>
+<p>Checkpoint 是增量做的，每次的时间较短，数据量较小，只要在程序里面启用后会自动触发，用户无须感知；Checkpoint 是作业 failover 的时候自动使用，不需要用户指定。</p>
+<p>Savepoint 是全量做的，每次的时间较长，数据量较大，需要用户主动去触发。Savepoint 一般用于程序的版本更新（详见文档），Bug 修复，A/B Test 等场景，需要用户指定。</p>
+<p><strong>保存的内容</strong></p>
+<ul>
+<li>首先，Savepoint 包含了一个目录，其中包含（通常很大的）二进制文件，这些文件表示了整个流应用在 Checkpoint/Savepoint 时的状态。</li>
+<li>以及一个（相对较小的）元数据文件，包含了指向 Savapoint 各个文件的指针，并存储在所选的分布式文件系统或数据存储中。</li>
+</ul>
+<p><strong>目标</strong></p>
+<p>Savepoint 和 Checkpoint 的不同之处很像传统数据库中备份与恢复日志之间的区别。Checkpoint 的主要目标是充当 Flink 中的恢复机制，确保能从潜在的故障中恢复。相反，Savepoint 的主要目标是充当手动备份、恢复暂停作业的方法。</p>
+<p><strong>实现</strong></p>
+<p>Checkpoint 被设计成轻量和快速的机制。它们可能（但不一定必须）利用底层状态后端的不同功能尽可能快速地恢复数据。例如，基于 RocksDB 状态后端的增量检查点，能够加速 RocksDB 的 checkpoint 过程，这使得 checkpoint 机制变得更加轻量。相反，Savepoint 旨在更多地关注数据的可移植性，并支持对作业做任何更改而状态能保持兼容，这使得生成和恢复的成本更高</p>
+<p><strong>状态文件保留策略</strong></p>
+<p>Checkpoint默认程序删除，可以设置CheckpointConfig中的参数进行保留 。Savepoint会一直保存，除非用户删除 。</p>
+<p><strong>应用</strong></p>
+<ul>
+<li>部署流应用的一个新版本，包括新功能、BUG 修复、或者一个更好的机器学习模型</li>
+<li>引入 A/B 测试，使用相同的源数据测试程序的不同版本，从同一时间点开始测试而不牺牲先前的状态</li>
+<li>在需要更多资源时扩容应用程序</li>
+<li>迁移流应用程序到 Flink 的新版本上，或者迁移到另一个集群</li>
+</ul>
+<h1 id="Flink数据一致性"><a href="#Flink数据一致性" class="headerlink" title="Flink数据一致性"></a>Flink数据一致性</h1><h2 id="一、综述"><a href="#一、综述" class="headerlink" title="一、综述"></a>一、综述</h2><p><strong>flink 通过内部依赖checkpoint 并且可以通过设置其参数exactly-once 实现其内部的一致性</strong>。但要实现其端到端的一致性，还必须保证<br>1、source 外部数据源可重设数据的读取位置<br>2、sink端 需要保证数据从故障恢复时，数据不会重复写入外部系统（或者可以逻辑实现写入多次，但只有一次生效的数据sink端）</p>
+<h2 id="二、sink-端到端实现方式"><a href="#二、sink-端到端实现方式" class="headerlink" title="二、sink 端到端实现方式"></a>二、sink 端到端实现方式</h2><p><strong>幂等操作：</strong><br>一个操作，可以重复执行多次，但只导致一次结果更改，豁免重复操作执行就不起作用了，他的瑕疵 （在系统恢复的过程中，如果这段时间内多个更新或者插入导致状态不一致，但当数据追上就可以了）<br>（逻辑与、逻辑或等）具体理解参照自己以前写的文章。<br><strong>事务写入：</strong><br>事务应该具有四个属性：原子性、一致性、隔离性、持久性等。其具体的实现方式有两种<br><strong>（1）、预写日志</strong><br>简单易于实现，由于数据提前在状态后端中做了缓存，所以无论什么sink系统，都能用这种方式一批搞定，DataStream API提供了一个模板类：GenericWriteAheadSink，来实现这种事务性sink；<br>缺点：<br>1）、sink系统没说他支持事务。有可能出现一部分写入集群了。一部分没有写进去（如果实表，再写一次就写重复了）<br>2）、checkpoint做完了sink才去真正的写入（但其实得等sink都写完checkpoint才能生效，所以WAL这个机制jobmanager确定它写完还不算真正写完，还得有一个外部系统已经确认 完成的checkpoint）<br>（<strong>2）、两阶段提交。 flink 真正实现exactle-once</strong><br>对于每个checkpoint,sink 任务会启动一个事务，并将接下来所有接收的数据添加到事务中，然后将这些数据写入外部sink系统，但不提交他们（这里是预提交）。当checkpoint完成时的通知，它才正式提交事务，实现结果的真正写入；这种方式真正实现了exactly-once,它需要一个提供事务支持的外部sink系统，Flink提供了其具体实现（TwoPhaseCommitSinkFunction接口）</p>
+<h2 id="三、-2pc-对外部-sink的要求"><a href="#三、-2pc-对外部-sink的要求" class="headerlink" title="三、 2pc 对外部 sink的要求"></a>三、 2pc 对外部 sink的要求</h2><p>1、外部sink系统必须事务支持，或者sink任务必须能够模拟外部系统上的事务；<br>2、在checkpoint的间隔期间里，必须能够开启一个事务，并接受数据写入。<br>3、在收到checkpoint完成通知之前，事务必须是“等待提交”的状态，在故障恢复的情况线，这可能需要一些时间。如果个时候sink系统关闭事务（例如超时了），那么未提交的数据就会丢失；<br>4、四年任务必选能够在进程失败后恢复事务<br>5、提交事务必须是幂等操作；</p>
+<p>四、综上不同Source和sink的一致性保证：<br><img src="_v_images/20201208154240979_1471214802.png" alt="在这里插入图片描述"></p>
+<h2 id="五、应用（flinK-kafka-端到端一致性保证）"><a href="#五、应用（flinK-kafka-端到端一致性保证）" class="headerlink" title="五、应用（flinK+kafka 端到端一致性保证）"></a>五、应用（flinK+kafka 端到端一致性保证）</h2><p>flink 和kafka 端到端一致性(kafka(source+flink+kafka(sink)))<br>1、内部 – 利用checkpoint机制，把状态存盘，发生故障的时候可以恢复，保证内部的状态一致性<br>2、source – kafka consumer作为source，可以将偏移量保存下来，如果后续任务出现了故障，恢复的时候可以由连接器重置偏移量，重新消费数据，保证一致性；</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-tag">kafka</span> 0.8 和<span class="selector-tag">kafka</span> 0.11 之后 通过以下配置将偏移量保存，恢复时候重新消费</span><br><span class="line"> <span class="selector-tag">kafka</span><span class="selector-class">.setStartFromLatest</span>();</span><br><span class="line"> <span class="selector-tag">kafka</span><span class="selector-class">.setCommitOffsetsOnCheckpoints</span>(<span class="selector-tag">false</span>);</span><br><span class="line"> <span class="selector-tag">kafka</span> 0.9 和<span class="selector-tag">kafka0</span>.10 未验证是否支持这两个参数(<span class="selector-tag">todo</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>3、sink FlinkkafkaProducer作为Sink，采用两阶段提交的sink，由下图可以看出flink 0.11 已经默认继承了TwoPhaseCommitSinkFunction<br><img src="_v_images/20201208154240548_914126344.png" alt="在这里插入图片描述"><br>但我们需要在参数种传入指定语义，它默认时还是at-least-once<br>此外我们还需要进行一些producer的容错配置：<br>（1）除了启用Flink的检查点之外，还可以通过将适当的semantic参数传递给FlinkKafkaProducer011（FlinkKafkaProducer对于Kafka&gt; = 1.0.0版本）<br>（2）来选择三种不同的操作模式<br>1）、Semantic.NONE 代表at-mostly-once语义<br>2）、Semantic.AT_LEAST_ONCE（Flink默认设置<br>3）、Semantic.EXACTLY_ONCE 使用Kafka事务提供一次精确的语义，每当您使用事务写入Kafka时<br>（3）、请不要忘记消费kafka记录任何应用程序设置所需的设置isolation.leva（read_committed 或者read_uncommitted-后者是默认）<br>read_committed，只是读取已经提交的数据。</p>
+<p>应用；<br>Semantic.EXACTLY_ONCE依赖与下游系统能支持事务操作.以0.11kafka为例.<br>transaction.max.timeout.ms 最大超市时长，默认15分钟，如果需要用exactly语义，需要增加这个值。（因为它小于transaction.timeout.ms ）<br>isolation.level 如果需要用到exactly语义，需要在下级consumerConfig中设置read-commited [read-uncommited(默认值)]<br>transaction.timeout.ms 默认为1hour</p>
+<p><strong>其参数对应关系为 和一些报错问题<br>checkpoint间隔&lt;transaction.timeout.ms&lt;transaction.max.timeout.ms</strong></p>
+<p><strong>参考：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/createweb/p/11971846.html">https://www.cnblogs.com/createweb/p/11971846.html</a></strong></p>
+<p>注意：<br>1、Semantic.EXACTLY_ONCE 模式每个FlinkKafkaProducer011实例使用一个固定大小的KafkaProducers池。每个检查点使用这些生产者中的每一个。如果并发检查点的数量超过池大小，FlinkKafkaProducer011 将引发异常，并使整个应用程序失败。请相应地配置最大池大小和最大并发检查点数。</p>
+<p>2、Semantic.EXACTLY_ONCE采取所有可能的措施，不要留下任何挥之不去的数据，否则这将有碍于消费者更多地阅读Kafka主题。但是，如果flink应用程序在第一个检查点之前失败，则在重新启动此类应用程序后，系统种将没有有关先前池大小信息，因此，在第一个检查点完成前按比例缩小Flink应用程序的FlinkKafkaProducer011.SAFE_SCALE_DOWN_FACTOR</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">//1。设置最大允许的并行<span class="selector-tag">checkpoint</span>数，防止超过<span class="selector-tag">producer</span>池的个数发生异常</span><br><span class="line"><span class="selector-tag">env</span><span class="selector-class">.getCheckpointConfig</span><span class="selector-class">.setMaxConcurrentCheckpoints</span>(5) </span><br><span class="line">//2。设置<span class="selector-tag">producer</span>的<span class="selector-tag">ack</span>传输配置</span><br><span class="line">// 设置超市时长，默认15分钟，建议1个小时以上</span><br><span class="line"><span class="selector-tag">producerConfig</span><span class="selector-class">.put</span>(<span class="selector-tag">ProducerConfig</span><span class="selector-class">.ACKS_CONFIG</span>, 1) </span><br><span class="line"><span class="selector-tag">producerConfig</span><span class="selector-class">.put</span>(<span class="selector-tag">ProducerConfig</span><span class="selector-class">.TRANSACTION_TIMEOUT_CONFIG</span>, 15000) </span><br><span class="line"></span><br><span class="line">//3。在下一个<span class="selector-tag">kafka</span> <span class="selector-tag">consumer</span>的配置文件，或者代码中设置<span class="selector-tag">ISOLATION_LEVEL_CONFIG-read-commited</span></span><br><span class="line">//<span class="selector-tag">Note</span>:必须在下一个<span class="selector-tag">consumer</span>中指定，当前指定是没用用的</span><br><span class="line"><span class="selector-tag">kafkaonfigs</span><span class="selector-class">.setProperty</span>(<span class="selector-tag">ConsumerConfig</span><span class="selector-class">.ISOLATION_LEVEL_CONFIG</span>,&quot;<span class="selector-tag">read_commited</span>&quot;)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>完整应用代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.shufang.flink.connectors</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Properties</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.api.common.serialization.SimpleStringSchema</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.TimeCharacteristic</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.scala._</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.windowing.time.Time</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer.Semantic</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.connectors.kafka._</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.util.serialization.KeyedSerializationSchemaWrapper</span><br><span class="line"><span class="keyword">import</span> org.apache.kafka.clients.consumer.ConsumerConfig</span><br><span class="line"><span class="keyword">import</span> org.apache.kafka.clients.producer.ProducerConfig</span><br><span class="line"><span class="keyword">import</span> org.apache.kafka.common.serialization.StringDeserializer</span><br><span class="line"></span><br><span class="line">object KafkaSource01 &#123;</span><br><span class="line">  <span class="function">def <span class="title">main</span><span class="params">(args: Array[String])</span>: Unit </span>= &#123;</span><br><span class="line">    val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment</span><br><span class="line"></span><br><span class="line">    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)</span><br><span class="line"></span><br><span class="line">    <span class="comment">//这是checkpoint的超时时间</span></span><br><span class="line">    <span class="comment">//env.getCheckpointConfig.setCheckpointTimeout()</span></span><br><span class="line">    <span class="comment">//设置最大并行的chekpoint</span></span><br><span class="line">    env.getCheckpointConfig.setMaxConcurrentCheckpoints(<span class="number">5</span>)</span><br><span class="line">    env.getCheckpointConfig.setCheckpointInterval(<span class="number">1000</span>) <span class="comment">//增加checkpoint的中间时长，保证可靠性</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 为了保证数据的一致性，我们开启Flink的checkpoint一致性检查点机制，保证容错</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    env.enableCheckpointing(<span class="number">60000</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 从kafka获取数据，一定要记得添加checkpoint，能保证offset的状态可以重置，从数据源保证数据的一致性</span></span><br><span class="line"><span class="comment">     * 保证kafka代理的offset与checkpoint备份中保持状态一致</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    val kafkaonfigs = <span class="keyword">new</span> Properties()</span><br><span class="line"></span><br><span class="line">    <span class="comment">//指定kafka的启动集群</span></span><br><span class="line">    kafkaonfigs.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, <span class="string">&quot;localhost:9092&quot;</span>)</span><br><span class="line">    <span class="comment">//指定消费者组</span></span><br><span class="line">    kafkaonfigs.setProperty(ConsumerConfig.GROUP_ID_CONFIG, <span class="string">&quot;flinkConsumer&quot;</span>)</span><br><span class="line">    <span class="comment">//指定key的反序列化类型</span></span><br><span class="line">    kafkaonfigs.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)</span><br><span class="line">    <span class="comment">//指定value的反序列化类型</span></span><br><span class="line">    kafkaonfigs.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, classOf[StringDeserializer].getName)</span><br><span class="line">    <span class="comment">//指定自动消费offset的起点配置</span></span><br><span class="line">    <span class="comment">//    kafkaonfigs.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, &quot;latest&quot;)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 自定义kafkaConsumer，同时可以指定从哪里开始消费</span></span><br><span class="line"><span class="comment">     * 开启了Flink的检查点之后，我们还要开启kafka-offset的检查点，通过kafkaConsumer.setCommitOffsetsOnCheckpoints(true)开启，</span></span><br><span class="line"><span class="comment">     * 一旦这个检查点开启，那么之前配置的 auto-commit-enable = true的配置就会自动失效</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    val kafkaConsumer = <span class="keyword">new</span> FlinkKafkaConsumer[String](</span><br><span class="line">      <span class="string">&quot;console-topic&quot;</span>,</span><br><span class="line">      <span class="keyword">new</span> SimpleStringSchema(), <span class="comment">// 这个schema是将kafka的数据应设成Flink中的String类型</span></span><br><span class="line">      kafkaonfigs</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 开启kafka-offset检查点状态保存机制</span></span><br><span class="line">    kafkaConsumer.setCommitOffsetsOnCheckpoints(<span class="keyword">true</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">//    kafkaConsumer.setStartFromEarliest()//</span></span><br><span class="line">    <span class="comment">//    kafkaConsumer.setStartFromTimestamp(1010003794)</span></span><br><span class="line">    <span class="comment">//    kafkaConsumer.setStartFromLatest()</span></span><br><span class="line">    <span class="comment">//    kafkaConsumer.setStartFromSpecificOffsets(Map[KafkaTopicPartition,Long]()</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 添加source数据源</span></span><br><span class="line">    val kafkaStream: DataStream[String] = env.addSource(kafkaConsumer)</span><br><span class="line"></span><br><span class="line">    kafkaStream.print()</span><br><span class="line"></span><br><span class="line">    val sinkStream: DataStream[String] = kafkaStream.assignTimestampsAndWatermarks(<span class="keyword">new</span> BoundedOutOfOrdernessTimestampExtractor[String](Time.seconds(<span class="number">5</span>)) &#123;</span><br><span class="line">      <span class="function">override def <span class="title">extractTimestamp</span><span class="params">(element: String)</span>: Long </span>= &#123;</span><br><span class="line">        element.split(<span class="string">&quot;,&quot;</span>)(<span class="number">1</span>).toLong</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 通过FlinkkafkaProduccer API将stream的数据写入到kafka的&#x27;sink-topic&#x27;中</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="comment">//    val brokerList = &quot;localhost:9092&quot;</span></span><br><span class="line">    val topic = <span class="string">&quot;sink-topic&quot;</span></span><br><span class="line">    val producerConfig = <span class="keyword">new</span> Properties()</span><br><span class="line">    producerConfig.put(ProducerConfig.ACKS_CONFIG, <span class="keyword">new</span> Integer(<span class="number">1</span>)) <span class="comment">// 设置producer的ack传输配置</span></span><br><span class="line">    producerConfig.put(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG, Time.hours(<span class="number">2</span>)) <span class="comment">//设置超市时长，默认1小时，建议1个小时以上</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 自定义producer，可以通过不同的构造器创建</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    val producer: FlinkKafkaProducer[String] = <span class="keyword">new</span> FlinkKafkaProducer[String](</span><br><span class="line">      topic,</span><br><span class="line">      <span class="keyword">new</span> KeyedSerializationSchemaWrapper[String](SimpleStringSchema),</span><br><span class="line">      producerConfig,</span><br><span class="line">      Semantic.EXACTLY_ONCE</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="comment">//    FlinkKafkaProducer.SAFE_SCALE_DOWN_FACTOR</span></span><br><span class="line">    <span class="comment">/** *****************************************************************************************************************</span></span><br><span class="line"><span class="comment">     * * 出了要开启flink的checkpoint功能，同时还要设置相关配置功能。</span></span><br><span class="line"><span class="comment">     * * 因在0.9或者0.10，默认的FlinkKafkaProducer只能保证at-least-once语义，假如需要满足at-least-once语义，我们还需要设置</span></span><br><span class="line"><span class="comment">     * * setLogFailuresOnly(boolean)    默认false</span></span><br><span class="line"><span class="comment">     * * setFlushOnCheckpoint(boolean)  默认true</span></span><br><span class="line"><span class="comment">     * * come from 官网 below：</span></span><br><span class="line"><span class="comment">     * * Besides enabling Flink’s checkpointing，you should also configure the setter methods setLogFailuresOnly(boolean)</span></span><br><span class="line"><span class="comment">     * * and setFlushOnCheckpoint(boolean) appropriately.</span></span><br><span class="line"><span class="comment">     * ******************************************************************************************************************/</span></span><br><span class="line"></span><br><span class="line">    producer.setLogFailuresOnly(<span class="keyword">false</span>) <span class="comment">//默认是false</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 除了启用Flink的检查点之外，还可以通过将适当的semantic参数传递给FlinkKafkaProducer011（FlinkKafkaProducer对于Kafka&gt; = 1.0.0版本）</span></span><br><span class="line"><span class="comment">     * 来选择三种不同的操作模式：</span></span><br><span class="line"><span class="comment">     * Semantic.NONE  代表at-mostly-once语义</span></span><br><span class="line"><span class="comment">     * Semantic.AT_LEAST_ONCE（Flink默认设置）</span></span><br><span class="line"><span class="comment">     * Semantic.EXACTLY_ONCE：使用Kafka事务提供一次精确的语义，每当您使用事务写入Kafka时，</span></span><br><span class="line"><span class="comment">     * 请不要忘记为使用Kafka记录的任何应用程序设置所需的设置isolation.level（read_committed 或read_uncommitted-后者是默认值)</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    sinkStream.addSink(producer)</span><br><span class="line"></span><br><span class="line">    env.execute(<span class="string">&quot;kafka source &amp; sink&quot;</span>)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="[参考文献]"></a>[参考文献]</h2><ol>
+<li><a target="_blank" rel="noopener" href="http://shiyanjun.cn/archives/1855.html">Flink Checkpoint、Savepoint配置与实践</a></li>
+<li><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2018/11/04/how-apache-flink-manages-kafka-consumer-offsets/">Flink 小贴士 (2)：Flink 如何管理 Kafka 消费位点</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/4bcbcda0e2f4">Flink实时计算-深入理解Checkpoint和Savepoint</a></li>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/abs/1506.08603">Lightweight Asynchronous Snapshots for Distributed Dataflows: 分布式数据流轻量级异步快照</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-metrics/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-metrics/" class="post-title-link" itemprop="url">Flink:指标监控</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="flink-metrics"><a href="#flink-metrics" class="headerlink" title="flink-metrics"></a>flink-metrics</h1><p>[参考文献]</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21653785/article/details/79625601">Flink源码系列-指标监控</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/0x12345678/p/10561039.html">自定义metric-report</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.mamicode.com/info-detail-2317943.html">深入理解Flink之metrics</a></li>
+<li><a target="_blank" rel="noopener" href="https://my.oschina.net/go4it/blog/3023586">聊聊Flink的MertricsQueryServiceGateway</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/e50586fff515">Flink指标</a></li>
+</ul>
+<p>Flink Metrics是通过引入<code>com.codahale.metrics</code>包实现的，它将收集的metrics分为四大类：<code>Counter</code>，<code>Gauge</code>，<code>Histogram</code>和<code>Meter</code>下面分别说明：</p>
+<ul>
+<li><code>Counter计数器</code><br>  用来统计一个metrics的总量。<br>  拿flink中的指标来举例，像Task/Operator中的numRecordsIn（此task或者operator接收到的record总量）和numRecordsOut（此task或者operator发送的record总量）就属于Counter。</li>
+<li><code>Gauge指标值</code><br>  用来记录一个metrics的瞬间值。<br>  拿flink中的指标举例，像JobManager或者TaskManager中的<code>JVM.Heap.Used</code>就属于<code>Gauge</code>，记录某个时刻JobManager或者TaskManager所在机器的JVM堆使用量。</li>
+<li><code>Histogram直方图</code><br>  有的时候我们不满足于只拿到metrics的总量或者瞬时值，当想得到metrics的最大值，最小值，中位数等信息时，我们就能用到Histogram了。<br>  Flink中属于Histogram的指标很少，但是最重要的一个是属于operator的latency。此项指标会记录数据处理的延迟信息，对任务监控起到很重要的作用。</li>
+<li><code>Meter平均值</code><br>   用来记录一个metrics某个时间段内平均值。<br>   flink中类似指标有task/operator中的numRecordsInPerSecond，字面意思就可以理解，指的是此task或者operator每秒接收的记录数。</li>
+</ul>
+<h3 id="com-tencent-oceanus-metastore-metrics-CustomMetricsRegistry"><a href="#com-tencent-oceanus-metastore-metrics-CustomMetricsRegistry" class="headerlink" title="com.tencent.oceanus.metastore.metrics.CustomMetricsRegistry"></a>com.tencent.oceanus.metastore.metrics.CustomMetricsRegistry</h3><h3 id="org-apache-flink-metrics-MeterView"><a href="#org-apache-flink-metrics-MeterView" class="headerlink" title="org.apache.flink.metrics.MeterView"></a>org.apache.flink.metrics.MeterView</h3>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-time/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-time/" class="post-title-link" itemprop="url">Flink:时间</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-Time"><a href="#Flink-Time" class="headerlink" title="Flink Time"></a>Flink Time</h1><p>![北京时间](_v_images/20190731222505723_213254839.png =968x)</p>
+<blockquote>
+<p>划定时间窗口和时间戳以毫秒为单位</p>
+</blockquote>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">eventStream.assignTimestampsAndWatermarks(assigner = <span class="keyword">new</span> <span class="type">AscendingTimestampExtractor</span>[<span class="type">Event</span>]() &#123;</span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">extractAscendingTimestamp</span></span>(t: <span class="type">Event</span>): <span class="type">Long</span> = &#123;</span><br><span class="line">    t.getTime * <span class="number">1000</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<h2 id="processFunction中的时间"><a href="#processFunction中的时间" class="headerlink" title="processFunction中的时间"></a>processFunction中的时间</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="type">ProcessFunction</span>[<span class="type">Event</span>, (<span class="type">String</span>, <span class="type">Long</span>)] &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">processElement</span></span>(event: <span class="type">Event</span>, context: <span class="type">ProcessFunction</span>[<span class="type">Event</span>,</span><br><span class="line">          (<span class="type">String</span>, <span class="type">Long</span>)]#<span class="type">Context</span>, collector: <span class="type">Collector</span>[(<span class="type">String</span>, <span class="type">Long</span>)]): <span class="type">Unit</span> = &#123;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">context.timestamp&#x3D;1565064599999</span><br><span class="line">context.timerService().currentWatermark()&#x3D;-9223372036854775808</span><br><span class="line">context.timerService().currentProcessingTime()&#x3D;1565064607343</span><br><span class="line"></span><br><span class="line">Event(time&#x3D;1565064350, count&#x3D;9, url&#x3D;&#x2F;apply&#x2F;main, channelId&#x3D;1057)</span><br></pre></td></tr></table></figure>
+<p>以事件事件，窗口大小5min</p>
+<p>一条消息，事件的时间是 1565064350(2019-08-06 12:05:50)<br><code>Context.timestamp</code>是1565064599999(2019-08-06 12:09:59), 可以理解为窗口结束的时间<br><code>context.timerService().currentWatermark()</code> 莫名其妙，这么大<br><code>context.timerService().currentProcessingTime()</code>是当前处理事件 2019-08-06 12:10:07</p>
+<h3 id="Context-timestamp"><a href="#Context-timestamp" class="headerlink" title="Context.timestamp"></a><code>Context.timestamp</code></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Timestamp of the element currently being processed or timestamp of a firing timer.</span><br><span class="line">This might be &#123;<span class="meta">@code</span> <span class="keyword">null</span>&#125;, <span class="keyword">for</span> example <span class="keyword">if</span> the time characteristic of your program</span><br></pre></td></tr></table></figure>
+
+<h2 id="时间戳timestamp与水印watermark"><a href="#时间戳timestamp与水印watermark" class="headerlink" title="时间戳timestamp与水印watermark"></a>时间戳timestamp与水印watermark</h2><p>提取Timestamp与生成Watermark一般步骤</p>
+<ol>
+<li>设置时间特性为Event Time。<code>StreamExecutionEnvironment#setStreamTimeCharacteristic(TimeCharacteristic.EventTime)</code>。</li>
+<li>在Source后Window前用<code>DataStream#assignTimestampsAndWatermarks</code>方法(<code>AssignerWithPeriodicWatermarks</code>或<code>AssignerWithPunctuatedWatermarks</code>)提取时间戳并生成水印。</li>
+<li>重写<code>extractTimestamp</code>方法提取Timestamp，重写<code>getCurrentWatermark</code>方法或<code>checkAndGetNextWatermark</code>方法生成水印。</li>
+</ol>
+<h3 id="数据源中指定"><a href="#数据源中指定" class="headerlink" title="数据源中指定"></a>数据源中指定</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ExampleSourceFunction</span> <span class="keyword">implements</span> <span class="title">SourceFunction</span>&lt;<span class="title">Tuple4</span>&lt;<span class="title">String</span>,<span class="title">Long</span>,<span class="title">String</span>,<span class="title">Integer</span>&gt;&gt;</span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">(SourceContext&lt;Tuple4&lt;String,Long,String,Integer&gt;&gt; ctx)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">            <span class="keyword">while</span> (isRunning)&#123;</span><br><span class="line">                <span class="comment">// 构造测试数据</span></span><br><span class="line">                ....</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 发出一条数据以及数据对应的Timestamp</span></span><br><span class="line">                ctx.collectWithTimestamp(record,eventTime);</span><br><span class="line"></span><br><span class="line">                <span class="comment">// 发出一条Watermark</span></span><br><span class="line">                ctx.emitWatermark(<span class="keyword">new</span> Watermark(eventTime - maxOutOfOrderness));</span><br><span class="line"></span><br><span class="line">                Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">cancel</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            isRunning = <span class="keyword">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>时间戳和水位线分别通过两个方法实现的</p>
+<h3 id="时间戳的抽取方法"><a href="#时间戳的抽取方法" class="headerlink" title="时间戳的抽取方法"></a>时间戳的抽取方法</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* 传入了两个参数，第二个参数是上一个时间戳，元素的当前内部时间戳，如果尚未分配时间戳，则为负值。</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">long</span> <span class="title">extractTimestamp</span><span class="params">(T element, <span class="keyword">long</span> recordTimestamp)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="周期性水印"><a href="#周期性水印" class="headerlink" title="周期性水印"></a>周期性水印</h3><p>分配器为元素分配事件时间时间戳，并生成表示流中事件时间进度的低水位线。这些时间戳和水印由对事件时间进行操作的函数和运算符使用，例如事件时间窗口。<br>使用此类以周期性间隔生成水印。最多每隔I毫秒(通过<code>ExecutionConfig.getautowerMarkinterval()</code>)配置一次，系统将调用<code>getCurrentWatermark()</code>方法来探测下一个水印值。<br>如果探测到的值为非空，并且时间戳大于前一个水印的时间戳，系统将生成新的水印(以保留升序水印的约定)。 如果自上次调用<code>getCurrentWatermark()</code>方法后没有新元素到达，系统调用该方法的频率可能会低于每I毫秒一次。<br>时间戳和水印被定义为代表自纪元(世界协调时1970年1月1日午夜)以来的毫秒的长度。某个值为t的水印表示不会再出现带有事件时间戳x的元素，其中x小于或等于t。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* 返回当前水印。系统定期调用此方法来检索当前水印。该方法可能返回空值，表示没有新的水印可用。</span></span><br><span class="line"><span class="comment">* 只有当返回的水印为非空且其时间戳大于之前发出的水印的时间戳时，才会发出该水印(以保留升序水印的约定)。</span></span><br><span class="line"><span class="comment">* 如果当前水印仍然与前一个相同，则自上一次调用此方法以来，事件时间没有任何进展。如果返回空值，或者返回的水印的时间戳小于上次发出的时间戳，则不会生成新的水印。</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line">Watermark  AssignerWithPeriodicWatermarks.getCurrentWatermark()</span><br></pre></td></tr></table></figure>
+<h3 id="非连续性水印"><a href="#非连续性水印" class="headerlink" title="非连续性水印"></a>非连续性水印</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* 询问此实现是否要发出水印。这个方法是在extractTimestamp(对象，长)方法之后调用的。</span></span><br><span class="line"><span class="comment">* 只有当返回的水印为非空且其时间戳大于之前发出的水印的时间戳时，才会发出该水印(以保留升序水印的约定)。</span></span><br><span class="line"><span class="comment">* 如果返回空值，或者返回的水印的时间戳小于上次发出的时间戳，则不会生成新的水印。 有关如何使用此方法的示例，请参见此类的分配器带标点水印的文档。</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line">Watermark AssignerWithPunctuatedWatermarks.checkAndGetNextWatermark(T lastElement, <span class="keyword">long</span> extractedTimestamp)</span><br></pre></td></tr></table></figure>
+
+
+<p><img src="_v_images/20201207105022608_1990981860.png"></p>
+<h3 id="升序水印-AscendingTimestampExtractor"><a href="#升序水印-AscendingTimestampExtractor" class="headerlink" title="升序水印 AscendingTimestampExtractor"></a>升序水印 AscendingTimestampExtractor</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line">org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AscendingTimestampExtractor</span>&lt;<span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">AssignerWithPeriodicWatermarks</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/** The current timestamp. */</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">long</span> currentTimestamp = Long.MIN_VALUE;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/** Handler that is called when timestamp monotony is violated. */</span></span><br><span class="line">	<span class="keyword">private</span> MonotonyViolationHandler violationHandler = <span class="keyword">new</span> LoggingHandler();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Extracts the timestamp from the given element. The timestamp must be monotonically increasing.</span></span><br><span class="line"><span class="comment">	 *</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@param</span> element The element that the timestamp is extracted from.</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> The new timestamp.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">long</span> <span class="title">extractAscendingTimestamp</span><span class="params">(T element)</span></span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Sets the handler for violations to the ascending timestamp order.</span></span><br><span class="line"><span class="comment">	 *</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@param</span> handler The violation handler to use.</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> This extractor.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> AscendingTimestampExtractor&lt;T&gt; <span class="title">withViolationHandler</span><span class="params">(MonotonyViolationHandler handler)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">this</span>.violationHandler = requireNonNull(handler);</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// ------------------------------------------------------------------------</span></span><br><span class="line">    <span class="comment">// 调用</span></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">long</span> <span class="title">extractTimestamp</span><span class="params">(T element, <span class="keyword">long</span> elementPrevTimestamp)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">final</span> <span class="keyword">long</span> newTimestamp = extractAscendingTimestamp(element);</span><br><span class="line">		<span class="keyword">if</span> (newTimestamp &gt;= <span class="keyword">this</span>.currentTimestamp) &#123;</span><br><span class="line">			<span class="keyword">this</span>.currentTimestamp = newTimestamp;</span><br><span class="line">			<span class="keyword">return</span> newTimestamp;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			violationHandler.handleViolation(newTimestamp, <span class="keyword">this</span>.currentTimestamp);</span><br><span class="line">			<span class="keyword">return</span> newTimestamp;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Watermark <span class="title">getCurrentWatermark</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> Watermark(currentTimestamp == Long.MIN_VALUE ? Long.MIN_VALUE : currentTimestamp - <span class="number">1</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>AscendingTimestampExtractor抽象类实现了ssignerWithPeriodicWatermarks接口的extractTimestamp及getCurrentWatermark方法，同时声明抽象方法extractAscendingTimestamp供子类实现<br>水印的生产策略为：getCurrentWatermark 方法在currentTimestamp不为Long.MIN_VALUE时返回Watermark(currentTimestamp - 1)</p>
+<p>综上：<br>发现AscendingTimestampExtractor适用于elements的时间在每个并行task里面事单调递增的，（timestamp monotony）数据场景。</p>
+<h3 id="无序水印-BoundedOutOfOrdernessTimestampExtractor"><a href="#无序水印-BoundedOutOfOrdernessTimestampExtractor" class="headerlink" title="无序水印 BoundedOutOfOrdernessTimestampExtractor"></a>无序水印 BoundedOutOfOrdernessTimestampExtractor</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">BoundedOutOfOrdernessTimestampExtractor</span>&lt;<span class="title">T</span>&gt; <span class="keyword">implements</span> <span class="title">AssignerWithPeriodicWatermarks</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> serialVersionUID = <span class="number">1L</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/** The current maximum timestamp seen so far. */</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">long</span> currentMaxTimestamp;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/** The timestamp of the last emitted watermark. */</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">long</span> lastEmittedWatermark = Long.MIN_VALUE;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * The (fixed) interval between the maximum seen timestamp seen in the records</span></span><br><span class="line"><span class="comment">	 * and that of the watermark to be emitted.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">long</span> maxOutOfOrderness;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="title">BoundedOutOfOrdernessTimestampExtractor</span><span class="params">(Time maxOutOfOrderness)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (maxOutOfOrderness.toMilliseconds() &lt; <span class="number">0</span>) &#123;</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Tried to set the maximum allowed &quot;</span> +</span><br><span class="line">				<span class="string">&quot;lateness to &quot;</span> + maxOutOfOrderness + <span class="string">&quot;. This parameter cannot be negative.&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">this</span>.maxOutOfOrderness = maxOutOfOrderness.toMilliseconds();</span><br><span class="line">		<span class="keyword">this</span>.currentMaxTimestamp = Long.MIN_VALUE + <span class="keyword">this</span>.maxOutOfOrderness;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">getMaxOutOfOrdernessInMillis</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> maxOutOfOrderness;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Extracts the timestamp from the given element.</span></span><br><span class="line"><span class="comment">	 *</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@param</span> element The element that the timestamp is extracted from.</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> The new timestamp.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">long</span> <span class="title">extractTimestamp</span><span class="params">(T element)</span></span>;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">final</span> Watermark <span class="title">getCurrentWatermark</span><span class="params">()</span> </span>&#123;</span><br><span class="line">		<span class="comment">// this guarantees that the watermark never goes backwards.</span></span><br><span class="line">		<span class="keyword">long</span> potentialWM = currentMaxTimestamp - maxOutOfOrderness;</span><br><span class="line">		<span class="keyword">if</span> (potentialWM &gt;= lastEmittedWatermark) &#123;</span><br><span class="line">			lastEmittedWatermark = potentialWM;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> Watermark(lastEmittedWatermark);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">long</span> <span class="title">extractTimestamp</span><span class="params">(T element, <span class="keyword">long</span> previousElementTimestamp)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">long</span> timestamp = extractTimestamp(element);</span><br><span class="line">		<span class="keyword">if</span> (timestamp &gt; currentMaxTimestamp) &#123;</span><br><span class="line">			currentMaxTimestamp = timestamp;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> timestamp;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>BoundedOutOfOrdernessTimestampExtractor</code> 抽象类实现<code>AssignerWithPeriodicWatermarks</code>接口的<code>extractTimestamp及getCurrentWatermark</code>方法，同时声明抽象方法<code>extractAscendingTimestamp</code>供子类实现<br><code>BoundedOutOfOrdernessTimestampExtractor</code> 的构造器接收<code>maxOutOfOrderness</code>参数用于指定element允许滞后（<code>t</code>~`t_w<code>，</code>t<code>为element的eventTime，</code>t_w<code>为前一次watermark的时间）的最大时间，在计算窗口数据时，如果超过该值则会被忽略。 </code>BoundedOutOfOrdernessTimestampExtractor<code>的</code>extractTimestamp<code>方法会调用子类的</code>extractTimestamp<code>方法抽取时间，如果该时间大于</code>currentMaxTimestamp<code>，则更新</code>currentMaxTimestamp<code>； </code>getCurrentWatermark<code>先计算</code>potentialWM<code>，如果</code>potentialWM<code>大于等于</code>lastEmittedWatermark<code>则更新</code>lastEmittedWatemakr<code>(</code>currentMaxTimestamp - lastEmittedWatermark &gt;= maxOutOfOrderness<code>， 这里表示</code>lastEmittedWatermark<code>太小了，所以差值超过了</code>maxOutOfOrderness<code>，因此会调大</code>lastEmittedWatermark<code>)，最后返回</code>watermark` </p>
+<p>具体逻辑参考：就是判断如果新的水印时间大于上次最后一次发出水印时间，选择新的水印时间，否则选择上次最后发送水印时间戳</p>
+<h3 id="TimeStamp分配器和Watermark生成器-Timestamp-Assigners-Watermark-Generators"><a href="#TimeStamp分配器和Watermark生成器-Timestamp-Assigners-Watermark-Generators" class="headerlink" title="TimeStamp分配器和Watermark生成器(Timestamp Assigners / Watermark Generators)"></a>TimeStamp分配器和Watermark生成器(Timestamp Assigners / Watermark Generators)</h3><h2 id="数据延迟"><a href="#数据延迟" class="headerlink" title="数据延迟"></a>数据延迟</h2><p>主要的办法是给定一个允许延迟的时间，在该时间范围内仍可以接受处理延迟数据</p>
+<p>设置允许延迟的时间是通过<code>allowedLateness(lateness: Time)</code>设置</p>
+<p>保存延迟数据则是通过<code>sideOutputLateData(outputTag: OutputTag[T])</code>保存</p>
+<p>获取延迟数据是通过<code>DataStream.getSideOutput(tag: OutputTag[X])</code>获取</p>
+<h3 id="allowedLateness-lateness-Time"><a href="#allowedLateness-lateness-Time" class="headerlink" title="allowedLateness(lateness: Time)"></a>allowedLateness(lateness: Time)</h3><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">allowedLateness</span></span>(lateness: <span class="type">Time</span>): <span class="type">WindowedStream</span>[<span class="type">T</span>, <span class="type">K</span>, <span class="type">W</span>] = &#123;</span><br><span class="line">    javaStream.allowedLateness(lateness)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法传入一个Time值，设置允许数据迟到的时间，这个时间和waterMark中的时间概念不同。再来回顾一下，</p>
+<p>waterMark=数据的事件时间-允许乱序时间值</p>
+<p>随着新数据的到来，waterMark的值会更新为最新数据事件时间-允许乱序时间值，但是如果这时候来了一条历史数据，waterMark值则不会更新。总的来说，waterMark是为了能接收到尽可能多的乱序数据。</p>
+<p>那这里的Time值呢？主要是为了等待迟到的数据，在一定时间范围内，如果属于该窗口的数据到来，仍会进行计算，后面会对计算方式仔细说明</p>
+<p><strong>allowedLateness 是等待数据进入窗口的最大时间，未进入的数据，可以通过偏流导出</strong></p>
+<p>注意：该方法只针对于基于event-time的窗口，如果是基于processing-time，并且指定了非零的time值则会抛出异常</p>
+<h3 id="sideOutputLateData-outputTag-OutputTag-T"><a href="#sideOutputLateData-outputTag-OutputTag-T" class="headerlink" title="sideOutputLateData(outputTag: OutputTag[T])"></a>sideOutputLateData(outputTag: OutputTag[T])</h3><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">sideOutputLateData</span></span>(outputTag: <span class="type">OutputTag</span>[<span class="type">T</span>]): <span class="type">WindowedStream</span>[<span class="type">T</span>, <span class="type">K</span>, <span class="type">W</span>] = &#123;</span><br><span class="line">    javaStream.sideOutputLateData(outputTag)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>该方法是将迟来的数据保存至给定的outputTag参数，而OutputTag则是用来标记延迟数据的一个对象。</p>
+<h3 id="DataStream-getSideOutput-tag-OutputTag-X"><a href="#DataStream-getSideOutput-tag-OutputTag-X" class="headerlink" title="DataStream.getSideOutput(tag: OutputTag[X])"></a>DataStream.getSideOutput(tag: OutputTag[X])</h3><p>通过window等操作返回的DataStream调用该方法，传入标记延迟数据的对象来获取延迟的数据</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">waterStream.keyBy(<span class="number">0</span>)</span><br><span class="line">      .window(<span class="type">TumblingEventTimeWindows</span>.of(<span class="type">Time</span>.seconds(<span class="number">5</span>L)))</span><br><span class="line">    </span><br><span class="line">      .allowedLateness(<span class="type">Time</span>.seconds(<span class="number">2</span>L))</span><br><span class="line">      .sideOutputLateData(lateData)</span><br><span class="line">      .apply(<span class="keyword">new</span> <span class="type">WindowFunction</span>[(<span class="type">String</span>, <span class="type">Long</span>), <span class="type">String</span>, <span class="type">Tuple</span>, <span class="type">TimeWindow</span>] &#123;</span><br><span class="line">        <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">apply</span></span>(key: <span class="type">Tuple</span>, window: <span class="type">TimeWindow</span>, input: <span class="type">Iterable</span>[(<span class="type">String</span>, <span class="type">Long</span>)], out: <span class="type">Collector</span>[<span class="type">String</span>]): <span class="type">Unit</span> = &#123;</span><br><span class="line">          <span class="keyword">val</span> timeArr = <span class="type">ArrayBuffer</span>[<span class="type">String</span>]()</span><br><span class="line">          <span class="keyword">val</span> iterator = input.iterator</span><br><span class="line">          <span class="keyword">while</span> (iterator.hasNext) &#123;</span><br><span class="line">            <span class="keyword">val</span> tup2 = iterator.next()</span><br><span class="line">            timeArr.append(sdf.format(tup2._2))</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">val</span> outData = <span class="type">String</span>.format(<span class="string">&quot;key: %s    data: %s    startTime:  %s    endTime:  %s&quot;</span>,</span><br><span class="line">            key.toString,</span><br><span class="line">            timeArr.mkString(<span class="string">&quot;-&quot;</span>),</span><br><span class="line">            sdf.format(window.getStart),</span><br><span class="line">            sdf.format(window.getEnd))</span><br><span class="line">          out.collect(outData)</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;)</span><br><span class="line">    result.print(<span class="string">&quot;window计算结果:&quot;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">val</span> late = result.getSideOutput(lateData)</span><br><span class="line">    late.print(<span class="string">&quot;迟到的数据:&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+
+
+
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/103519313">Flink时间系列-EventTime下数据延迟处理</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.infoq.cn/article/zvc15xotpp5x5brxhwuz">Flink: 时间属性深度解析</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/HBaseConnectors/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/HBaseConnectors/" class="post-title-link" itemprop="url">Flink:HBaseConnectors</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-HBase-connectors"><a href="#Flink-HBase-connectors" class="headerlink" title="Flink HBase connectors"></a>Flink HBase connectors</h1><h2 id="flighting"><a href="#flighting" class="headerlink" title="flighting"></a>flighting</h2><p>奇怪，没有依赖HBase-Client，而是依赖了HBase-server</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.hbase<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hbase-hadoop2-compat<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;hbase.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">scope</span>&gt;</span>test<span class="tag">&lt;/<span class="name">scope</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">type</span>&gt;</span>test-jar<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.hbase<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>hbase-server<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">version</span>&gt;</span>$&#123;hbase.version&#125;<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h3 id="添加文件到ClassLoader的classpath"><a href="#添加文件到ClassLoader的classpath" class="headerlink" title="添加文件到ClassLoader的classpath"></a>添加文件到ClassLoader的classpath</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Get the classloader actually used by HBaseConfiguration</span></span><br><span class="line">ClassLoader classLoader = HBaseConfiguration.create().getClassLoader();</span><br><span class="line"><span class="keyword">if</span> (!(classLoader <span class="keyword">instanceof</span> URLClassLoader)) &#123;</span><br><span class="line">	fail(<span class="string">&quot;We should get a URLClassLoader&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Make the addURL method accessible</span></span><br><span class="line">Method method = URLClassLoader.class.getDeclaredMethod(<span class="string">&quot;addURL&quot;</span>, URL.class);</span><br><span class="line">method.setAccessible(<span class="keyword">true</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Add the directory where we put the hbase-site.xml to the classpath</span></span><br><span class="line">method.invoke(classLoader, directory.toURI().toURL());</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/10/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/">12</a><span class="space">&hellip;</span><a class="page-number" href="/page/27/">27</a><a class="extend next" rel="next" href="/page/12/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/page/10/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/">12</a><span class="space">&hellip;</span><a class="page-number" href="/page/26/">26</a><a class="extend next" rel="next" href="/page/12/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1563,7 +1886,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">258</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

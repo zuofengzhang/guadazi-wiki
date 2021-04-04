@@ -207,7 +207,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:36:20" itemprop="dateCreated datePublished" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              <time title="Created: 2021-04-04 08:42:23" itemprop="dateCreated datePublished" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
             </span>
 
           
@@ -222,98 +222,6 @@
 
       
           <h1 id="实时数仓"><a href="#实时数仓" class="headerlink" title="实时数仓"></a>实时数仓</h1><h2 id="为什么构建实时数仓"><a href="#为什么构建实时数仓" class="headerlink" title="为什么构建实时数仓"></a>为什么构建实时数仓</h2>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/ORC-file(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)(AVERYZHANG-PC1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Hadoop/ORC-file(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)(AVERYZHANG-PC1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-04 08:36:20" itemprop="dateCreated datePublished" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <hr>
-<p>title: orcfile<br>date: 2017-02-26 00:00:00<br>layout: post<br>category: Distributed<br>tags:</p>
-<ul>
-<li>Distributed</li>
-<li>Hadoop</li>
-<li>mapReducer</li>
-<li>hive</li>
-<li>orc</li>
-</ul>
-<h1 id="ORC-file"><a href="#ORC-file" class="headerlink" title="ORC file"></a>ORC file</h1><p>源码主要有core和mapreduce两个module，其中MapReduce module就是Hadoop的InputFormat和OutFormat，这个module下有两个包，mapred和MapReduce分别符合MapReduce的V1和V2的Input/Output Format.</p>
-<p>四个类：OrcInputFormat、OrcOutputFormat、OrcMapreduceRecordReader和OrcMapreduceRecordWriter</p>
-<h2 id="OrcInputFormat与OrcOutputFormat"><a href="#OrcInputFormat与OrcOutputFormat" class="headerlink" title="OrcInputFormat与OrcOutputFormat"></a>OrcInputFormat与OrcOutputFormat</h2><p>OrcInputFormat继承了FileInputFormat，getSplits用的就是FileInputFormat的实现，只是重写了createRecordReader方法。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> RecordReader&lt;NullWritable, V&gt;</span><br><span class="line">    createRecordReader(InputSplit inputSplit,</span><br><span class="line">                       TaskAttemptContext taskAttemptContext</span><br><span class="line">                       ) <span class="keyword">throws</span> IOException, InterruptedException &#123;</span><br><span class="line">  FileSplit split = (FileSplit) inputSplit;</span><br><span class="line">  Configuration conf = taskAttemptContext.getConfiguration();</span><br><span class="line">  Reader file = OrcFile.createReader(split.getPath(),</span><br><span class="line">      OrcFile.readerOptions(conf)</span><br><span class="line">          .maxLength(OrcConf.MAX_FILE_LENGTH.getLong(conf)));</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> OrcMapreduceRecordReader&lt;&gt;(file,</span><br><span class="line">      org.apache.orc.mapred.OrcInputFormat.buildOptions(conf,</span><br><span class="line">          file, split.getStart(), split.getLength()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里面用到了org.apache.orc.Reader和org.apache.orc.OrcFile. 模板里面的V通常会是OrcStruct，Orc中一个表的schema可以表示为一个OrcStruct。<br>同样滴，OrcOutputFormat当中也是重写了craeteRecordWriter方法：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> RecordWriter&lt;NullWritable, V&gt;</span><br><span class="line">     getRecordWriter(TaskAttemptContext taskAttemptContext</span><br><span class="line">                     ) <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">  Configuration conf = taskAttemptContext.getConfiguration();</span><br><span class="line">  Path filename = getDefaultWorkFile(taskAttemptContext, EXTENSION);</span><br><span class="line">  Writer writer = OrcFile.createWriter(filename,</span><br><span class="line">      org.apache.orc.mapred.OrcOutputFormat.buildOptions(conf));</span><br><span class="line">   <span class="keyword">return</span> <span class="keyword">new</span> OrcMapreduceRecordWriter&lt;V&gt;(writer);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里面用到了org.apache.orc.Writer和org.apache.orc.OrcFile.<br>以上用到的这三个类都是core module里的，之后再去读。</p>
-<h2 id="OrcMapreduceRecordReader"><a href="#OrcMapreduceRecordReader" class="headerlink" title="OrcMapreduceRecordReader"></a>OrcMapreduceRecordReader</h2><p>这个类里面其实复用了org.apache.orc.mapred包下面的一些Writable类，这些Writable类用来在MapReduce中支持Orc中的一些特殊数据类型，比如Map、List、Struct等等，可以将这些数据类型从DataInput中反序列化出来，也可以将数据序列化到DataOutput中去。</p>
-<p>从构造方法可以看到：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">OrcMapreduceRecordReader</span><span class="params">(Reader fileReader,</span></span></span><br><span class="line"><span class="function"><span class="params">                                Reader.Options options)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.batchReader = fileReader.rows(options);</span><br><span class="line">  <span class="keyword">if</span> (options.getSchema() == <span class="keyword">null</span>) &#123;</span><br><span class="line">    schema = fileReader.getSchema();</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    schema = options.getSchema();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.batch = schema.createRowBatch();</span><br><span class="line">  rowInBatch = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">this</span>.row = (V) OrcStruct.createValue(schema);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>其中batchReader是org.apache.orc.RecordReader类型的，这个RecordReader在core中。batch是真正有数据的地方。batch的类型是org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch，从java doc可以看出来它是干嘛用的：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * A VectorizedRowBatch is a set of rows, organized with each column</span></span><br><span class="line"><span class="comment"> * as a vector. It is the unit of query execution, organized to minimize</span></span><br><span class="line"><span class="comment"> * the cost per row and achieve high cycles-per-instruction.</span></span><br><span class="line"><span class="comment"> * The major fields are public by design to allow fast and convenient</span></span><br><span class="line"><span class="comment"> * access by the vectorized query execution code.</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure>
-<p>而schema是org.apache.orc.TypeDescription类型的，而TypeDescription其实是一个数据类型的描述，它有一个category，可以是INT、FLOAT等等，也可以是STRUCT。这里schema的category通常会是STRUCT。STRUCT和OrcStruct是对应的，是一个复合类型，其中可以包含其他类型的属性，用来表示一个表的schema。</p>
-<p>row就是batchReader从batch中读出来的一行记录。</p>
-<p>OrcMapreduceRecordReader中另外一个重要的方法是nextKeyValue：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">nextKeyValue</span><span class="params">()</span> <span class="keyword">throws</span> IOException, InterruptedException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!ensureBatch()) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (schema.getCategory() == TypeDescription.Category.STRUCT) &#123;</span><br><span class="line">    OrcStruct result = (OrcStruct) row;</span><br><span class="line">    List&lt;TypeDescription&gt; children = schema.getChildren();</span><br><span class="line">    <span class="keyword">int</span> numberOfChildren = children.size();</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i &lt; numberOfChildren; ++i) &#123;</span><br><span class="line">      result.setFieldValue(i, OrcMapredRecordReader.nextValue(batch.cols[i], rowInBatch,</span><br><span class="line">          children.get(i), result.getFieldValue(i)));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    OrcMapredRecordReader.nextValue(batch.cols[<span class="number">0</span>], rowInBatch, schema, row);</span><br><span class="line">  &#125;</span><br><span class="line">  rowInBatch += <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看出来，这个方法中，判断当schema是STRUCT的category时，将它看做一个表的schema，取出里面包含的children，即各个字段的TypeDescription，然后读取各个字段的值，存入row中。这其中复用了OrcMapredRecordReader.nextValue()方法.</p>
-<h2 id="OrcMapreduceRecordWriter"><a href="#OrcMapreduceRecordWriter" class="headerlink" title="OrcMapreduceRecordWriter"></a>OrcMapreduceRecordWriter</h2><p>OrcMapreduceRecordWriter和OrcMapreduceRecordReader类似，只不过其中的batchReader换成了org.apache.orc<br>.Writer类型的writer。构造方法如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">OrcMapreduceRecordWriter</span><span class="params">(Writer writer)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.writer = writer;</span><br><span class="line">  schema = writer.getSchema();</span><br><span class="line">  <span class="keyword">this</span>.batch = schema.createRowBatch();</span><br><span class="line">  isTopStruct = schema.getCategory() == TypeDescription.Category.STRUCT;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这个类的主要方法就是write方法：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(NullWritable nullWritable, V v)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="comment">// if the batch is full, write it out.</span></span><br><span class="line">  <span class="keyword">if</span> (batch.size == batch.getMaxSize()) &#123;</span><br><span class="line">    writer.addRowBatch(batch);</span><br><span class="line">    batch.reset();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// add the new row</span></span><br><span class="line">  <span class="keyword">int</span> row = batch.size++;</span><br><span class="line">  <span class="comment">// skip over the OrcKey or OrcValue</span></span><br><span class="line">  <span class="keyword">if</span> (v <span class="keyword">instanceof</span> OrcKey) &#123;</span><br><span class="line">    v = (V)((OrcKey) v).key;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (v <span class="keyword">instanceof</span> OrcValue) &#123;</span><br><span class="line">    v = (V)((OrcValue) v).value;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (isTopStruct) &#123;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> f=<span class="number">0</span>; f &lt; schema.getChildren().size(); ++f) &#123;</span><br><span class="line">      OrcMapredRecordWriter.setColumn(schema.getChildren().get(f),</span><br><span class="line">          batch.cols[f], row, ((OrcStruct) v).getFieldValue(f));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    OrcMapredRecordWriter.setColumn(schema, batch.cols[<span class="number">0</span>], row, v);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看出来，write先把V类型（通常是OrcStruct）的记录写入batch，如果batch写满了，就批量写入writer。</p>
-<p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/bhq2010/article/details/76213895">ORC源码阅读(1) - mapreduce module</a></li>
-</ol>
-
       
     </div>
 
@@ -356,7 +264,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:36:20" itemprop="dateCreated datePublished" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              <time title="Created: 2021-04-04 08:42:23" itemprop="dateCreated datePublished" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
             </span>
 
           
@@ -371,200 +279,6 @@
 
       
           <h1 id="Yarn"><a href="#Yarn" class="headerlink" title="Yarn"></a>Yarn</h1><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">grep -A2 -B1 cg yarn-site.xml </span><br><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.linux-container-executor.cgroups.delete-timeout-ms<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>30000<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">--</span><br><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.linux-container-executor.cgroups.memory-control.enabled<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>true<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">--</span><br><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.linux-container-executor.cgroups.oom.policy<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>true<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">--</span><br><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.linux-container-executor.cgroups.hierarchy<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>/hadoop-yarn<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">--</span><br><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.linux-container-executor.cgroups.mount<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>true<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line">--</span><br><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.linux-container-executor.cgroups.mount-path<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>/cgroup<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br><span class="line"></span><br><span class="line">--</span><br><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.nodemanager.linux-container-executor.cgroups.strict-resource-usage<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>false<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/solr/SolrCloud(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)(AVERYZHANG-PC1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/solr/SolrCloud(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)(AVERYZHANG-PC1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-04 08:36:20" itemprop="dateCreated datePublished" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="SolrCloud"><a href="#SolrCloud" class="headerlink" title="SolrCloud"></a>SolrCloud</h1><p><img src="_v_images/20200812120555513_1829511358.png"></p>
-<p>物理结构：</p>
-<p>三个Solr实例（ 每个实例包括两个Core），组成一个SolrCloud。</p>
-<p>逻辑结构：</p>
-<p>索引集合包括两个Shard（shard1和shard2），shard1和shard2分别由三个Core组成，其中一个Leader两个Replication，Leader是由zookeeper选举产生，zookeeper控制每个shard上三个Core的索引数据一致，解决高可用问题。用户发起索引请求分别从shard1和shard2上获取，解决高并发问题。</p>
-<p>core：</p>
-<p>每个Core是Solr中一个独立运行单位，提供 索引和搜索服务。一个shard需要由一个Core或多个Core组成。由于collection由多个shard组成所以collection一般由多个core组成。</p>
-<p>Master&amp;Slave：</p>
-<p>Master是master-slave构中的主结点（通常说主服务器），Slave是master-slave结构中的从结点（通常说从服务器或备服务器）。同一个Shard下master和slave存储的数据是一致的，这是为了达到高可用目的</p>
-<h3 id="Logical-Concepts"><a href="#Logical-Concepts" class="headerlink" title="Logical Concepts"></a><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html#logical-concepts">Logical Concepts</a></h3><ul>
-<li><p>A Cluster can host multiple Collections of Solr Documents. 一个集群可持有多个solr文档集合</p>
-</li>
-<li><p>A collection can be partitioned into multiple Shards, which contain a subset of the Documents in the Collection. 一个集合可以分区为多个shards(切片), 一个shard包含文档集合的子集</p>
-</li>
-<li><p>The number of Shards that a Collection has determines: 集合中shard的个数取决于:</p>
-<ul>
-<li><p>The theoretical limit to the number of Documents that Collection can reasonably contain.  集合可以合理包含的文档数量的理论限制。</p>
-</li>
-<li><p>The amount of parallelization that is possible for an individual search request. 单个搜索请求可能的并行度。</p>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="Physical-Concepts"><a href="#Physical-Concepts" class="headerlink" title="Physical Concepts"></a><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html#physical-concepts">Physical Concepts</a></h3><ul>
-<li><p>A Cluster is made up of one or more Solr Nodes, which are running instances of the Solr server process. 集群由一个或多个Solr节点组成，这些节点运行着Solr服务器进程的实例。</p>
-</li>
-<li><p>Each Node can host multiple Cores. 每个节点可以持有多个核</p>
-</li>
-<li><p>Each Core in a Cluster is a physical Replica for a logical Shard. 一个集群的每个核是一个shard的物理副本</p>
-</li>
-<li><p>Every Replica uses the same configuration specified for the Collection that it is a part of. 每个副本使用为其所属的集合指定的相同配置。</p>
-</li>
-<li><p>The number of Replicas that each Shard has determines: 每个shard的副本数取决于:</p>
-<ul>
-<li><p>The level of redundancy built into the Collection and how fault tolerant the Cluster can be in the event that some Nodes become unavailable. 集合内建的冗余级别，以及在某些节点不可用时集群的容错能力。</p>
-</li>
-<li><p>The theoretical limit in the number concurrent search requests that can be processed under heavy load. 在高负载下可处理的并发搜索请求数量的理论限制。</p>
-</li>
-</ul>
-</li>
-</ul>
-<p><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html">官方文档-How SolrCloud Works</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/iceberg/Apache%20iceberg%EF%BC%9ANetflix%20%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)(AVERYZHANG-PC1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/iceberg/Apache%20iceberg%EF%BC%9ANetflix%20%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)(AVERYZHANG-PC1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-04 08:36:20" itemprop="dateCreated datePublished" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Apache-iceberg：Netflix-数据仓库的基石"><a href="#Apache-iceberg：Netflix-数据仓库的基石" class="headerlink" title="Apache iceberg：Netflix 数据仓库的基石"></a>Apache iceberg：Netflix 数据仓库的基石</h1><p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/acWcoZ25zDXetA3ewypG2g?spm=a2c6h.12873639.0.0.7e4b13839s5rpH">Apache iceberg：Netflix 数据仓库的基石</a></p>
-<h2 id="5-year-challenges"><a href="#5-year-challenges" class="headerlink" title="5-year challenges"></a>5-year challenges</h2><p>智能处理引擎</p>
-<ul>
-<li>CBO，更好的join实现</li>
-<li>缓存结果集，物化视图</li>
-</ul>
-<p>减少人工维护数据</p>
-<ul>
-<li>data librarian services 数据图书馆服务</li>
-<li>declarative instead of imperative 陈述式而不是命令式</li>
-</ul>
-<h2 id="Problem-Whack-a-mole"><a href="#Problem-Whack-a-mole" class="headerlink" title="Problem Whack-a-mole"></a>Problem Whack-a-mole</h2><p>1、不安全的操作随处可见: 同时写多个分区，列重命名<br>2、和对象存储交互有时候会出现很大的问题: eventual consistency to performance problems(最终一致性的性能问题)、output committees can’t fix it<br>3、无休止的可扩展性挑战。</p>
-<h2 id="iceberg"><a href="#iceberg" class="headerlink" title="iceberg"></a>iceberg</h2><ol>
-<li>在单个文件中修改或跳过数据</li>
-<li>当然多个文件也支持这些操作</li>
-</ol>
-<p><img src="_v_images/20201014205326408_1460756353.png"></p>
-<p><img src="_v_images/20201014205344160_898972367.png"></p>
-<p>Hive 表的核心思想是把数据组织成目录树，如上所述。</p>
-<p>如果我们需要过滤数据，可以在 where 里面添加分区相关的信息。</p>
-<p>带来的问题是如果一张表有很多分区，我们需要使用 HMS（Hive MetaStore）来记录这些分区，同时底层的文件系统（比如 HDFS）仍然需要在每个分区里面记录这些分区数据。</p>
-<p>这就导致我们需要在 HMS 和 文件系统里面同时保存一些状态信息；因为缺乏锁机制，所以对上面两个系统进行修改也不能保证原子性。</p>
-<p>当然 Hive 这样维护表也不是没有好处。这种设计使得很多引擎（Hive、Spark、Presto、Flink、Pig）都支持读写 Hive 表，同时支持很多第三方工具。简单和透明使得 Hive 表变得不可或缺的。</p>
-<p>Iceberg 的目标包括：</p>
-<p>1、成为静态数据交换的开放规范，维护一个清晰的格式规范，支持多语言，支持跨项目的需求等。<br>2、提升扩展性和可靠性。能够在一个节点上运行，也能在集群上运行。所有的修改都是原子性的，串行化隔离。原生支持云对象存储，支持多并发写。<br>3、修复持续的可用性问题，比如模式演进，分区隐藏，支持时间旅行、回滚等。</p>
-<p>Iceberg 主要设计思想：</p>
-<p>记录表在所有时间的所有文件，和 Delta Lake 或 Apache Hudi 一样，支持 snapshot，其是表在某个时刻的完整文件列表。每一次写操作都会生成一个新的快照。</p>
-<p>读取数据的时候使用当前的快照，Iceberg 使用乐观锁机制来创建新的快照，然后提交。</p>
-<p>Iceberg 这么设计的好处是：</p>
-<ul>
-<li>所有的修改都是原子性的；</li>
-<li>没有耗时的文件系统操作；</li>
-<li>快照是索引好的，以便加速读取；</li>
-<li>CBO metrics 信息是可靠的；</li>
-<li>更新支持版本，支持物化视图。</li>
-</ul>
-<p>Iceberg 在 Netflix 生产环境维护着数十 PB 的数据，数百万个分区。对大表进行查询能够提供低延迟的响应。</p>
-<p>未来工作：1、支持 Spark 向量化以便实现快速的 bulk read，Presto 向量化已经支持。2、行级别的删除，支持 MERGE INTO 等</p>
-
       
     </div>
 
@@ -607,7 +321,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:36:20" itemprop="dateCreated datePublished" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              <time title="Created: 2021-04-04 08:42:23" itemprop="dateCreated datePublished" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
             </span>
 
           
@@ -664,7 +378,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:36:20" itemprop="dateCreated datePublished" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              <time title="Created: 2021-04-04 08:42:23" itemprop="dateCreated datePublished" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
             </span>
 
           
@@ -735,7 +449,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:36:20" itemprop="dateCreated datePublished" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              <time title="Created: 2021-04-04 08:42:23" itemprop="dateCreated datePublished" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
             </span>
 
           
@@ -869,7 +583,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:36:20" itemprop="dateCreated datePublished" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              <time title="Created: 2021-04-04 08:42:23" itemprop="dateCreated datePublished" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
             </span>
 
           
@@ -948,7 +662,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-04 08:36:20" itemprop="dateCreated datePublished" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+              <time title="Created: 2021-04-04 08:42:23" itemprop="dateCreated datePublished" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
             </span>
 
           
@@ -977,10 +691,209 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/actions/FrundDetectedSystem/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/actions/FrundDetectedSystem/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-04 08:42:23" itemprop="dateCreated datePublished" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-实时规则引擎实现与应用"><a href="#Flink-实时规则引擎实现与应用" class="headerlink" title="Flink 实时规则引擎实现与应用"></a>Flink 实时规则引擎实现与应用</h1><p>Rule engine</p>
+<p>欺诈检测<br>实时标签工厂<br>ABT<br>CEP有什么问题？</p>
+<p>Frund detected system</p>
+<p>秒级规则生效<br>自定义分发，运行时动态切换<br>自定义窗口<br>实时多维聚合</p>
+<p>样例:</p>
+<ol>
+<li>欺诈检测: 同一个用户连续往两一个账户三天内连续支付超过</li>
+<li>实时标签工厂: 标签-用户近三十天访问次数、近三十天访问某个页面的次数</li>
+<li>ABT</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/actions/01.%20%E5%AE%9E%E6%97%B6%E5%8F%8D%E6%AC%BA%E8%AF%88/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/actions/01.%20%E5%AE%9E%E6%97%B6%E5%8F%8D%E6%AC%BA%E8%AF%88/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-04 08:42:23" itemprop="dateCreated datePublished" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="玖富实时反欺诈"><a href="#玖富实时反欺诈" class="headerlink" title="玖富实时反欺诈"></a>玖富实时反欺诈</h1><h2 id="业务场景"><a href="#业务场景" class="headerlink" title="业务场景"></a>业务场景</h2><ul>
+<li>低延迟</li>
+<li>大数据</li>
+<li>多维度</li>
+</ul>
+<p>系统获取用户产生数据最简单有效的方法就是流水式数据，单个数据包里包含了发生时间点的各个维度的所有信息量，这种场景的特性之一就是数据高并发，因此对时效要求比较高的数据分析来说是一个非常巨大的挑战</p>
+<blockquote>
+<p>在哪个场景下，实时宽表都是一个门槛</p>
+</blockquote>
+<ul>
+<li><p>高并发</p>
+</li>
+<li><p>规则实时下发</p>
+</li>
+</ul>
+<p>数据加工提速</p>
+<p>在大量数据中做快速预查，利用Flink并发能力进行数据覆盖，最后在缓存里命中结果，从而不必重新进行网络I/O 查询、等待返回的过程。经过部分计算框架升级，最终系统实现了p99 延迟由1s 降为100ms 的优化</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/actions/02.%20%E5%AE%9E%E6%97%B6%E7%94%A8%E6%88%B7%E7%94%BB%E5%83%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/actions/02.%20%E5%AE%9E%E6%97%B6%E7%94%A8%E6%88%B7%E7%94%BB%E5%83%8F/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-04 08:42:23" itemprop="dateCreated datePublished" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="实时用户画像"><a href="#实时用户画像" class="headerlink" title="实时用户画像"></a>实时用户画像</h1><h2 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h2><p>企业面对不断增加的海量信息，其信息筛选和处理效率低下的困扰与日俱增。由于用户营销不够细化，企业App 中许多不合时宜或不合偏好的消息推送很大程度上影响了用户体验，甚至引发了用户流失</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/27/">27</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/26/">26</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1046,7 +959,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">258</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

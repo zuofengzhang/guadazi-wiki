@@ -183,786 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-window/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/Flink-window/" class="post-title-link" itemprop="url">Flink-window</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Flink-window"><a href="#Flink-window" class="headerlink" title="Flink-window"></a>Flink-window</h1><h2 id="窗口的触发"><a href="#窗口的触发" class="headerlink" title="窗口的触发"></a>窗口的触发</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line">SingleOutputStreamOperator&lt;ItemEntity&gt; streamOperator = env</span><br><span class="line">        .socketTextStream(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">9091</span>)</span><br><span class="line">        .map(<span class="keyword">new</span> MapFunction&lt;String, ItemEntity&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> ItemEntity <span class="title">map</span><span class="params">(String s)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                String[] split = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (s.isEmpty() || (split = s.split(<span class="string">&quot;,&quot;</span>)).length != <span class="number">2</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                ItemEntity itemEntity = ItemEntity.builder().timestamp(split[<span class="number">0</span>])</span><br><span class="line">                        .eventId(split[<span class="number">1</span>])</span><br><span class="line">                        .build();</span><br><span class="line">                <span class="keyword">return</span> itemEntity;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;)</span><br><span class="line">        .filter(Objects::nonNull)</span><br><span class="line">        .assignTimestampsAndWatermarks(<span class="keyword">new</span> AscendingTimestampExtractor&lt;ItemEntity&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">extractAscendingTimestamp</span><span class="params">(ItemEntity itemEntity)</span> </span>&#123;</span><br><span class="line">                <span class="keyword">long</span> timestamp = itemEntity.getTimestamp();</span><br><span class="line">                <span class="keyword">return</span> timestamp;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">streamOperator</span><br><span class="line">        .keyBy(<span class="keyword">new</span> KeySelector&lt;ItemEntity, String&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> String <span class="title">getKey</span><span class="params">(ItemEntity itemEntity)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                String eventId = itemEntity.getEventId();</span><br><span class="line">                <span class="keyword">return</span> eventId;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;)</span><br><span class="line">        .window(TumblingEventTimeWindows.of(Time.seconds(<span class="number">5</span>)))</span><br><span class="line">        .process(</span><br><span class="line">                <span class="keyword">new</span> ProcessWindowFunction&lt;ItemEntity, Tuple2&lt;String, String&gt;, String, TimeWindow&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(String s, Context context,</span></span></span><br><span class="line"><span class="function"><span class="params">                            Iterable&lt;ItemEntity&gt; iterable,</span></span></span><br><span class="line"><span class="function"><span class="params">                            Collector&lt;Tuple2&lt;String, String&gt;&gt; collector)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                        <span class="keyword">for</span> (ItemEntity itemEntity : iterable) &#123;</span><br><span class="line">                            <span class="keyword">long</span> timestamp = itemEntity.getTimestamp();</span><br><span class="line">                            Date date = <span class="keyword">new</span> Date(timestamp);</span><br><span class="line">                            SimpleDateFormat simpleDateFormat = <span class="keyword">new</span> SimpleDateFormat(</span><br><span class="line">                                    <span class="string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);</span><br><span class="line">                            collector.collect(Tuple2.of(itemEntity.getEventId(),</span><br><span class="line">                                    timestamp + <span class="string">&quot;-&gt;&quot;</span> + simpleDateFormat.format(date)));</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;)</span><br><span class="line">        .print();</span><br><span class="line">env.execute(<span class="string">&quot;test-window&quot;</span>);</span><br></pre></td></tr></table></figure>
-<p>5秒的窗口</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">2020-04-01 00:01:00,1</span><br><span class="line">2020-04-01 00:01:00,1</span><br><span class="line">2020-04-01 00:01:06,1 # 触发计算</span><br><span class="line">(1,1585670460000-&gt;2020-04-01 00:01:00)</span><br><span class="line">(1,1585670460000-&gt;2020-04-01 00:01:00)</span><br><span class="line">2020-04-01 00:01:00,1 # 窗口已经关闭，旧数据</span><br><span class="line"><span class="meta">#</span><span class="bash"> WARN  org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor [] - Timestamp monotony violated: 1585670460000 &lt; 1585670466000</span></span><br><span class="line">2020-04-01 00:01:06,1</span><br><span class="line">2020-04-01 00:01:07,1</span><br><span class="line">2020-04-01 00:01:11,1 # 触发计算</span><br><span class="line">(1,1585670466000-&gt;2020-04-01 00:01:06)</span><br><span class="line">(1,1585670466000-&gt;2020-04-01 00:01:06)</span><br><span class="line">(1,1585670467000-&gt;2020-04-01 00:01:07)</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="window的抽象概念"><a href="#window的抽象概念" class="headerlink" title="window的抽象概念"></a>window的抽象概念</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">Keyed Windows</span><br><span class="line"></span><br><span class="line">stream</span><br><span class="line">       .keyBy(...)               &lt;-  keyed versus non-keyed windows</span><br><span class="line">       .window(...)              &lt;-  required: &quot;assigner&quot;</span><br><span class="line">      [.trigger(...)]            &lt;-  optional: &quot;trigger&quot; (else default trigger)</span><br><span class="line">      [.evictor(...)]            &lt;-  optional: &quot;evictor&quot; (else no evictor)</span><br><span class="line">      [.allowedLateness(...)]    &lt;-  optional: &quot;lateness&quot; (else zero)</span><br><span class="line">      [.sideOutputLateData(...)] &lt;-  optional: &quot;output tag&quot; (else no side output for late data)</span><br><span class="line">       .reduce&#x2F;aggregate&#x2F;fold&#x2F;apply()      &lt;-  required: &quot;function&quot;</span><br><span class="line">      [.getSideOutput(...)]      &lt;-  optional: &quot;output tag&quot;</span><br><span class="line">Non-Keyed Windows</span><br><span class="line"></span><br><span class="line">stream</span><br><span class="line">       .windowAll(...)           &lt;-  required: &quot;assigner&quot;</span><br><span class="line">      [.trigger(...)]            &lt;-  optional: &quot;trigger&quot; (else default trigger)</span><br><span class="line">      [.evictor(...)]            &lt;-  optional: &quot;evictor&quot; (else no evictor)</span><br><span class="line">      [.allowedLateness(...)]    &lt;-  optional: &quot;lateness&quot; (else zero)</span><br><span class="line">      [.sideOutputLateData(...)] &lt;-  optional: &quot;output tag&quot; (else no side output for late data)</span><br><span class="line">       .reduce&#x2F;aggregate&#x2F;fold&#x2F;apply()      &lt;-  required: &quot;function&quot;</span><br><span class="line">      [.getSideOutput(...)]      &lt;-  optional: &quot;output tag&quot;</span><br></pre></td></tr></table></figure>
-<h3 id="window-assigner"><a href="#window-assigner" class="headerlink" title="window assigner"></a>window assigner</h3><h3 id="window-trigger"><a href="#window-trigger" class="headerlink" title="window trigger"></a>window trigger</h3><h3 id="window-evictor"><a href="#window-evictor" class="headerlink" title="window evictor"></a>window evictor</h3><h2 id="windowOperator工作流程"><a href="#windowOperator工作流程" class="headerlink" title="windowOperator工作流程"></a>windowOperator工作流程</h2><p><img src="_v_images/20201206173044901_44534749.png"></p>
-<h3 id="window-state"><a href="#window-state" class="headerlink" title="window state"></a>window state</h3><p><img src="_v_images/20201206173354630_1171217287.png"></p>
-<h2 id="Session-window"><a href="#Session-window" class="headerlink" title="Session window"></a>Session window</h2><p><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2016/06/06/flink-internals-session-window/">Flink 原理与实现：Session Window</a></p>
-<p><code>SESSION(time_attr, interval)</code>定义一个会话时间窗口。<br>会话时间窗口没有一个固定的持续时间，但是它们的边界会根据 <code>interval</code> 所定义的不活跃时间所确定；即一个会话时间窗口在定义的间隔时间内没有时间出现，该窗口会被关闭。例如时间窗口的间隔时间是 30 分钟，当其不活跃的时间达到30分钟后，若观测到新的记录，则会启动一个新的会话时间窗口（否则该行数据会被添加到当前的窗口），且若在 30 分钟内没有观测到新纪录，这个窗口将会被关闭。会话时间窗口可以使用事件时间（批处理、流处理）或处理时间（流处理）。</p>
-<p>流式数据处理中，很多操作要依赖于时间属性进行，因此时间属性也是流式引擎能够保证准确处理数据的基石。在这篇文章中，我们将对 Flink 中时间属性和窗口的实现逻辑进行分析。</p>
-<h2 id="概览"><a href="#概览" class="headerlink" title="概览"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#%E6%A6%82%E8%A7%88"></a>概览</h2><p>Google 2015 年发表的 <a target="_blank" rel="noopener" href="https://ai.google/research/pubs/pub43864">The Dataflow Model</a> 论文是流式处理领域非常具有指导意义的一篇论文，对于大规模/无边界/乱序数据集的数据特征和计算范式进行了总结，并且提出了一个通用的计算模型来指导流式数据处理系统的构建。Flink 参考了很多 Dataflow Model 的思想，尤其是在时间属性和窗口的设计实现方面。</p>
-<p>Dataflow 模型将数据处理处理要处理的问题抽象为以下几个基本问题：</p>
-<ul>
-<li>  What results are being computed?</li>
-<li>  Where in event time they are being computed?</li>
-<li>  When in processing time they are materialized?</li>
-<li>  How earlier results relate to later refinements?</li>
-</ul>
-<p>要回答上面 Where 和 When 的问题，就需要依赖于时间域（time domain），水位线（watermark），窗口模型（windowing model），触发器（triggering model）等机制。</p>
-<h3 id="Event-Time-vs-Processing-Time"><a href="#Event-Time-vs-Processing-Time" class="headerlink" title="Event Time vs Processing Time"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#event-time-vs-processing-time"></a>Event Time vs Processing Time</h3><p>在处理无边界的乱序数据时，需要对涉及到的时间域有一个清晰的认识。在流式处理系统，我们主要关注两种典型的时间属性：</p>
-<ul>
-<li>  Event Time：事件发生时的确切时间</li>
-<li>  Processing Time：事件在系统中被处理的时间</li>
-</ul>
-<p>事件时间是一个消息的固有属性，消息在流处理系统中流转，事件时间始终保持不变；而处理时间则依赖于流处理系统的本地时钟，随着消息的流转，处理时间也在不断发生变动。在完全理想的情况下，事件事件和处理时间是一致的，也就是事件发生的时候就立即被处理。然而实际情况肯定并非如此，在分布式系统中，由于网络延迟等因素，处理时间必然落后于事件时间。</p>
-<p>除了 Event Time 和 Processing Time 之外，Flink 还提供了 Ingestion Time（摄入时间）。摄入时间指的是一个消息进入 Flink 的时间，随着消息的流转，摄入时间不会发生变动。并且，和事件时间可能会出现乱序问题不同，摄入时间是递增的。摄入时间介于事件时间和处理时间之间，</p>
-<h3 id="Window"><a href="#Window" class="headerlink" title="Window"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#window"></a>Window</h3><p>对于一个无边界的数据流，窗口（Window）可以沿着时间的边界将其切割成有边界的数据块（chunk）来进行处理。图中给出了三种主要类型的窗口的简单示例。</p>
-<p><a target="_blank" rel="noopener" href="https://blog.jrwang.me/img/flink/windows.png"><img src="vx_images/4524683776119.png" alt="window"></a></p>
-<ul>
-<li>  Fixed windows（固定窗口）：在 Flink 中被也称为 Tumbling windows（滚动窗口），将时间切割成具有固定时间长度的段。滚动窗口之间不会重叠。</li>
-<li>  Sliding windows（滑动窗口）：滑动窗口是滚动窗口更一般化的表现的形式，由窗口大小和滑动间隔这两个属性来定义。如果滑动间隔小于窗口大小，那么不同的窗口之间就会存在重叠；如果滑动间隔大于窗口大小，不同窗口之间就会存在间隔；如果滑动间隔等于窗口大小，就相当于滚动窗口。</li>
-<li>  Session Windows（会话窗口）：和滚动窗口与滑动窗口不同的是，会话窗口并没有固定的窗口大小；它是一种动态窗口，通常由超时间隔（timeout gap）来定义。当超过一段时间没有新的事件到达，则可以认为窗口关闭了。</li>
-</ul>
-<h3 id="Trigger"><a href="#Trigger" class="headerlink" title="Trigger"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#trigger"></a>Trigger</h3><p>触发器（Trigger）提供了一种灵活的机制来决定窗口的计算结果在什么时候对外输出。理论上来说，只有两种类型的触发器，大部分的应用都是选择其一或组合使用：</p>
-<ul>
-<li>  Repeated update triggers：重复更新窗口的计算结果，更新可以是由新消息到达时触发，也可以是每个一段时间（如1分钟）进行触发</li>
-<li>  Completeness triggers：在窗口结束时进行触发，这是更符合直觉的使用方法，也和批处理模式的计算结果相吻合。但是需要一种机制来衡量一个窗口的所有消息都已经被正确地处理了。</li>
-</ul>
-<h3 id="Watermark"><a href="#Watermark" class="headerlink" title="Watermark"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#watermark"></a>Watermark</h3><p>怎么确定一个窗口是否已经结束，这在流式数据处理系统中并非一个很容易解决的问题。如果窗口是基于处理时间的，那么问题确实容易解决，因为处理时间是完全基于本地时钟的；但是如果窗口基于事件时间，由于分布式系统中消息可能存在延迟、乱序到达的问题，即便系统已经接收到窗口边界以外的数据了，也不能确定前面的所有数据都已经到达了。水位线（Watermark）机制就是用于解决这个问题的。</p>
-<p>Watermark 是事件时间域中衡量输入完成进度的一种时间概念。换句话说，在处理使用事件时间属性的数据流时，Watermark 是系统测量数据处理进度的一种方法。假如当前系统的 watermark 为时间 T，那么系统认为所有事件时间小于 T 的消息都已经到达，即系统任务它不会再接收到事件时间小于 T 的消息了。有了 Watermark，系统就可以确定使用事件时间的窗口是否已经完成。但是 Watermark 只是一种度量指标，系统借由它来评估当前的进度，并不能完全保证不会出现小于当前 Watermark 的消息。对于这种消息，即“迟到”的消息，需要进行特殊的处理。这也就是前面所说的流处理系统面临的 <strong>How</strong> 的问题，即如何处理迟到的消息，从而修正已经输出的计算结果。</p>
-<h2 id="事件时间和水位线"><a href="#事件时间和水位线" class="headerlink" title="事件时间和水位线"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#%E4%BA%8B%E4%BB%B6%E6%97%B6%E9%97%B4%E5%92%8C%E6%B0%B4%E4%BD%8D%E7%BA%BF"></a>事件时间和水位线</h2><p>Flink 内部使用 <code>StreamRecord</code> 来表示需要被处理的一条消息，使用 <code>Watermark</code> 来表示一个水位线的标记。<code>Watermark</code> 和 <code>StreamRecord</code> 一样，需要在上下游的算子之间进行流动，它们拥有共同的父类 <code>StreamElement</code>。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 910111213141516</code></td>
-<td><code>java//对实际的消息类型做一层封装，timestamp就是这条记录关联的事件时间public final class StreamRecord&lt;T&gt; extends StreamElement &#123;    /** The actual value held by this record. */    private T value;    /** The timestamp of the record. */    private long timestamp;    /** Flag whether the timestamp is actually set. */    private boolean hasTimestamp;&#125;public final class Watermark extends StreamElement &#123;    /** The watermark that signifies end-of-event-time. */    public static final Watermark MAX_WATERMARK = new Watermark(Long.MAX_VALUE);    /** The timestamp of the watermark in milliseconds. */    private final long timestamp;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>有两种方式来生成一个消息流的 event time 和 watermark，一种方式是在数据源中直接生成，另一种方式是通过 Timestamp Assigners / Watermark Generators。</p>
-<h3 id="在-SourceFunction-中生成时间信息"><a href="#在-SourceFunction-中生成时间信息" class="headerlink" title="在 SourceFunction 中生成时间信息"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#%E5%9C%A8-sourcefunction-%E4%B8%AD%E7%94%9F%E6%88%90%E6%97%B6%E9%97%B4%E4%BF%A1%E6%81%AF"></a>在 SourceFunction 中生成时间信息</h3><p>在 <code>SourceFunction</code> 中，可以通过 <code>SourceContext</code> 接口提供的 <code>SourceContext.collectWithTimestamp(T element, long timestamp)</code> 提交带有时间戳的消息，通过 <code>SourceContext.emitWatermark(Watermark mark)</code> 提交 watermark。<code>SourceContext</code> 有几种不同的实现，根据时间属性的设置，会自动选择不同的 <code>SourceContext</code>。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 910111213141516171819202122232425262728293031323334353637383940414243444546474849</code></td>
-<td><code>javapublic class StreamSourceContexts &#123;    /**     * Depending on the &#123;@link TimeCharacteristic&#125;, this method will return the adequate     * &#123;@link org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext&#125;. That is:     * &lt;ul&gt;     *     &lt;li&gt;&#123;@link TimeCharacteristic#IngestionTime&#125; = &#123;@code AutomaticWatermarkContext&#125;&lt;/li&gt;     *     &lt;li&gt;&#123;@link TimeCharacteristic#ProcessingTime&#125; = &#123;@code NonTimestampContext&#125;&lt;/li&gt;     *     &lt;li&gt;&#123;@link TimeCharacteristic#EventTime&#125; = &#123;@code ManualWatermarkContext&#125;&lt;/li&gt;     * &lt;/ul&gt;     * */    public static &lt;OUT&gt; SourceFunction.SourceContext&lt;OUT&gt; getSourceContext(            TimeCharacteristic timeCharacteristic,            ProcessingTimeService processingTimeService,            Object checkpointLock,            StreamStatusMaintainer streamStatusMaintainer,            Output&lt;StreamRecord&lt;OUT&gt;&gt; output,            long watermarkInterval,            long idleTimeout) &#123;        final SourceFunction.SourceContext&lt;OUT&gt; ctx;        switch (timeCharacteristic) &#123;            case EventTime:                ctx = new ManualWatermarkContext&lt;&gt;(                    output,                    processingTimeService,                    checkpointLock,                    streamStatusMaintainer,                    idleTimeout);                break;            case IngestionTime:                ctx = new AutomaticWatermarkContext&lt;&gt;(                    output,                    watermarkInterval,                    processingTimeService,                    checkpointLock,                    streamStatusMaintainer,                    idleTimeout);                break;            case ProcessingTime:                ctx = new NonTimestampContext&lt;&gt;(checkpointLock, output);                break;            default:                throw new IllegalArgumentException(String.valueOf(timeCharacteristic));        &#125;        return ctx;    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>如果系统时间属性被设置为 <code>TimeCharacteristic#ProcessingTime</code>，那么 <code>NonTimestampContext</code> 会忽略掉时间戳和watermark；如果时间属性被设置为 <code>TimeCharacteristic#EventTime</code>，那么通过 <code>ManualWatermarkContext</code> 提交的 <code>StreamRecord</code> 就会包含时间戳，watermark 也会正常提交。比较特殊的是 <code>TimeCharacteristic#IngestionTime</code>，<code>AutomaticWatermarkContext</code> 会使用系统当前时间作为 <code>StreamRecord</code> 的时间戳，并定期提交 watermark，从而实现 IngestionTime 的效果。</p>
-<h3 id="Timestamp-Assigners-Watermark-Generators"><a href="#Timestamp-Assigners-Watermark-Generators" class="headerlink" title="Timestamp Assigners / Watermark Generators"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#timestamp-assigners-watermark-generators"></a>Timestamp Assigners / Watermark Generators</h3><p>也可以通过 Timestamp Assigners / Watermark Generators 来生成事件时间和 watermark，一般是从消息中提取出时间字段。通过 <code>DataStream.assignTimestampsAndWatermarks(AssignerWithPeriodicWatermarks)</code> 和 <code>DataStream.assignTimestampsAndWatermarks(AssignerWithPunctuatedWatermarks)</code> 方法和来自定义提取 timstamp 和生成 watermark 的逻辑。</p>
-<p><code>AssignerWithPeriodicWatermarks</code> 和 <code>AssignerWithPunctuatedWatermarks</code> 都继承了 <code>TimestampAssigner</code> 接口：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 91011</code></td>
-<td><code>javapublic interface TimestampAssigner&lt;T&gt; extends Function &#123;    long extractTimestamp(T element, long previousElementTimestamp);&#125;public interface AssignerWithPeriodicWatermarks&lt;T&gt; extends TimestampAssigner&lt;T&gt; &#123;    @Nullable Watermark getCurrentWatermark();&#125;public interface AssignerWithPunctuatedWatermarks&lt;T&gt; extends TimestampAssigner&lt;T&gt; &#123;    @Nullable Watermark checkAndGetNextWatermark(T lastElement, long extractedTimestamp);&#125;</code></td>
-</tr>
-</tbody></table>
-<p><code>AssignerWithPeriodicWatermarks</code> 和 <code>AssignerWithPunctuatedWatermarks</code> 的区别在于 watermark 的生成方式不一样。如果使用 <code>AssignerWithPeriodicWatermarks</code> 那么会定期生成 watermark 信息；而如果使用 <code>AssignerWithPunctuatedWatermarks</code> 则一般依赖于数据流中的特殊元素来生成 watermark。</p>
-<p>在使用 <code>AssignerWithPeriodicWatermarks</code> 的情况下会生成一个 <code>TimestampsAndPeriodicWatermarksOperator</code> 算子，<code>TimestampsAndPeriodicWatermarksOperator</code> 会注册定时器，定期提交 watermark 到下游：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112131415161718192021222324252627282930313233343536373839404142</code></td>
-<td><code>javapublic class TimestampsAndPeriodicWatermarksOperator&lt;T&gt;        extends AbstractUdfStreamOperator&lt;T, AssignerWithPeriodicWatermarks&lt;T&gt;&gt;        implements OneInputStreamOperator&lt;T, T&gt;, ProcessingTimeCallback &#123;        @Override    public void open() throws Exception &#123;        super.open();        currentWatermark = Long.MIN_VALUE;        watermarkInterval = getExecutionConfig().getAutoWatermarkInterval();        //注册一个定时器        if (watermarkInterval &gt; 0) &#123;            long now = getProcessingTimeService().getCurrentProcessingTime();            getProcessingTimeService().registerTimer(now + watermarkInterval, this);        &#125;    &#125;    @Override    public void processElement(StreamRecord&lt;T&gt; element) throws Exception &#123;        //从元素中提取时间        final long newTimestamp = userFunction.extractTimestamp(element.getValue(),                element.hasTimestamp() ? element.getTimestamp() : Long.MIN_VALUE);        output.collect(element.replace(element.getValue(), newTimestamp));    &#125;    //定时器触发的回调函数    @Override    public void onProcessingTime(long timestamp) throws Exception &#123;        //watermark 大于当前值，则提交        Watermark newWatermark = userFunction.getCurrentWatermark();        if (newWatermark != null &amp;&amp; newWatermark.getTimestamp() &gt; currentWatermark) &#123;            currentWatermark = newWatermark.getTimestamp();            // emit watermark            output.emitWatermark(newWatermark);        &#125;        // register next timer        long now = getProcessingTimeService().getCurrentProcessingTime();        getProcessingTimeService().registerTimer(now + watermarkInterval, this);    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>在使用 <code>AssignerWithPunctuatedWatermarks</code> 的时候，会生成一个 <code>TimestampsAndPunctuatedWatermarksOperator</code> 算子，会针对每个元素判断是否需要提交 watermark：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 910111213141516171819</code></td>
-<td><code>javapublic class TimestampsAndPunctuatedWatermarksOperator&lt;T&gt;        extends AbstractUdfStreamOperator&lt;T, AssignerWithPunctuatedWatermarks&lt;T&gt;&gt;        implements OneInputStreamOperator&lt;T, T&gt; &#123;    @Override    public void processElement(StreamRecord&lt;T&gt; element) throws Exception &#123;        final T value = element.getValue();        //生成时间信息        final long newTimestamp = userFunction.extractTimestamp(value,                element.hasTimestamp() ? element.getTimestamp() : Long.MIN_VALUE);        output.collect(element.replace(element.getValue(), newTimestamp));        //判断是否需要提交 watermark        final Watermark nextWatermark = userFunction.checkAndGetNextWatermark(value, newTimestamp);        if (nextWatermark != null &amp;&amp; nextWatermark.getTimestamp() &gt; currentWatermark) &#123;            currentWatermark = nextWatermark.getTimestamp();            output.emitWatermark(nextWatermark);        &#125;    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<h2 id="Timer-定时器"><a href="#Timer-定时器" class="headerlink" title="Timer 定时器"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#timer-%E5%AE%9A%E6%97%B6%E5%99%A8"></a>Timer 定时器</h2><p>Timer 提供了一种定时触发器的功能，通过 <code>TimerService</code> 接口注册 timer，触发的回调被封装为 <code>Triggerable</code>：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112131415</code></td>
-<td><code>javapublic interface TimerService &#123;    long currentProcessingTime();    long currentWatermark();    void registerProcessingTimeTimer(long time);    void registerEventTimeTimer(long time);    void deleteProcessingTimeTimer(long time);    void deleteEventTimeTimer(long time);&#125;public interface Triggerable&lt;K, N&gt; &#123;    void onEventTime(InternalTimer&lt;K, N&gt; timer) throws Exception;    void onProcessingTime(InternalTimer&lt;K, N&gt; timer) throws Exception;&#125;</code></td>
-</tr>
-</tbody></table>
-<p><code>TimerService</code> 不仅提供了注册和取消 timer 的功能，还可以通过它来获取当前的系统时间和 watermark 的值。需要注意的一点是，<strong>Timer 只能在 <code>KeyedStream</code> 中使用</strong>。和 <code>TimerService</code> 相对应的是，Flink 内部使用 <code>InternalTimerService</code>，可以设置 timer 关联的 namespace 和 key。Timer 实际上是一种特殊的状态，在 checkpoint 时会写入快照中，这一点在前面分析 checkpoint 过程时也有介绍。</p>
-<p>在 <code>InternalTimeService</code> 中注册的 timer 有两种类型，分别为基于系统时间的和基于事件时间的，它使用两个优先级队列分别保存这两种类型的 timer。Timer 则被抽象为接口 <code>InternalTimer</code>，每个 timer 有绑定的 key，namespace 和触发时间 timestamp，<code>TimerHeapInternalTimer</code> 是其具体实现。<code>InternalTimerServiceImpl</code> 内部的两个优先级队列会按照触发时间的大小进行排序。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112131415161718192021222324252627282930313233</code></td>
-<td><code>javapublic interface InternalTimer&lt;K, N&gt; extends PriorityComparable&lt;InternalTimer&lt;?, ?&gt;&gt;, Keyed&lt;K&gt; &#123;    /** Function to extract the key from a &#123;@link InternalTimer&#125;. */    KeyExtractorFunction&lt;InternalTimer&lt;?, ?&gt;&gt; KEY_EXTRACTOR_FUNCTION = InternalTimer::getKey;    /** Function to compare instances of &#123;@link InternalTimer&#125;. */    PriorityComparator&lt;InternalTimer&lt;?, ?&gt;&gt; TIMER_COMPARATOR =        (left, right) -&gt; Long.compare(left.getTimestamp(), right.getTimestamp());    // Returns the timestamp of the timer. This value determines the point in time when the timer will fire.    long getTimestamp();    // Returns the key that is bound to this timer.    @Nonnull @Override K getKey();    // Returns the namespace that is bound to this timer.    @Nonnull N getNamespace();&#125;public class InternalTimerServiceImpl&lt;K, N&gt; implements InternalTimerService&lt;N&gt;, ProcessingTimeCallback &#123;    /**     * Processing time timers that are currently in-flight.     */    private final KeyGroupedInternalPriorityQueue&lt;TimerHeapInternalTimer&lt;K, N&gt;&gt; processingTimeTimersQueue;    /**     * Event time timers that are currently in-flight.     */    private final KeyGroupedInternalPriorityQueue&lt;TimerHeapInternalTimer&lt;K, N&gt;&gt; eventTimeTimersQueue;    /**     * The local event time, as denoted by the last received     * &#123;@link org.apache.flink.streaming.api.watermark.Watermark Watermark&#125;.     */    private long currentWatermark = Long.MIN_VALUE;    private Triggerable&lt;K, N&gt; triggerTarget;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>Processing time timer 的触发依赖于 <code>ProcessingTimeService</code>，它负责所有基于系统时间的触发器的管理，内部使用 <code>ScheduledThreadPoolExecutor</code> 调度定时任务；当定时任务被触发时，<code>ProcessingTimeCallback</code> 的回调会被调用。实际上，<code>InternalTimerServiceImpl</code> 内部依赖了 <code>ProcessingTimeService</code>，并且 <code>InternalTimerServiceImpl</code> 实现了 <code>ProcessingTimeCallback</code> 接口。当注册一个 Processing time timer 的时候，会将 timer 加入优先级队列，并正确设置下一次 <code>ProcessingTimeService</code> 的触发时间；当 <code>ProcessingTimeService</code> 触发 <code>InternalTimerServiceImpl.onProcessingTime()</code> 回调后，会从优先级队列中取出所有符合条件的触发器，并调用 <code>triggerTarget.onProcessingTime(timer)</code>。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112131415161718192021222324252627282930313233343536</code></td>
-<td><code>javapublic class InternalTimerServiceImpl&lt;K, N&gt; implements InternalTimerService&lt;N&gt;, ProcessingTimeCallback &#123;    private final ProcessingTimeService processingTimeService;    @Override    public void registerProcessingTimeTimer(N namespace, long time) &#123;        InternalTimer&lt;K, N&gt; oldHead = processingTimeTimersQueue.peek();        if (processingTimeTimersQueue.add(new TimerHeapInternalTimer&lt;&gt;(time, (K) keyContext.getCurrentKey(), namespace))) &#123;            long nextTriggerTime = oldHead != null ? oldHead.getTimestamp() : Long.MAX_VALUE;            // check if we need to re-schedule our timer to earlier            if (time &lt; nextTriggerTime) &#123; //如果新加入的timer触发时间早于下一次的触发时间，那么应该重新设置下一次触发时间                if (nextTimer != null) &#123;                    nextTimer.cancel(false);                &#125;                nextTimer = processingTimeService.registerTimer(time, this);            &#125;        &#125;    &#125;    @Override    public void onProcessingTime(long time) throws Exception &#123;        // null out the timer in case the Triggerable calls registerProcessingTimeTimer()        // inside the callback.        nextTimer = null;        InternalTimer&lt;K, N&gt; timer;        while ((timer = processingTimeTimersQueue.peek()) != null &amp;&amp; timer.getTimestamp() &lt;= time) &#123;            processingTimeTimersQueue.poll();            keyContext.setCurrentKey(timer.getKey());            triggerTarget.onProcessingTime(timer); // timer 关联的 triggerTarget.onProcessingTime 被调用        &#125;        if (timer != null &amp;&amp; nextTimer == null) &#123;            //注册下一次的触发任务            nextTimer = processingTimeService.registerTimer(timer.getTimestamp(), this);        &#125;    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>Event time timer 的触发则依赖于系统当前的 watermark。当注册一个 Processing time timer 的时候，会将对应的 timer 加入优先级队列中；而一旦 watermark 上升，<code>InternalTimerServiceImpl.advanceWatermark()</code> 方法就会被调用，这时会检查优先级队列中所有触发时间早于当前 watermark 值的 timer，并依次调用 <code>triggerTarget.onEventTime(timer)</code> 方法。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 910111213141516</code></td>
-<td><code>javapublic class InternalTimerServiceImpl&lt;K, N&gt; implements InternalTimerService&lt;N&gt;, ProcessingTimeCallback &#123;    public void advanceWatermark(long time) throws Exception &#123;        currentWatermark = time;        InternalTimer&lt;K, N&gt; timer;        while ((timer = eventTimeTimersQueue.peek()) != null &amp;&amp; timer.getTimestamp() &lt;= time) &#123;            eventTimeTimersQueue.poll();            keyContext.setCurrentKey(timer.getKey());            triggerTarget.onEventTime(timer);        &#125;    &#125;    @Override    public void registerEventTimeTimer(N namespace, long time) &#123;        eventTimeTimersQueue.add(new TimerHeapInternalTimer&lt;&gt;(time, (K) keyContext.getCurrentKey(), namespace));    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p><code>AbstractStreamOperator</code> 使用 <code>InternalTimeServiceManager</code> 管理所有的 <code>InternalTimerService</code>。在 <code>InternalTimeServiceManager</code> 内部，<code>InternalTimerService</code> 是和名称绑定的，<code>AbstractStreamOperator</code> 在获取 <code>InternalTimerService</code> 时必须指定名称，这样可以方便地将不同的触发对象 <code>Triggerable</code> 绑定到不同的 <code>InternalTimerService</code> 中。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556</code></td>
-<td><code>java@Internalpublic class InternalTimeServiceManager&lt;K&gt; &#123;    //所有的 InternalTimerServiceImpl 和名称的映射关系    private final Map&lt;String, InternalTimerServiceImpl&lt;K, ?&gt;&gt; timerServices;        //获取 InternalTimerService， 必须指定名称    public &lt;N&gt; InternalTimerService&lt;N&gt; getInternalTimerService(        String name,        TimerSerializer&lt;K, N&gt; timerSerializer,        Triggerable&lt;K, N&gt; triggerable) &#123;        InternalTimerServiceImpl&lt;K, N&gt; timerService = registerOrGetTimerService(name, timerSerializer);        timerService.startTimerService(            timerSerializer.getKeySerializer(),            timerSerializer.getNamespaceSerializer(),            triggerable);        return timerService;    &#125;    public void advanceWatermark(Watermark watermark) throws Exception &#123;        for (InternalTimerServiceImpl&lt;?, ?&gt; service : timerServices.values()) &#123;            service.advanceWatermark(watermark.getTimestamp());        &#125;    &#125;&#125;public abstract class AbstractStreamOperator&lt;OUT&gt;        implements StreamOperator&lt;OUT&gt;, SetupableStreamOperator&lt;OUT&gt;, Serializable &#123;        protected transient InternalTimeServiceManager&lt;?&gt; timeServiceManager;    public &lt;K, N&gt; InternalTimerService&lt;N&gt; getInternalTimerService(            String name,            TypeSerializer&lt;N&gt; namespaceSerializer,            Triggerable&lt;K, N&gt; triggerable) &#123;        checkTimerServiceInitialization();        // the following casting is to overcome type restrictions.        KeyedStateBackend&lt;K&gt; keyedStateBackend = getKeyedStateBackend();        TypeSerializer&lt;K&gt; keySerializer = keyedStateBackend.getKeySerializer();        InternalTimeServiceManager&lt;K&gt; keyedTimeServiceHandler = (InternalTimeServiceManager&lt;K&gt;) timeServiceManager;        TimerSerializer&lt;K, N&gt; timerSerializer = new TimerSerializer&lt;&gt;(keySerializer, namespaceSerializer);        return keyedTimeServiceHandler.getInternalTimerService(name, timerSerializer, triggerable);    &#125;    //处理 watermark    public void processWatermark(Watermark mark) throws Exception &#123;        if (timeServiceManager != null) &#123;            timeServiceManager.advanceWatermark(mark);        &#125;        output.emitWatermark(mark);    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>所有的 operator 的实现都可以通过 <code>InternalTimeServiceManager</code> 来管理 <code>InternalTimerService</code>，那么在用户提供的算子计算逻辑中又如何使用 timer 呢？以 <code>KeyedProcessOperator</code> 和 <code>KeyedProcessFunction</code> 为例，不同类型的 operator 的实现逻辑基本类似，但要注意的一点是，timer 必须在 keyed stream 中才能使用。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273</code></td>
-<td><code>javapublic abstract class KeyedProcessFunction&lt;K, I, O&gt; extends AbstractRichFunction &#123;    private static final long serialVersionUID = 1L;    public abstract void processElement(I value, Context ctx, Collector&lt;O&gt; out) throws Exception;    //timer 触发的回调， OnTimerContext 是触发的上下文信息    public void onTimer(long timestamp, OnTimerContext ctx, Collector&lt;O&gt; out) throws Exception &#123;&#125;    /**     * Information available in an invocation of &#123;@link #processElement(Object, Context, Collector)&#125;     * or &#123;@link #onTimer(long, OnTimerContext, Collector)&#125;.     */    public abstract class Context &#123;        public abstract Long timestamp();        public abstract TimerService timerService(); //获取 TimerService，可以用于注册 timer        public abstract &lt;X&gt; void output(OutputTag&lt;X&gt; outputTag, X value);        public abstract K getCurrentKey();    &#125;    /**     * Information available in an invocation of &#123;@link #onTimer(long, OnTimerContext, Collector)&#125;.     */    public abstract class OnTimerContext extends Context &#123;        public abstract TimeDomain timeDomain();        @Override        public abstract K getCurrentKey();    &#125;&#125;public class KeyedProcessOperator&lt;K, IN, OUT&gt;        extends AbstractUdfStreamOperator&lt;OUT, KeyedProcessFunction&lt;K, IN, OUT&gt;&gt;        implements OneInputStreamOperator&lt;IN, OUT&gt;, Triggerable&lt;K, VoidNamespace&gt; &#123;            @Override    public void open() throws Exception &#123;        super.open();        collector = new TimestampedCollector&lt;&gt;(output);        //注册了一个 TimerService，触发的目标是 KeyedProcessOperator 自身（实现了 Triggerable 接口）        InternalTimerService&lt;VoidNamespace&gt; internalTimerService =                getInternalTimerService(&quot;user-timers&quot;, VoidNamespaceSerializer.INSTANCE, this);        TimerService timerService = new SimpleTimerService(internalTimerService);        context = new ContextImpl(userFunction, timerService); //将 TimerService 封装在 ContextImpl 中        onTimerContext = new OnTimerContextImpl(userFunction, timerService);    &#125;    //event timer 触发    @Override    public void onEventTime(InternalTimer&lt;K, VoidNamespace&gt; timer) throws Exception &#123;        collector.setAbsoluteTimestamp(timer.getTimestamp());        invokeUserFunction(TimeDomain.EVENT_TIME, timer);    &#125;    //processing timer 触发    @Override    public void onProcessingTime(InternalTimer&lt;K, VoidNamespace&gt; timer) throws Exception &#123;        collector.eraseTimestamp();        invokeUserFunction(TimeDomain.PROCESSING_TIME, timer);    &#125;    private void invokeUserFunction(            TimeDomain timeDomain,            InternalTimer&lt;K, VoidNamespace&gt; timer) throws Exception &#123;        onTimerContext.timeDomain = timeDomain;        onTimerContext.timer = timer;        //user function 中的 timer 回调        userFunction.onTimer(timer.getTimestamp(), onTimerContext, collector);        onTimerContext.timeDomain = null;        onTimerContext.timer = null;    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<h2 id="窗口"><a href="#窗口" class="headerlink" title="窗口"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#%E7%AA%97%E5%8F%A3"></a>窗口</h2><h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95"></a>使用方法</h3><p>窗口的使用有两种基本方式，分别是 Keyed Windows 和 Non-Keyed Windows：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21</td>
-<td>// Keyed Windowsstream       .keyBy(…)               &lt;-  keyed versus non-keyed windows       .window(…)              &lt;-  required: “assigner”      [.trigger(…)]            &lt;-  optional: “trigger” (else default trigger)      [.evictor(…)]            &lt;-  optional: “evictor” (else no evictor)      [.allowedLateness(…)]    &lt;-  optional: “lateness” (else zero)      [.sideOutputLateData(…)] &lt;-  optional: “output tag” (else no side output for late data)       .reduce/aggregate/fold/process()      &lt;-  required: “function”      [.getSideOutput(…)]      &lt;-  optional: “output tag”// Non-Keyed Windowsstream       .windowAll(…)           &lt;-  required: “assigner”      [.trigger(…)]            &lt;-  optional: “trigger” (else default trigger)      [.evictor(…)]            &lt;-  optional: “evictor” (else no evictor)      [.allowedLateness(…)]    &lt;-  optional: “lateness” (else zero)      [.sideOutputLateData(…)] &lt;-  optional: “output tag” (else no side output for late data)       .reduce/aggregate/fold/process()      &lt;-  required: “function”      [.getSideOutput(…)]      &lt;-  optional: “output tag”</td>
-</tr>
-</tbody></table>
-<p>接下来，我们将重点关注 Keyed Windows 的实现方式，Non-Keyed Windows 实际上是基于 Keyed Windows 的一种特殊实现，在介绍了 Keyed Windows 的实现方式之后也会进行分析。</p>
-<p>从基本的用法来看，首先使用 <code>WindowAssigner</code> 将 <code>KeyedStream</code> 转换为 <code>WindowedStream</code>；然后指定 1）窗口的计算逻辑，如聚合函数或 <code>ProcessWindowFunction</code> 2）触发窗口计算的 <code>Trigger</code> 3）能够修改窗口中元素的 <code>Evictor</code>，这时将会生成一个 <code>WindowOperator</code> （或其子类 <code>EvictingWindowOperator</code>）算子。窗口的主要的实现逻辑就在 <code>WindowOperator</code> 中。</p>
-<h3 id="Window-和-WindowAssigner"><a href="#Window-和-WindowAssigner" class="headerlink" title="Window 和 WindowAssigner"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#window-%E5%92%8C-windowassigner"></a>Window 和 WindowAssigner</h3><p>窗口在 Flink 内部就是使用抽象类 <code>Window</code> 来表示，每一个窗口都有一个绑定的最大 timestamp，一旦时间超过这个值表明窗口结束了。<code>Window</code> 有两个具体实现类，分别为 <code>TimeWindow</code> 和 <code>GlobalWindow</code>：<code>TimeWindow</code> 就是时间窗口，每一个时间窗口都有开始时间和结束时间，可以对时间窗口进行合并操作（主要是在 Session Window 中）；<code>GlobalWindow</code> 是一个全局窗口，所有数据都属于该窗口，其最大 timestamp 是 <code>Long.MAX_VALUE</code>，使用单例模式。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 910111213141516171819202122</code></td>
-<td><code>javapublic abstract class Window &#123;    public abstract long maxTimestamp();&#125;public class TimeWindow extends Window &#123;    private final long start;    private final long end;    @Override    public long maxTimestamp() &#123;        return end - 1;    &#125;&#125;public class GlobalWindow extends Window &#123;    private static final GlobalWindow INSTANCE = new GlobalWindow();    @Override    public long maxTimestamp() &#123;        return Long.MAX_VALUE;    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p><code>WindowAssigner</code> 确定每一条消息属于哪些窗口，一条消息可能属于多个窗口（如在滑动窗口中，窗口之间可能有重叠）；<code>MergingWindowAssigner</code> 是 <code>WindowAssigner</code> 的抽象子类，主要是提供了对时间窗口的合并功能。窗口合并的逻辑在 <code>TimeWindow</code> 提供的工具方法 <code>mergeWindows(Collection&lt;TimeWindow&gt; windows, MergingWindowAssigner.MergeCallback&lt;TimeWindow&gt; c)</code> 中，会对所有窗口按开始时间排序，存在重叠的窗口就可以进行合并。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112131415161718192021222324252627282930313233</code></td>
-<td><code>javapublic abstract class WindowAssigner&lt;T, W extends Window&gt; implements Serializable &#123;    public abstract Collection&lt;W&gt; assignWindows(T element, long timestamp, WindowAssignerContext context);    public abstract boolean isEventTime();    public abstract Trigger&lt;T, W&gt; getDefaultTrigger(StreamExecutionEnvironment env);    public abstract TypeSerializer&lt;W&gt; getWindowSerializer(ExecutionConfig executionConfig);        public abstract static class WindowAssignerContext &#123;        public abstract long getCurrentProcessingTime();    &#125;&#125;public abstract class MergingWindowAssigner&lt;T, W extends Window&gt; extends WindowAssigner&lt;T, W&gt; &#123;    private static final long serialVersionUID = 1L;    public abstract void mergeWindows(Collection&lt;W&gt; windows, MergeCallback&lt;W&gt; callback);    /**     * Callback to be used in &#123;@link #mergeWindows(Collection, MergeCallback)&#125; for specifying which     * windows should be merged.     */    public interface MergeCallback&lt;W&gt; &#123;        /**         * Specifies that the given windows should be merged into the result window.         *         * @param toBeMerged The list of windows that should be merged into one window.         * @param mergeResult The resulting merged window.         */        void merge(Collection&lt;W&gt; toBeMerged, W mergeResult);    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>根据窗口类型和时间属性的不同，有不同的 <code>WindowAssigner</code> 的具体实现，如 <code>TumblingEventTimeWindows</code>, <code>TumblingProcessingTimeWindows</code>, <code>SlidingEventTimeWindows</code>, <code>SlidingProcessingTimeWindows</code>, <code>EventTimeSessionWindows</code>, <code>ProcessingTimeSessionWindows</code>, <code>DynamicEventTimeSessionWindows</code>, <code>DynamicProcessingTimeSessionWindows</code>, 以及 <code>GlobalWindows</code>。具体的实现逻辑这里就不赘述了。</p>
-<h3 id="Trigger-1"><a href="#Trigger-1" class="headerlink" title="Trigger"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#trigger-1"></a>Trigger</h3><p><code>Trigger</code> 用来确定一个窗口是否应该触发结果的计算，<code>Trigger</code> 提供了一系列的回调函数，根据回调函数返回的结果来决定是否应该触发窗口的计算。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829303132333435363738394041424344454647484950515253</code></td>
-<td><code>javapublic abstract class Trigger&lt;T, W extends Window&gt; implements Serializable &#123;    /**     * Called for every element that gets added to a pane. The result of this will determine     * whether the pane is evaluated to emit results.     *     * @param element The element that arrived.     * @param timestamp The timestamp of the element that arrived.     * @param window The window to which the element is being added.     * @param ctx A context object that can be used to register timer callbacks.     */    public abstract TriggerResult onElement(T element, long timestamp, W window, TriggerContext ctx) throws Exception;        /**     * Called when a processing-time timer that was set using the trigger context fires.     *     * @param time The timestamp at which the timer fired.     * @param window The window for which the timer fired.     * @param ctx A context object that can be used to register timer callbacks.     */    public abstract TriggerResult onProcessingTime(long time, W window, TriggerContext ctx) throws Exception;    /**     * Called when an event-time timer that was set using the trigger context fires.     *     * @param time The timestamp at which the timer fired.     * @param window The window for which the timer fired.     * @param ctx A context object that can be used to register timer callbacks.     */    public abstract TriggerResult onEventTime(long time, W window, TriggerContext ctx) throws Exception;    /**     * Returns true if this trigger supports merging of trigger state and can therefore     * be used with a     * &#123;@link org.apache.flink.streaming.api.windowing.assigners.MergingWindowAssigner&#125;.     *     * &lt;p&gt;If this returns &#123;@code true&#125; you must properly implement     * &#123;@link #onMerge(Window, OnMergeContext)&#125;     */    public boolean canMerge() &#123;        return false;    &#125;    /**     * Called when several windows have been merged into one window by the     * &#123;@link org.apache.flink.streaming.api.windowing.assigners.WindowAssigner&#125;.     *     * @param window The new window that results from the merge.     * @param ctx A context object that can be used to register timer callbacks and access state.     */    public void onMerge(W window, OnMergeContext ctx) throws Exception &#123;        throw new UnsupportedOperationException(&quot;This trigger does not support merging.&quot;);    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>Flink 提供了一些内置的 <code>Trigger</code> 实现，这些 <code>Trigger</code> 内部往往配合 timer 定时器进行使用，例如 <code>EventTimeTrigger</code> 是所有事件时间窗口的默认触发器，<code>ProcessingTimeTrigger</code> 是所有处理时间窗口的默认触发器，<code>ContinuousEventTimeTrigger</code> 和 <code>ContinuousProcessingTimeTrigger</code> 定期进行触发，<code>CountTrigger</code> 按照窗口内元素个数进行触发，<code>DeltaTrigger</code> 按照 <code>DeltaFunction</code> 进行触发，<code>NeverTrigger</code> 主要在全局窗口中使用，永远不会触发。</p>
-<h3 id="WindowOperator"><a href="#WindowOperator" class="headerlink" title="WindowOperator"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#windowoperator"></a>WindowOperator</h3><p>Window 操作的主要处理逻辑在 <code>WindowOperator</code> 中。由于 window 的使用方式比较比较灵活，下面我们将先介绍最通用的窗口处理逻辑的实现，接着介绍窗口聚合函数的实现，最后介绍对可以合并的窗口的处理逻辑。</p>
-<h4 id="窗口处理逻辑"><a href="#窗口处理逻辑" class="headerlink" title="窗口处理逻辑"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#%E7%AA%97%E5%8F%A3%E5%A4%84%E7%90%86%E9%80%BB%E8%BE%91"></a>窗口处理逻辑</h4><p>首先，我们来看一下 <code>WindowOperator</code> 的构造函数，确认它所依赖的比较重要的一些对象：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829</code></td>
-<td><code>javapublic class WindowOperator&lt;K, IN, ACC, OUT, W extends Window&gt;    extends AbstractUdfStreamOperator&lt;OUT, InternalWindowFunction&lt;ACC, OUT, K, W&gt;&gt;    implements OneInputStreamOperator&lt;IN, OUT&gt;, Triggerable&lt;K, W&gt; &#123;    public WindowOperator(            WindowAssigner&lt;? super IN, W&gt; windowAssigner,            TypeSerializer&lt;W&gt; windowSerializer,            KeySelector&lt;IN, K&gt; keySelector,            TypeSerializer&lt;K&gt; keySerializer,            StateDescriptor&lt;? extends AppendingState&lt;IN, ACC&gt;, ?&gt; windowStateDescriptor,            InternalWindowFunction&lt;ACC, OUT, K, W&gt; windowFunction,            Trigger&lt;? super IN, ? super W&gt; trigger,            long allowedLateness,            OutputTag&lt;IN&gt; lateDataOutputTag) &#123;        super(windowFunction);        this.windowAssigner = checkNotNull(windowAssigner);        this.windowSerializer = checkNotNull(windowSerializer);        this.keySelector = checkNotNull(keySelector);        this.keySerializer = checkNotNull(keySerializer);        this.windowStateDescriptor = windowStateDescriptor;        this.trigger = checkNotNull(trigger);        this.allowedLateness = allowedLateness;        this.lateDataOutputTag = lateDataOutputTag;        setChainingStrategy(ChainingStrategy.ALWAYS);    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>可以看出，构造 <code>WindowOperator</code> 时需要提供的比较重要的对象包括 <code>WindowAssigner</code>, <code>Trigger</code>, <code>StateDescriptor&lt;? extends AppendingState&lt;IN, ACC&gt;, ?&gt;</code> 以及 <code>InternalWindowFunction&lt;ACC, OUT, K, W&gt;</code>。其中，<code>StateDescriptor&lt;? extends AppendingState&lt;IN, ACC&gt;, ?&gt;</code> 是窗口状态的描述符，窗口的状态必须是 <code>AppendingState</code> 的子类；<code>InternalWindowFunction&lt;ACC, OUT, K, W&gt;</code> 是窗口的计算函数，从名字也可以看出，这是 Flink 内部使用的接口，不对外暴露。</p>
-<p>在使用窗口时，最一般化的使用方式是通过 <code>ProcessWindowFunction</code> 或 <code>WindowFunction</code> 指定计算逻辑，<code>ProcessWindowFunction</code> 和 <code>WindowFunction</code> 会被包装成 <code>InternalWindowFunction</code> 的子类。<code>WindowFunction</code> 和 <code>ProcessWindowFunction</code> 的效果在某些场景下是一致的，但 <code>ProcessWindowFunction</code> 能够提供更多的窗口上下文信息，并且在之后的版本中可能会移除 <code>WindowFunction</code> 接口：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112131415161718192021222324252627282930313233</code></td>
-<td><code>javapublic class WindowedStream&lt;T, K, W extends Window&gt; &#123;    @Internal    public &lt;R&gt; SingleOutputStreamOperator&lt;R&gt; process(ProcessWindowFunction&lt;T, R, K, W&gt; function, TypeInformation&lt;R&gt; resultType) &#123;        function = input.getExecutionEnvironment().clean(function);        return apply(new InternalIterableProcessWindowFunction&lt;&gt;(function), resultType, function);    &#125;    private &lt;R&gt; SingleOutputStreamOperator&lt;R&gt; apply(InternalWindowFunction&lt;Iterable&lt;T&gt;, R, K, W&gt; function, TypeInformation&lt;R&gt; resultType, Function originalFunction) &#123;        final String opName = generateOperatorName(windowAssigner, trigger, evictor, originalFunction, null);        KeySelector&lt;T, K&gt; keySel = input.getKeySelector();        WindowOperator&lt;K, T, Iterable&lt;T&gt;, R, W&gt; operator;        if (evictor != null) &#123;            .......        &#125; else &#123;            ListStateDescriptor&lt;T&gt; stateDesc = new ListStateDescriptor&lt;&gt;(&quot;window-contents&quot;,                input.getType().createSerializer(getExecutionEnvironment().getConfig()));            operator =                new WindowOperator&lt;&gt;(windowAssigner,                    windowAssigner.getWindowSerializer(getExecutionEnvironment().getConfig()),                    keySel,                    input.getKeyType().createSerializer(getExecutionEnvironment().getConfig()),                    stateDesc,                    function,                    trigger,                    allowedLateness,                    lateDataOutputTag);        &#125;        return input.transform(opName, resultType, operator);    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>可以看出，用户提供的 <code>ProcessWindowFunction</code> 被包装成 <code>InternalIterableProcessWindowFunction</code> 提供给 <code>WindowOperator</code>，并且 window 使用的状态是 <code>ListState</code>。</p>
-<p>在 <code>WindowOperator.open()</code> 方法中会进行一些初始化操作，包括创建一个名为 window-timers 的 <code>InternalTimerService</code> 用于注册各种定时器，定时器的触发对象是 <code>WindowOperator</code> 自身。同时，会创建各种上下文对象，并初始化窗口状态。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112131415161718192021222324252627282930</code></td>
-<td><code>javapublic class WindowOperator&lt;K, IN, ACC, OUT, W extends Window&gt;    extends AbstractUdfStreamOperator&lt;OUT, InternalWindowFunction&lt;ACC, OUT, K, W&gt;&gt;    implements OneInputStreamOperator&lt;IN, OUT&gt;, Triggerable&lt;K, W&gt; &#123;    @Override    public void open() throws Exception &#123;        super.open();        this.numLateRecordsDropped = metrics.counter(LATE_ELEMENTS_DROPPED_METRIC_NAME);        timestampedCollector = new TimestampedCollector&lt;&gt;(output);        internalTimerService =                getInternalTimerService(&quot;window-timers&quot;, windowSerializer, this);        triggerContext = new Context(null, null);        processContext = new WindowContext(null);        windowAssignerContext = new WindowAssigner.WindowAssignerContext() &#123;            @Override            public long getCurrentProcessingTime() &#123;                return internalTimerService.currentProcessingTime();            &#125;        &#125;;        // create (or restore) the state that hold the actual window contents        // NOTE - the state may be null in the case of the overriding evicting window operator        if (windowStateDescriptor != null) &#123;            windowState = (InternalAppendingState&lt;K, W, IN, ACC, ACC&gt;) getOrCreateKeyedState(windowSerializer, windowStateDescriptor);        &#125;        .......&#125;</code></td>
-</tr>
-</tbody></table>
-<p>当消息到达时，在窗口算子中的处理流程大致如下：</p>
-<ul>
-<li>  通过 <code>WindowAssigner</code> 确定消息所在的窗口（可能属于多个窗口）</li>
-<li>  将消息加入到对应窗口的状态中</li>
-<li>  根据 <code>Trigger.onElement</code> 确定是否应该触发窗口结果的计算，如果使用 <code>InternalWindowFunction</code> 对窗口进行处理</li>
-<li>  注册一个定时器，在窗口结束时清理窗口状态</li>
-<li>  如果消息太晚到达，提交到 side output 中</li>
-</ul>
-<p>如下：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576</code></td>
-<td><code>javapublic class WindowOperator&lt;K, IN, ACC, OUT, W extends Window&gt;    extends AbstractUdfStreamOperator&lt;OUT, InternalWindowFunction&lt;ACC, OUT, K, W&gt;&gt;    implements OneInputStreamOperator&lt;IN, OUT&gt;, Triggerable&lt;K, W&gt; &#123;        @Override    public void processElement(StreamRecord&lt;IN&gt; element) throws Exception &#123;        final Collection&lt;W&gt; elementWindows = windowAssigner.assignWindows(            element.getValue(), element.getTimestamp(), windowAssignerContext);        //if element is handled by none of assigned elementWindows        boolean isSkippedElement = true;        final K key = this.&lt;K&gt;getKeyedStateBackend().getCurrentKey();            if (windowAssigner instanceof MergingWindowAssigner) &#123;            ......        &#125; else &#123;            for (W window: elementWindows) &#123;                // drop if the window is already late                if (isWindowLate(window)) &#123;                    continue;                &#125;                isSkippedElement = false;                windowState.setCurrentNamespace(window); //用 window 作为 state 的 namespace                windowState.add(element.getValue()); //消息加入到状态中                triggerContext.key = key;                triggerContext.window = window;                //通过 Trigger.onElement() 判断是否触发窗口结果的计算                TriggerResult triggerResult = triggerContext.onElement(element);                if (triggerResult.isFire()) &#123;                    ACC contents = windowState.get(); //获取窗口状态                    if (contents == null) &#123;                        continue;                    &#125;                    emitWindowContents(window, contents);                &#125;                //是否需要清除窗口状态                if (triggerResult.isPurge()) &#123;                    windowState.clear();                &#125;                //注册一个定时器，窗口结束后清理状态                registerCleanupTimer(window);            &#125;        &#125;        // 迟到的数据        if (isSkippedElement &amp;&amp; isElementLate(element)) &#123;            if (lateDataOutputTag != null)&#123;                sideOutput(element);            &#125; else &#123;                this.numLateRecordsDropped.inc();            &#125;        &#125;    &#125;    protected void registerCleanupTimer(W window) &#123;        long cleanupTime = cleanupTime(window);        if (cleanupTime == Long.MAX_VALUE) &#123;            // don&#39;t set a GC timer for &quot;end of time&quot;            return;        &#125;        if (windowAssigner.isEventTime()) &#123;            triggerContext.registerEventTimeTimer(cleanupTime);        &#125; else &#123;            triggerContext.registerProcessingTimeTimer(cleanupTime);        &#125;    &#125;    //注意，这里窗口的清理时间是 window.maxTimestamp + allowedLateness    private long cleanupTime(W window) &#123;        if (windowAssigner.isEventTime()) &#123;            long cleanupTime = window.maxTimestamp() + allowedLateness;            return cleanupTime &gt;= window.maxTimestamp() ? cleanupTime : Long.MAX_VALUE;        &#125; else &#123;            return window.maxTimestamp();        &#125;    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>当定时器到期是，会调用 <code>Trigger.onEventTime</code> 判断是否需要触发窗口结果的计算；并且如果是窗口结束的定时器，会清理掉窗口的状态。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829</code></td>
-<td><code>javapublic class WindowOperator&lt;K, IN, ACC, OUT, W extends Window&gt;    extends AbstractUdfStreamOperator&lt;OUT, InternalWindowFunction&lt;ACC, OUT, K, W&gt;&gt;    implements OneInputStreamOperator&lt;IN, OUT&gt;, Triggerable&lt;K, W&gt; &#123;    @Override    public void onEventTime(InternalTimer&lt;K, W&gt; timer) throws Exception &#123;        triggerContext.key = timer.getKey();        triggerContext.window = timer.getNamespace();        ......        TriggerResult triggerResult = triggerContext.onEventTime(timer.getTimestamp());        if (triggerResult.isFire()) &#123;//触发窗口结果的计算            ACC contents = windowState.get(); //获取状态            if (contents != null) &#123;                emitWindowContents(triggerContext.window, contents);            &#125;        &#125;        if (triggerResult.isPurge()) &#123;            windowState.clear();        &#125;        if (windowAssigner.isEventTime() &amp;&amp; isCleanupTime(triggerContext.window, timer.getTimestamp())) &#123;            clearAllState(triggerContext.window, windowState, mergingWindows);        &#125;        ......    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>当需要进行窗口结果的计算时，会取出当前窗口所保存的状态，调用用户提供的 <code>ProcessWindowFunction</code> 进行处理：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 91011121314151617181920212223</code></td>
-<td><code>javapublic class WindowOperator&lt;K, IN, ACC, OUT, W extends Window&gt;    extends AbstractUdfStreamOperator&lt;OUT, InternalWindowFunction&lt;ACC, OUT, K, W&gt;&gt;    implements OneInputStreamOperator&lt;IN, OUT&gt;, Triggerable&lt;K, W&gt; &#123;        private void emitWindowContents(W window, ACC contents) throws Exception &#123;        timestampedCollector.setAbsoluteTimestamp(window.maxTimestamp());        processContext.window = window;        userFunction.process(triggerContext.key, window, processContext, contents, timestampedCollector);    &#125;&#125;public final class InternalIterableProcessWindowFunction&lt;IN, OUT, KEY, W extends Window&gt;        extends WrappingFunction&lt;ProcessWindowFunction&lt;IN, OUT, KEY, W&gt;&gt;        implements InternalWindowFunction&lt;Iterable&lt;IN&gt;, OUT, KEY, W&gt; &#123;        @Override    public void process(KEY key, final W window, final InternalWindowContext context, Iterable&lt;IN&gt; input, Collector&lt;OUT&gt; out) throws Exception &#123;        this.ctx.window = window;        this.ctx.internalContext = context;        ProcessWindowFunction&lt;IN, OUT, KEY, W&gt; wrappedFunction = this.wrappedFunction;        wrappedFunction.process(key, ctx, input, out);    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<h4 id="增量窗口聚合"><a href="#增量窗口聚合" class="headerlink" title="增量窗口聚合"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#%E5%A2%9E%E9%87%8F%E7%AA%97%E5%8F%A3%E8%81%9A%E5%90%88"></a>增量窗口聚合</h4><p>从上面对窗口处理逻辑的介绍我们可以看出，在使用 <code>ProcessWindowFunction</code> 来对窗口进行操作的一个重要缺陷是，需要把整个窗口内的所有消息全部缓存在 <code>ListState</code> 中，这无疑会导致性能问题。如果窗口的计算逻辑支持增量聚合操作，那么可以使用 <code>ReduceFunction</code>, <code>AggregateFunction</code> 或 <code>FoldFunction</code> 进行增量窗口聚合计算，这可以在很大程度上解决 <code>ProcessWindowFunction</code> 的性能问题。</p>
-<p>使用 <code>ReduceFunction</code>, <code>AggregateFunction</code> 或 <code>FoldFunction</code> 进行在窗口聚合的底层实现是类似的，区别只在于聚合函数的不同。其中 <code>AggregateFunction</code> 是最通用的函数，我们以 <code>AggregateFunction</code> 为例进行分析。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112131415161718192021222324252627282930313233343536373839404142434445464748495051</code></td>
-<td><code>javapublic class WindowedStream&lt;T, K, W extends Window&gt; &#123;    public &lt;ACC, R&gt; SingleOutputStreamOperator&lt;R&gt; aggregate(            AggregateFunction&lt;T, ACC, R&gt; function,            TypeInformation&lt;ACC&gt; accumulatorType,            TypeInformation&lt;R&gt; resultType) &#123;        checkNotNull(function, &quot;function&quot;);        checkNotNull(accumulatorType, &quot;accumulatorType&quot;);        checkNotNull(resultType, &quot;resultType&quot;);        if (function instanceof RichFunction) &#123;            throw new UnsupportedOperationException(&quot;This aggregation function cannot be a RichFunction.&quot;);        &#125;        return aggregate(function, new PassThroughWindowFunction&lt;K, W, R&gt;(),            accumulatorType, resultType);    &#125;    @PublicEvolving    public &lt;ACC, V, R&gt; SingleOutputStreamOperator&lt;R&gt; aggregate(            AggregateFunction&lt;T, ACC, V&gt; aggregateFunction,            WindowFunction&lt;V, R, K, W&gt; windowFunction,            TypeInformation&lt;ACC&gt; accumulatorType,            TypeInformation&lt;R&gt; resultType) &#123;        ......        final String opName = generateOperatorName(windowAssigner, trigger, evictor, aggregateFunction, windowFunction);        KeySelector&lt;T, K&gt; keySel = input.getKeySelector();        OneInputStreamOperator&lt;T, R&gt; operator;        if (evictor != null) &#123;            .......        &#125; else &#123;            //注意，这里不再是 ListState，而是支持聚合操作的 AggregatingState，其聚合函数就是用户代码提供的            AggregatingStateDescriptor&lt;T, ACC, V&gt; stateDesc = new AggregatingStateDescriptor&lt;&gt;(&quot;window-contents&quot;,                    aggregateFunction, accumulatorType.createSerializer(getExecutionEnvironment().getConfig()));            operator = new WindowOperator&lt;&gt;(windowAssigner,                    windowAssigner.getWindowSerializer(getExecutionEnvironment().getConfig()),                    keySel,                    input.getKeyType().createSerializer(getExecutionEnvironment().getConfig()),                    stateDesc,                    new InternalSingleValueWindowFunction&lt;&gt;(windowFunction),                     trigger,                    allowedLateness,                    lateDataOutputTag);        &#125;        return input.transform(opName, resultType, operator);    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>可以看出来，如果使用了增量聚合函数，那么窗口的状态就不再是以 <code>ListState</code> 的形式保存窗口中的所有元素，而是 <code>AggregatingState</code>。这样，每当窗口中新消息到达时，在将消息添加到状态中的同时就会触发聚合函数的计算，这样在状态中就只需要保存聚合后的状态即可。</p>
-<p>在上面直接使用 <code>AggregateFunction</code> 的情况下，用户代码中无法访问窗口的上下文信息。为了解决这个问题，可以将增量聚合函数和 <code>ProcessWindowFunction</code> 结合在一起使用，这样在提交窗口计算结果时也可以访问到窗口的上下文信息：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 910111213141516171819202122232425262728293031323334</code></td>
-<td><code>javapublic class WindowedStream&lt;T, K, W extends Window&gt; &#123;    public &lt;ACC, V, R&gt; SingleOutputStreamOperator&lt;R&gt; aggregate(            AggregateFunction&lt;T, ACC, V&gt; aggregateFunction,            ProcessWindowFunction&lt;V, R, K, W&gt; windowFunction,            TypeInformation&lt;ACC&gt; accumulatorType,            TypeInformation&lt;V&gt; aggregateResultType,            TypeInformation&lt;R&gt; resultType) &#123;        .......        final String opName = generateOperatorName(windowAssigner, trigger, evictor, aggregateFunction, windowFunction);        KeySelector&lt;T, K&gt; keySel = input.getKeySelector();        OneInputStreamOperator&lt;T, R&gt; operator;        if (evictor != null) &#123;            ........        &#125; else &#123;            AggregatingStateDescriptor&lt;T, ACC, V&gt; stateDesc = new AggregatingStateDescriptor&lt;&gt;(&quot;window-contents&quot;,                    aggregateFunction, accumulatorType.createSerializer(getExecutionEnvironment().getConfig()));            operator = new WindowOperator&lt;&gt;(windowAssigner,                    windowAssigner.getWindowSerializer(getExecutionEnvironment().getConfig()),                    keySel,                    input.getKeyType().createSerializer(getExecutionEnvironment().getConfig()),                    stateDesc,                    new InternalSingleValueProcessWindowFunction&lt;&gt;(windowFunction),                    trigger,                    allowedLateness,                    lateDataOutputTag);        &#125;        return input.transform(opName, resultType, operator);    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<h4 id="合并窗口"><a href="#合并窗口" class="headerlink" title="合并窗口"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#%E5%90%88%E5%B9%B6%E7%AA%97%E5%8F%A3"></a>合并窗口</h4><p>前面在介绍窗口的实现逻辑时都只是考虑了窗口不会发生合并的情况。在一些情况下，窗口的边界不是固定的，可能会随着消息的到达不断进行调整，例如 session window，这就情况下就会发生窗口的合并。</p>
-<p>可以合并的窗口相比于不可以合并的窗口，在 <code>WindowOperator.open</code> 方法中除了初始化窗口状态之外，还会初始化一个新的 <code>mergingSetsState</code> 用于保存窗口合并状态：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829303132333435363738394041</code></td>
-<td><code>javapublic class WindowOperator&lt;K, IN, ACC, OUT, W extends Window&gt;    extends AbstractUdfStreamOperator&lt;OUT, InternalWindowFunction&lt;ACC, OUT, K, W&gt;&gt;    implements OneInputStreamOperator&lt;IN, OUT&gt;, Triggerable&lt;K, W&gt; &#123;    @Override    public void open() throws Exception &#123;        ......        // create (or restore) the state that hold the actual window contents        // NOTE - the state may be null in the case of the overriding evicting window operator        if (windowStateDescriptor != null) &#123;            windowState = (InternalAppendingState&lt;K, W, IN, ACC, ACC&gt;) getOrCreateKeyedState(windowSerializer, windowStateDescriptor);        &#125;        // create the typed and helper states for merging windows        if (windowAssigner instanceof MergingWindowAssigner) &#123;            // store a typed reference for the state of merging windows - sanity check            // 窗口状态必须是可以合并的            if (windowState instanceof InternalMergingState) &#123;                windowMergingState = (InternalMergingState&lt;K, W, IN, ACC, ACC&gt;) windowState;            &#125; else if (windowState != null) &#123;                throw new IllegalStateException(                        &quot;The window uses a merging assigner, but the window state is not mergeable.&quot;);            &#125;            @SuppressWarnings(&quot;unchecked&quot;)            final Class&lt;Tuple2&lt;W, W&gt;&gt; typedTuple = (Class&lt;Tuple2&lt;W, W&gt;&gt;) (Class&lt;?&gt;) Tuple2.class;            final TupleSerializer&lt;Tuple2&lt;W, W&gt;&gt; tupleSerializer = new TupleSerializer&lt;&gt;(                    typedTuple,                    new TypeSerializer[] &#123;windowSerializer, windowSerializer&#125;);            final ListStateDescriptor&lt;Tuple2&lt;W, W&gt;&gt; mergingSetsStateDescriptor =                    new ListStateDescriptor&lt;&gt;(&quot;merging-window-set&quot;, tupleSerializer);            // 创建一个 ListState&lt;Tuple2&lt;W,W&gt;&gt; 用于保存合并的窗口集合            // get the state that stores the merging sets            mergingSetsState = (InternalListState&lt;K, VoidNamespace, Tuple2&lt;W, W&gt;&gt;)                    getOrCreateKeyedState(VoidNamespaceSerializer.INSTANCE, mergingSetsStateDescriptor);            mergingSetsState.setCurrentNamespace(VoidNamespace.INSTANCE);        &#125;    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>相比于不可合并的窗口，可以合并的窗口实现上的一个难点就在于窗口合并时状态的处理，这需要依赖于 <code>mergingSetsState</code> 和 <code>MergingWindowSet</code>。我们先来梳理下窗口合并时窗口状态的处理，然后再详细地看具体的实现。</p>
-<p>首先，可以合并的窗口要求窗口状态必须是可以合并的，只有这样，当两个窗口进行合并时其状态才可以正确地保存，<code>ListState</code>，<code>ReducingState</code>和 <code>AggregatingState</code> 都继承了 <code>MergingState</code> 接口。 <code>InternalMergingState</code> 接口提供了将多个 namespace 关联的状态合并到目标 namespace 的功能，注意方法的签名是将一组作为 source 的 namespace 合并到作为 target 的 namespace ：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112</code></td>
-<td><code>javapublic interface InternalMergingState&lt;K, N, IN, SV, OUT&gt; extends InternalAppendingState&lt;K, N, IN, SV, OUT&gt;, MergingState&lt;IN, OUT&gt; &#123;    /**     * Merges the state of the current key for the given source namespaces into the state of     * the target namespace.     *      * @param target The target namespace where the merged state should be stored.     * @param sources The source namespaces whose state should be merged.     *      * @throws Exception The method may forward exception thrown internally (by I/O or functions).     */    void mergeNamespaces(N target, Collection&lt;N&gt; sources) throws Exception;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>现在我们考虑窗口合并的情况。如下图所示，w1 窗口的状态 s1 (w1 也是 s1 的 namespace)，w2 窗口的状态 s2 (w2 也是 s2 的 namespace)，现在新增了一个窗口 w3，则应该对窗口进行合并，将 w1, w2, w3 合并为一个新的窗口 w4。在这种情况下，我们也需要对窗口的状态进行合并。按照常规的思路，我们应该以 w4 作为合并之后窗口状态的 namespace，调用 <code>mergeNamespaces(w4, Collection(w1,w2,w3))</code> 进行状态合并。但是以 w4 作为 namespace 的状态并不存在，因此考虑继续使用 w1 作为窗口 w4 状态的 namespace，即调用 <code>mergeNamespaces(w1, Collection(w2,w3))</code> 进行状态合并，但要将 <code>w4 -&gt; w1</code> 的映射关系保存起来，以便查找窗口的状态。这种 <code>窗口 -&gt; 窗口状态的 namespace</code> 的映射关系就保存在 <code>InternalListState&lt;K, VoidNamespace, Tuple2&lt;W, W&gt;&gt; mergingSetsState</code> 中。</p>
-<p><a target="_blank" rel="noopener" href="https://blog.jrwang.me/img/flink/mergingwindow-state.svg"><img src="vx_images/4364001218596.svg" alt="mergingwindow-state"></a></p>
-<p><code>WindowOperator</code> 内部对窗口合并的处理如下，主要是借助 <code>MergingWindowSet</code> 进行窗口的合并：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677787980818283848586878889</code></td>
-<td><code>javapublic class WindowOperator&lt;K, IN, ACC, OUT, W extends Window&gt;    extends AbstractUdfStreamOperator&lt;OUT, InternalWindowFunction&lt;ACC, OUT, K, W&gt;&gt;    implements OneInputStreamOperator&lt;IN, OUT&gt;, Triggerable&lt;K, W&gt; &#123;    @Override    public void processElement(StreamRecord&lt;IN&gt; element) throws Exception &#123;        final Collection&lt;W&gt; elementWindows = windowAssigner.assignWindows(                element.getValue(), element.getTimestamp(), windowAssignerContext);        boolean isSkippedElement = true;        final K key = this.&lt;K&gt;getKeyedStateBackend().getCurrentKey();        if (windowAssigner instanceof MergingWindowAssigner) &#123;            MergingWindowSet&lt;W&gt; mergingWindows = getMergingWindowSet(); //获取 MergingWindowSet，这是辅助进行窗口合并的工具            for (W window : elementWindows) &#123;                // adding the new window might result in a merge, in that case the actualWindow                // is the merged window and we work with that. If we don&#39;t merge then                // actualWindow == window                W actualWindow = mergingWindows.addWindow(window,                        new MergingWindowSet.MergeFunction&lt;W&gt;() &#123; //这是合并窗口的回调函数                            @Override                            public void merge(                                    W mergeResult, //这是合并后的窗口                                    Collection&lt;W&gt; mergedWindows, //这是被合并的窗口                                    W stateWindowResult, //这是用作合并后窗口状态的 namespace                                    Collection&lt;W&gt; mergedStateWindows //这是被合并的状态的 namespace                                ) throws Exception &#123;                                .......                                triggerContext.key = key;                                triggerContext.window = mergeResult;                                triggerContext.onMerge(mergedWindows); //调用 Trigger.onMerger 判断是否需要进行触发                                for (W m : mergedWindows) &#123;                                    triggerContext.window = m;                                    triggerContext.clear();                                    deleteCleanupTimer(m);                                &#125;                                // 合并窗口状态                                // merge the merged state windows into the newly resulting state window                                evictingWindowState.mergeNamespaces(stateWindowResult, mergedStateWindows);                            &#125;                        &#125;);                // drop if the window is already late                if (isWindowLate(actualWindow)) &#123;                    mergingWindows.retireWindow(actualWindow);                    continue;                &#125;                isSkippedElement = false;                W stateWindow = mergingWindows.getStateWindow(actualWindow);                if (stateWindow == null) &#123;                    throw new IllegalStateException(&quot;Window &quot; + window + &quot; is not in in-flight window set.&quot;);                &#125;                evictingWindowState.setCurrentNamespace(stateWindow);                evictingWindowState.add(element);                triggerContext.key = key;                triggerContext.window = actualWindow;                evictorContext.key = key;                evictorContext.window = actualWindow;                TriggerResult triggerResult = triggerContext.onElement(element);                if (triggerResult.isFire()) &#123;                    Iterable&lt;StreamRecord&lt;IN&gt;&gt; contents = evictingWindowState.get();                    if (contents == null) &#123;                        // if we have no state, there is nothing to do                        continue;                    &#125;                    emitWindowContents(actualWindow, contents, evictingWindowState);                &#125;                if (triggerResult.isPurge()) &#123;                    evictingWindowState.clear();                &#125;                registerCleanupTimer(actualWindow);            &#125;            // need to make sure to update the merging state in state            mergingWindows.persist();        &#125; else &#123;            ........        &#125;    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>窗口合并的主要逻辑被封装在 <code>MergingWindowSet</code> 中，需要重点关注合并时对<code>窗口 -&gt; 窗口状态的 namespace</code> 的映射关系的处理，结合前面的分析应该可以理解：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374757677</code></td>
-<td>```javapublic class MergingWindowSet<W extends Window> {    private final Map&lt;W, W&gt; mapping; //这里保存的就是 <code>窗口 -&gt; 窗口状态的 namespace</code> 的映射关系    public W addWindow(W newWindow, MergeFunction<W> mergeFunction) throws Exception {        List<W> windows = new ArrayList&lt;&gt;();        windows.addAll(this.mapping.keySet());        windows.add(newWindow);        //确定能够合并的窗口，在回调函数中将窗口的合并结果保存在mergeResults        final Map&lt;W, Collection<W>&gt; mergeResults = new HashMap&lt;&gt;();        windowAssigner.mergeWindows(windows,                new MergingWindowAssigner.MergeCallback<W>() {                    @Override                    public void merge(Collection<W> toBeMerged, W mergeResult) {                        mergeResults.put(mergeResult, toBeMerged);                    }                });        W resultWindow = newWindow;        boolean mergedNewWindow = false;        // perform the merge        for (Map.Entry&lt;W, Collection<W>&gt; c: mergeResults.entrySet()) {            W mergeResult = c.getKey(); //合并后产生的窗口            Collection<W> mergedWindows = c.getValue(); //被合并的窗口            // if our new window is in the merged windows make the merge result the            // result window            if (mergedWindows.remove(newWindow)) {                mergedNewWindow = true;                resultWindow = mergeResult;            }            // pick any of the merged windows and choose that window’s state window            // as the state window for the merge result            //从需要被合并的窗口中选择一个作为合并后状态的namespace            W mergedStateWindow = this.mapping.get(mergedWindows.iterator().next());            // figure out the state windows that we are merging            List<W> mergedStateWindows = new ArrayList&lt;&gt;();            for (W mergedWindow: mergedWindows) {                //移除旧的映射关系                W res = this.mapping.remove(mergedWindow);                if (res != null) {                    mergedStateWindows.add(res);                }            }            //新的映射关系            this.mapping.put(mergeResult, mergedStateWindow);            // don’t put the target state window into the merged windows            mergedStateWindows.remove(mergedStateWindow);            // don’t merge the new window itself, it never had any state associated with it            // i.e. if we are only merging one pre-existing window into itself            // without extending the pre-existing window            if (!(mergedWindows.contains(mergeResult) &amp;&amp; mergedWindows.size() == 1)) {                //调用回调函数进行状态的合并                mergeFunction.merge(                        mergeResult, //合并后的窗口                        mergedWindows, //需要被合并的窗口                        this.mapping.get(mergeResult), //用作状态 namespace 的 window                        mergedStateWindows); //需要合并到最终结果的 namespace            }        }        // the new window created a new, self-contained window without merging        if (mergeResults.isEmpty()</td>
-</tr>
-</tbody></table>
-<h4 id="Evictor"><a href="#Evictor" class="headerlink" title="Evictor"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#evictor"></a>Evictor</h4><p>Flink 的窗口操作还提供了一个可选的 evitor，允许在调用 <code>InternalWindowFunction</code> 计算窗口结果之前或之后移除窗口中的元素。在这种情况下，就不能对窗口进行增量聚合操作了，窗口内的所有元素必须保存在 <code>ListState</code> 中，因而对性能会有一定影响。</p>
-<p><code>Evictor</code> 提拱了两个方法，分别在 <code>InternalWindowFunction</code> 处理之前和处理之后调用：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java1234</code></td>
-<td><code>javapublic interface Evictor&lt;T, W extends Window&gt; extends Serializable &#123;    void evictBefore(Iterable&lt;TimestampedValue&lt;T&gt;&gt; elements, int size, W window, EvictorContext evictorContext);    void evictAfter(Iterable&lt;TimestampedValue&lt;T&gt;&gt; elements, int size, W window, EvictorContext evictorContext);&#125;</code></td>
-</tr>
-</tbody></table>
-<p>以 <code>CountEvictor</code> 为例，只会保留一定数量的元素在窗口中，超出的部分被移除掉：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112131415161718192021222324252627282930313233</code></td>
-<td><code>javapublic class CountEvictor&lt;W extends Window&gt; implements Evictor&lt;Object, W&gt; &#123;    @Override    public void evictBefore(Iterable&lt;TimestampedValue&lt;Object&gt;&gt; elements, int size, W window, EvictorContext ctx) &#123;        if (!doEvictAfter) &#123;            evict(elements, size, ctx);        &#125;    &#125;    @Override    public void evictAfter(Iterable&lt;TimestampedValue&lt;Object&gt;&gt; elements, int size, W window, EvictorContext ctx) &#123;        if (doEvictAfter) &#123;            evict(elements, size, ctx);        &#125;    &#125;    private void evict(Iterable&lt;TimestampedValue&lt;Object&gt;&gt; elements, int size, EvictorContext ctx) &#123;        if (size &lt;= maxCount) &#123;            return;        &#125; else &#123;            int evictedCount = 0;            for (Iterator&lt;TimestampedValue&lt;Object&gt;&gt; iterator = elements.iterator(); iterator.hasNext();)&#123;                iterator.next();                evictedCount++;                if (evictedCount &gt; size - maxCount) &#123;                    break;                &#125; else &#123;                    //超出的部分都移除                    iterator.remove();                &#125;            &#125;        &#125;    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>在使用了 <code>Evictor</code> 的情况下，会生成 <code>EvictingWindowOperator</code> 算子，<code>EvictingWindowOperator</code> 是 <code>WindowOperator</code> 的子类，会在触发窗口计算时调用 <code>Evictor</code>：</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 91011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162636465666768697071727374</code></td>
-<td><code>javaclass WindowedStream &#123;    public &lt;ACC, V, R&gt; SingleOutputStreamOperator&lt;R&gt; aggregate(            AggregateFunction&lt;T, ACC, V&gt; aggregateFunction,            ProcessWindowFunction&lt;V, R, K, W&gt; windowFunction,            TypeInformation&lt;ACC&gt; accumulatorType,            TypeInformation&lt;V&gt; aggregateResultType,            TypeInformation&lt;R&gt; resultType) &#123;                if (evictor != null) &#123;            TypeSerializer&lt;StreamRecord&lt;T&gt;&gt; streamRecordSerializer =                    (TypeSerializer&lt;StreamRecord&lt;T&gt;&gt;) new StreamElementSerializer(input.getType().createSerializer(getExecutionEnvironment().getConfig()));            //即便是使用了增量聚合函数，状态仍然是以 `ListState` 形式保存的            ListStateDescriptor&lt;StreamRecord&lt;T&gt;&gt; stateDesc =                    new ListStateDescriptor&lt;&gt;(&quot;window-contents&quot;, streamRecordSerializer);            //生成了 EvictingWindowOperator            operator = new EvictingWindowOperator&lt;&gt;(windowAssigner,                    windowAssigner.getWindowSerializer(getExecutionEnvironment().getConfig()),                    keySel,                    input.getKeyType().createSerializer(getExecutionEnvironment().getConfig()),                    stateDesc,                    new InternalAggregateProcessWindowFunction&lt;&gt;(aggregateFunction, windowFunction),                    trigger,                    evictor,                    allowedLateness,                    lateDataOutputTag);        &#125; else &#123;            .......        &#125;    &#125;&#125;public class WindowOperator&lt;K, IN, ACC, OUT, W extends Window&gt;    extends AbstractUdfStreamOperator&lt;OUT, InternalWindowFunction&lt;ACC, OUT, K, W&gt;&gt;    implements OneInputStreamOperator&lt;IN, OUT&gt;, Triggerable&lt;K, W&gt; &#123;        private void emitWindowContents(W window, Iterable&lt;StreamRecord&lt;IN&gt;&gt; contents, ListState&lt;StreamRecord&lt;IN&gt;&gt; windowState) throws Exception &#123;        timestampedCollector.setAbsoluteTimestamp(window.maxTimestamp());        // Work around type system restrictions...        FluentIterable&lt;TimestampedValue&lt;IN&gt;&gt; recordsWithTimestamp = FluentIterable            .from(contents)            .transform(new Function&lt;StreamRecord&lt;IN&gt;, TimestampedValue&lt;IN&gt;&gt;() &#123;                @Override                public TimestampedValue&lt;IN&gt; apply(StreamRecord&lt;IN&gt; input) &#123;                    return TimestampedValue.from(input);                &#125;            &#125;);        //调用 InternalWindowFunction 之前        evictorContext.evictBefore(recordsWithTimestamp, Iterables.size(recordsWithTimestamp));        FluentIterable&lt;IN&gt; projectedContents = recordsWithTimestamp            .transform(new Function&lt;TimestampedValue&lt;IN&gt;, IN&gt;() &#123;                @Override                public IN apply(TimestampedValue&lt;IN&gt; input) &#123;                    return input.getValue();                &#125;            &#125;);        processContext.window = triggerContext.window;        //调用 InternalWindowFunction 计算结果        userFunction.process(triggerContext.key, triggerContext.window, processContext, projectedContents, timestampedCollector);        //调用 InternalWindowFunction 之前        evictorContext.evictAfter(recordsWithTimestamp, Iterables.size(recordsWithTimestamp));        //work around to fix FLINK-4369, remove the evicted elements from the windowState.        //this is inefficient, but there is no other way to remove elements from ListState, which is an AppendingState.        windowState.clear();        for (TimestampedValue&lt;IN&gt; record : recordsWithTimestamp) &#123;            windowState.add(record.getStreamRecord());        &#125;    &#125;    &#125;</code></td>
-</tr>
-</tbody></table>
-<h4 id="AllWindowedStream"><a href="#AllWindowedStream" class="headerlink" title="AllWindowedStream"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#allwindowedstream"></a>AllWindowedStream</h4><p>前面我们介绍的实际上是 Keyed Windows 的具体实现，它是在 KeyedStream 上进行的窗口操作，所以消息会按照 key 进行分流，这也是窗口最常用的到的的应用场景。但是，针对普通的 Non-Keyed Stream，同样可以进行窗口操作。在这种情况下，<code>DataStream.windowAll(...)</code> 操作得到 <code>AllWindowedStream</code>。</p>
-<table>
-<thead>
-<tr>
-<th><br></th>
-<th><br></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>java 1 2 3 4 5 6 7 8 9101112131415</code></td>
-<td><code>javapublic class AllWindowedStream&lt;T, W extends Window&gt; &#123;    public AllWindowedStream(DataStream&lt;T&gt; input,            WindowAssigner&lt;? super T, W&gt; windowAssigner) &#123;        this.input = input.keyBy(new NullByteKeySelector&lt;T&gt;());        this.windowAssigner = windowAssigner;        this.trigger = windowAssigner.getDefaultTrigger(input.getExecutionEnvironment());    &#125;&#125;public class NullByteKeySelector&lt;T&gt; implements KeySelector&lt;T, Byte&gt; &#123;    @Override    public Byte getKey(T value) throws Exception &#123;        return 0;    &#125;&#125;</code></td>
-</tr>
-</tbody></table>
-<p>所以很明显，Non-Keyed Windows 实际上就是基于 Keyed Windows 的一种特殊实现，只是使用了一种特殊的 <code>NullByteKeySelector</code>，这样所有的消息得到的 Key 都是一样的。Non-Keyed Windows 的一个问题在于，由于所有消息的 key 都是一样的，那么所有的消息最终都会被同一个 Task 处理，这个 Task 也会成为整个作业的瓶颈。</p>
-<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#%E5%B0%8F%E7%BB%93"></a>小结</h2><p>时间属性和窗口操作是对流处理系统能力的极大增强。在这篇文章中，我们由 Dataflow Model 引申出时间域（time domain），水位线（watermark），窗口模型（windowing model），触发器（triggering model）等概念，并一一介绍了这些机制在 Flink 内部的实现方式。</p>
-<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a><a target="_blank" rel="noopener" href="https://blog.jrwang.me/2019/flink-source-code-time-and-window/#%E5%8F%82%E8%80%83"></a>参考</h2><ul>
-<li>  <a target="_blank" rel="noopener" href="https://ai.google/research/pubs/pub43864">The Dataflow Model: A Practical Approach to Balancing Correctness, Latency, and Cost in Massive-Scale, Unbounded, Out-of-Order Data Processing</a></li>
-<li>  <a target="_blank" rel="noopener" href="https://www.oreilly.com/ideas/the-world-beyond-batch-streaming-101">Streaming 101: The world beyond batch</a></li>
-<li>  <a target="_blank" rel="noopener" href="https://www.oreilly.com/ideas/the-world-beyond-batch-streaming-102">Streaming 102: The world beyond batch</a></li>
-</ul>
-<p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2016/05/25/flink-internals-window-mechanism/">flink原理与实现: window机制</a></li>
-<li><a target="_blank" rel="noopener" href="https://xie.infoq.cn/article/0d5038bc42862b3db79c571bd">flink窗口应用与实现</a></li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/a1240466196/article/details/108334436">Flink原理: 窗口原理详解</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/RealTimeSystem-backpress/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/RealTimeSystem-backpress/" class="post-title-link" itemprop="url">【转】实时流处理系统反压机制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:19" itemprop="dateModified" datetime="2021-04-04T08:36:19+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="实时流处理系统反压机制（BackPressure）综述-转"><a href="#实时流处理系统反压机制（BackPressure）综述-转" class="headerlink" title="实时流处理系统反压机制（BackPressure）综述[转]"></a>实时流处理系统反压机制（BackPressure）综述[转]</h1><p> 发表于 2018-11-15 |  更新于 2018-12-03 |  分类于 <a target="_blank" rel="noopener" href="http://ileaf.tech/category/#/BigData">BigData </a>|  阅读次数 333</p>
-<p>本文主要关于实时流处理系统反压机制，最近看到反压问题看到此文章很好，在此分享并mark一下。</p>
-<blockquote>
-<p>本文主要关于实时流处理系统反压机制，最近看到反压问题看到此文章很好，在此分享并mark一下。<br>(￢_￢)ﾉ最近菜叶子没自己写见谅。<br>本文转自 <a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">实时流处理系统反压机制（BackPressure）综述</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">https://blog.csdn.net/qq_21125183/article/details/80708142</a><br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/28fcd51d4edd">开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效</a></p>
-</blockquote>
-<p>反压机制（BackPressure）被广泛应用到实时流处理系统中，流处理系统需要能优雅地处理反压（backpressure）问题。<br>反压通常产生于这样的场景：短时负载高峰导致系统接收数据的速率远高于它处理数据的速率。<br>许多日常问题都会导致反压，例如，垃圾回收停顿可能会导致流入的数据快速堆积，或者遇到大促或秒杀活动导致流量陡增。<br>反压如果不能得到正确的处理，可能会导致资源耗尽甚至系统崩溃。反压机制就是指系统能够自己检测到被阻塞的Operator，然后系统自适应地降低源头或者上游的发送速率。</p>
-<p>目前主流的流处理系统 Apache Storm、JStorm、Spark Streaming、S4、Apache Flink、Twitter Heron都采用反压机制解决这个问题，不过他们的实现各自不同。</p>
-<p><img src="_v_images/20201030212807758_57452691.png" alt="实时流处理系统反压机制01"></p>
-<p>不同的组件可以不同的速度执行（并且每个组件中的处理速度随时间改变）。 例如，考虑一个工作流程，或由于数据倾斜或任务调度而导致数据被处理十分缓慢。<br>在这种情况下，如果上游阶段不减速，将导致缓冲区建立长队列(队列占用内存、硬盘空间，节点负载加重)，或导致系统丢弃元组。<br>如果元组在中途丢弃，那么效率可能会有损失，因为已经为这些元组产生的计算被浪费了。<br>并且在一些流处理系统中比如Strom，会将这些丢失的元组重新发送，这样会导致数据的一致性问题(at least once语义)，并且还会导致某些Operator状态叠加。<br>进而整个程序输出结果不准确。第二由于系统接收数据的速率是随着时间改变的，短时负载高峰导致系统接收数据的速率远高于它处理数据的速率的情况，也会导致Tuple在中途丢失。<br>所以实时流处理系统必须能够解决发送速率远大于系统能处理速率这个问题，大多数实时流处理系统采用反压（BackPressure）机制解决这个问题。</p>
-<p>下面我们就来介绍一下不同的实时流处理系统采用的反压机制：</p>
-<h1 id="Strom-反压机制"><a href="#Strom-反压机制" class="headerlink" title="Strom 反压机制"></a>Strom 反压机制</h1><h2 id="Storm-1-0-以前的反压机制"><a href="#Storm-1-0-以前的反压机制" class="headerlink" title="Storm 1.0 以前的反压机制"></a>Storm 1.0 以前的反压机制</h2><p>对于开启了acker机制的storm程序，可以通过设置conf.setMaxSpoutPending参数来实现反压效果，<strong>如果下游组件(bolt)处理速度跟不上导致spout发送的tuple没有及时确认的数超过了参数设定的值，spout会停止发送数据</strong>，这种方式的缺点是很难调优conf.setMaxSpoutPending参数的设置以达到最好的反压效果，设小了会导致吞吐上不去，设大了会导致worker OOM；有震荡，数据流会处于一个颠簸状态，效果不如逐级反压；另外对于关闭acker机制的程序无效；</p>
-<h2 id="Storm-Automatic-Backpressure"><a href="#Storm-Automatic-Backpressure" class="headerlink" title="Storm Automatic Backpressure"></a>Storm Automatic Backpressure</h2><p>新的storm自动反压机制(Automatic Back Pressure)通过监控bolt中的接收队列的情况，当超过高水位值时专门的线程会将反压信息写到 Zookeeper ，Zookeeper上的watch会通知该拓扑的所有Worker都进入反压状态，最后Spout降低tuple发送的速度。</p>
-<p><img src="_v_images/20201030212806451_178512803.png" alt="实时流处理系统反压机制02"></p>
-<p>每个Executor都有一个接受队列和发送队列用来接收Tuple和发送Spout或者Bolt生成的Tuple元组。每个Worker进程都有一个单的的接收线程监听接收端口。<br>它从每个网络上进来的消息发送到Executor的接收队列中。Executor接收队列存放Worker或者Worker内部其他Executor发过来的消息。<br>Executor工作线程从接收队列中拿出数据，然后调用execute方法，发送Tuple到Executor的发送队列。<br>Executor的发送线程从发送队列中获取消息，按照消息目的地址选择发送到Worker的传输队列中或者其他Executor的接收队列中。<br>最后Worker的发送线程从传输队列中读取消息，然后将Tuple元组发送到网络中。</p>
-<ol>
-<li>当Worker进程中的Executor线程发现自己的接收队列满了时，也就是接收队列达到<code>high watermark</code>的阈值后，因此它会发送通知消息到背压线程。</li>
-<li>背压线程将当前worker进程的信息注册到Zookeeper的Znode节点中。具体路径就是 <code>/Backpressure/topo1/wk1</code>下</li>
-<li>Zookeepre的Znode Watcher监视/Backpreesure/topo1下的节点目录变化情况，如果发现目录增加了znode节点说明或者其他变化。这就说明该Topo1需要反压控制，然后它会通知Topo1所有的Worker进入反压状态。</li>
-<li>最终Spout降低tuple发送的速度。</li>
-</ol>
-<h1 id="JStorm-反压机制"><a href="#JStorm-反压机制" class="headerlink" title="JStorm 反压机制"></a>JStorm 反压机制</h1><p>JStorm做了两级的反压，第一级和Jstorm类似，通过执行队列来监测，但是不会通过ZK来协调，而是通过Topology Master来协调。<br>在队列中会标记high water mark和low water mark，当执行队列超过high water mark时，就认为bolt来不及处理，则向TM发一条控制消息，上游开始减慢发送速率，直到下游低于low water mark时解除反压。</p>
-<p>此外，在Netty层也做了一级反压，由于每个Worker Task都有自己的发送和接收的缓冲区，可以对缓冲区设定限额、控制大小，如果spout数据量特别大，缓冲区填满会导致下游bolt的接收缓冲区填满，造成了反压。</p>
-<p><img src="_v_images/20201030212805000_1695102842.png" alt="实时流处理系统反压机制03"></p>
-<p>限流机制：jstorm的限流机制， 当下游bolt发生阻塞时， 并且阻塞task的比例超过某个比例时（现在默认设置为0.1），触发反压</p>
-<p>限流方式：计算阻塞Task的地方执行线程执行时间，Spout每发送一个tuple等待相应时间，然后讲这个时间发送给Spout， 于是， spout每发送一个tuple，就会等待这个执行时间。</p>
-<p>Task阻塞判断方式：在jstorm 连续4次采样周期中采样，队列情况，当队列超过80%（可以设置）时，即可认为该task处在阻塞状态。</p>
-<h1 id="SparkStreaming-反压机制"><a href="#SparkStreaming-反压机制" class="headerlink" title="SparkStreaming 反压机制"></a>SparkStreaming 反压机制</h1><h2 id="为什么引入反压机制Backpressure"><a href="#为什么引入反压机制Backpressure" class="headerlink" title="为什么引入反压机制Backpressure"></a>为什么引入反压机制Backpressure</h2><p>默认情况下，Spark Streaming通过Receiver以生产者生产数据的速率接收数据，计算过程中会出现<code>batch processing time &gt; batch interval</code>的情况，其中<code>batch processing time</code> 为实际计算一个批次花费时间， <code>batch interval</code>为Streaming应用设置的批处理间隔。<br>这意味着Spark Streaming的数据接收速率高于Spark从队列中移除数据的速率，也就是数据处理能力低，在设置间隔内不能完全处理当前接收速率接收的数据。如果这种情况持续过长的时间，会造成数据在内存中堆积，导致Receiver所在Executor内存溢出等问题（如果设置StorageLevel包含disk, 则内存存放不下的数据会溢写至disk, 加大延迟）。<br>Spark 1.5以前版本，用户如果要限制Receiver的数据接收速率，可以通过设置静态配制参数“<code>spark.streaming.receiver.maxRate</code>”的值来实现，此举虽然可以通过限制接收速率，来适配当前的处理能力，防止内存溢出，但也会引入其它问题。比如：producer数据生产高于maxRate，当前集群处理能力也高于maxRate，这就会造成资源利用率下降等问题。为了更好的协调数据接收速率与资源处理能力，Spark Streaming 从v1.5开始引入反压机制（back-pressure）,通过动态控制数据接收速率来适配集群数据处理能力。</p>
-<h2 id="反压机制Backpressure"><a href="#反压机制Backpressure" class="headerlink" title="反压机制Backpressure"></a>反压机制Backpressure</h2><p><code>Spark Streaming Backpressure</code>: 根据JobScheduler反馈作业的执行信息来动态调整Receiver数据接收率。通过属性“spark.streaming.backpressure.enabled”来控制是否启用backpressure机制，默认值false，即不启用。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sparkConf.set(<span class="string">&quot;spark.streaming.backpressure.enabled&quot;</span>,”<span class="keyword">true</span>”)</span><br></pre></td></tr></table></figure>
-<p>SparkStreaming 架构图如下所示:</p>
-<p><img src="_v_images/20201030212803393_1135733829.png" alt="实时流处理系统反压机制04"></p>
-<p>SparkStreaming 反压过程执行如下图所示：</p>
-<p>在原架构的基础上加上一个新的组件RateController,这个组件负责监听“OnBatchCompleted”事件，然后从中抽取<code>processingDelay</code> 及<code>schedulingDelay</code>信息. <code>Estimator</code>依据这些信息估算出最大处理速度（rate），最后由基于<code>Receiver</code>的Input Stream将rate通过ReceiverTracker与ReceiverSupervisorImpl转发给BlockGenerator（继承自RateLimiter）.</p>
-<p><img src="_v_images/20201030212801986_428923565.png" alt="实时流处理系统反压机制05"></p>
-<h2 id="direct模式-BackPressure-此部分详细说明了direct模式接收：转自-开启Back-Pressure使生产环境的Spark-Streaming应用更稳定、有效"><a href="#direct模式-BackPressure-此部分详细说明了direct模式接收：转自-开启Back-Pressure使生产环境的Spark-Streaming应用更稳定、有效" class="headerlink" title="direct模式-BackPressure(此部分详细说明了direct模式接收：转自-开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效)"></a>direct模式-BackPressure(此部分详细说明了direct模式接收：转自-<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/28fcd51d4edd">开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效</a>)</h2><p>当Spark Streaming与Kafka使用Direct API集群时，我们可以很方便的去控制最大数据摄入量–通过一个被称作spark.streaming.kafka.maxRatePerPartition的参数。根据文档描述，他的含义是：Direct API读取每一个Kafka partition数据的最大速率（每秒读取的消息量）。<br>配置项spark.streaming.kafka.maxRatePerPartition，对防止流式应用在下边两种情况下出现流量过载时尤其重要：<br>1.Kafka Topic中有大量未处理的消息，并且我们设置是Kafka auto.offset.reset参数值为smallest，他可以防止第一个批次出现数据流量过载情况。<br>2.当Kafka 生产者突然飙升流量的时候，他可以防止批次处理出现数据流量过载情况。</p>
-<p>但是，配置Kafka每个partition每批次最大的摄入量是个静态值，也算是个缺点。随着时间的变化，在生产环境运行了一段时间的Spark Streaming应用，每批次每个Kafka partition摄入数据最大量的最优值也是变化的。有时候，是因为消息的大小会变，导致数据处理时间变化。有时候，是因为流计算所使用的多租户集群会变得非常繁忙，比如在白天时候，一些其他的数据应用（例如Impala/Hive/MR作业）竞争共享的系统资源时（CPU/内存/网络/磁盘IO）。<br>背压机制可以解决该问题。背压机制是呼声比较高的功能，他允许根据前一批次数据的处理情况，动态、自动的调整后续数据的摄入量，这样的反馈回路使得我们可以应对流式应用流量波动的问题。<br>Spark Streaming的背压机制是在Spark1.5版本引进的，我们可以添加如下代码启用改功能：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sparkConf.set(&quot;spark.streaming.backpressure.enabled&quot;,”true”)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>那应用启动后的第一个批次流量怎么控制呢？因为他没有前面批次的数据处理时间，所以没有参考的数据去评估这一批次最优的摄入量。在Spark官方文档中有个被称作spark.streaming.backpressure.initialRate的配置，看起来是控制开启背压机制时初始化的摄入量。其实不然，该参数只对receiver模式起作用，并不适用于direct模式。推荐的方法是使用spark.streaming.kafka.maxRatePerPartition控制背压机制起作用前的第一批次数据的最大摄入量。我通常建议设置spark.streaming.kafka.maxRatePerPartition的值为最优估计值的1.5到2倍，让背压机制的算法去调整后续的值。请注意，spark.streaming.kafka.maxRatePerPartition的值会一直控制最大的摄入量，所以背压机制的算法值不会超过他。<br>另一个需要注意的是，在第一个批次处理完成前，紧接着的批次都将使用spark.streaming.kafka.maxRatePerPartition的值作为摄入量。通过Spark UI可以看到，批次间隔为5s，当批次调度延迟31秒时候，前7个批次的摄入量是20条记录。直到第八个批次，背压机制起作用时，摄入量变为5条记录。</p>
-<h1 id="Heron-反压机制"><a href="#Heron-反压机制" class="headerlink" title="Heron 反压机制"></a>Heron 反压机制</h1><p><img src="_v_images/20201030212800445_1650579597.png" alt="实时流处理系统反压机制06"></p>
-<p>当下游处理速度跟不上上游发送速度时，一旦StreamManager 发现一个或多个Heron Instance 速度变慢，立刻对本地spout进行降级，降低本地Spout发送速度, 停止从这些spout读取数据。并且受影响的StreamManager 会发送一个特殊的start backpressure message 给其他的StreamManager ，要求他们对spout进行本地降级。 当其他StreamManager 接收到这个特殊消息时，他们通过不读取当地Spout中的Tuple来进行降级。一旦出问题的Heron Instance 恢复速度后，本地的SM 会发送stop backpressure message 解除降级。</p>
-<p>很多Socket Channel与应用程序级别的Buffer相关联，该缓冲区由high watermark 和low watermark组成。 当缓冲区大小达到high watermark时触发反压，并保持有效，直到缓冲区大小低于low watermark。 此设计的基本原理是防止拓扑在进入和退出背压缓解模式之间快速振荡。</p>
-<h1 id="Flink-反压机制"><a href="#Flink-反压机制" class="headerlink" title="Flink 反压机制"></a>Flink 反压机制</h1><p>Flink 没有使用任何复杂的机制来解决反压问题，因为根本不需要那样的方案！它利用自身作为纯数据流引擎的优势来优雅地响应反压问题。下面我们会深入分析 Flink 是如何在 Task 之间传输数据的，以及数据流如何实现自然降速的。 Flink 在运行时主要由 operators 和 streams 两大组件构成。每个 operator 会消费中间态的流，并在流上进行转换，然后生成新的流。对于 Flink 的网络机制一种形象的类比是，Flink 使用了高效有界的分布式阻塞队列，就像 Java 通用的阻塞队列（BlockingQueue）一样。还记得经典的线程间通信案例：生产者消费者模型吗？使用 BlockingQueue 的话，一个较慢的接受者会降低发送者的发送速率，因为一旦队列满了（有界队列）发送者会被阻塞。Flink 解决反压的方案就是这种感觉。 在 Flink 中，这些分布式阻塞队列就是这些逻辑流，而队列容量是通过缓冲池来（LocalBufferPool）实现的。每个被生产和被消费的流都会被分配一个缓冲池。缓冲池管理着一组缓冲(Buffer)，缓冲在被消费后可以被回收循环利用。这很好理解：你从池子中拿走一个缓冲，填上数据，在数据消费完之后，又把缓冲还给池子，之后你可以再次使用它。</p>
-<h2 id="Flink-网络传输中的内存管理"><a href="#Flink-网络传输中的内存管理" class="headerlink" title="Flink 网络传输中的内存管理"></a>Flink 网络传输中的内存管理</h2><p>如下图所示展示了 Flink 在网络传输场景下的内存管理。网络上传输的数据会写到 Task 的 InputGate（IG） 中，经过 Task 的处理后，再由 Task 写到 ResultPartition（RS） 中。每个 Task 都包括了输入和输入，输入和输出的数据存在 Buffer 中（都是字节数据）。Buffer 是 MemorySegment 的包装类。</p>
-<p><img src="_v_images/20201030212758832_1369878662.png" alt="实时流处理系统反压机制07"></p>
-<ol>
-<li>TaskManager（TM）在启动时，会先初始化NetworkEnvironment对象，TM 中所有与网络相关的东西都由该类来管理（如 Netty 连接），其中就包括NetworkBufferPool。根据配置，Flink 会在 NetworkBufferPool 中生成一定数量（默认2048个）的内存块 MemorySegment（关于 Flink 的内存管理，后续文章会详细谈到），内存块的总数量就代表了网络传输中所有可用的内存。NetworkEnvironment 和 NetworkBufferPool 是 Task 之间共享的，每个 TM 只会实例化一个。</li>
-<li>Task 线程启动时，会向 NetworkEnvironment 注册，NetworkEnvironment 会为 Task 的 InputGate（IG）和 ResultPartition（RP） 分别创建一个 LocalBufferPool（缓冲池）并设置可申请的 MemorySegment（内存块）数量。IG 对应的缓冲池初始的内存块数量与 IG 中 InputChannel 数量一致，RP 对应的缓冲池初始的内存块数量与 RP 中的 ResultSubpartition 数量一致。不过，每当创建或销毁缓冲池时，NetworkBufferPool 会计算剩余空闲的内存块数量，并平均分配给已创建的缓冲池。注意，这个过程只是指定了缓冲池所能使用的内存块数量，并没有真正分配内存块，只有当需要时才分配。为什么要动态地为缓冲池扩容呢？因为内存越多，意味着系统可以更轻松地应对瞬时压力（如GC），不会频繁地进入反压状态，所以我们要利用起那部分闲置的内存块。</li>
-<li>在 Task 线程执行过程中，当 Netty 接收端收到数据时，为了将 Netty 中的数据拷贝到 Task 中，InputChannel（实际是 RemoteInputChannel）会向其对应的缓冲池申请内存块（上图中的①）。如果缓冲池中也没有可用的内存块且已申请的数量还没到池子上限，则会向 NetworkBufferPool 申请内存块（上图中的②）并交给 InputChannel 填上数据（上图中的③和④）。如果缓冲池已申请的数量达到上限了呢？或者 NetworkBufferPool 也没有可用内存块了呢？这时候，Task 的 Netty Channel 会暂停读取，上游的发送端会立即响应停止发送，拓扑会进入反压状态。当 Task 线程写数据到 ResultPartition 时，也会向缓冲池请求内存块，如果没有可用内存块时，会阻塞在请求内存块的地方，达到暂停写入的目的。</li>
-<li>当一个内存块被消费完成之后（在输入端是指内存块中的字节被反序列化成对象了，在输出端是指内存块中的字节写入到 Netty Channel 了），会调用 Buffer.recycle() 方法，会将内存块还给 LocalBufferPool （上图中的⑤）。如果LocalBufferPool中当前申请的数量超过了池子容量（由于上文提到的动态容量，由于新注册的 Task 导致该池子容量变小），则LocalBufferPool会将该内存块回收给 NetworkBufferPool（上图中的⑥）。如果没超过池子容量，则会继续留在池子中，减少反复申请的开销。</li>
-</ol>
-<h2 id="Flink-反压机制-1"><a href="#Flink-反压机制-1" class="headerlink" title="Flink 反压机制"></a>Flink 反压机制</h2><p>下面这张图简单展示了两个 Task 之间的数据传输以及 Flink 如何感知到反压的：</p>
-<p><img src="_v_images/20201030212757424_78076714.png" alt="实时流处理系统反压机制08"></p>
-<ol>
-<li>记录“A”进入了 Flink 并且被 Task 1 处理。（这里省略了 Netty 接收、反序列化等过程）</li>
-<li>记录被序列化到 buffer 中。</li>
-<li>该 buffer 被发送到 Task 2，然后 Task 2 从这个 buffer 中读出记录。</li>
-</ol>
-<p><strong>不要忘了：记录能被 Flink 处理的前提是，必须有空闲可用的 Buffer。</strong></p>
-<p>结合上面两张图看：Task 1 在输出端有一个相关联的 LocalBufferPool（称缓冲池1），Task 2 在输入端也有一个相关联的 LocalBufferPool（称缓冲池2）。如果缓冲池1中有空闲可用的 buffer 来序列化记录 “A”，我们就序列化并发送该 buffer。</p>
-<p>这里我们需要注意两个场景：</p>
-<ul>
-<li>本地传输：如果 Task 1 和 Task 2 运行在同一个 worker 节点（TaskManager），该 buffer 可以直接交给下一个 Task。一旦 Task 2 消费了该 buffer，则该 buffer 会被缓冲池1回收。如果 Task 2 的速度比 1 慢，那么 buffer 回收的速度就会赶不上 Task 1 取 buffer 的速度，导致缓冲池1无可用的 buffer，Task 1 等待在可用的 buffer 上。最终形成 Task 1 的降速。</li>
-<li>远程传输：如果 Task 1 和 Task 2 运行在不同的 worker 节点上，那么 buffer 会在发送到网络（TCP Channel）后被回收。在接收端，会从 LocalBufferPool 中申请 buffer，然后拷贝网络中的数据到 buffer 中。如果没有可用的 buffer，会停止从 TCP 连接中读取数据。在输出端，通过 Netty 的水位值机制来保证不往网络中写入太多数据（后面会说）。如果网络中的数据（Netty输出缓冲中的字节数）超过了高水位值，我们会等到其降到低水位值以下才继续写入数据。这保证了网络中不会有太多的数据。如果接收端停止消费网络中的数据（由于接收端缓冲池没有可用 buffer），网络中的缓冲数据就会堆积，那么发送端也会暂停发送。另外，这会使得发送端的缓冲池得不到回收，writer 阻塞在向 LocalBufferPool 请求 buffer，阻塞了 writer 往 ResultSubPartition 写数据。</li>
-</ul>
-<p>这种固定大小缓冲池就像阻塞队列一样，保证了 Flink 有一套健壮的反压机制，使得 Task 生产数据的速度不会快于消费的速度。我们上面描述的这个方案可以从两个 Task 之间的数据传输自然地扩展到更复杂的 pipeline 中，保证反压机制可以扩散到整个 pipeline。</p>
-<h2 id="反压实验"><a href="#反压实验" class="headerlink" title="反压实验"></a>反压实验</h2><p>另外，官方博客中为了展示反压的效果，给出了一个简单的实验。下面这张图显示了：随着时间的改变，生产者（黄色线）和消费者（绿色线）每5秒的平均吞吐与最大吞吐（在单一JVM中每秒达到8百万条记录）的百分比。我们通过衡量task每5秒钟处理的记录数来衡量平均吞吐。该实验运行在单 JVM 中，不过使用了完整的 Flink 功能栈。</p>
-<p><img src="_v_images/20201030212755917_1236027751.png" alt="实时流处理系统反压机制09"></p>
-<p>首先，我们运行生产task到它最大生产速度的60%（我们通过Thread.sleep()来模拟降速）。消费者以同样的速度处理数据。然后，我们将消费task的速度降至其最高速度的30%。你就会看到背压问题产生了，正如我们所见，生产者的速度也自然降至其最高速度的30%。接着，停止消费task的人为降速，之后生产者和消费者task都达到了其最大的吞吐。接下来，我们再次将消费者的速度降至30%，pipeline给出了立即响应：生产者的速度也被自动降至30%。最后，我们再次停止限速，两个task也再次恢复100%的速度。总而言之，我们可以看到：生产者和消费者在 pipeline 中的处理都在跟随彼此的吞吐而进行适当的调整，这就是我们希望看到的反压的效果。</p>
-<h2 id="Flink-反压监控"><a href="#Flink-反压监控" class="headerlink" title="Flink 反压监控"></a>Flink 反压监控</h2><p>在 Storm/JStorm 中，只要监控到队列满了，就可以记录下拓扑进入反压了。但是 Flink 的反压太过于天然了，导致我们无法简单地通过监控队列来监控反压状态。Flink 在这里使用了一个 trick 来实现对反压的监控。如果一个 Task 因为反压而降速了，那么它会卡在向 LocalBufferPool 申请内存块上。那么这时候，该 Task 的 stack trace 就会长下面这样：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">java.lang.Object.wait(Native Method)</span><br><span class="line">o.a.f.[...].LocalBufferPool.requestBuffer(LocalBufferPool.java:<span class="number">163</span>)</span><br><span class="line">o.a.f.[...].LocalBufferPool.requestBufferBlocking(LocalBufferPool.java:<span class="number">133</span>) &lt;--- BLOCKING request</span><br><span class="line">[...]</span><br></pre></td></tr></table></figure>
-<p>那么事情就简单了。通过不断地采样每个 task 的 stack trace 就可以实现反压监控。</p>
-<p><img src="_v_images/20201030212753993_1098219801.png" alt="实时流处理系统反压机制10"></p>
-<p>Flink 的实现中，只有当 Web 页面切换到某个 Job 的 Backpressure 页面，才会对这个 Job 触发反压检测，因为反压检测还是挺昂贵的。JobManager 会通过 Akka 给每个 TaskManager 发送TriggerStackTraceSample消息。默认情况下，TaskManager 会触发100次 stack trace 采样，每次间隔 50ms（也就是说一次反压检测至少要等待5秒钟）。并将这 100 次采样的结果返回给 JobManager，由 JobManager 来计算反压比率（反压出现的次数/采样的次数），最终展现在 UI 上。UI 刷新的默认周期是一分钟，目的是不对 TaskManager 造成太大的负担。</p>
-<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>Flink不需要一种特殊的机制来处理反压，因为Flink 中的数据传输相当于已经提供了应对反压的机制。因此，Flink 所能获得的最大吞吐量由其 pipeline 中最慢的组件决定。相对于 Storm/JStorm 的实现，Flink 的实现更为简洁优雅，源码中也看不见与反压相关的代码，无需 Zookeeper/TopologyMaster 的参与也降低了系统的负载，也利于对反压更迅速的响应。</p>
-<blockquote>
-<p>本文转自 <a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">实时流处理系统反压机制（BackPressure）综述</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_21125183/article/details/80708142">https://blog.csdn.net/qq_21125183/article/details/80708142</a><br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/28fcd51d4edd">开启Back Pressure使生产环境的Spark Streaming应用更稳定、有效</a></p>
-</blockquote>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Uber-AthenaX/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/Uber-AthenaX/" class="post-title-link" itemprop="url">Uber-AthenaX</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Uber-AthenaX"><a href="#Uber-AthenaX" class="headerlink" title="Uber-AthenaX"></a>Uber-AthenaX</h1>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-SQL/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -994,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1156,7 +376,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1231,7 +451,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1400,7 +620,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1477,7 +697,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1580,7 +800,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1708,7 +928,7 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:36:20" itemprop="dateModified" datetime="2021-04-04T08:36:20+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1748,10 +968,391 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/doris/Doris/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/doris/Doris/" class="post-title-link" itemprop="url">Doris</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Doris"><a href="#Doris" class="headerlink" title="Doris"></a>Doris</h1><p>参考文献:</p>
+<p><a target="_blank" rel="noopener" href="https://blog.bcmeng.com/post/doris-bitmap.html">Apache Doris 基于 Bitmap的精确去重和用户行为分析</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/iceberg/Apache%20iceberg%EF%BC%9ANetflix%20%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/iceberg/Apache%20iceberg%EF%BC%9ANetflix%20%E6%95%B0%E6%8D%AE%E4%BB%93%E5%BA%93%E7%9A%84%E5%9F%BA%E7%9F%B3/" class="post-title-link" itemprop="url">Apache iceberg：Netflix 数据仓库的基石</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Apache-iceberg：Netflix-数据仓库的基石"><a href="#Apache-iceberg：Netflix-数据仓库的基石" class="headerlink" title="Apache iceberg：Netflix 数据仓库的基石"></a>Apache iceberg：Netflix 数据仓库的基石</h1><p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/acWcoZ25zDXetA3ewypG2g?spm=a2c6h.12873639.0.0.7e4b13839s5rpH">Apache iceberg：Netflix 数据仓库的基石</a></p>
+<h2 id="5-year-challenges"><a href="#5-year-challenges" class="headerlink" title="5-year challenges"></a>5-year challenges</h2><p>智能处理引擎</p>
+<ul>
+<li>CBO，更好的join实现</li>
+<li>缓存结果集，物化视图</li>
+</ul>
+<p>减少人工维护数据</p>
+<ul>
+<li>data librarian services 数据图书馆服务</li>
+<li>declarative instead of imperative 陈述式而不是命令式</li>
+</ul>
+<h2 id="Problem-Whack-a-mole"><a href="#Problem-Whack-a-mole" class="headerlink" title="Problem Whack-a-mole"></a>Problem Whack-a-mole</h2><p>1、不安全的操作随处可见: 同时写多个分区，列重命名<br>2、和对象存储交互有时候会出现很大的问题: eventual consistency to performance problems(最终一致性的性能问题)、output committees can’t fix it<br>3、无休止的可扩展性挑战。</p>
+<h2 id="iceberg"><a href="#iceberg" class="headerlink" title="iceberg"></a>iceberg</h2><ol>
+<li>在单个文件中修改或跳过数据</li>
+<li>当然多个文件也支持这些操作</li>
+</ol>
+<p><img src="_v_images/20201014205326408_1460756353.png"></p>
+<p><img src="_v_images/20201014205344160_898972367.png"></p>
+<p>Hive 表的核心思想是把数据组织成目录树，如上所述。</p>
+<p>如果我们需要过滤数据，可以在 where 里面添加分区相关的信息。</p>
+<p>带来的问题是如果一张表有很多分区，我们需要使用 HMS（Hive MetaStore）来记录这些分区，同时底层的文件系统（比如 HDFS）仍然需要在每个分区里面记录这些分区数据。</p>
+<p>这就导致我们需要在 HMS 和 文件系统里面同时保存一些状态信息；因为缺乏锁机制，所以对上面两个系统进行修改也不能保证原子性。</p>
+<p>当然 Hive 这样维护表也不是没有好处。这种设计使得很多引擎（Hive、Spark、Presto、Flink、Pig）都支持读写 Hive 表，同时支持很多第三方工具。简单和透明使得 Hive 表变得不可或缺的。</p>
+<p>Iceberg 的目标包括：</p>
+<p>1、成为静态数据交换的开放规范，维护一个清晰的格式规范，支持多语言，支持跨项目的需求等。<br>2、提升扩展性和可靠性。能够在一个节点上运行，也能在集群上运行。所有的修改都是原子性的，串行化隔离。原生支持云对象存储，支持多并发写。<br>3、修复持续的可用性问题，比如模式演进，分区隐藏，支持时间旅行、回滚等。</p>
+<p>Iceberg 主要设计思想：</p>
+<p>记录表在所有时间的所有文件，和 Delta Lake 或 Apache Hudi 一样，支持 snapshot，其是表在某个时刻的完整文件列表。每一次写操作都会生成一个新的快照。</p>
+<p>读取数据的时候使用当前的快照，Iceberg 使用乐观锁机制来创建新的快照，然后提交。</p>
+<p>Iceberg 这么设计的好处是：</p>
+<ul>
+<li>所有的修改都是原子性的；</li>
+<li>没有耗时的文件系统操作；</li>
+<li>快照是索引好的，以便加速读取；</li>
+<li>CBO metrics 信息是可靠的；</li>
+<li>更新支持版本，支持物化视图。</li>
+</ul>
+<p>Iceberg 在 Netflix 生产环境维护着数十 PB 的数据，数百万个分区。对大表进行查询能够提供低延迟的响应。</p>
+<p>未来工作：1、支持 Spark 向量化以便实现快速的 bulk read，Presto 向量化已经支持。2、行级别的删除，支持 MERGE INTO 等</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/iceberg/DataLake%E4%B8%89%E5%89%91%E5%AE%A2(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/iceberg/DataLake%E4%B8%89%E5%89%91%E5%AE%A2(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/" class="post-title-link" itemprop="url">DataLake三剑客</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:42:23" itemprop="dateModified" datetime="2021-04-04T08:42:23+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="DataLake三剑客"><a href="#DataLake三剑客" class="headerlink" title="DataLake三剑客"></a>DataLake三剑客</h1><p><strong>作者</strong>：辛庸，阿里巴巴计算平台事业部 EMR 技术专家。Apache Hadoop，Apache Spark contributor。对 Hadoop、Spark、Hive、Druid 等大数据组件有深入研究。目前从事大数据云化相关工作，专注于计算引擎、存储结构、数据库事务等内容。</p>
+<h3 id="共同点"><a href="#共同点" class="headerlink" title="共同点"></a>共同点</h3><p>定性上讲，三者均为 Data Lake 的数据存储中间层，其数据管理的功能均是基于一系列的 meta 文件。meta 文件的角色类似于数据库的 catalog/wal，起到 schema 管理、事务管理和数据管理的功能。与数据库不同的是，这些 meta 文件是与数据文件一起存放在存储引擎中的，用户可以直接看到。这种做法直接继承了大数据分析中数据对用户可见的传统，但是无形中也增加了数据被不小心破坏的风险。一旦某个用户不小心删了 meta 目录，表就被破坏了，想要恢复难度非常大。</p>
+<p>Meta 文件包含有表的 schema 信息。因此系统可以自己掌握 Schema 的变动，提供 Schema 演化的支持。Meta 文件也有 transaction log 的功能（需要文件系统有原子性和一致性的支持）。所有对表的变更都会生成一份新的 meta 文件，于是系统就有了 ACID 和多版本的支持，同时可以提供访问历史的功能。在这些方面，三者是相同的。</p>
+<p>下面来谈一下三者的不同。</p>
+<h3 id="Hudi"><a href="#Hudi" class="headerlink" title="Hudi"></a>Hudi</h3><p>先说 Hudi。Hudi 的设计目标正如其名，Hadoop Upserts Deletes and Incrementals（原为 Hadoop Upserts anD Incrementals），强调了其主要支持 Upserts、Deletes 和 Incremental 数据处理，其主要提供的写入工具是 Spark HudiDataSource API 和自身提供的 DeltaStreamer，均支持三种数据写入方式：UPSERT，INSERT 和 BULK_INSERT。其对 Delete 的支持也是通过写入时指定一定的选项支持的，并不支持纯粹的 delete 接口。</p>
+<p>其典型用法是将上游数据通过 Kafka 或者 Sqoop，经由 DeltaStreamer 写入 Hudi。DeltaStreamer 是一个常驻服务，不断地从上游拉取数据，并写入 hudi。写入是分批次的，并且可以设置批次之间的调度间隔。默认间隔为 0，类似于 Spark Streaming 的 As-soon-as-possible 策略。随着数据不断写入，会有小文件产生。对于这些小文件，DeltaStreamer 可以自动地触发小文件合并的任务。</p>
+<p>在查询方面，Hudi 支持 Hive、Spark、Presto。</p>
+<p>在性能方面，Hudi 设计了 <code>`</code><br>HoodieKey<br><code>，一个类似于主键的东西。</code><br>HoodieKey<br><code>有 Min/Max 统计，BloomFilter，用于快速定位 Record 所在的文件。在具体做 Upserts 时，如果 </code>HoodieKey<br><code>不存在于 BloomFilter，则执行插入，否则，确认 </code>HoodieKey<br>是否真正存在，如果真正存在，则执行 update。这种基于 HoodieKey + BloomFilter 的 upserts 方法是比较高效的，否则，需要做全表的 Join 才能实现 upserts。对于查询性能，一般需求是根据查询谓词生成过滤条件下推至 datasource。Hudi 这方面没怎么做工作，其性能完全基于引擎自带的谓词下推和 partition prune 功能。</p>
+<p>Hudi 的另一大特色是支持 Copy On Write 和 Merge On Read。前者在写入时做数据的 merge，写入性能略差，但是读性能更高一些。后者读的时候做 merge，读性能查，但是写入数据会比较及时，因而后者可以提供近实时的数据分析能力。</p>
+<p>最后，Hudi 提供了一个名为 run_sync_tool 的脚本同步数据的 schema 到 Hive 表。Hudi 还提供了一个命令行工具用于管理 Hudi 表。</p>
+<p><strong>hudi</strong><br><img src="_v_images/20201014213247817_752642290.png" alt="image.png" title="image.png"></p>
+<hr>
+<h3 id="Iceberg"><a href="#Iceberg" class="headerlink" title="Iceberg"></a>Iceberg</h3><p>Iceberg 没有类似的 HoodieKey 设计，其不强调主键。上文已经说到，没有主键，做 update/delete/merge 等操作就要通过 Join 来实现，而 Join 需要有一个 类似 SQL 的执行引擎。Iceberg 并不绑定某个引擎，也没有自己的引擎，所以 Iceberg 并不支持 update/delete/merge。如果用户需要 update 数据，最好的方法就是找出哪些 partition 需要更新，然后通过 overwrite 的方式重写数据。Iceberg 官网提供的 quickstart 以及 Spark 的接口均只是提到了使用 Spark dataframe API 向 Iceberg 写数据的方式，没有提及别的数据摄入方法。至于使用 Spark Streaming 写入，代码中是实现了相应的 StreamWriteSupport，应该是支持流式写入，但是貌似官网并未明确提及这一点。支持流式写入意味着有小文件问题，对于怎么合并小文件，官网也未提及。我怀疑对于流式写入和小文件合并，可能 Iceberg 还没有很好的生产 ready，因而没有提及（纯属个人猜测）。</p>
+<p>在查询方面，Iceberg 支持 Spark、Presto。</p>
+<p>Iceberg 在查询性能方面做了大量的工作。值得一提的是它的 hidden partition 功能。Hidden partition 意思是说，对于用户输入的数据，用户可以选取其中某些列做适当的变换（Transform）形成一个新的列作为 partition 列。这个 partition 列仅仅为了将数据进行分区，并不直接体现在表的 schema 中。例如，用户有 timestamp 列，那么可以通过 hour(timestamp) 生成一个 timestamp_hour 的新分区列。timestamp_hour 对用户不可见，仅仅用于组织数据。Partition 列有 partition 列的统计，如该 partition 包含的数据范围。当用户查询时，可以根据 partition 的统计信息做 partition prune。</p>
+<p>除了 hidden partition，Iceberg 也对普通的 column 列做了信息收集。这些统计信息非常全，包括列的 size，列的 value count，null value count，以及列的最大最小值等等。这些信息都可以用来在查询时过滤数据。</p>
+<p>Iceberg 提供了建表的 API，用户可以使用该 API 指定表明、schema、partition 信息等，然后在 Hive catalog 中完成建表。</p>
+<hr>
+<h3 id="Delta"><a href="#Delta" class="headerlink" title="Delta"></a>Delta</h3><p>我们最后来说 Delta。Delta 的定位是流批一体的 Data Lake 存储层，支持 update/delete/merge。由于出自 Databricks，spark 的所有数据写入方式，包括基于 dataframe 的批式、流式，以及 SQL 的 Insert、Insert Overwrite 等都是支持的（开源的 SQL 写暂不支持，EMR 做了支持）。与 Iceberg 类似，Delta 不强调主键，因此其 update/delete/merge 的实现均是基于 spark 的 join 功能。在数据写入方面，Delta 与 Spark 是强绑定的，这一点 Hudi 是不同的：Hudi 的数据写入不绑定 Spark（可以用 Spark，也可以使用 Hudi 自己的写入工具写入）。</p>
+<p>在查询方面，开源 Delta 目前支持 Spark 与 Presto，但是，Spark 是不可或缺的，因为 delta log 的处理需要用到 Spark。这意味着如果要用 Presto 查询 Delta，查询时还要跑一个 Spark 作业。更为蛋疼的是，Presto 查询是基于 SymlinkTextInputFormat。在查询之前，要运行 Spark 作业生成这么个 Symlink 文件。如果表数据是实时更新的，意味着每次在查询之前先要跑一个 SparkSQL，再跑 Presto。这样的话为何不都在 SparkSQL 里搞定呢？这是一个非常蛋疼的设计。为此，EMR 在这方面做了改进，支持了 DeltaInputFormat，用户可以直接使用 Presto 查询 Delta 数据，而不必事先启动一个 Spark 任务。</p>
+<p>在查询性能方面，开源的 Delta 几乎没有任何优化。Iceberg 的 hidden partition 且不说，普通的 column 的统计信息也没有。Databricks 对他们引以为傲的 Data Skipping 技术做了保留。不得不说这对于推广 Delta 来说不是件好事。EMR 团队在这方面正在做一些工作，希望能弥补这方面能力的缺失。</p>
+<p>Delta 在数据 merge 方面性能不如 Hudi，在查询方面性能不如 Iceberg，是不是意味着 Delta 一无是处了呢？其实不然。Delta 的一大优点就是与 Spark 的整合能力（虽然目前仍不是很完善，但 Spark-3.0 之后会好很多），尤其是其流批一体的设计，配合 multi-hop 的 data pipeline，可以支持分析、Machine learning、CDC 等多种场景。使用灵活、场景支持完善是它相比 Hudi 和 Iceberg 的最大优点。另外，Delta 号称是 Lambda 架构、Kappa 架构的改进版，无需关心流批，无需关心架构。这一点上 Hudi 和 Iceberg 是力所不及的。</p>
+<p><strong>delta</strong><br><img src="_v_images/20201014213246690_850183439.png" alt="image.png" title="image.png"></p>
+<hr>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>通过上面的分析能够看到，三个引擎的初衷场景并不完全相同，Hudi 为了 incremental 的 upserts，Iceberg 定位于高性能的分析与可靠的数据管理，Delta 定位于流批一体的数据处理。这种场景的不同也造成了三者在设计上的差别。尤其是 Hudi，其设计与另外两个相比差别更为明显。随着时间的发展，三者都在不断补齐自己缺失的能力，可能在将来会彼此趋同，互相侵入对方的领地。当然也有可能各自关注自己专长的场景，筑起自己的优势壁垒，因此最终谁赢谁输还是未知之数。</p>
+<p>下表从多个维度对三者进行了总结，需要注意的是此表所列的能力仅代表至 2019 年底。</p>
+<table>
+<thead>
+<tr>
+<th>·</th>
+<th>Delta</th>
+<th>Hudi</th>
+<th>Iceberg</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Incremental Ingestion</td>
+<td>Spark</td>
+<td>Spark</td>
+<td>Spark</td>
+</tr>
+<tr>
+<td>ACID updates</td>
+<td>HDFS, S3 (Databricks), OSS</td>
+<td>HDFS</td>
+<td>HDFS, S3</td>
+</tr>
+<tr>
+<td>Upserts/Delete/Merge/Update</td>
+<td>Delete/Merge/Update</td>
+<td>Upserts/Delete</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Streaming sink</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes(not ready?)</td>
+</tr>
+<tr>
+<td>Streaming source</td>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>FileFormats</td>
+<td>Parquet</td>
+<td>Avro,Parquet</td>
+<td>Parquet, ORC</td>
+</tr>
+<tr>
+<td>Data Skipping</td>
+<td>File-Level Max-Min stats + Z-Ordering (Databricks)</td>
+<td>File-Level Max-Min stats + Bloom Filter</td>
+<td>File-Level Max-Min Filtering</td>
+</tr>
+<tr>
+<td>Concurrency control</td>
+<td>Optimistic</td>
+<td>Optimistic</td>
+<td>Optimistic</td>
+</tr>
+<tr>
+<td>Data Validation</td>
+<td>Yes (Databricks)</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Merge on read</td>
+<td>No</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Schema Evolution</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>File I/O Cache</td>
+<td>Yes (Databricks)</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Cleanup</td>
+<td>Manual</td>
+<td>Automatic</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Compaction</td>
+<td>Manual</td>
+<td>Automatic</td>
+<td>No</td>
+</tr>
+</tbody></table>
+<p>注：限于本人水平，文中内容可能有误，也欢迎读者批评指正！</p>
+<hr>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/6/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/27/">27</a><a class="extend next" rel="next" href="/page/8/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/page/6/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/26/">26</a><a class="extend next" rel="next" href="/page/8/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1817,7 +1418,7 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">268</span>
+          <span class="site-state-item-count">258</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
