@@ -183,6 +183,518 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-StateManagement/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-StateManagement/" class="post-title-link" itemprop="url">Flink状态管理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="state-management"><a href="#state-management" class="headerlink" title="state-management"></a>state-management</h1><h2 id="org-apache-flink-streaming-api-checkpoint-CheckpointedFunction"><a href="#org-apache-flink-streaming-api-checkpoint-CheckpointedFunction" class="headerlink" title="org.apache.flink.streaming.api.checkpoint.CheckpointedFunction"></a>org.apache.flink.streaming.api.checkpoint.CheckpointedFunction</h2><ul>
+<li>CheckpointedFunction是stateful transformation functions的核心接口，用于跨stream维护state<ul>
+<li>snapshotState 在checkpoint的时候会被调用，用于snapshot state，通常用于flush、commit、synchronize外部系统</li>
+<li>initializeState 在parallel function初始化的时候(<strong>第一次初始化或者从前一次checkpoint recover的时候</strong>)被调用，通常用来初始化state，以及处理state recovery的逻辑</li>
+</ul>
+</li>
+</ul>
+<p>从checkpoint中恢复数据时，需要判断snapshot当前的情况，</p>
+<p>FunctionSnapshotContext实现了ManagedSnapshotContext, 父类中的方法: <code>getCheckpointId</code>,<code>getCheckpointTimestamp</code><br>FunctionInitializationContext实现了ManagedInitializationContext接口, 实现了<code>isRestored</code>、<code>getOperatorStateStore</code>、<code>getKeyedStateStore</code>方法</p>
+<p>在初始化容器之后，我们使用上下文的<code>isrestore()</code>方法检查失败后是否正在恢复。如果是true，即正在恢复，则应用恢复逻辑。</p>
+<blockquote>
+<p>样例: HBase写入OutPutFormat</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">PortraitOutputFormat</span> <span class="keyword">extends</span> <span class="title">RichOutputFormat</span>&lt;<span class="title">EventItem</span>&gt; <span class="keyword">implements</span> <span class="title">CheckpointedFunction</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 输出阈值，批量写入的条数</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">int</span> threshold;</span><br><span class="line">    <span class="comment">// 维护在状态中的数据</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">transient</span> ListState&lt;EventItem&gt; checkpointState;</span><br><span class="line">    <span class="comment">// 内存中的数据</span></span><br><span class="line">    <span class="keyword">private</span> List&lt;EventItem&gt; bufferedEventItem;</span><br><span class="line">    <span class="comment">// HBase客户端</span></span><br><span class="line">    <span class="keyword">private</span> HBaseClient hbaseClient;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PortraitOutputFormat</span><span class="params">(HBaseClient hbaseClient)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.hbaseClient = hbaseClient;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    * checkpoint时调用</span></span><br><span class="line"><span class="comment">    * 执行snapshot操作，将内存中的数据写入到内存</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">snapshotState</span><span class="params">(FunctionSnapshotContext functionSnapshotContext)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        checkpointState.clear();</span><br><span class="line">        <span class="keyword">for</span> (EventItem eventItem : bufferedEventItem) &#123;</span><br><span class="line">            checkpointState.add(eventItem);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    * 创建state，判断是否存在需要恢复的状态，如果有则需要恢复到bufferedEventItem</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">initializeState</span><span class="params">(FunctionInitializationContext context)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ListStateDescriptor&lt;EventItem&gt; descriptor = <span class="keyword">new</span> ListStateDescriptor&lt;&gt;(<span class="string">&quot;buf-p&quot;</span>, EventItem.class);</span><br><span class="line">        checkpointState = context.getOperatorStateStore().getListState(descriptor);</span><br><span class="line">        <span class="keyword">if</span> (context.isRestored()) &#123;</span><br><span class="line">            <span class="keyword">for</span> (EventItem eventItem : checkpointState.get()) &#123;</span><br><span class="line">                bufferedEventItem.add(eventItem);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    *</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">configure</span><span class="params">(Configuration configuration)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    *</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">open</span><span class="params">(<span class="keyword">int</span> taskNumber, <span class="keyword">int</span> numTasks)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    * 将新消息写入到缓存bufferedEventItem，缓存个数大约threshold,则执行sink写入，然后清空bufferedEventItem</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">writeRecord</span><span class="params">(EventItem value)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (value.getAttachUserId() == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        bufferedEventItem.add(value);</span><br><span class="line">        <span class="keyword">int</span> size = bufferedEventItem.size();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (size &gt;= threshold) &#123;</span><br><span class="line">            List&lt;Put&gt; puts = bufferedEventItem</span><br><span class="line">                    .stream()</span><br><span class="line">                    .map(eventItem -&gt; &#123;</span><br><span class="line">                        String rowKey1 = portraitDataGenerator.rowKey(eventItem);</span><br><span class="line">                        Map&lt;String, String&gt; data = portraitDataGenerator.data(eventItem);</span><br><span class="line">                        Put put = <span class="keyword">new</span> Put(rowKey1.getBytes());</span><br><span class="line">                        <span class="keyword">for</span> (String cfc : data.keySet()) &#123;</span><br><span class="line">                            String[] cfcs = cfc.split(<span class="string">&quot;:&quot;</span>);</span><br><span class="line">                            String cf = cfcs[<span class="number">0</span>];</span><br><span class="line">                            String c = cfcs[<span class="number">1</span>];</span><br><span class="line">                            String dataOne = data.get(cfc);</span><br><span class="line">                            put.addColumn(cf.getBytes(), c.getBytes(), dataOne.getBytes());</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">return</span> put;</span><br><span class="line">                    &#125;)</span><br><span class="line">                    .collect(Collectors.toList());</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                hbaseClient.putAndFlush(puts);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">            bufferedEventItem.clear();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    *</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (hTable != <span class="keyword">null</span>) &#123;</span><br><span class="line">            hTable.flushCommits();</span><br><span class="line">            hTable.close();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (connection != <span class="keyword">null</span>) &#123;</span><br><span class="line">            connection.close();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+<h2 id="org-apache-flink-runtime-state-CheckpointListener"><a href="#org-apache-flink-runtime-state-CheckpointListener" class="headerlink" title="org.apache.flink.runtime.state.CheckpointListener"></a>org.apache.flink.runtime.state.CheckpointListener</h2><p>一旦所有checkpoint参与者确认完全，该接口必须由想要接收提交通知的功能/操作来实现。</p>
+<h1 id="TTL"><a href="#TTL" class="headerlink" title="TTL"></a>TTL</h1><p>1.8 自动清理原理</p>
+<p>Apache Flink的1.6.0版本引入了State TTL功能。它使流处理应用程序的开发人员配置过期时间，并在定义时间超时（Time to Live）之后进行清理。在Flink 1.8.0中，该功能得到了扩展，包括对RocksDB和堆状态后端（FSStateBackend和MemoryStateBackend）的历史数据进行持续清理，从而实现旧条目的连续清理过程（根据TTL设置）。</p>
+<p>RocksDB后台压缩可以过滤掉过期状态<br>如果你的Flink应用程序使用RocksDB作为状态后端存储，则可以启用另一个基于Flink特定压缩过滤器的清理策略。RocksDB定期运行异步压缩以合并状态更新并减少存储。Flink压缩过滤器使用TTL检查状态条目的到期时间戳，并丢弃所有过期值。</p>
+<p>激活此功能的第一步是通过设置以下Flink配置选项来配置RocksDB状态后端：</p>
+<p>state.backend.rocksdb.ttl.compaction.filter.enabled</p>
+<p>配置RocksDB状态后端后，将为状态启用压缩清理策略，如以下代码示例所示：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">StateTtlConfig ttlConfig &#x3D; StateTtlConfig</span><br><span class="line">    .newBuilder(Time.days(7))</span><br><span class="line">    .cleanupInRocksdbCompactFilter()</span><br><span class="line">    .build();</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="backend-状态后端"><a href="#backend-状态后端" class="headerlink" title="backend 状态后端"></a>backend 状态后端</h2><table>
+<thead>
+<tr>
+<th>state</th>
+<th>保存</th>
+<th>snapshot与restore</th>
+<th>大小</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>keyed state</td>
+<td>堆内或堆外(RocksDB)</td>
+<td>backend自行实现，用户不关心</td>
+<td>大</td>
+</tr>
+<tr>
+<td>operator state</td>
+<td>堆内</td>
+<td>用户自行实现</td>
+<td>小</td>
+</tr>
+</tbody></table>
+<p><img src="_v_images/20201208101748835_1926021392.png"></p>
+<p>Flink 的 keyed state 本质上来说就是一个键值对，所以与 RocksDB 的数据模型是吻合的。下图分别是 “window state” 和 “value state” 在 RocksDB 中的存储格式，所有存储的 key，value 均被序列化成 bytes 进行存储。</p>
+<p><img src="_v_images/20201208113819762_751391291.png"></p>
+<p>在 RocksDB 中，每个 state 独享一个 Column Family，而每个 Column family 使用各自独享的 write buffer 和 block cache，上图中的 window state 和 value state实际上分属不同的 column family。</p>
+<h3 id="最佳实践"><a href="#最佳实践" class="headerlink" title="最佳实践"></a>最佳实践</h3><h4 id="operator-state"><a href="#operator-state" class="headerlink" title="operator state"></a>operator state</h4><h5 id="慎重使用长-list"><a href="#慎重使用长-list" class="headerlink" title="慎重使用长 list"></a>慎重使用长 list</h5><p>下图展示的是目前 task 端 operator state 在执行完 checkpoint 返回给 job master 端的 StateMetaInfo 的代码片段。</p>
+<p><img src="_v_images/20201208113527702_980726558.png"></p>
+<p>由于 operator state 没有 key group 的概念，所以为了实现改并发恢复的功能，需要对 operator state 中的每一个序列化后的元素存储一个位置偏移 offset，也就是构成了上图红框中的 offset 数组。  </p>
+<p>那么如果你的 operator state 中的 list 长度达到一定规模时，这个 offset 数组就可能会有几十 MB 的规模，关键这个数组是会返回给 job master，当 operator 的并发数目很大时，很容易触发 job master 的内存超用问题。我们遇到过用户把 operator state 当做黑名单存储，结果这个黑名单规模很大，导致一旦开始执行 checkpoint，job master 就会因为收到 task 发来的“巨大”的 offset 数组，而内存不断增长直到超用无法正常响应。</p>
+<h5 id="正确使用-UnionListState"><a href="#正确使用-UnionListState" class="headerlink" title="正确使用 UnionListState"></a>正确使用 UnionListState</h5><p>union list state 目前被广泛使用在 kafka connector 中，不过可能用户日常开发中较少遇到，他的语义是从检查点恢复之后每个并发 task 内拿到的是原先所有operator 上的 state，如下图所示：</p>
+<p><img src="_v_images/20201208113559017_2066750174.png"></p>
+<p>kafka connector 使用该功能，为的是从检查点恢复时，可以拿到之前的全局信息，如果用户需要使用该功能，需要切记恢复的 task 只取其中的一部分进行处理和用于下一次 snapshot，否则有可能随着作业不断的重启而导致 state 规模不断增长。</p>
+<h4 id="Keyed-state-使用建议"><a href="#Keyed-state-使用建议" class="headerlink" title="Keyed state 使用建议"></a>Keyed state 使用建议</h4><h5 id="如何正确清空当前的-state"><a href="#如何正确清空当前的-state" class="headerlink" title="如何正确清空当前的 state"></a>如何正确清空当前的 state</h5><p>state.clear() 实际上只能清理当前 key 对应的 value 值，如果想要清空整个 state，需要借助于 applyToAllKeys 方法，具体代码片段如下：</p>
+<p><img src="_v_images/20201208113620034_1338097160.png"></p>
+<p>如果你的需求中只是对 state 有过期需求，借助于 state TTL 功能来清理会是一个性能更好的方案。</p>
+<h5 id="RocksDB-中考虑-value-值很大的极限场景"><a href="#RocksDB-中考虑-value-值很大的极限场景" class="headerlink" title="RocksDB 中考虑 value 值很大的极限场景"></a>RocksDB 中考虑 value 值很大的极限场景</h5><p>受限于 JNI bridge API 的限制，单个 value 只支持 2^31 bytes 大小，如果存在很极限的情况，可以考虑使用 MapState 来替代 ListState 或者 ValueState，因为RocksDB 的 map state 并不是将整个 map 作为 value 进行存储，而是将 map 中的一个条目作为键值对进行存储。</p>
+<h5 id="如何知道当前-RocksDB-的运行情况"><a href="#如何知道当前-RocksDB-的运行情况" class="headerlink" title="如何知道当前 RocksDB 的运行情况"></a>如何知道当前 RocksDB 的运行情况</h5><p>比较直观的方式是打开 RocksDB 的 native metrics ，在默认使用 Flink managed memory 方式的情况下，state.backend.rocksdb.metrics.block-cache-usage ，state.backend.rocksdb.metrics.mem-table-flush-pending，state.backend.rocksdb.metrics.num-running-compactions 以及 state.backend.rocksdb.metrics.num-running-flushes 是比较重要的相关 metrics。</p>
+<h4 id="使用-checkpoint-的使用建议"><a href="#使用-checkpoint-的使用建议" class="headerlink" title="使用 checkpoint 的使用建议"></a>使用 checkpoint 的使用建议</h4><h5 id="Checkpoint-间隔不要太短"><a href="#Checkpoint-间隔不要太短" class="headerlink" title="Checkpoint 间隔不要太短"></a>Checkpoint 间隔不要太短</h5><p>虽然理论上 Flink 支持很短的 checkpoint 间隔，但是在实际生产中，过短的间隔对于底层分布式文件系统而言，会带来很大的压力。另一方面，由于检查点的语义，所以实际上 Flink 作业处理 record 与执行 checkpoint 存在互斥锁，过于频繁的 checkpoint，可能会影响整体的性能。当然，这个建议的出发点是底层分布式文件系统的压力考虑。 </p>
+<h5 id="合理设置超时时间"><a href="#合理设置超时时间" class="headerlink" title="合理设置超时时间"></a>合理设置超时时间</h5><p>默认的超时时间是 10min，如果 state 规模大，则需要合理配置。最坏情况是分布式地创建速度大于单点（job master 端）的删除速度，导致整体存储集群可用空间压力较大。建议当检查点频繁因为超时而失败时，增大超时时间。</p>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/6ed0ef5e2b74">Flink Streaming状态处理（Working with State）</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-StreamingAPI/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-StreamingAPI/" class="post-title-link" itemprop="url">Flink-streaming API</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-Streaming-API"><a href="#Flink-Streaming-API" class="headerlink" title="Flink Streaming API"></a>Flink Streaming API</h1><h2 id="org-apache-flink-streaming-api-functions-source-SourceFunction"><a href="#org-apache-flink-streaming-api-functions-source-SourceFunction" class="headerlink" title="org.apache.flink.streaming.api.functions.source.SourceFunction"></a>org.apache.flink.streaming.api.functions.source.SourceFunction</h2>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-VS-Spark/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-VS-Spark/" class="post-title-link" itemprop="url">Flink VS Spark</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-VS-Spark"><a href="#Flink-VS-Spark" class="headerlink" title="Flink VS Spark"></a>Flink VS Spark</h1><p>Spark Structure Streaming 是什么？</p>
+<h3 id="1、抽象-Abstraction"><a href="#1、抽象-Abstraction" class="headerlink" title="1、抽象 Abstraction"></a>1、抽象 Abstraction</h3><p>　　Spark中，对于批处理我们有RDD,对于流式，我们有DStream，不过内部实际还是RDD.所以所有的数据表示本质上还是RDD抽象。在Flink中，对于批处理有DataSet，对于流式我们有DataStreams。看起来和Spark类似，他们的不同点在于：</p>
+<p>　　<strong>（一）DataSet在运行时是表现为运行计划(runtime plans)的</strong></p>
+<p>　　在Spark中，RDD在运行时是表现为java objects的。通过引入Tungsten，这块有了些许的改变。但是在Flink中是被表现为logical plan(逻辑计划)的, 就是类似于Spark中的dataframes。所以在Flink中你使用的类Dataframe api是被作为第一优先级来优化的。但是相对来说在Spark RDD中就没有了这块的优化了。<br>　　Flink中的Dataset，对标Spark中的Dataframe，在运行前会经过优化。在Spark 1.6，dataset API已经被引入Spark了，也许最终会取代RDD 抽象。</p>
+<p>　　<strong>(二）Dataset和DataStream是独立的API</strong></p>
+<p>　　在Spark中，所有不同的API，例如DStream，Dataframe都是基于RDD抽象的。但是在Flink中，Dataset和DataStream是同一个公用的引擎之上两个独立的抽象。所以你不能把这两者的行为合并在一起操作，当然，Flink社区目前在朝这个方向努力(<code>https://issues.apache.org/jira/browse/Flink-2320</code>)，但是目前还不能轻易断言最后的结果。</p>
+<h3 id="2、内存管理"><a href="#2、内存管理" class="headerlink" title="2、内存管理"></a>2、内存管理</h3><p>　　一直到1.5版本，Spark都是试用java的内存管理来做数据缓存，明显很容易导致OOM或者gc。所以从1.5开始，Spark开始转向精确的控制内存的使用，这就是tungsten项目了。</p>
+<p>　　而Flink从第一天开始就坚持自己控制内存试用。这个也是启发了Spark走这条路的原因之一。Flink除了把数据存在自己管理的内存以外，还直接操作二进制数据。在Spark中，从1.5开始，所有的dataframe操作都是直接作用在tungsten的二进制数据上。</p>
+<h3 id="3、语言实现"><a href="#3、语言实现" class="headerlink" title="3、语言实现"></a>3、语言实现</h3><ul>
+<li><p>实现语言</p>
+<p>Spark和Flink均有Scala/Java混合编程实现，Spark的核心逻辑由Scala完成，Flink的主要核心逻辑由Java完成</p>
+</li>
+<li><p>支持应用语言<br> Flink主要支持Scala，和Java编程，部分API支持python应用<br> Spark主要支持Scala，Java，Python,R语言编程，部分API暂不支持Python和R</p>
+</li>
+</ul>
+<h3 id="4、API"><a href="#4、API" class="headerlink" title="4、API"></a>4、API</h3><table>
+<thead>
+<tr>
+<th>API对比</th>
+<th>Flink</th>
+<th></th>
+<th>Spark</th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>应用类型</td>
+<td>Batch</td>
+<td>Streaming</td>
+<td>Batch</td>
+<td>Structed Streaming</td>
+<td>SparkStreaming</td>
+</tr>
+<tr>
+<td>数据表示</td>
+<td>Dataset</td>
+<td>datastream</td>
+<td>RDD,Dataset</td>
+<td>Dataset</td>
+<td>Dtream</td>
+</tr>
+<tr>
+<td>主要支持API</td>
+<td>map,filter,flatMap等</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>转换后数据类型</td>
+<td>Dataset</td>
+<td>datastream</td>
+<td>RDD,Dataset</td>
+<td>Dataset</td>
+<td>Dtream</td>
+</tr>
+</tbody></table>
+<h4 id="批处理："><a href="#批处理：" class="headerlink" title="批处理："></a>批处理：</h4><p>Spark批处理的数据表示经历了从<code>RDD -&gt; DataFrame -&gt; Dataset</code>的变化，均具有不可变，lazy执行，可分区等特性，是Spark框架的核心，rdd经过map等函数操作后，并没有改变而是生成新的RDD，Spark的Dataset（DataFrame是一种特殊的Dataset，已经不推荐使用）还包含数据类型信息</p>
+<p>Flink批处理的API是Dataset,同样具有不可变，lazy执行，可分区等特性，是Flink框架的核心，Dataset经过map等函数操作后，并没有改变而是生成新的Dataset</p>
+<h4 id="流处理"><a href="#流处理" class="headerlink" title="流处理"></a>流处理</h4><ul>
+<li><p>Spark Streaming</p>
+<p>Spark在1.*版本引入的spark streaming作为流处理模块，抽象出Dstream的API来进行流数据处理，同时抽象出通过receiver获取消息数据，然后启动task处理的模式，以及直接启动task消费处理两种方式的流式数据处理。receiver模式由于稳定性不足被遗弃，推荐使用的是直接消费模式；然而本质上讲，Sparkstreaming的流处理是micro-batch的处理模式，将一定时间的流数据作为一个block/RDD，然后使用批处理的rdd的api来完成数据的处理。</p>
+</li>
+<li><p>Structed streaming</p>
+<p>随着Spark在2.*版本的Structed streaming的推出，Spark streaming模块进入了维护模式，从Spark2.*版本以来没有已经没有更新，当前社区主推使用Structed streaming进行流处理。Structed streaming在流处理中有两种流处理模式，一种是microbatch模式；一种是continuous模式；</p>
+<ul>
+<li><p>microbatch模式与spark streaming的microbatch模式大致相当，分批处理消息，但可通过设置连续的批次处理，即一个批次执行完之后立即进入下一个批次的处理</p>
+</li>
+<li><p>continuous模式，可以实现真正的流数据处理，端到端的毫秒级，当前处于Experiment状态，也只能支持简单的map,filter操作，当前不支持聚合，<code>current_timestamp</code>，<code>current_date</code>等操作</p>
+</li>
+<li><p>PS : microbatch &lt;—-&gt; continuous 两种模式可以相互切换且无需改动代码</p>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p>Flink Streaming</p>
+<p>Flink Streaming以流的方式处理流数据，可以实现简单map,fliter等操作，也可以实现复杂的聚合，关联操作，以完善的处理模型及high throughout得到了广泛的应用。</p>
+</li>
+</ul>
+<p>　　Spark和Flink都在模仿scala的collection API.所以从表面看起来，两者都很类似。下面是分别用RDD和DataSet API实现的word count</p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Spark wordcount</span></span><br><span class="line"><span class="class"><span class="keyword">object</span> <span class="title">WordCount</span> </span>&#123;</span><br><span class="line"> </span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">main</span></span>(args: <span class="type">Array</span>[<span class="type">String</span>]) &#123;</span><br><span class="line">    <span class="keyword">val</span> env = <span class="keyword">new</span> <span class="type">SparkContext</span>(<span class="string">&quot;local&quot;</span>,<span class="string">&quot;wordCount&quot;</span>)</span><br><span class="line">    <span class="keyword">val</span> data = <span class="type">List</span>(<span class="string">&quot;hi&quot;</span>,<span class="string">&quot;how are you&quot;</span>,<span class="string">&quot;hi&quot;</span>)</span><br><span class="line">    <span class="keyword">val</span> dataSet = env.parallelize(data)</span><br><span class="line">    <span class="keyword">val</span> words = dataSet.flatMap(value =&gt; value.split(<span class="string">&quot;\\s+&quot;</span>))</span><br><span class="line">    <span class="keyword">val</span> mappedWords = words.map(value =&gt; (value,<span class="number">1</span>))</span><br><span class="line">    <span class="keyword">val</span> sum = mappedWords.reduceByKey(_+_)</span><br><span class="line">    println(sum.collect())</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// Flink wordcount</span></span><br><span class="line"><span class="class"><span class="keyword">object</span> <span class="title">WordCount</span> </span>&#123;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span></span>(args: <span class="type">Array</span>[<span class="type">String</span>]) &#123;</span><br><span class="line">　　<span class="keyword">val</span> env = <span class="type">ExecutionEnvironment</span>.getExecutionEnvironment</span><br><span class="line">　　<span class="keyword">val</span> data = <span class="type">List</span>(<span class="string">&quot;hi&quot;</span>,<span class="string">&quot;how are you&quot;</span>,<span class="string">&quot;hi&quot;</span>)</span><br><span class="line">　　<span class="keyword">val</span> dataSet = env.fromCollection(data)</span><br><span class="line">　　<span class="keyword">val</span> words = dataSet.flatMap(value =&gt; value.split(<span class="string">&quot;\\s+&quot;</span>))</span><br><span class="line">　　<span class="keyword">val</span> mappedWords = words.map(value =&gt; (value,<span class="number">1</span>))</span><br><span class="line">　　<span class="keyword">val</span> grouped = mappedWords.groupBy(<span class="number">0</span>)</span><br><span class="line">　　<span class="keyword">val</span> sum = grouped.sum(<span class="number">1</span>)</span><br><span class="line">　　println(sum.collect())</span><br><span class="line">　&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>　　不知道是偶然还是故意的，API都长得很像，这样很方便开发者从一个引擎切换到另外一个引擎。我感觉以后这种Collection API会成为写data pipeline的标配。</p>
+<h3 id="5、Steaming"><a href="#5、Steaming" class="headerlink" title="5、Steaming"></a>5、Steaming</h3><p>　　Spark把streaming看成是更快的批处理，而Flink把批处理看成streaming的special case。这里面的思路决定了各自的方向，其中两者的差异点有如下这些：</p>
+<p><strong>实时 vs 近实时的角度</strong></p>
+<p>　　Flink提供了基于每个事件的流式处理机制，所以可以被认为是一个真正的流式计算。它非常像storm的model。而Spark，不是基于事件的粒度，而是用小批量来模拟流式，也就是多个事件的集合。所以Spark被认为是近实时的处理系统。</p>
+<p>　　Spark streaming 是更快的批处理，而Flink Batch是有限数据的流式计算。虽然大部分应用对准实时是可以接受的，但是也还是有很多应用需要event level的流式计算。这些应用更愿意选择storm而非Spark streaming，现在，Flink也许是一个更好的选择。</p>
+<p><strong>流式计算和批处理计算的表示</strong></p>
+<p>　　Spark对于批处理和流式计算，都是用的相同的抽象：RDD，这样很方便这两种计算合并起来表示。而Flink这两者分为了DataSet和DataStream，相比Spark，这个设计算是一个糟糕的设计。</p>
+<p><strong>对 windowing 的支持</strong></p>
+<p>　　因为Spark的小批量机制，Spark对于windowing的支持非常有限。只能基于process time，且只能对batches来做window。而Flink对window的支持非常到位，且Flink对windowing API的支持是相当给力的，允许基于process time,data time,record 来做windowing。我不太确定Spark是否能引入这些API，不过到目前为止，Flink的windowing支持是要比Spark好的。Steaming这部分Flink胜</p>
+<table>
+<thead>
+<tr>
+<th>Window 类型</th>
+<th>Window 含义</th>
+<th>Flink Streaming</th>
+<th>SparkStreaming</th>
+<th>Structed Streaming</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>tumblingWindow</td>
+<td>一个滚动的window</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td></td>
+</tr>
+<tr>
+<td>Sliding window</td>
+<td>滑动的window</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td></td>
+</tr>
+<tr>
+<td>Global window</td>
+<td>全局window</td>
+<td>支持</td>
+<td>间接实现</td>
+<td>间接支持</td>
+<td>间接支持的含义是可以时间类似功能，但没有抽象出该window</td>
+</tr>
+<tr>
+<td>Session window</td>
+<td>以接收到数据开始，一定时间没有接收到数据，则结束</td>
+<td>支持</td>
+<td>不支持</td>
+<td>不支持</td>
+<td></td>
+</tr>
+</tbody></table>
+<p><strong>流join分析：</strong></p>
+<p>由于Spark streaming中不支持event time的概念，其只能支持window不同Dstream的RDD的join，不同window间无法join</p>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>event-time</th>
+<th>流join</th>
+<th>join实现方式</th>
+<th>处理方式</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Spark streaming</td>
+<td>不支持</td>
+<td>支持</td>
+<td>window内</td>
+<td>processingTime</td>
+<td>micro-batch处理</td>
+</tr>
+<tr>
+<td>FLink1.5之前</td>
+<td>支持</td>
+<td>支持</td>
+<td>window内</td>
+<td>native处理，join时(window触发)，watermark灵活</td>
+<td>Processing Time／ EventTime ／ element Number</td>
+</tr>
+<tr>
+<td>FLink1.6之后</td>
+<td>支持</td>
+<td>支持</td>
+<td>window内，跨window</td>
+<td>native处理，join时(window触发)，watermark灵活</td>
+<td>Processing Time／ EventTime ／ element Number</td>
+</tr>
+<tr>
+<td>Structed Streaming 2.2</td>
+<td>支持</td>
+<td>不支持</td>
+<td>仅支持流数据和静态数据的join</td>
+<td>native处理，join时(window触发)，watermark灵活</td>
+<td>Processing Time／ EventTime</td>
+</tr>
+<tr>
+<td>Structed Streaming 2.3+</td>
+<td>支持</td>
+<td>支持</td>
+<td>跨window</td>
+<td>native处理，join时（proocessingTime（interval）触发）</td>
+<td>Processing Time／ EventTime</td>
+</tr>
+</tbody></table>
+<p>PS:</p>
+<ul>
+<li>Flink／structed streaming开发难度相当，FLink略复杂，但灵活度更高</li>
+<li>Flink的inteval join</li>
+<li>Structed Streaming支持数据去重（同个imsi的数据的多个不同join结果的去重）</li>
+<li>FLink的窗口操作相当于structed streaming的update模式</li>
+<li>Flink的单流的watermark更新时实时的，有专门线程处理</li>
+<li>Structed streaming的watermark更新时间基于批的，每个批次共用同一个watermark，如果有多个流，多个流共用一个watermark</li>
+<li>structed Streaming的watermark更新方法：<br> 基于每个流找出该流的watermark：Max_event_time - lateness<br> 找出所有流中最小/最大的watermark设置为batch的watermark</li>
+<li>Flink专门抽象了类以便不同场景下使用自定义的eventTime的waterMark获取/设置方法,且提供了一般场景下的的类以便使用</li>
+<li>Flink抽象了trigger和evictor来实现触发计算和清理数据的逻辑，以便自定义相关逻辑</li>
+<li>FLink 支持sideoutput输出，如迟到的数据可以单独输出</li>
+</ul>
+<h3 id="6、SQL-interface"><a href="#6、SQL-interface" class="headerlink" title="6、SQL interface"></a>6、SQL interface</h3><p>　　目前Spark-sql是Spark里面最活跃的组件之一，Spark提供了类似Hive的sql和Dataframe这种DSL来查询结构化数据，API很成熟，在流式计算中使用很广，预计在流式计算中也会发展得很快。至于Flink，到目前为止，Flink Table API只支持类似DataFrame这种DSL，并且还是处于beta状态，社区有计划增加SQL 的interface，但是目前还不确定什么时候才能在框架中用上。所以这个部分，Spark胜出。目前Flink已经支持SQL API</p>
+<h3 id="7、外部数据源的整合"><a href="#7、外部数据源的整合" class="headerlink" title="7、外部数据源的整合"></a>7、外部数据源的整合</h3><p>　　Spark的数据源 API是整个框架中最好的，支持的数据源包括NoSql db,parquet,ORC等，并且支持一些高级的操作，例如predicate push down。Flink目前还依赖map/reduce InputFormat来做数据源聚合。这一场Spark胜，目前已经提供 </p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">env.readTextFile(path_i)</span><br><span class="line">env.writeTextFile(path_i)</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="8、Iterative-processing"><a href="#8、Iterative-processing" class="headerlink" title="8、Iterative processing"></a>8、Iterative processing</h3><p>![Flink 迭代处理](_v_images/20190723102241286_1833770582.png =519x)<br>![Spark迭代处理](_v_images/20190723102318593_811318029.png =519x)<br>　　Spark对机器学习的支持较好，因为利用内存cache来加速机器学习算法。然而大部分机器学习算法其实是一个有环的数据流，但是在Spark中，实际是用无环图来表示的，一般的分布式处理引擎都是不鼓励试用有环图的。但是Flink这里又有点不一样，Flink支持在runtime中的有环数据流，这样表示机器学习算法更有效而且更有效率。这一点Flink胜出。</p>
+<h3 id="9、Stream-as-platform-vs-Batch-as-Platform"><a href="#9、Stream-as-platform-vs-Batch-as-Platform" class="headerlink" title="9、Stream as platform vs Batch as Platform"></a>9、Stream as platform vs Batch as Platform</h3><ul>
+<li><p>Spark诞生在Map/Reduce的时代，数据都是以文件的形式保存在磁盘中，这样非常方便做容错处理。</p>
+</li>
+<li><p>Flink把纯流式数据计算引入大数据时代，无疑给业界带来了一股清新的空气。这个idea非常类似akka-streams这种。</p>
+</li>
+</ul>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.iteblog.com/archives/1624.html">Apache Flink vs Apache Spark</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/da1910535f73">Flink vs Spark</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-TableAPI/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +726,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -468,7 +980,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -672,7 +1184,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -900,7 +1412,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -988,7 +1500,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1120,7 +1632,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1204,7 +1716,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
+                <time title="Modified: 2021-04-04 08:28:31" itemprop="dateModified" datetime="2021-04-04T08:28:31+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1249,439 +1761,6 @@
 <p>[averyzhang@tdw-<ip> /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646]$ tree<br>.<br>|– blobStore-b0fe739d-d5e0-4a87-9c34-2a2492fc84a6<br>|– blobStore-f8cdfc9d-d7d2-4fb6-9836-da65b414b45a<br>|– container_e03_1542247480019_1646_01_000002<br>|   |– container_tokens<br>|   |– flink-conf.yaml -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/10/91db3812-bb43-492d-8c32-359b2c21a142-taskmanager-conf.yaml<br>|   |– flink-runtime-oceanus-dependency-lib-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/15/flink-runtime-oceanus-dependency-lib-1.1.0-SNAPSHOT.jar<br>|   |– kafka-connector-0.11-dependency-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/11/kafka-connector-0.11-dependency-1.1.0-SNAPSHOT.jar<br>|   |– launch_container.sh<br>|   |– lct-click-stat-1.0-SNAPSHOT-jar-with-dependencies-20200511152610.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/12/lct-click-stat-1.0-SNAPSHOT-jar-with-dependencies-20200511152610.jar<br>|   |– log4j.properties -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/17/log4j.properties<br>|   |– log4j.zip -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/14/log4j.zip<br>|   |– oceanus-common-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/13/oceanus-common-1.1.0-SNAPSHOT.jar<br>|   |– oceanus-core-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/16/oceanus-core-1.1.0-SNAPSHOT.jar<br>|   |– oceanus-ml-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/18/oceanus-ml-1.1.0-SNAPSHOT.jar<br>|   <code>-- tmp |-- filecache [error opening dir] |-- flink-dist-cache-d55b9eaa-87b9-404e-a015-c4c90c767ac9 |-- flink-io-0bd3c6be-79ef-41d6-95ec-f42a949a10f1 |   |-- job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_337adade1e207453ed3502e01d75fd03__1_8__uuid_6d0d5c24-bb66-4793-afa4-7a7e3c3ffd6a |   |   </code>– db<br>|   |       |– 000013.log<br>|   |       |– 024751.sst<br>|   |       |– 024753.sst<br>|   |       |– CURRENT<br>|   |       |– IDENTITY<br>|   |       |– LOCK<br>|   |       |– LOG<br>|   |       |– MANIFEST-000006<br>|   |       |– OPTIONS-000010<br>|   |       <code>-- OPTIONS-000012 |   |-- job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_337adade1e207453ed3502e01d75fd03__2_8__uuid_18ea3048-b73d-482d-b6c9-615452280981 |   |   </code>– db<br>|   |       |– 000013.log<br>|   |       |– 024739.sst<br>|   |       |– 024741.sst<br>|   |       |– 024742.sst<br>|   |       |– 024743.sst<br>|   |       |– CURRENT<br>|   |       |– IDENTITY<br>|   |       |– LOCK<br>|   |       |– LOG<br>|   |       |– MANIFEST-000006<br>|   |       |– OPTIONS-000010<br>|   |       <code>-- OPTIONS-000012 |   |-- job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_be465a1f98956392d0b820196e75d12b__1_8__uuid_efd7a85c-2a15-4d62-9929-60624dd6ea4a |   |   </code>– db<br>|   |       |– 000013.log<br>|   |       |– 024741.sst<br>|   |       |– 024743.sst<br>|   |       |– 024744.sst<br>|   |       |– 024745.sst<br>|   |       |– 024746.sst<br>|   |       |– 024747.sst<br>|   |       |– 024748.sst<br>|   |       |– 024749.sst<br>|   |       |– CURRENT<br>|   |       |– IDENTITY<br>|   |       |– LOCK<br>|   |       |– LOG<br>|   |       |– MANIFEST-000006<br>|   |       |– OPTIONS-000010<br>|   |       <code>-- OPTIONS-000012 |   |-- job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_be465a1f98956392d0b820196e75d12b__2_8__uuid_e666a8b1-d26d-4688-b089-0a957e49f947 |   |   </code>– db<br>|   |       |– 000013.log<br>|   |       |– 024740.sst<br>|   |       |– 024742.sst<br>|   |       |– 024743.sst<br>|   |       |– CURRENT<br>|   |       |– IDENTITY<br>|   |       |– LOCK<br>|   |       |– LOG<br>|   |       |– MANIFEST-000006<br>|   |       |– OPTIONS-000010<br>|   |       <code>-- OPTIONS-000012 |   |-- job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_eaecdab2f3df15db186c08e889659492__1_8__uuid_24efb767-bdf2-4309-a136-302cc4a18399 |   |   </code>– db<br>|   |       |– 000013.log<br>|   |       |– 024741.sst<br>|   |       |– 024743.sst<br>|   |       |– 024744.sst<br>|   |       |– 024745.sst<br>|   |       |– 024746.sst<br>|   |       |– 024747.sst<br>|   |       |– 024748.sst<br>|   |       |– CURRENT<br>|   |       |– IDENTITY<br>|   |       |– LOCK<br>|   |       |– LOG<br>|   |       |– MANIFEST-000006<br>|   |       |– OPTIONS-000010<br>|   |       <code>-- OPTIONS-000012 |   </code>– job_05606ccf34b1f48ff075d3092d9b81dd_op_WindowOperator_eaecdab2f3df15db186c08e889659492__2_8__uuid_776c72fa-68fa-493b-b9ab-03461406816a<br>|       <code>-- db |           |-- 000013.log |           |-- 024740.sst |           |-- 024742.sst |           |-- 024743.sst |           |-- CURRENT |           |-- IDENTITY |           |-- LOCK |           |-- LOG |           |-- MANIFEST-000006 |           |-- OPTIONS-000010 |           </code>– OPTIONS-000012<br>|– localState<br>|   |– aid_AllocationID{e1f41e5a166354d80ad6d6b8d3765fa1}<br>|   <code>-- aid_AllocationID&#123;e6e7f806bb078db66f50eeb3a48f0da9&#125; </code>– rocksdb-lib-89c57e29c492279dc1e188992c87925e<br>    `– librocksdbjni-linux64.so</p>
 <p>23 directories, 87 files</p>
 <p>[averyzhang@tdw-<ip> /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/container_e03_1542247480019_1646_01_000002]$ ll<br>总用量 52<br>-rw——- 1 u_teg_tdbank users   69 6月   5 16:07 container_tokens<br>lrwxrwxrwx 1 u_teg_tdbank users  154 6月   5 16:07 flink-conf.yaml -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/10/91db3812-bb43-492d-8c32-359b2c21a142-taskmanager-conf.yaml<br>lrwxrwxrwx 1 u_teg_tdbank users  151 6月   5 16:07 flink-runtime-oceanus-dependency-lib-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/15/flink-runtime-oceanus-dependency-lib-1.1.0-SNAPSHOT.jar<br>lrwxrwxrwx 1 u_teg_tdbank users  146 6月   5 16:07 kafka-connector-0.11-dependency-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/11/kafka-connector-0.11-dependency-1.1.0-SNAPSHOT.jar<br>-rwx—— 1 u_teg_tdbank users 6328 6月   5 16:07 launch_container.sh<br>lrwxrwxrwx 1 u_teg_tdbank users  164 6月   5 16:07 lct-click-stat-1.0-SNAPSHOT-jar-with-dependencies-20200511152610.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/12/lct-click-stat-1.0-SNAPSHOT-jar-with-dependencies-20200511152610.jar<br>lrwxrwxrwx 1 u_teg_tdbank users  112 6月   5 16:07 log4j.properties -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/17/log4j.properties<br>lrwxrwxrwx 1 u_teg_tdbank users  105 6月   5 16:07 log4j.zip -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/14/log4j.zip<br>lrwxrwxrwx 1 u_teg_tdbank users  129 6月   5 16:07 oceanus-common-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/13/oceanus-common-1.1.0-SNAPSHOT.jar<br>lrwxrwxrwx 1 u_teg_tdbank users  127 6月   5 16:07 oceanus-core-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/16/oceanus-core-1.1.0-SNAPSHOT.jar<br>lrwxrwxrwx 1 u_teg_tdbank users  125 6月   5 16:07 oceanus-ml-1.1.0-SNAPSHOT.jar -&gt; /data/yarnenv/local/usercache/u_teg_tdbank/appcache/application_1542247480019_1646/filecache/18/oceanus-ml-1.1.0-SNAPSHOT.jar<br>drwxr-s— 2 u_teg_tdbank users 4096 6月   5 16:07 tmp</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/StateManagement/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/StateManagement/" class="post-title-link" itemprop="url">Flink状态管理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="state-management"><a href="#state-management" class="headerlink" title="state-management"></a>state-management</h1><h2 id="org-apache-flink-streaming-api-checkpoint-CheckpointedFunction"><a href="#org-apache-flink-streaming-api-checkpoint-CheckpointedFunction" class="headerlink" title="org.apache.flink.streaming.api.checkpoint.CheckpointedFunction"></a>org.apache.flink.streaming.api.checkpoint.CheckpointedFunction</h2><ul>
-<li>CheckpointedFunction是stateful transformation functions的核心接口，用于跨stream维护state<ul>
-<li>snapshotState 在checkpoint的时候会被调用，用于snapshot state，通常用于flush、commit、synchronize外部系统</li>
-<li>initializeState 在parallel function初始化的时候(<strong>第一次初始化或者从前一次checkpoint recover的时候</strong>)被调用，通常用来初始化state，以及处理state recovery的逻辑</li>
-</ul>
-</li>
-</ul>
-<p>从checkpoint中恢复数据时，需要判断snapshot当前的情况，</p>
-<p>FunctionSnapshotContext实现了ManagedSnapshotContext, 父类中的方法: <code>getCheckpointId</code>,<code>getCheckpointTimestamp</code><br>FunctionInitializationContext实现了ManagedInitializationContext接口, 实现了<code>isRestored</code>、<code>getOperatorStateStore</code>、<code>getKeyedStateStore</code>方法</p>
-<p>在初始化容器之后，我们使用上下文的<code>isrestore()</code>方法检查失败后是否正在恢复。如果是true，即正在恢复，则应用恢复逻辑。</p>
-<blockquote>
-<p>样例: HBase写入OutPutFormat</p>
-</blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line"> <span class="class"><span class="keyword">class</span> <span class="title">PortraitOutputFormat</span> <span class="keyword">extends</span> <span class="title">RichOutputFormat</span>&lt;<span class="title">EventItem</span>&gt; <span class="keyword">implements</span> <span class="title">CheckpointedFunction</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 输出阈值，批量写入的条数</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">int</span> threshold;</span><br><span class="line">    <span class="comment">// 维护在状态中的数据</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">transient</span> ListState&lt;EventItem&gt; checkpointState;</span><br><span class="line">    <span class="comment">// 内存中的数据</span></span><br><span class="line">    <span class="keyword">private</span> List&lt;EventItem&gt; bufferedEventItem;</span><br><span class="line">    <span class="comment">// HBase客户端</span></span><br><span class="line">    <span class="keyword">private</span> HBaseClient hbaseClient;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PortraitOutputFormat</span><span class="params">(HBaseClient hbaseClient)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.hbaseClient = hbaseClient;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    * checkpoint时调用</span></span><br><span class="line"><span class="comment">    * 执行snapshot操作，将内存中的数据写入到内存</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">snapshotState</span><span class="params">(FunctionSnapshotContext functionSnapshotContext)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        checkpointState.clear();</span><br><span class="line">        <span class="keyword">for</span> (EventItem eventItem : bufferedEventItem) &#123;</span><br><span class="line">            checkpointState.add(eventItem);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    * 创建state，判断是否存在需要恢复的状态，如果有则需要恢复到bufferedEventItem</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">initializeState</span><span class="params">(FunctionInitializationContext context)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        ListStateDescriptor&lt;EventItem&gt; descriptor = <span class="keyword">new</span> ListStateDescriptor&lt;&gt;(<span class="string">&quot;buf-p&quot;</span>, EventItem.class);</span><br><span class="line">        checkpointState = context.getOperatorStateStore().getListState(descriptor);</span><br><span class="line">        <span class="keyword">if</span> (context.isRestored()) &#123;</span><br><span class="line">            <span class="keyword">for</span> (EventItem eventItem : checkpointState.get()) &#123;</span><br><span class="line">                bufferedEventItem.add(eventItem);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    *</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">configure</span><span class="params">(Configuration configuration)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    *</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">open</span><span class="params">(<span class="keyword">int</span> taskNumber, <span class="keyword">int</span> numTasks)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    * 将新消息写入到缓存bufferedEventItem，缓存个数大约threshold,则执行sink写入，然后清空bufferedEventItem</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">writeRecord</span><span class="params">(EventItem value)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (value.getAttachUserId() == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        bufferedEventItem.add(value);</span><br><span class="line">        <span class="keyword">int</span> size = bufferedEventItem.size();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (size &gt;= threshold) &#123;</span><br><span class="line">            List&lt;Put&gt; puts = bufferedEventItem</span><br><span class="line">                    .stream()</span><br><span class="line">                    .map(eventItem -&gt; &#123;</span><br><span class="line">                        String rowKey1 = portraitDataGenerator.rowKey(eventItem);</span><br><span class="line">                        Map&lt;String, String&gt; data = portraitDataGenerator.data(eventItem);</span><br><span class="line">                        Put put = <span class="keyword">new</span> Put(rowKey1.getBytes());</span><br><span class="line">                        <span class="keyword">for</span> (String cfc : data.keySet()) &#123;</span><br><span class="line">                            String[] cfcs = cfc.split(<span class="string">&quot;:&quot;</span>);</span><br><span class="line">                            String cf = cfcs[<span class="number">0</span>];</span><br><span class="line">                            String c = cfcs[<span class="number">1</span>];</span><br><span class="line">                            String dataOne = data.get(cfc);</span><br><span class="line">                            put.addColumn(cf.getBytes(), c.getBytes(), dataOne.getBytes());</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">return</span> put;</span><br><span class="line">                    &#125;)</span><br><span class="line">                    .collect(Collectors.toList());</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                hbaseClient.putAndFlush(puts);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">            bufferedEventItem.clear();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    *</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">close</span><span class="params">()</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (hTable != <span class="keyword">null</span>) &#123;</span><br><span class="line">            hTable.flushCommits();</span><br><span class="line">            hTable.close();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (connection != <span class="keyword">null</span>) &#123;</span><br><span class="line">            connection.close();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-
-<h2 id="org-apache-flink-runtime-state-CheckpointListener"><a href="#org-apache-flink-runtime-state-CheckpointListener" class="headerlink" title="org.apache.flink.runtime.state.CheckpointListener"></a>org.apache.flink.runtime.state.CheckpointListener</h2><p>一旦所有checkpoint参与者确认完全，该接口必须由想要接收提交通知的功能/操作来实现。</p>
-<h1 id="TTL"><a href="#TTL" class="headerlink" title="TTL"></a>TTL</h1><p>1.8 自动清理原理</p>
-<p>Apache Flink的1.6.0版本引入了State TTL功能。它使流处理应用程序的开发人员配置过期时间，并在定义时间超时（Time to Live）之后进行清理。在Flink 1.8.0中，该功能得到了扩展，包括对RocksDB和堆状态后端（FSStateBackend和MemoryStateBackend）的历史数据进行持续清理，从而实现旧条目的连续清理过程（根据TTL设置）。</p>
-<p>RocksDB后台压缩可以过滤掉过期状态<br>如果你的Flink应用程序使用RocksDB作为状态后端存储，则可以启用另一个基于Flink特定压缩过滤器的清理策略。RocksDB定期运行异步压缩以合并状态更新并减少存储。Flink压缩过滤器使用TTL检查状态条目的到期时间戳，并丢弃所有过期值。</p>
-<p>激活此功能的第一步是通过设置以下Flink配置选项来配置RocksDB状态后端：</p>
-<p>state.backend.rocksdb.ttl.compaction.filter.enabled</p>
-<p>配置RocksDB状态后端后，将为状态启用压缩清理策略，如以下代码示例所示：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">StateTtlConfig ttlConfig &#x3D; StateTtlConfig</span><br><span class="line">    .newBuilder(Time.days(7))</span><br><span class="line">    .cleanupInRocksdbCompactFilter()</span><br><span class="line">    .build();</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-<p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/6ed0ef5e2b74">Flink Streaming状态处理（Working with State）</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/StreamingAPI/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/StreamingAPI/" class="post-title-link" itemprop="url">Flink-streaming API</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Flink-Streaming-API"><a href="#Flink-Streaming-API" class="headerlink" title="Flink Streaming API"></a>Flink Streaming API</h1><h2 id="org-apache-flink-streaming-api-functions-source-SourceFunction"><a href="#org-apache-flink-streaming-api-functions-source-SourceFunction" class="headerlink" title="org.apache.flink.streaming.api.functions.source.SourceFunction"></a>org.apache.flink.streaming.api.functions.source.SourceFunction</h2>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/TableAPI/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/TableAPI/" class="post-title-link" itemprop="url">Flink:Table API</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2019-08-10T14:58:00+08:00">2019-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-04 08:26:32" itemprop="dateModified" datetime="2021-04-04T08:26:32+08:00">2021-04-04</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="flink-table-api"><a href="#flink-table-api" class="headerlink" title="flink-table-api"></a>flink-table-api</h1><p><a target="_blank" rel="noopener" href="https://github.com/crestofwave1/oneFlink/blob/master/doc/table/Concept%20%26%20Common%20API.md">官方文档翻译</a></p>
-<h2 id="Concept-amp-Common-API"><a href="#Concept-amp-Common-API" class="headerlink" title="Concept  &amp; Common API"></a>Concept  &amp; Common API</h2><p>Table API和SQL集成在一个联合的API中。这个API核心概念是Table，<br>Table可以作为查询的输入和输出。这篇文章展示了使用Table API和SQL查询的通用结构，<br>如何去进行表的注册，如何去进行表的查询，并且展示如何去进行表的输出。</p>
-<h2 id="1-Structure-of-Table-API-and-SQL-Programs"><a href="#1-Structure-of-Table-API-and-SQL-Programs" class="headerlink" title="1. Structure of Table API and SQL Programs"></a>1. Structure of Table API and SQL Programs</h2><p>​    所有使用批量和流式相关的Table API和SQL的程序都有以下相同模式。下面的代码实例展示了Table API和SQL程序的通用结构。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 在批处理程序中使用ExecutionEnvironment代替StreamExecutionEnvironment</span></span><br><span class="line"><span class="keyword">val</span> env = <span class="type">StreamExecutionEnvironment</span>.getExecutionEnvironment</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册表</span></span><br><span class="line">tableEnv.registerTable(<span class="string">&quot;table1&quot;</span>, ...)           <span class="comment">// or</span></span><br><span class="line">tableEnv.registerTableSource(<span class="string">&quot;table2&quot;</span>, ...)     <span class="comment">// or</span></span><br><span class="line">tableEnv.registerExternalCatalog(<span class="string">&quot;extCat&quot;</span>, ...) </span><br><span class="line"></span><br><span class="line"><span class="comment">// 基于Table API的查询创建表</span></span><br><span class="line"><span class="keyword">val</span> tapiResult = tableEnv.scan(<span class="string">&quot;table1&quot;</span>).select(...)</span><br><span class="line"><span class="comment">// 从SQL查询创建表</span></span><br><span class="line"><span class="keyword">val</span> sqlResult  = tableEnv.sqlQuery(<span class="string">&quot;SELECT ... FROM table2 ...&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将表操作API查询到的结果表输出到TableSink，SQL查询到的结果一样如此</span></span><br><span class="line">tapiResult.writeToSink(...)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 执行</span></span><br><span class="line">env.execute()</span><br></pre></td></tr></table></figure>
-<p>注意：Table API和SQL查询很容易集成并被嵌入到DataStream或者DataSet程序中。查看<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/common.html#integration-with-datastream-and-dataset-api">将DataStream和DataSet API进行整合</a>章节<br>学习DataSteams和DataSets是如何转换成Table以及Table是如何转换为DataStream或DataSet</p>
-<h2 id="2-Create-a-TableEnvironment"><a href="#2-Create-a-TableEnvironment" class="headerlink" title="2. Create a TableEnvironment"></a>2. Create a TableEnvironment</h2><p>TableEnvironment是Table API与SQL整合的核心概念之一，它主要有如下功能：</p>
-<ul>
-<li>在internal catalog注册表</li>
-<li>注册external catalog</li>
-<li>执行SQL查询</li>
-<li>注册UDF函数（user-defined function)，例如 标量, 表或聚合</li>
-<li>将DataStream或者DataSet转换为表</li>
-<li>保持ExecutionEnvironment或者StreamExecutionEnvironment的引用指向</li>
-</ul>
-<p>一个表总是与一个特定的TableEnvironment绑定在一块，<br>相同的查询不同的TableEnvironment是无法通过join、union合并在一起。</p>
-<p>创建TableEnvironment的方法通常是通过StreamExecutionEnvironment，ExecutionEnvironment对象调用其中的静态方法TableEnvironment.getTableEnvironment()，或者是TableConfig来创建。<br>TableConfig可以用作配置TableEnvironment或是对自定义查询优化器或者是编译过程进行优化(详情查看<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/common.html#query-optimization">查询优化</a>)</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ***************</span></span><br><span class="line"><span class="comment">// 流式查询</span></span><br><span class="line"><span class="comment">// ***************</span></span><br><span class="line"><span class="keyword">val</span> sEnv = <span class="type">StreamExecutionEnvironment</span>.getExecutionEnvironment</span><br><span class="line"><span class="comment">// 为流式查询创建一个TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> sTableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(sEnv)</span><br><span class="line"></span><br><span class="line"><span class="comment">// ***********</span></span><br><span class="line"><span class="comment">// 批量查询</span></span><br><span class="line"><span class="comment">// ***********</span></span><br><span class="line"><span class="keyword">val</span> bEnv = <span class="type">ExecutionEnvironment</span>.getExecutionEnvironment</span><br><span class="line"><span class="comment">// 为批量查询创建一个TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> bTableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(bEnv)</span><br></pre></td></tr></table></figure>
-<h2 id="Register-Tables-in-the-Catalog"><a href="#Register-Tables-in-the-Catalog" class="headerlink" title="Register Tables in the Catalog"></a>Register Tables in the Catalog</h2><p>TableEnvironment包含了通过名称注册表时的表的catalog信息。通常情况下有两种表，一种为输入表，<br>一种为输出表。输入表主要是在使用Table API和SQL查询时提供输入数据，输出表主要是将Table API和<br>SQL查询的结果作为输出结果对接到外部系统。</p>
-<p>输入表有多种不同的输入源进行注册：</p>
-<ul>
-<li>已经存在的Table对象，通常是是作为Table API和SQL查询的结果</li>
-<li>TableSource，可以访问外部数据如文件，数据库或者是消息系统</li>
-<li>来自DataStream或是DataSet程序中的DataStream或DataSet，讨论DataStream或是DataSet<br>可以<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/common.html#integration-with-datastream-and-dataset-api">整合DataStream和DataSet API</a>了解到</li>
-</ul>
-<p>输出表可使用TableSink进行注册</p>
-<h2 id="Register-a-Table"><a href="#Register-a-Table" class="headerlink" title="Register a Table"></a>Register a Table</h2><p>Table是如何注册到TableEnvironment中如下所示：</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 从简单的查询结果中作为表</span></span><br><span class="line"><span class="keyword">val</span> projTable: <span class="type">Table</span> = tableEnv.scan(<span class="string">&quot;X&quot;</span>).select(...)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将创建的表projTable命名为projectedTable注册到TableEnvironment中</span></span><br><span class="line">tableEnv.registerTable(<span class="string">&quot;projectedTable&quot;</span>, projTable)</span><br></pre></td></tr></table></figure>
-<p>注意：一张注册过的Table就跟关系型数据库中的视图性质相同，定义表的查询未进行优化，但在另一个查询引用已注册的表时将进行内联。<br>如果多表查询引用了相同的Table，它就会将每一个引用进行内联并且多次执行，已注册的Table的结果之间不会进行共享。</p>
-<h2 id="Register-a-TableSource"><a href="#Register-a-TableSource" class="headerlink" title="Register a TableSource"></a>Register a TableSource</h2><p>TableSource可以访问外部系统存储例如数据库（Mysql,HBase），特殊格式编码的文件(CSV, Apache [Parquet, Avro, ORC], …)<br>或者是消息系统 (Apache Kafka, RabbitMQ, …)中的数据。</p>
-<p>Flink旨在为通用数据格式和存储系统提供TableSource。请查看<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/sourceSinks.html">此处</a><br>了解支持的TableSource类型与如何去自定义TableSour。</p>
-<p>TableSource是如何注册到TableEnvironment中如下所示：</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建TableSource对象</span></span><br><span class="line"><span class="keyword">val</span> csvSource: <span class="type">TableSource</span> = <span class="keyword">new</span> <span class="type">CsvTableSource</span>(<span class="string">&quot;/path/to/file&quot;</span>, ...)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将创建的TableSource作为表并命名为csvTable注册到TableEnvironment中</span></span><br><span class="line">tableEnv.registerTableSource(<span class="string">&quot;CsvTable&quot;</span>, csvSource)</span><br></pre></td></tr></table></figure>
-<h2 id="Register-a-TableSink"><a href="#Register-a-TableSink" class="headerlink" title="Register a TableSink"></a>Register a TableSink</h2><p>注册过的TableSink可以将SQL查询的结果以表的形式输出到外部的存储系统，例如关系型数据库，<br>Key-Value数据库(Nosql)，消息队列，或者是其他文件系统(使用不同的编码, 例如CSV, Apache [Parquet, Avro, ORC], …)</p>
-<p>Flink使用TableSink的目的是为了将常用的数据进行清洗转换然后存储到不同的存储介质中。详情请查看<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/sourceSinks.html">此处</a><br>去深入了解哪些sinks是可用的，并且如何去自定义TableSink。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建TableSink对象</span></span><br><span class="line"><span class="keyword">val</span> csvSink: <span class="type">TableSink</span> = <span class="keyword">new</span> <span class="type">CsvTableSink</span>(<span class="string">&quot;/path/to/file&quot;</span>, ...)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义字段的名称和类型</span></span><br><span class="line"><span class="keyword">val</span> fieldNames: <span class="type">Array</span>[<span class="type">String</span>] = <span class="type">Array</span>(<span class="string">&quot;a&quot;</span>, <span class="string">&quot;b&quot;</span>, <span class="string">&quot;c&quot;</span>)</span><br><span class="line"><span class="keyword">val</span> fieldTypes: <span class="type">Array</span>[<span class="type">TypeInformation</span>[_]] = <span class="type">Array</span>(<span class="type">Types</span>.<span class="type">INT</span>, <span class="type">Types</span>.<span class="type">STRING</span>, <span class="type">Types</span>.<span class="type">LONG</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将创建的TableSink作为表并命名为CsvSinkTable注册到TableEnvironment中</span></span><br><span class="line">tableEnv.registerTableSink(<span class="string">&quot;CsvSinkTable&quot;</span>, fieldNames, fieldTypes, csvSink)</span><br></pre></td></tr></table></figure>
-<h2 id="Register-an-External-Catalog"><a href="#Register-an-External-Catalog" class="headerlink" title="Register an External Catalog"></a>Register an External Catalog</h2><p>外部目录可以提供有关外部数据库和表的信息，<br>例如其名称，模式，统计以及有关如何访问存储在外部数据库，表或文件中的数据的信息。</p>
-<p>外部目录的创建方式可以通过实现ExternalCatalog接口，并且注册到TableEnvironment中，详情如下所示:</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建一个External Catalog目录对象</span></span><br><span class="line"><span class="keyword">val</span> catalog: <span class="type">ExternalCatalog</span> = <span class="keyword">new</span> <span class="type">InMemoryExternalCatalog</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 将ExternalCatalog注册到TableEnvironment中</span></span><br><span class="line">tableEnv.registerExternalCatalog(<span class="string">&quot;InMemCatalog&quot;</span>, catalog)</span><br></pre></td></tr></table></figure>
-<p>一旦将External Catalog注册到TableEnvironment中，所有在ExternalCatalog中<br>定义的表可以通过完整的路径如catalog.database.table进行Table API和SQL的查询操作 </p>
-<p>目前，Flink提供InMemoryExternalCatalog对象用来做demo和测试，然而，<br>ExternalCatalog对象还可用作Table API来连接catalogs，例如HCatalog 或 Metastore</p>
-<h2 id="Query-a-Table"><a href="#Query-a-Table" class="headerlink" title="Query a Table"></a>Query a Table</h2><h3 id="Table-API"><a href="#Table-API" class="headerlink" title="Table API"></a>Table API</h3><p>Table API是Scala和Java语言集成查询的API，与SQL查询不同之处在于，它的查询不是像<br>SQL一样使用字符串进行查询，而是在语言中使用语法进行逐步组合使用</p>
-<p>Table API是基于展示表（流或批处理）的Table类，它提供一些列操作应用相关的操作。<br>这些方法返回一个新的Table对象，该对象表示在输入表上关系运算的结果。一些关系运算是<br>由多个方法组合而成的，例如 table.groupBy(…).select()，其中groupBy()指定<br>表的分组，select()表示在分组的结果上进行查询。</p>
-<p><a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/tableApi.html">Table API</a><br>描述了所有支持表的流式或者批处理相关的操作。</p>
-<p>下面给出一个简单的实例去说明如何去使用Table API进行聚合查询：</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册Orders表</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 扫描注册过的Orders表</span></span><br><span class="line"><span class="keyword">val</span> orders = tableEnv.scan(<span class="string">&quot;Orders&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 计算表中所有来自法国的客户的收入</span></span><br><span class="line"><span class="keyword">val</span> revenue = orders</span><br><span class="line">  .filter(<span class="symbol">&#x27;cCountry</span> === <span class="string">&quot;FRANCE&quot;</span>)</span><br><span class="line">  .groupBy(<span class="symbol">&#x27;cID</span>, <span class="symbol">&#x27;cName</span>)</span><br><span class="line">  .select(<span class="symbol">&#x27;cID</span>, <span class="symbol">&#x27;cName</span>, <span class="symbol">&#x27;revenue</span>.sum <span class="type">AS</span> <span class="symbol">&#x27;revSum</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将结果输出成一张表或者是转换表</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 执行查询</span></span><br></pre></td></tr></table></figure>
-<p>注意：Scala的Table API使用Scala符号，它使用单引号加字段(‘cID)来表示表的属性的引用，<br>如果使用Scala的隐式转换的话，确保引入了org.apache.flink.api.scala._ 和 org.apache.flink.table.api.scala._<br>来确保它们之间的转换。</p>
-<h3 id="SQL"><a href="#SQL" class="headerlink" title="SQL"></a>SQL</h3><p>Flink的SQL操作基于实现了SQL标准的<a target="_blank" rel="noopener" href="https://calcite.apache.org/">Apache Calcite</a>，SQL查询通常是使用特殊且有规律的字符串。<br><a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/sql.html">SQL</a><br>描述了所有支持表的流式或者批处理相关的SQL操作。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册Orders表</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 计算表中所有来自法国的客户的收入</span></span><br><span class="line"><span class="keyword">val</span> revenue = tableEnv.sqlQuery(<span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">  |SELECT cID, cName, SUM(revenue) AS revSum</span></span><br><span class="line"><span class="string">  |FROM Orders</span></span><br><span class="line"><span class="string">  |WHERE cCountry = &#x27;FRANCE&#x27;</span></span><br><span class="line"><span class="string">  |GROUP BY cID, cName</span></span><br><span class="line"><span class="string">  &quot;</span><span class="string">&quot;&quot;</span>.stripMargin)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将结果输出成一张表或者是转换表</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 执行查询</span></span><br></pre></td></tr></table></figure>
-<p>下面的例子展示了如何去使用更新查询去插入数据到已注册的表中</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册&quot;Orders&quot;表</span></span><br><span class="line"><span class="comment">// 注册&quot;RevenueFrance&quot;输出表</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 计算表中所有来自法国的客户的收入并且将结果作为结果输出到&quot;RevenueFrance&quot;中</span></span><br><span class="line">tableEnv.sqlUpdate(<span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">  |INSERT INTO RevenueFrance</span></span><br><span class="line"><span class="string">  |SELECT cID, cName, SUM(revenue) AS revSum</span></span><br><span class="line"><span class="string">  |FROM Orders</span></span><br><span class="line"><span class="string">  |WHERE cCountry = &#x27;FRANCE&#x27;</span></span><br><span class="line"><span class="string">  |GROUP BY cID, cName</span></span><br><span class="line"><span class="string">  &quot;</span><span class="string">&quot;&quot;</span>.stripMargin)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 执行查询</span></span><br></pre></td></tr></table></figure>
-<h2 id="Mixing-Table-API-and-SQL"><a href="#Mixing-Table-API-and-SQL" class="headerlink" title="Mixing Table API and SQL"></a>Mixing Table API and SQL</h2><p>Table API和SQL可以很轻松的混合使用因为他们两者返回的结果都为Table对象：</p>
-<ul>
-<li>可以在SQL查询返回的Table对象上定义Table API查询</li>
-<li>通过在TableEnvironment中注册结果表并在SQL查询的FROM子句中引用它，<br>可以在Table API查询的结果上定义SQL查询。</li>
-</ul>
-<h2 id="Emit-a-Table"><a href="#Emit-a-Table" class="headerlink" title="Emit a Table"></a>Emit a Table</h2><p>通过将Table写入到TableSink来作为一张表的输出，TableSink是做为多种文件类型 (CSV, Apache Parquet, Apache Avro),<br>存储系统(JDBC, Apache HBase, Apache Cassandra, Elasticsearch), 或者是消息系统 (Apache Kafka, RabbitMQ).输出的通用接口，</p>
-<p>Batch Table只能通过BatchTableSink来进行数据写入，而Streaming Table可以<br>选择AppendStreamTableSink，RetractStreamTableSink，UpsertStreamTableSink<br>中的任意一个来进行。</p>
-<p>请查看<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/sourceSinks.html">Table Source &amp; Sinks</a><br>来更详细的了解支持的Sinks并且如何去实现自定义的TableSink。</p>
-<p>可以使用两种方式来输出一张表：</p>
-<ul>
-<li>Table.writeToSink(TableSink sink)方法使用提供的TableSink自动配置的表的schema来<br>进行表的输出</li>
-<li>Table.insertInto（String sinkTable）方法查找在TableEnvironment目录中提供的名称下使用特定模式注册的TableSink。<br>将输出表的模式将根据已注册的TableSink的模式进行验证</li>
-</ul>
-<p>下面的例子展示了如何去查询结果作为一张表输出</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用Table API或者SQL 查询来查找结果</span></span><br><span class="line"><span class="keyword">val</span> result: <span class="type">Table</span> = ...</span><br><span class="line"><span class="comment">// 创建TableSink对象</span></span><br><span class="line"><span class="keyword">val</span> sink: <span class="type">TableSink</span> = <span class="keyword">new</span> <span class="type">CsvTableSink</span>(<span class="string">&quot;/path/to/file&quot;</span>, fieldDelim = <span class="string">&quot;|&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 方法1: 使用TableSink的writeToSink()方法来将结果输出为一张表</span></span><br><span class="line">result.writeToSink(sink)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 方法2: 注册特殊schema的TableSink</span></span><br><span class="line"><span class="keyword">val</span> fieldNames: <span class="type">Array</span>[<span class="type">String</span>] = <span class="type">Array</span>(<span class="string">&quot;a&quot;</span>, <span class="string">&quot;b&quot;</span>, <span class="string">&quot;c&quot;</span>)</span><br><span class="line"><span class="keyword">val</span> fieldTypes: <span class="type">Array</span>[<span class="type">TypeInformation</span>] = <span class="type">Array</span>(<span class="type">Types</span>.<span class="type">INT</span>, <span class="type">Types</span>.<span class="type">STRING</span>, <span class="type">Types</span>.<span class="type">LONG</span>)</span><br><span class="line">tableEnv.registerTableSink(<span class="string">&quot;CsvSinkTable&quot;</span>, fieldNames, fieldTypes, sink)</span><br><span class="line"><span class="comment">// 调用注册过的TableSink中insertInto() 方法来将结果输出为一张表</span></span><br><span class="line">result.insertInto(<span class="string">&quot;CsvSinkTable&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 执行</span></span><br></pre></td></tr></table></figure>
-<h2 id="Translate-and-Execute-a-Query"><a href="#Translate-and-Execute-a-Query" class="headerlink" title="Translate and Execute a Query"></a>Translate and Execute a Query</h2><p>Table API和SQL查询的结果转换为<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/datastream_api.html">DataStream</a><br>或是<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/batch/">DataSet</a><br>取决于它的输入是流式输入还是批处理输入。查询逻辑在内部表示为逻辑执行计划，并分为两个阶段进行转换：</p>
-<ul>
-<li>优化逻辑执行计划</li>
-<li>转换为DataStream或DataSet</li>
-</ul>
-<p>Table API或SQL查询在下面请看下进行转换：</p>
-<ul>
-<li>当调用Table.writeToSink() 或 Table.insertInto()进行查询结果表输出的时候</li>
-<li>当调用TableEnvironment.sqlUpdate()进行SQL更新查询时</li>
-<li>当表转换为DataSteam或DataSet时，详情查看<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/common.html#integration-with-dataStream-and-dataSet-api">Integration with DataStream and DataSet API</a></li>
-</ul>
-<p>一旦进行转换后，Table API或SQL查询的结果就会在StreamExecutionEnvironment.execute() 或 ExecutionEnvironment.execute()<br>被调用时被当做DataStream或DataSet一样被进行处理</p>
-<h2 id="Integration-with-DataStream-and-DataSet-API"><a href="#Integration-with-DataStream-and-DataSet-API" class="headerlink" title="Integration with DataStream and DataSet API"></a>Integration with DataStream and DataSet API</h2><p>Table API或SQL查询的结果很容易被<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/datastream_api.html">DataStream</a><br>或是<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/batch/">DataSet</a>内嵌整合。举个例子，<br>我们会进行外部表的查询(像关系型数据库)，然后做像过滤，映射，聚合或者是元数据关联的一些预处理。<br>然后使用DataStream或是DataSet API(或者是基于这些基础库开发的上层API库, 例如CEP或Gelly)进一步对数据进行处理。<br>同样，Table API或SQL查询也可以应用于DataStream或DataSet程序的结果。</p>
-<p>##implicit Conversion for Scala<br>Scala Table API具有DataSet，DataStream和Table Class之间的隐式转换，流式操作API中只要引入org.apache.flink.table.api.scala._<br>和 org.apache.flink.api.scala._ 便可以进行相应的隐式转换</p>
-<h2 id="Register-a-DataStream-or-DataSet-as-Table"><a href="#Register-a-DataStream-or-DataSet-as-Table" class="headerlink" title="Register a DataStream or DataSet as Table"></a>Register a DataStream or DataSet as Table</h2><p>DataStream或DataSet也可以作为Table注册到TableEnvironment中。结果表的模式取决于已注册的DataStream或DataSet的数据类型，<br>详情请查看<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/common.html#mapping-of-data-types-to-table-schema">mapping of data types to table schema</a></p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="comment">// 注册如表一样的DataSet</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> stream: <span class="type">DataStream</span>[(<span class="type">Long</span>, <span class="type">String</span>)] = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将DataStream作为具有&quot;f0&quot;, &quot;f1&quot;字段的&quot;myTable&quot;表注册到TableEnvironment中</span></span><br><span class="line">tableEnv.registerDataStream(<span class="string">&quot;myTable&quot;</span>, stream)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将DataStream作为具有&quot;myLong&quot;, &quot;myString&quot;字段的&quot;myTable2&quot;表注册到TableEnvironment中</span></span><br><span class="line">tableEnv.registerDataStream(<span class="string">&quot;myTable2&quot;</span>, stream, <span class="symbol">&#x27;myLong</span>, <span class="symbol">&#x27;myString</span>)</span><br></pre></td></tr></table></figure>
-<p>注意：DataStream表的名称必须与^ <em>DataStreamTable</em> [0-9] +模式不匹配，<br>并且DataSet表的名称必须与^ <em>DataSetTable</em> [0-9] +模式不匹配。<br>这些模式仅供内部使用。</p>
-<h2 id="Convert-a-DataStream-or-DataSet-into-a-Table"><a href="#Convert-a-DataStream-or-DataSet-into-a-Table" class="headerlink" title="Convert a DataStream or DataSet into a Table"></a>Convert a DataStream or DataSet into a Table</h2><p>如果你使用Table API或是SQL查询，你可以直接将DataStream或DataSet直接转换为表而不需要<br>再将它们注册到TableEnvironment中。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="comment">// 注册如表一样的DataSet</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> stream: <span class="type">DataStream</span>[(<span class="type">Long</span>, <span class="type">String</span>)] = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用默认的字段&#x27;_1, &#x27;_2将DataStram转换为Table</span></span><br><span class="line"><span class="keyword">val</span> table1: <span class="type">Table</span> = tableEnv.fromDataStream(stream)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用默认的字段&#x27;myLong, &#x27;myString将DataStram转换为Table</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> table2: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;myLong</span>, <span class="symbol">&#x27;myString</span>)</span><br></pre></td></tr></table></figure>
-<h2 id="Convert-a-Table-into-a-DataStream-or-DataSet"><a href="#Convert-a-Table-into-a-DataStream-or-DataSet" class="headerlink" title="Convert a Table into a DataStream or DataSet"></a>Convert a Table into a DataStream or DataSet</h2><p>表可以转换为DataStream或DataSet，通过这种方式，自定义DataStream或DataSet<br>同样也可以作为Table API或SQL查询结果的结果。<br>当把表转换为DataStream或DataSet时，你需要指定生成的DataStream或DataSet的数据类型。<br>例如，表格行所需转换的数据类型，通常最方便的转换类型也最常用的是Row。<br>以下列表概述了不同选项的功能：</p>
-<ul>
-<li>Row：字段按位置，任意数量的字段映射，支持空值，无类型安全访问。</li>
-<li>POJO：字段按名称(POJO字段必须与Table字段保持一致)，任意数量的字段映射，支持空值，类型安全访问。</li>
-<li>Case Class：字段按位置，任意数量的字段映射，不支持空值，类型安全访问。</li>
-<li>Tuple：字段按位置，Scala支持22个字段，Java 25个字段映射，不支持空值，类型安全访问。</li>
-<li>Atomic Type：表必须具有单个字段，不支持空值，类型安全访问。<h3 id="Convert-a-Table-into-a-DataStream"><a href="#Convert-a-Table-into-a-DataStream" class="headerlink" title="Convert a Table into a DataStream"></a>Convert a Table into a DataStream</h3>作为流式查询结果的表将动态更新，它随着新记录到达查询的输入流而改变，于是，转换到这样的动态查询DataStream<br>需要对表的更新进行编码。<br>将表转换为DataStream有两种模式：</li>
-<li>Append Mode：这种模式仅用于动态表仅仅通过INSERT来进行表的更新，它是仅可追加模式，<br>并且之前输出的表不会进行更改</li>
-<li>Retract Mode：这种模式经常用到。它使用布尔值的变量来对INSERT和DELETE对表的更新做标记<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象 </span></span><br><span class="line"><span class="comment">// 注册如表一样的DataSet</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 表中有两个字段(String name, Integet age)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将表转换为列的 append DataStream</span></span><br><span class="line"><span class="keyword">val</span> dsRow: <span class="type">DataStream</span>[<span class="type">Row</span>] = tableEnv.toAppendStream[<span class="type">Row</span>](table)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将表转换为Tubple2[String,Int]的 append DataStream</span></span><br><span class="line"><span class="comment">// convert the Table into an append DataStream of Tuple2[String, Int]</span></span><br><span class="line"><span class="keyword">val</span> dsTuple: <span class="type">DataStream</span>[(<span class="type">String</span>, <span class="type">Int</span>)] dsTuple = </span><br><span class="line">  tableEnv.toAppendStream[(<span class="type">String</span>, <span class="type">Int</span>)](table)</span><br><span class="line"></span><br><span class="line"><span class="comment">// convert the Table into a retract DataStream of Row.</span></span><br><span class="line"><span class="comment">// Retract Mode下将表转换为列的 append DataStream</span></span><br><span class="line"><span class="comment">// 判断A retract stream X是否为DataStream[(Boolean, X)]</span></span><br><span class="line"><span class="comment">//  布尔只表示数据类型的变化,True代表为INSERT，false表示为删除</span></span><br><span class="line"><span class="keyword">val</span> retractStream: <span class="type">DataStream</span>[(<span class="type">Boolean</span>, <span class="type">Row</span>)] = tableEnv.toRetractStream[<span class="type">Row</span>](table)</span><br></pre></td></tr></table></figure>
-注意：关于动态表和它的属性详情参考<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/table/streaming.html">Streaming Queries</a></li>
-</ul>
-<h3 id="Convert-a-Table-into-a-DataSet"><a href="#Convert-a-Table-into-a-DataSet" class="headerlink" title="Convert a Table into a DataSet"></a>Convert a Table into a DataSet</h3><p>表转换为DataSet如下所示：</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象 </span></span><br><span class="line"><span class="comment">// 注册如表一样的DataSet</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 表中有两个字段(String name, Integet age)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将表转换为列的DataSet</span></span><br><span class="line"><span class="keyword">val</span> dsRow: <span class="type">DataSet</span>[<span class="type">Row</span>] = tableEnv.toDataSet[<span class="type">Row</span>](table)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将表转换为Tubple2[String,Int]的DataSet</span></span><br><span class="line"><span class="keyword">val</span> dsTuple: <span class="type">DataSet</span>[(<span class="type">String</span>, <span class="type">Int</span>)] = tableEnv.toDataSet[(<span class="type">String</span>, <span class="type">Int</span>)](table)</span><br></pre></td></tr></table></figure>
-<h3 id="Mapping-of-Data-Types-to-Table-Schema"><a href="#Mapping-of-Data-Types-to-Table-Schema" class="headerlink" title="Mapping of Data Types to Table Schema"></a>Mapping of Data Types to Table Schema</h3><p>Flink的DataStream和DataSet API支持多种类型。组合类型像Tuple(内置Scala元组和Flink Java元组)，<br>POJOs，Scala case classes和Flink中具有可在表表达式中访问的多个字段允许嵌套数据结构的Row类型，<br>其他类型都被视为原子类型。接下来，我们将会描述Table API是如何将这些类型转换为内部的列展现并且<br>举例说明如何将DataStream转换为Table</p>
-<h4 id="Position-based-Mapping"><a href="#Position-based-Mapping" class="headerlink" title="Position-based Mapping"></a>Position-based Mapping</h4><p>基于位置的映射通常在保持顺序的情况下给字段一个更有意义的名称，这种映射可用于有固定顺序的组合数据类型，<br>也可用于原子类型。复合数据类型（如元组，行和Case Class）具有此类字段顺序.然而，POJO的字段必须与映射的<br>表的字段名相同。</p>
-<p>当定义基于位置的映射，输入的数据类型不得存在指定的名称，不然API会认为这些映射应该按名称来进行映射。<br>如果未指定字段名称，则使用复合类型的默认字段名称和字段顺序，或者使用f0作为原子类型。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象 </span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> stream: <span class="type">DataStream</span>[(<span class="type">Long</span>, <span class="type">Int</span>)] = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用默认的字段&#x27;_1, &#x27;_2将DataStram转换为Table</span></span><br><span class="line"><span class="keyword">val</span> table1: <span class="type">Table</span> = tableEnv.fromDataStream(stream)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用默认的字段&#x27;myLong, &#x27;myInt将DataStram转换为Table</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;myLong</span> <span class="symbol">&#x27;myInt</span>)</span><br></pre></td></tr></table></figure>
-<h4 id="Name-based-Mapping"><a href="#Name-based-Mapping" class="headerlink" title="Name-based Mapping"></a>Name-based Mapping</h4><p>基于名称的映射可用于一切数据类型包括POJOs，它是定义表模式映射最灵活的一种方式。虽然查询结果的字段可能会使用别名，但<br>这种模式下所有的字段都是使用名称进行映射的。使用别名的情况下会进行重排序。<br>如果未指定字段名称，则使用复合类型的默认字段名称和字段顺序，或者使用f0作为原子类型。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象 </span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> stream: <span class="type">DataStream</span>[(<span class="type">Long</span>, <span class="type">Int</span>)] = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用默认的字段&#x27;_1 和 &#x27;_2将DataStram转换为Table</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 只使用&#x27;_2字段将DataStream转换为Table</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;_2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 交换字段将DataStream转换为Table</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;_2</span>, <span class="symbol">&#x27;_1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 交换后的字段给予别名&#x27;myInt, &#x27;myLong将DataStream转换为Table</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;_2</span> as <span class="symbol">&#x27;myInt</span>, <span class="symbol">&#x27;_1</span> as <span class="symbol">&#x27;myLong</span>)</span><br></pre></td></tr></table></figure>
-<h4 id="Atomic-Types"><a href="#Atomic-Types" class="headerlink" title="Atomic Types"></a>Atomic Types</h4><p>Flink将基础类型(Integer, Double, String)和通用类型(不能被分析和拆分的类型)视为原子类型。<br>原子类型的DataStream或DataSet转换为只有单个属性的表。从原子类型推断属性的类型，并且可以指定属性的名称。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> stream: <span class="type">DataStream</span>[<span class="type">Long</span>] = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将DataStream转换为带默认字段&quot;f0&quot;的表</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将DataStream转换为带字段&quot;myLong&quot;的表</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;myLong</span>)</span><br></pre></td></tr></table></figure>
-<h4 id="Tuples-Scala-and-Java-and-Case-Classes-Scala-only"><a href="#Tuples-Scala-and-Java-and-Case-Classes-Scala-only" class="headerlink" title="Tuples (Scala and Java) and Case Classes (Scala only)"></a>Tuples (Scala and Java) and Case Classes (Scala only)</h4><p>Flink支持内建的Tuples并且提供了自己的Tuple类给Java进行使用。DataStreams和DataSet这两种<br>Tuple都可以转换为表。提供所有字段的名称(基于位置的映射)字段可以被重命名。如果没有指定字段的名称，<br>就使用默认的字段名称。如果原始字段名(f0, f1, … for Flink Tuples and _1, _2, … for Scala Tuples)被引用了的话，<br>API就会使用基于名称的映射来代替位置的映射。基于名称的映射可以起别名并且会进行重排序。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象 </span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> stream: <span class="type">DataStream</span>[(<span class="type">Long</span>, <span class="type">String</span>)] = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将默认的字段重命名为&#x27;_1，&#x27;_2的DataStream转换为Table</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将字段名为&#x27;myLong，&#x27;myString的DataStream转换为Table(基于位置)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;myLong</span>, <span class="symbol">&#x27;myString</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将重排序后字段为&#x27;_2，&#x27;_1 的DataStream转换为Table(基于名称)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;_2</span>, <span class="symbol">&#x27;_1</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将映射字段&#x27;_2的DataStream转换为Table(基于名称)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;_2</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将重排序后字段为&#x27;_2给出别名&#x27;myString，&#x27;_1给出别名&#x27;myLong 的DataStream转换为Table(基于名称)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;_2</span> as <span class="symbol">&#x27;myString</span>, <span class="symbol">&#x27;_1</span> as <span class="symbol">&#x27;myLong</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义 case class</span></span><br><span class="line"><span class="keyword">case</span> <span class="class"><span class="keyword">class</span> <span class="title">Person</span>(<span class="params">name: <span class="type">String</span>, age: <span class="type">Int</span></span>)</span></span><br><span class="line"><span class="class"><span class="title">val</span> <span class="title">streamCC</span></span>: <span class="type">DataStream</span>[<span class="type">Person</span>] = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将默认字段&#x27;name, &#x27;age的DataStream转换为Table</span></span><br><span class="line"><span class="keyword">val</span> table = tableEnv.fromDataStream(streamCC)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将字段名为&#x27;myName，&#x27;myAge的DataStream转换为Table(基于位置)</span></span><br><span class="line"><span class="keyword">val</span> table = tableEnv.fromDataStream(streamCC, <span class="symbol">&#x27;myName</span>, <span class="symbol">&#x27;myAge</span>)</span><br><span class="line"></span><br><span class="line">将重排序后字段为<span class="symbol">&#x27;_age</span>给出别名<span class="symbol">&#x27;myAge</span>，<span class="symbol">&#x27;_name</span>给出别名<span class="symbol">&#x27;myName</span> 的<span class="type">DataStream</span>转换为<span class="type">Table</span>(基于名称)</span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;age</span> as <span class="symbol">&#x27;myAge</span>, <span class="symbol">&#x27;name</span> as <span class="symbol">&#x27;myName</span>)</span><br></pre></td></tr></table></figure>
-<h4 id="POJO-Java-and-Scala"><a href="#POJO-Java-and-Scala" class="headerlink" title="POJO (Java and Scala)"></a>POJO (Java and Scala)</h4><p>Flink支持POJO作为符合类型。决定POJO规则的文档请参考<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.6/dev/api_concepts.html#pojos">这里</a></p>
-<p>当将一个POJO类型的DataStream或者DataSet转换为Table而不指定字段名称时，Table的字段名称将采用JOPO原生的字段名称作为字段名称。<br>重命名原始的POJO字段需要关键字AS，因为POJO没有固定的顺序，名称映射需要原始名称并且不能通过位置来完成。</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// Person 是一个有两个字段&quot;name&quot;和&quot;age&quot;的POJO</span></span><br><span class="line"><span class="keyword">val</span> stream: <span class="type">DataStream</span>[<span class="type">Person</span>] = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将 DataStream 转换为带字段 &quot;age&quot;, &quot;name&quot; 的Table(字段通过名称进行排序)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将DataStream转换为重命名为&quot;myAge&quot;, &quot;myName&quot;的Table(基于名称)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;age</span> as <span class="symbol">&#x27;myAge</span>, <span class="symbol">&#x27;name</span> as <span class="symbol">&#x27;myName</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将带映射字段&#x27;name的DataStream转换为Table(基于名称)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;name</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将带映射字段&#x27;name并重命名为&#x27;myName的DataStream转换为Table(基于名称)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;name</span> as <span class="symbol">&#x27;myName</span>)</span><br></pre></td></tr></table></figure>
-<h4 id="Row"><a href="#Row" class="headerlink" title="Row"></a>Row</h4><p>Row数据类型可以支持任意数量的字段，并且这些字段支持null值。当进行Row DataStream或Row DataSet<br>转换为Table时可以通过RowTypeInfo来指定字段的名称。Row Type支持基于位置和名称的两种映射方式。<br>通过提供所有字段的名称可以进行字段的重命名(基于位置)，或者是单独选择列来进行映射/重排序/重命名(基于名称)</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取(创建)TableEnvironment对象</span></span><br><span class="line"><span class="keyword">val</span> tableEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在`RowTypeInfo`中指定字段&quot;name&quot; 和 &quot;age&quot;的Row类型DataStream</span></span><br><span class="line"><span class="keyword">val</span> stream: <span class="type">DataStream</span>[<span class="type">Row</span>] = ...</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将 DataStream 转换为带默认字段 &quot;age&quot;, &quot;name&quot; 的Table</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将 DataStream 转换为重命名字段 &#x27;myName, &#x27;myAge 的Table(基于位置)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;myName</span>, <span class="symbol">&#x27;myAge</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将 DataStream 转换为重命名字段 &#x27;myName, &#x27;myAge 的Table(基于名称)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;name</span> as <span class="symbol">&#x27;myName</span>, <span class="symbol">&#x27;age</span> as <span class="symbol">&#x27;myAge</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将 DataStream 转换为映射字段 &#x27;name的Table(基于名称)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;name</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将 DataStream 转换为映射字段 &#x27;name并重命名为&#x27;myName的Table(基于名称)</span></span><br><span class="line"><span class="keyword">val</span> table: <span class="type">Table</span> = tableEnv.fromDataStream(stream, <span class="symbol">&#x27;name</span> as <span class="symbol">&#x27;myName</span>)</span><br></pre></td></tr></table></figure>
-<h4 id="Query-Optimization"><a href="#Query-Optimization" class="headerlink" title="Query Optimization"></a>Query Optimization</h4><p>Apache Flink 基于 Apache Calcite 来做转换和查询优化。当前的查询优化包括投影、过滤下推、<br>相关子查询和各种相关的查询重写。Flink不去做join优化，但是会让他们去顺序执行(FROM子句中表的顺序或者WHERE子句中连接谓词的顺序)</p>
-<p>可以通过提供一个CalciteConfig对象来调整在不同阶段应用的优化规则集，<br>这个可以通过调用CalciteConfig.createBuilder())获得的builder来创建，<br>并且可以通过调用tableEnv.getConfig.setCalciteConfig(calciteConfig)来提供给TableEnvironment。</p>
-<h4 id="Explaining-a-Table"><a href="#Explaining-a-Table" class="headerlink" title="Explaining a Table"></a>Explaining a Table</h4><p>Table API为计算Table提供了一个机制来解析逻辑和优化查询计划，这个可以通过TableEnvironment.explain(table)<br>来完成。它返回描述三个计划的字符串信息：</p>
-<ul>
-<li>关联查询抽象语法树，即未优化过的逻辑执行计划</li>
-<li>优化过的逻辑执行计划</li>
-<li>物理执行计划</li>
-</ul>
-<p>下面的实例展示了相应的输出：</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> env = <span class="type">StreamExecutionEnvironment</span>.getExecutionEnvironment</span><br><span class="line"><span class="keyword">val</span> tEnv = <span class="type">TableEnvironment</span>.getTableEnvironment(env)</span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> table1 = env.fromElements((<span class="number">1</span>, <span class="string">&quot;hello&quot;</span>)).toTable(tEnv, <span class="symbol">&#x27;count</span>, <span class="symbol">&#x27;word</span>)</span><br><span class="line"><span class="keyword">val</span> table2 = env.fromElements((<span class="number">1</span>, <span class="string">&quot;hello&quot;</span>)).toTable(tEnv, <span class="symbol">&#x27;count</span>, <span class="symbol">&#x27;word</span>)</span><br><span class="line"><span class="keyword">val</span> table = table1</span><br><span class="line">  .where(<span class="symbol">&#x27;word</span>.like(<span class="string">&quot;F%&quot;</span>))</span><br><span class="line">  .unionAll(table2)</span><br><span class="line"></span><br><span class="line"><span class="keyword">val</span> explanation: <span class="type">String</span> = tEnv.explain(table)</span><br><span class="line">println(explanation)</span><br></pre></td></tr></table></figure>
-<p>对应的输出如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">&#x3D;&#x3D; 抽象语法树 &#x3D;&#x3D;</span><br><span class="line">LogicalUnion(all&#x3D;[true])</span><br><span class="line">  LogicalFilter(condition&#x3D;[LIKE($1, &#39;F%&#39;)])</span><br><span class="line">    LogicalTableScan(table&#x3D;[[_DataStreamTable_0]])</span><br><span class="line">  LogicalTableScan(table&#x3D;[[_DataStreamTable_1]])</span><br><span class="line"></span><br><span class="line">&#x3D;&#x3D; 优化后的逻辑执行计划 &#x3D;&#x3D;</span><br><span class="line">DataStreamUnion(union&#x3D;[count, word])</span><br><span class="line">  DataStreamCalc(select&#x3D;[count, word], where&#x3D;[LIKE(word, &#39;F%&#39;)])</span><br><span class="line">    DataStreamScan(table&#x3D;[[_DataStreamTable_0]])</span><br><span class="line">  DataStreamScan(table&#x3D;[[_DataStreamTable_1]])</span><br><span class="line"></span><br><span class="line">&#x3D;&#x3D; 物理执行计划 &#x3D;&#x3D;</span><br><span class="line">Stage 1 : Data Source</span><br><span class="line">  content : collect elements with CollectionInputFormat</span><br><span class="line"></span><br><span class="line">Stage 2 : Data Source</span><br><span class="line">  content : collect elements with CollectionInputFormat</span><br><span class="line"></span><br><span class="line">  Stage 3 : Operator</span><br><span class="line">    content : from: (count, word)</span><br><span class="line">    ship_strategy : REBALANCE</span><br><span class="line"></span><br><span class="line">    Stage 4 : Operator</span><br><span class="line">      content : where: (LIKE(word, &#39;F%&#39;)), select: (count, word)</span><br><span class="line">      ship_strategy : FORWARD</span><br><span class="line"></span><br><span class="line">      Stage 5 : Operator</span><br><span class="line">        content : from: (count, word)</span><br><span class="line">        ship_strategy : REBALANCE</span><br></pre></td></tr></table></figure>
-
-<h1 id="Flink用户自定义函数"><a href="#Flink用户自定义函数" class="headerlink" title="Flink用户自定义函数"></a>Flink用户自定义函数</h1><p>用户自定义函数是非常重要的一个特征，因为他极大地扩展了查询的表达能力。</p>
-<p>在大多数场景下，用户自定义函数在使用之前是必须要注册的。对于Scala的Table API，udf是不需要注册的。<br>调用TableEnvironment的registerFunction()方法来实现注册。Udf注册成功之后，会被插入TableEnvironment的function catalog，这样table API和sql就能解析他了。<br>本文会主要讲三种udf：</p>
-<ul>
-<li>ScalarFunction</li>
-<li>TableFunction</li>
-<li>AggregateFunction</li>
-</ul>
-<h2 id="1-Scalar-Functions-标量函数"><a href="#1-Scalar-Functions-标量函数" class="headerlink" title="1. Scalar Functions 标量函数"></a>1. Scalar Functions 标量函数</h2><p>标量函数，是指指返回一个值的函数。标量函数是实现讲0，1，或者多个标量值转化为一个新值。</p>
-<p>实现一个标量函数需要继承ScalarFunction，并且实现一个或者多个evaluation方法。标量函数的行为就是通过evaluation方法来实现的。evaluation方法必须定义为public，命名为eval。evaluation方法的输入参数类型和返回值类型决定着标量函数的输入参数类型和返回值类型。evaluation方法也可以被重载实现多个eval。同时evaluation方法支持变参数，例如：eval(String… strs)。</p>
-<p>下面给出一个标量函数的例子。例子实现的事一个hashcode方法。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HashCode</span> <span class="keyword">extends</span> <span class="title">ScalarFunction</span> </span>&#123;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">int</span> factor = <span class="number">12</span>;</span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">HashCode</span><span class="params">(<span class="keyword">int</span> factor)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">this</span>.factor = factor;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">eval</span><span class="params">(String s)</span> </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> s.hashCode() * factor;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">BatchTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);</span><br><span class="line"></span><br><span class="line"><span class="comment">// register the function</span></span><br><span class="line">tableEnv.registerFunction(<span class="string">&quot;hashCode&quot;</span>, <span class="keyword">new</span> HashCode(<span class="number">10</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">// use the function in Java Table API</span></span><br><span class="line">myTable.select(<span class="string">&quot;string, string.hashCode(), hashCode(string)&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// use the function in SQL API</span></span><br><span class="line">tableEnv.sqlQuery(<span class="string">&quot;SELECT string, HASHCODE(string) FROM MyTable&quot;</span>);</span><br><span class="line"></span><br><span class="line">````</span><br><span class="line"></span><br><span class="line">默认情况下evaluation方法的返回值类型是由flink类型抽取工具决定。对于基础类型，简单的POJOS是足够的，但是更复杂的类型，自定义类型，组合类型，会报错。这种情况下，返回值类型的TypeInformation，需要手动指定，方法是重载</span><br><span class="line">ScalarFunction#getResultType()。</span><br><span class="line"></span><br><span class="line">下面给一个例子，通过复写ScalarFunction#getResultType()，将long型的返回值在代码生成的时候翻译成Types.TIMESTAMP。</span><br><span class="line"></span><br><span class="line">```java</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">TimestampModifier</span> <span class="keyword">extends</span> <span class="title">ScalarFunction</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">eval</span><span class="params">(<span class="keyword">long</span> t)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> t % <span class="number">1000</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">public</span> TypeInformation&lt;?&gt; getResultType(signature: Class&lt;?&gt;[]) &#123;</span><br><span class="line">    <span class="keyword">return</span> Types.TIMESTAMP;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="2-Table-Functions-表函数"><a href="#2-Table-Functions-表函数" class="headerlink" title="2. Table Functions 表函数"></a>2. Table Functions 表函数</h2><p>与标量函数相似之处是输入可以0，1，或者多个参数，但是不同之处可以输出任意数目的行数。返回的行也可以包含一个或者多个列。</p>
-<p>为了自定义表函数，需要继承TableFunction，实现一个或者多个evaluation方法。表函数的行为定义在这些evaluation方法内部，函数名为eval并且必须是public。TableFunction可以重载多个eval方法。Evaluation方法的输入参数类型，决定着表函数的输入类型。Evaluation方法也支持变参，例如：eval(String… strs)。返回表的类型取决于TableFunction的基本类型。Evaluation方法使用collect(T)发射输出的rows。</p>
-<p>在Table API中，表函数在scala语言中使用方法如下：.join(Expression) 或者 .leftOuterJoin(Expression)，在java语言中使用方法如下：.join(String) 或者.leftOuterJoin(String)。</p>
-<p>Join操作算子会使用表值函数(操作算子右边的表)产生的所有行进行(cross) join 外部表(操作算子左边的表)的每一行。</p>
-<p>leftOuterJoin操作算子会使用表值函数(操作算子右边的表)产生的所有行进行(cross) join 外部表(操作算子左边的表)的每一行，并且在表函数返回一个空表的情况下会保留所有的outer rows。</p>
-<p>在sql语法中稍微有点区别：<br>cross join用法是LATERAL TABLE(<TableFunction>)。<br>LEFT JOIN用法是在join条件中加入ON TRUE。</p>
-<p>下面的理智讲的是如何使用表值函数。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// The generic type &quot;Tuple2&lt;String, Integer&gt;&quot; determines the schema of the returned table as (String, Integer).</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Split</span> <span class="keyword">extends</span> <span class="title">TableFunction</span>&lt;<span class="title">Tuple2</span>&lt;<span class="title">String</span>, <span class="title">Integer</span>&gt;&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> String separator = <span class="string">&quot; &quot;</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Split</span><span class="params">(String separator)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.separator = separator;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">eval</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (String s : str.split(separator)) &#123;</span><br><span class="line">            <span class="comment">// use collect(...) to emit a row</span></span><br><span class="line">            collect(<span class="keyword">new</span> Tuple2&lt;String, Integer&gt;(s, s.length()));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">BatchTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);</span><br><span class="line">Table myTable = ...         <span class="comment">// table schema: [a: String]</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Register the function.</span></span><br><span class="line">tableEnv.registerFunction(<span class="string">&quot;split&quot;</span>, <span class="keyword">new</span> Split(<span class="string">&quot;#&quot;</span>));</span><br><span class="line"></span><br><span class="line"><span class="comment">// Use the table function in the Java Table API. &quot;as&quot; specifies the field names of the table.</span></span><br><span class="line">myTable.join(<span class="string">&quot;split(a) as (word, length)&quot;</span>).select(<span class="string">&quot;a, word, length&quot;</span>);</span><br><span class="line">myTable.leftOuterJoin(<span class="string">&quot;split(a) as (word, length)&quot;</span>).select(<span class="string">&quot;a, word, length&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Use the table function in SQL with LATERAL and TABLE keywords.</span></span><br><span class="line">join.md</span><br><span class="line">tableEnv.sqlQuery(<span class="string">&quot;SELECT a, word, length FROM MyTable, LATERAL TABLE(split(a)) as T(word, length)&quot;</span>);</span><br><span class="line"><span class="comment">// LEFT JOIN a table function (equivalent to &quot;leftOuterJoin&quot; in Table API).</span></span><br><span class="line">tableEnv.sqlQuery(<span class="string">&quot;SELECT a, word, length FROM MyTable LEFT JOIN LATERAL TABLE(split(a)) as T(word, length) ON TRUE&quot;</span>);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>需要注意的是PROJO类型不需要一个确定的字段顺序。意味着你不能使用as修改表函数返回的pojo的字段的名字。</p>
-<p>默认情况下TableFunction返回值类型是由flink类型抽取工具决定。对于基础类型，简单的POJOS是足够的，但是更复杂的类型，自定义类型，组合类型，会报错。这种情况下，返回值类型的TypeInformation，需要手动指定，方法是重载<br>TableFunction#getResultType()。</p>
-<p>下面的例子，我们通过复写TableFunction#getResultType()方法使得表返回类型是RowTypeInfo(String, Integer)。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CustomTypeSplit</span> <span class="keyword">extends</span> <span class="title">TableFunction</span>&lt;<span class="title">Row</span>&gt; </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">eval</span><span class="params">(String str)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">for</span> (String s : str.split(<span class="string">&quot; &quot;</span>)) &#123;</span><br><span class="line">            Row row = <span class="keyword">new</span> Row(<span class="number">2</span>);</span><br><span class="line">            row.setField(<span class="number">0</span>, s);</span><br><span class="line">            row.setField(<span class="number">1</span>, s.length);</span><br><span class="line">            collect(row);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> TypeInformation&lt;Row&gt; <span class="title">getResultType</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Types.ROW(Types.STRING(), Types.INT());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="3-Aggregation-Functions-聚合函数"><a href="#3-Aggregation-Functions-聚合函数" class="headerlink" title="3. Aggregation Functions 聚合函数"></a>3. Aggregation Functions 聚合函数</h2><p>用户自定义聚合函数聚合一张表(一行或者多行，一行有一个或者多个属性)为一个标量的值。</p>
-<p>上图中是讲的一张饮料的表这个表有是那个字段五行数据，现在要做的事求出所有饮料的最高价。</p>
-<p>聚合函数需要继承AggregateFunction。聚合函数工作方式如下：<br>首先，需要一个accumulator，这个是保存聚合中间结果的数据结构。调用AggregateFunction函数的createAccumulator()方法来创建一个空的accumulator.<br>随后，每个输入行都会调用accumulate()方法来更新accumulator。一旦所有的行被处理了，getValue()方法就会被调用，计算和返回最终的结果。</p>
-<p>对于每个AggregateFunction，下面三个方法都是比不可少的：<br>createAccumulator()<br>accumulate()<br>getValue()</p>
-<p>flink的类型抽取机制不能识别复杂的数据类型，比如，数据类型不是基础类型或者简单的pojos类型。所以，类似于ScalarFunction 和TableFunction，AggregateFunction提供了方法去指定返回结果类型的TypeInformation，用的是AggregateFunction#getResultType()。Accumulator类型用的是AggregateFunction#getAccumulatorType()。</p>
-<p>除了上面的方法，这里有一些可选的方法。尽管有些方法是让系统更加高效的执行查询，另外的一些在特定的场景下是必须的。例如，merge()方法在会话组窗口上下文中是必须的。当一行数据是被视为跟两个回话窗口相关的时候，两个会话窗口的accumulators需要被join。</p>
-<p>AggregateFunction的下面几个方法，根据使用场景的不同需要被实现：<br>retract()：在bounded OVER窗口的聚合方法中是需要实现的。<br>merge()：在很多batch 聚合和会话窗口聚合是必须的。<br>resetAccumulator(): 在大多数batch聚合是必须的。</p>
-<p>AggregateFunction的所有方法都是需要被声明为public，而不是static。定义聚合函数需要实现org.apache.flink.table.functions.AggregateFunction同时需要实现一个或者多个accumulate方法。该方法可以被重载为不同的数据类型，并且支持变参。</p>
-<p>在这里就不贴出来AggregateFunction的源码了。</p>
-<p>下面举个求加权平均的栗子<br>为了计算加权平均值，累加器需要存储已累积的所有数据的加权和及计数。在栗子中定义一个WeightedAvgAccum类作为accumulator。尽管，retract(), merge(), 和resetAccumulator()方法在很多聚合类型是不需要的，这里也给出了栗子。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Accumulator for WeightedAvg.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">WeightedAvgAccum</span> </span>&#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">long</span> sum = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">int</span> count = <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Weighted Average user-defined aggregate function.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">WeightedAvg</span> <span class="keyword">extends</span> <span class="title">AggregateFunction</span>&lt;<span class="title">Long</span>, <span class="title">WeightedAvgAccum</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> WeightedAvgAccum <span class="title">createAccumulator</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> WeightedAvgAccum();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Long <span class="title">getValue</span><span class="params">(WeightedAvgAccum acc)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (acc.count == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> acc.sum / acc.count;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">accumulate</span><span class="params">(WeightedAvgAccum acc, <span class="keyword">long</span> iValue, <span class="keyword">int</span> iWeight)</span> </span>&#123;</span><br><span class="line">        acc.sum += iValue * iWeight;</span><br><span class="line">        acc.count += iWeight;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">retract</span><span class="params">(WeightedAvgAccum acc, <span class="keyword">long</span> iValue, <span class="keyword">int</span> iWeight)</span> </span>&#123;</span><br><span class="line">        acc.sum -= iValue * iWeight;</span><br><span class="line">        acc.count -= iWeight;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">merge</span><span class="params">(WeightedAvgAccum acc, Iterable&lt;WeightedAvgAccum&gt; it)</span> </span>&#123;</span><br><span class="line">        Iterator&lt;WeightedAvgAccum&gt; iter = it.iterator();</span><br><span class="line">        <span class="keyword">while</span> (iter.hasNext()) &#123;</span><br><span class="line">            WeightedAvgAccum a = iter.next();</span><br><span class="line">            acc.count += a.count;</span><br><span class="line">            acc.sum += a.sum;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">resetAccumulator</span><span class="params">(WeightedAvgAccum acc)</span> </span>&#123;</span><br><span class="line">        acc.count = <span class="number">0</span>;</span><br><span class="line">        acc.sum = <span class="number">0L</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// register function</span></span><br><span class="line">StreamTableEnvironment tEnv = ...</span><br><span class="line">tEnv.registerFunction(<span class="string">&quot;wAvg&quot;</span>, <span class="keyword">new</span> WeightedAvg());</span><br><span class="line"></span><br><span class="line"><span class="comment">// use function</span></span><br><span class="line">tEnv.sqlQuery(<span class="string">&quot;SELECT user, wAvg(points, level) AS avgPoints FROM userScores GROUP BY user&quot;</span>);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h2 id="4-实现udf的最佳实践经验"><a href="#4-实现udf的最佳实践经验" class="headerlink" title="4. 实现udf的最佳实践经验"></a>4. 实现udf的最佳实践经验</h2><p>Table API和SQL 代码生成器内部会尽可能多的尝试使用原生值。用户定义的函数可能通过对象创建、强制转换(casting)和拆装箱((un)boxing)引入大量开销。因此，强烈推荐参数和返回值的类型定义为原生类型而不是他们包装类型(boxing class)。Types.DATE 和Types.TIME可以用int代替。Types.TIMESTAMP可以用long代替。</p>
-<p>我们建议用户自定义函数使用java编写而不是scala编写，因为scala的类型可能会有不被flink类型抽取器兼容。</p>
-<p>用Runtime集成UDFs</p>
-<p>有时候udf需要获取全局runtime信息或者在进行实际工作之前做一些设置和清除工作。Udf提供了open()和close()方法，可以被复写，功能类似Dataset和DataStream API的RichFunction方法。</p>
-<p>Open()方法是在evaluation方法调用前调用一次。Close()是在evaluation方法最后一次调用后调用。</p>
-<p>Open()方法提共一个FunctionContext，FunctionContext包含了udf执行环境的上下文，比如，metric group，分布式缓存文件，全局的job参数。</p>
-<p>通过调用FunctionContext的相关方法，可以获取到相关的信息：</p>
-<p>方法描述</p>
-<ul>
-<li>getMetricGroup() - 并行子任务的指标组</li>
-<li>getCachedFile(name) -分布式缓存文件的本地副本</li>
-<li>getJobParameter(name, defaultValue) - 给定key全局job参数。</li>
-</ul>
-<p>下面，给出的例子就是通过FunctionContext在一个标量函数中获取全局job的参数。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HashCode</span> <span class="keyword">extends</span> <span class="title">ScalarFunction</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> factor = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">open</span><span class="params">(FunctionContext context)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="comment">// access &quot;hashcode_factor&quot; parameter</span></span><br><span class="line">        <span class="comment">// &quot;12&quot; would be the default value if parameter does not exist</span></span><br><span class="line">        factor = Integer.valueOf(context.getJobParameter(<span class="string">&quot;hashcode_factor&quot;</span>, <span class="string">&quot;12&quot;</span>)); </span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">eval</span><span class="params">(String s)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> s.hashCode() * factor;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">BatchTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);</span><br><span class="line"></span><br><span class="line"><span class="comment">// set job parameter</span></span><br><span class="line">Configuration conf = <span class="keyword">new</span> Configuration();</span><br><span class="line">conf.setString(<span class="string">&quot;hashcode_factor&quot;</span>, <span class="string">&quot;31&quot;</span>);</span><br><span class="line">env.getConfig().setGlobalJobParameters(conf);</span><br><span class="line"></span><br><span class="line"><span class="comment">// register the function</span></span><br><span class="line">tableEnv.registerFunction(<span class="string">&quot;hashCode&quot;</span>, <span class="keyword">new</span> HashCode());</span><br><span class="line"></span><br><span class="line"><span class="comment">// use the function in Java Table API</span></span><br><span class="line">myTable.select(<span class="string">&quot;string, string.hashCode(), hashCode(string)&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// use the function in SQL</span></span><br><span class="line">tableEnv.sqlQuery(<span class="string">&quot;SELECT string, HASHCODE(string) FROM MyTable&quot;</span>);</span><br></pre></td></tr></table></figure>
-<h1 id="内置函数"><a href="#内置函数" class="headerlink" title="内置函数"></a>内置函数</h1><h2 id="scala"><a href="#scala" class="headerlink" title="scala"></a>scala</h2><h3 id="三元运算符"><a href="#三元运算符" class="headerlink" title="三元运算符"></a>三元运算符</h3><p>sql或者table API筛选数据，必须保证每个字段不为空，<br>Flink内部，中间结果都是通过case class传递，而case class的字段必须保证不能为空</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">BOOLEAN</span>.?(<span class="type">VALUE1</span>, <span class="type">VALUE2</span>)</span><br><span class="line"><span class="symbol">&#x27;is_active_user</span>.isNull.?(<span class="string">&quot;0&quot;</span>, <span class="string">&quot;1&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h3 id="等值判断"><a href="#等值判断" class="headerlink" title="等值判断"></a>等值判断</h3><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">&#x27;Fuin</span> === <span class="symbol">&#x27;active_user</span></span><br></pre></td></tr></table></figure>
-<p>scala中的<code>===</code>是运算符重构</p>
 
       
     </div>
