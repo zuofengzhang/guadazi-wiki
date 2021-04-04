@@ -20,13 +20,24 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="Apache Flink® SQL Training Flink SQL实现原理 新版本的Table &amp; SQL API在原有的Table API基础上，由Calcite提供SQL解析和优化能力，将Table API调用和SQL查询统一转换成Calcite逻辑执行计划（Calcite RelNode树），并对此进行优化和代码生成，最终同样转化成Flink DataStream&#x2F;DataSe">
+  <meta name="description" content="Apache Flink® SQL Training Flink SQL Flink SQL&#x2F;Table 如何转化为Flink graph? Blink 进行了什么优化?  本节将主要从 SQL&#x2F;Table API 如何转化为真正的 Job Graph 的流程开始，让大家对 Blink Planner 有一个比较清晰的认识，希望对大家阅读 Blink 代码，或者使用 Blink 方面有所帮助。然后">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Flink-SQL">
+<meta property="og:title" content="Flink SQL inside">
 <meta property="og:url" content="http://example.com/bigdata/Flink/Flink-SQL-inside/index.html">
 <meta property="og:site_name" content="Guadazi">
-<meta property="og:description" content="Apache Flink® SQL Training Flink SQL实现原理 新版本的Table &amp; SQL API在原有的Table API基础上，由Calcite提供SQL解析和优化能力，将Table API调用和SQL查询统一转换成Calcite逻辑执行计划（Calcite RelNode树），并对此进行优化和代码生成，最终同样转化成Flink DataStream&#x2F;DataSe">
+<meta property="og:description" content="Apache Flink® SQL Training Flink SQL Flink SQL&#x2F;Table 如何转化为Flink graph? Blink 进行了什么优化?  本节将主要从 SQL&#x2F;Table API 如何转化为真正的 Job Graph 的流程开始，让大家对 Blink Planner 有一个比较清晰的认识，希望对大家阅读 Blink 代码，或者使用 Blink 方面有所帮助。然后">
 <meta property="og:locale">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5763696502773">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5754200881233">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5742768787093">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5732658916907">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5722510102563">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5711511556085">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5702882869443">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5692318921039">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5681295595288">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5669686806196">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5659004248673">
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/_v_images/20201030204716034_449053674">
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/_v_images/20201030205455658_1363203717.jpg">
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/_v_images/20201030205455452_457126200.jpg">
@@ -42,12 +53,14 @@
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5385895594990.png">
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5354486805898.png">
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5324204248375.png">
+<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/4467647168580">
 <meta property="article:published_time" content="2021-01-15T11:47:00.000Z">
-<meta property="article:modified_time" content="2021-02-09T01:52:15.683Z">
+<meta property="article:modified_time" content="2021-04-04T00:25:38.912Z">
 <meta property="article:author" content="aaronzhang">
 <meta property="article:tag" content="Flink">
+<meta property="article:tag" content="SQL">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/_v_images/20201030204716034_449053674">
+<meta name="twitter:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5763696502773">
 
 <link rel="canonical" href="http://example.com/bigdata/Flink/Flink-SQL-inside/">
 
@@ -62,7 +75,7 @@
   };
 </script>
 
-  <title>Flink-SQL | Guadazi</title>
+  <title>Flink SQL inside | Guadazi</title>
   
 
 
@@ -218,7 +231,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Flink-SQL
+          Flink SQL inside
         </h1>
 
         <div class="post-meta">
@@ -235,7 +248,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
+                <time title="Modified: 2021-04-04 08:25:38" itemprop="dateModified" datetime="2021-04-04T08:25:38+08:00">2021-04-04</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -259,9 +272,171 @@
 
       
         <p><a target="_blank" rel="noopener" href="https://github.com/ververica/sql-training/wiki">Apache Flink® SQL Training</a></p>
-<h1 id="Flink-SQL"><a href="#Flink-SQL" class="headerlink" title="Flink SQL"></a>Flink SQL</h1><h2 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h2><p><img src="_v_images/20201030204716034_449053674"></p>
+<h1 id="Flink-SQL"><a href="#Flink-SQL" class="headerlink" title="Flink SQL"></a>Flink SQL</h1><ul>
+<li>Flink SQL/Table 如何转化为Flink graph?</li>
+<li>Blink 进行了什么优化?</li>
+</ul>
+<p>本节将主要从 SQL/Table API 如何转化为真正的 Job Graph 的流程开始，让大家对 Blink Planner 有一个比较清晰的认识，希望对大家阅读 Blink 代码，或者使用 Blink 方面有所帮助。然后介绍 Blink Planner 的改进及优化。</p>
+<p><img src="vx_images/5763696502773"> </p>
+<p>从上图可以很清楚的看到，解析的过程涉及到了三层：Table API/SQL，Blink Planner，Runtime，下面将对主要的步骤进行讲解：</p>
+<p>Table API&amp;SQL 解析验证：在 Flink 1.9 中，Table API 进行了大量的重构，引入了一套新的 Operation，这套 Operation 主要是用来描述任务的 Logic Tree。</p>
+<p>当 SQL 传输进来后，首先会去做 SQL 解析，SQL 解析完成之后，会得到 SqlNode Tree(抽象语法树)，然后会紧接着去做 Validator（验证），验证时会去访问 FunctionManger 和 CatalogManger，FunctionManger 主要是查询用户定义的 UDF，以及检查 UDF 是否合法，CatalogManger 主要是检查这个 Table 或者 Database 是否存在，如果验证都通过，就会生成一个 Operation DAG（有向无环图）。</p>
+<p>从这一步可以看出，Table API 和 SQL 在 Flink 中最终都会转化为统一的结构，即 Operation DAG。</p>
+<p>生成RelNode：Operation DAG 会被转化为 RelNode(关系表达式) DAG。</p>
+<p>优化：优化器会对 RelNode 做各种优化，优化器的输入是各种优化的规则，以及各种统计信息。当前，在 Blink Planner 里面，绝大部分的优化规则，Stream 和 Batch 是共享的。差异在于，对 Batch 而言，它没有 state 的概念，而对于 Stream 而言，它是不支持 sort 的，所以目前 Blink Planner 中，还是运行了两套独立的规则集（Rule Set），然后定义了两套独立的 Physical Rel：BatchPhysical Rel 和 StreamPhysical Rel。优化器优化的结果，就是具体的 Physical Rel DAG。</p>
+<p>转化：得到 Physical Rel Dag 后，继续会转化为 ExecNode，通过名字可以看出，ExecNode 已经属于执行层的概念了，但是这个执行层是 Blink 的执行层，在 ExecNode 中，会进行大量的 CodeGen 的操作，还有非 Code 的 Operator 操作，最后，将 ExecNode 转化为 Transformation DAG。</p>
+<p>**生成可执行 Job Graph：**得到 Transformation DAG 后，最终会被转化成 Job Graph，完成 SQL 或者 Table API 的解析。</p>
+<h3 id="Blink-Planner-改进及优化"><a href="#Blink-Planner-改进及优化" class="headerlink" title="Blink Planner 改进及优化"></a>Blink Planner 改进及优化</h3><p>Blink Planner 功能方面改进主要包含如下几个方面：</p>
+<ul>
+<li>  更完整的 SQL 语法支持：例如，IN，EXISTS，NOT EXISTS，子查询，完整的 Over 语句，Group Sets 等。而且已经跑通了所有的 TPCH，TPCDS 这两个测试集，性能还非常不错。</li>
+<li>  提供了更丰富，高效的算子。</li>
+<li>  提供了非常完善的 cost 模型，同时能够对接 Catalog 中的统计信息，使 cost 根据统计信息得到更优的执行计划。</li>
+<li>  支持 join reorder。</li>
+<li>  shuffle service：对 Batch 而言，Blink Planner 还支持 shuffle service，这对 Batch 作业的稳定性有非常大的帮助，如果遇到 Batch 作业失败，通过 shuffle service 能够很快的进行恢复。</li>
+</ul>
+<p>性能方面，主要包括以下部分：</p>
+<ul>
+<li><p>  分段优化。</p>
+</li>
+<li><p>  Sub-Plan Reuse。</p>
+</li>
+<li><p>  更丰富的优化 Rule：共一百多个 Rule ，并且绝大多数 Rule 是 Stream 和 Batch 共享的。</p>
+</li>
+<li><p>  更高效的数据结构 BinaryRow：能够节省序列化和反序列化的操作。</p>
+</li>
+<li><p>  mini-batch 支持（仅 Stream）：节省 state 的访问的操作。</p>
+</li>
+<li><p>  节省多余的 Shuffle 和 Sort（Batch 模式）：两个算子之间，如果已经按 A 做 Shuffle，紧接着他下的下游也是需要按 A Shuffle 的数据，那中间的这一层 Shuffle，就可以省略，这样就可以省很多网络的开销，Sort 的情况也是类似。Sort 和 Shuffle 如果在整个计算里面是占大头，对整个性能是有很大的提升的。</p>
+</li>
+</ul>
+<h3 id="深入性能优化及实践"><a href="#深入性能优化及实践" class="headerlink" title="深入性能优化及实践"></a>深入性能优化及实践</h3><p>本节中，将使用具体的示例进行讲解，让你深入理解 Blink Planner 性能优化的设计。</p>
+<h4 id="分段优化"><a href="#分段优化" class="headerlink" title="分段优化"></a>分段优化</h4><p>示例 5</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">view</span> MyView <span class="keyword">as</span> <span class="keyword">select</span> word, <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">as</span> freq <span class="keyword">from</span> SourceTable <span class="keyword">group</span> <span class="keyword">by</span> word; <span class="keyword">insert</span> <span class="keyword">into</span> SinkTable1 <span class="keyword">select</span> \<span class="operator">*</span> <span class="keyword">from</span> MyView <span class="keyword">where</span> freq <span class="operator">&gt;</span><span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> SinkTable2 <span class="keyword">select</span> <span class="built_in">count</span>(word) <span class="keyword">as</span> freq2, freq <span class="keyword">from</span> MyView <span class="keyword">group</span> <span class="keyword">by</span> freq; </span><br></pre></td></tr></table></figure>
+<p>复制代码</p>
+<p>上面的这几个 SQL，转化为 RelNode DAG，大致图形如下：</p>
+<p><img src="vx_images/5754200881233">  </p>
+<p>图5 示例5 RelNode DAG</p>
+<p>如果是使用 Flink Planner，经过优化层后，会生成如下执行层的 DAG：</p>
+<p><img src="vx_images/5742768787093">  </p>
+<p>图6 示例 5 Flink Planner DAG</p>
+<p>可以看到，Flink Planner 只是简单的从 Sink 出发，反向的遍历到 Source，从而形成两个独立的执行链路，从上图也可以清楚的看到，Scan 和第一层 Aggregate 是有重复计算的。</p>
+<p>在 Blink Planner 中，经过优化层之后，会生成如下执行层的 DAG：</p>
+<p><img src="vx_images/5732658916907">  </p>
+<p>图7 示例 5 Blink Planner DAG</p>
+<p>Blink Planner 不是在每次调用 insert into 的时候就开始优化，而是先将所有的 insert into 操作缓存起来，等到执行前才进行优化，这样就可以看到完整的执行图，可以知道哪些部分是重复计算的。Blink Planner 通过寻找可以优化的最大公共子图，找到这些重复计算的部分。经过优化后，Blink Planner 会将最大公共子图的部分当做一个临时表，供其他部分直接使用。</p>
+<p>这样，上面的图可以分为三部分，最大公共子图部分（临时表），临时表与 Filter 和 SinkTable1 优化，临时表与第二个 Aggregate 和 SinkTable 2 优化。</p>
+<p>Blink Planner 其实是通过声明的 View 找到最大公共子图的，因此在开发过程中，如果需要复用某段逻辑，就将其定义为 View，这样就可以充分利用 Blink Planner 的分段优化功能，减少重复计算。</p>
+<p>当然，当前的优化也不是最完美的，因为提前对图进行了切割，可能会导致一些优化丢失，今后会持续地对这部分算法进行改进。</p>
+<p>总结一下，Blink Planner 的分段优化，其实解的是多 Sink 优化问题（DAG 优化），单 Sink 不是分段优化关心的问题，单 Sink 可以在所有节点上优化，不需要分段。</p>
+<h4 id="Sub-Plan-Reuse"><a href="#Sub-Plan-Reuse" class="headerlink" title="Sub-Plan Reuse"></a>Sub-Plan Reuse</h4><p>示例 6</p>
+<p>insert into SinkTabl</p>
+<p>select freq from (select word, count(1) as freq from SourceTable group by word) t where word like ‘T%’</p>
+<p>union all</p>
+<p>select count(word) as freq2 from (select word, count(1) as freq from SourceTable group by word) t group by freq; </p>
+<p>复制代码</p>
+<p>这个示例的 SQL 和分段优化的 SQL 其实是类似的，不同的是，没有将结果 Sink 到两个 Table 里面，而是将结果 Union 起来，Sink 到一个结果表里面。</p>
+<p>下面看一下转化为 RelNode 的 DAG 图：</p>
+<p><img src="vx_images/5722510102563">  </p>
+<p>图 8 示例 6 RelNode DAG</p>
+<p>从上图可以看出，Scan 和第一层的 Aggregate 也是有重复计算的，Blink Planner 其实也会将其找出来，变成下面的图：</p>
+<p><img src="vx_images/5711511556085">  </p>
+<p>图9 示例 6 Blink Planner DAG</p>
+<p>Sub-Plan 优化的启用，有两个相关的配置：</p>
+<ul>
+<li><p>  table.optimizer.reuse-sub-plan-enabled （默认开启）</p>
+</li>
+<li><p>  table.optimizer.reuse-source-enabled（默认开启）</p>
+</li>
+</ul>
+<p>这两个配置，默认都是开启的，用户可以根据自己的需求进行关闭。这里主要说明一下 table.optimizer.reuse-source-enabled 这个参数。在 Batch 模式下，join 操作可能会导致死锁，具体场景是在执行 hash-join 或者 nested-loop-join 时一定是先读 build 端，然后再读 probe 端，如果启用 reuse-source-enabled，当数据源是同一个 Source 的时候，Source 的数据会同时发送给 build 和 probe 端。这时候，build 端的数据将不会被消费，导致 join 操作无法完成，整个 join 就被卡住了。</p>
+<p>为了解决死锁问题，Blink Planner 会先将 probe 端的数据落盘，这样 build 端读数据的操作才会正常，等 build 端的数据全部读完之后，再从磁盘中拉取 probe 端的数据，从而解决死锁问题。但是，落盘会有额外的开销，会多一次写的操作；有时候，读两次 Source 的开销，可能比一次写的操作更快，这时候，可以关闭 reuse-source，性能会更好。当然，如果读两次 Source 的开销，远大于一次落盘的开销，可以保持 reuse-source 开启。需要说明的是，Stream 模式是不存在死锁问题的，因为 Stream 模式 join 不会有选边的问题。</p>
+<p>总结而言，sub-plan reuse 解的问题是优化结果的子图复用问题，它和分段优化类似，但他们是一个互补的过程。</p>
+<p>注：Hash Join：对于两张待 join 的表 t1, t2。选取其中的一张表按照 join 条件给的列建立hash 表。然后扫描另外一张表，一行一行去建好的 hash 表判断是否有对应相等的行来完成 join 操作，这个操作称之为 probe (探测)。前一张表叫做 build 表，后一张表的叫做 probe 表。</p>
+<h4 id="Agg-分类优化"><a href="#Agg-分类优化" class="headerlink" title="Agg 分类优化"></a>Agg 分类优化</h4><p>Blink 中的 Aggregate 操作是非常丰富的：</p>
+<ul>
+<li><p>  group agg，例如：select count(a) from t group by b</p>
+</li>
+<li><p>  over agg，例如：select count(a) over (partition by b order by c) from t</p>
+</li>
+<li><p>  window agg，例如：select count(a) from t group by tumble(ts, interval ‘10’ second), b</p>
+</li>
+<li><p>  table agg ，例如：tEnv.scan(‘t’).groupBy(‘a’).flatAggregate(flatAggFunc(‘b’ as (‘c’, ‘d’)))</p>
+</li>
+</ul>
+<p>下面主要对 Group Agg 优化进行讲解，主要是两类优化。</p>
+<p>1. Local/Global Agg 优化</p>
+<p>Local/Global Agg 主要是为了减少网络 Shuffle。要运用 Local/Global 的优化，必要条件如下：</p>
+<ul>
+<li><p>  Aggregate 的所有 Agg Function 都是 mergeable 的，每个 Aggregate 需要实现 merge 方法，例如 SUM，COUNT，AVG，这些都是可以分多阶段完成，最终将结果合并；但是求中位数，计算 95% 这种类似的问题，无法拆分为多阶段，因此，无法运用 Local/Global 的优化。</p>
+</li>
+<li><p>  table.optimizer.agg-phase-strategy 设置为 AUTO 或者 TWO_PHASE。</p>
+</li>
+<li><p>  Stream 模式下，mini-batch 开启 ；Batch 模式下 AUTO 会根据 cost 模型加上统计数据，选择是否进行 Local/Global 优化。</p>
+</li>
+</ul>
+<p>示例 7</p>
+<p>select count(*) from t group by color</p>
+<p>复制代码</p>
+<p>没有优化的情况下，下面的这个 Aggregate 会产生 10 次的 Shuffle 操作。</p>
+<p><img src="vx_images/5702882869443">  </p>
+<p>图 10 示例 7 未做优化的 Count 操作</p>
+<p>使用 Local/Global 优化后，会转化为下面的操作，会在本地先进行聚合，然后再进行 Shuffle 操作，整个 Shuffle 的数据剩下 6 条。在 Stream 模式下，Blink 其实会以 mini-batch 的维度对结果进行预聚合，然后将结果发送给 Global Agg 进行汇总。</p>
+<p><img src="vx_images/5692318921039">  </p>
+<p>图 11 示例 7 经过 Local/Global 优化的 Count 操作</p>
+<p>2. Distinct Agg 优化</p>
+<p>Distinct Agg 进行优化，主要是对 SQL 语句进行改写，达到优化的目的。但 Batch 模式和 Stream 模式解决的问题是不同的：</p>
+<ul>
+<li><p>  Batch 模式下的 Distinct Agg，需要先做 Distinct，再做 Agg，逻辑上需要两步才能实现，直接实现 Distinct Agg 开销太大。</p>
+</li>
+<li><p>  Stream 模式下，主要是解决热点问题，因为 Stream 需要将所有的输入数据放在 State 里面，如果数据有热点，State 操作会很频繁，这将影响性能。</p>
+</li>
+</ul>
+<p>Batch 模式</p>
+<p>第一层，求 distinct 的值和非 distinct agg function 的值，第二层求 distinct agg function 的值</p>
+<p>示例 8</p>
+<p>select color, count(distinct id), count(*) from t group by color </p>
+<p>复制代码</p>
+<p>手工改写成：</p>
+<p>select color, count(id), min(cnt) from (</p>
+<p>select color, id, count(*) filter (where $e=2) as cnt from (</p>
+<p>select color, id, 1 as $e from t –for distinct id</p>
+<p>union all</p>
+<p>select color, null as id, 2 as $e from t – for count(*)</p>
+<p>) group by color, id, $e</p>
+<p>) group by color </p>
+<p>复制代码</p>
+<p>转化的逻辑过程，如下图所示：</p>
+<p><img src="vx_images/5681295595288">  </p>
+<p>图 12 示例 8 Batch 模式 Distinct 改写逻辑</p>
+<p>Stream 模式</p>
+<p>Stream 模式的启用有一些必要条件：</p>
+<ul>
+<li><p>  必须是支持的 agg function：avg/count/min/max/sum/first_value/concat_agg/single_value；</p>
+</li>
+<li><p>  table.optimizer.distinct-agg.split.enabled（默认关闭）</p>
+</li>
+</ul>
+<p>示例 9</p>
+<p>select color, count(distinct id), count(*) from t group by color </p>
+<p>复制代码</p>
+<p>手工改写成：</p>
+<p>select color, sum(dcnt), sum(cnt) from (</p>
+<p>select color, count(distinct id) as dcnt, count(*) as cnt from t</p>
+<p>group by color, mod(hash_code(id), 1024)</p>
+<p>) group by color</p>
+<p>复制代码</p>
+<p>改写前，逻辑图大概如下：</p>
+<p><img src="vx_images/5669686806196">  </p>
+<p>图 13 示例 9 Stream 模式未优化 Distinct</p>
+<p>改写后，逻辑图就会变为下面这样，热点数据被打散到多个中间节点上。</p>
+<p><img src="vx_images/5659004248673">  </p>
+<p>图14 示例 9 Stream 模式优化 Distinct</p>
+<p>需要注意的是，示例 5 的 SQL 中 mod(hash_code(id),1024)中的这个 1024 为打散的维度，这个值建议设置大一些，设置太小产生的效果可能不好。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文首先对新的 TableEnvironment 的整体设计进行了介绍，并且列举了各种模式下TableEnvironment 的选择，然后通过具体的示例，展示了各种模式下代码的写法，以及需要注意的事项。</p>
+<p>在新的 Catalog 和 DDL 部分，对 Catalog 的整体设计、DDL 的使用部分也都以实例进行拆分讲解。最后，对 Blink Planner 解析 SQL/Table API 的流程、Blink Planner 的改进以及优化的原理进行了讲解，希望对大家探索和使用 Flink SQL 有所帮助。</p>
+<h2 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h2><p><img src="_v_images/20201030204716034_449053674"></p>
 <p>新版本的Table &amp; SQL API在原有的Table API基础上，由Calcite提供SQL解析和优化能力，将Table API调用和SQL查询统一转换成Calcite逻辑执行计划（Calcite RelNode树），并对此进行优化和代码生成，最终同样转化成Flink DataStream/DataSet API调用代码。</p>
-<p>一般在使用的时候需要分别注册Source表 和 Sink表，分别对应数据的输入和输出。<br>对于注册Source表，可以从内部的catalog注册；也可以从TableSource注册；还可以通过DataSet转换注册。<br>对于SInk表，一般就直接通过TableSink注册了。查询时可以通过Table API执行select或者filter之类，也可以通过env.sqlQuery执行查询。<br>写入时可以通过table.insertInto()执行写操作，也可以通过env.sqlUpdate()执行写入。<br>这里还要吐槽下：弄一个sql()自动判断查询和写入不好么，为什么要区分update和insert?</p>
+<p>一般在使用的时候需要分别注册Source表 和 Sink表，分别对应数据的输入和输出。<br>对于注册Source表，可以<strong>从内部的catalog注册</strong>；也可以从TableSource注册；还可以通过DataSet转换注册。<br>对于SInk表，一般就直接通过TableSink注册了。查询时可以通过Table API执行select或者filter之类，也可以通过env.sqlQuery执行查询。<br>写入时可以通过table.insertInto()执行写操作，也可以通过env.sqlUpdate()执行写入。<br>这里还要吐槽下：弄一个sql()自动判断查询和写入不好么，为什么要区分update和insert?</p>
 <h2 id="SQL原理"><a href="#SQL原理" class="headerlink" title="SQL原理"></a>SQL原理</h2><p>Table &amp; SQL API基于scala和java编写，内部基于calcite实现标准sql的解析和校验。跟spark不一样，flink直接基于开源的calcite编写。<br>calcite本身是一个apache的开源项目，它独立于存储和执行，专门负责sql的解析优化、语法树的校验等，并且通过插件的方式可以很方便的扩展优化规则，广泛的应用在hive、solr、flink等中。</p>
 <p><img src="_v_images/20201030205455658_1363203717.jpg"></p>
 <p>在Flink中通过tableEnv.sqlQuery和tableEnv.sqlUpdate可以看到具体的calcite使用流程。query与update的操作其实内部差不多，都是解析、校验、转换，不过sqlUpdate最后会基于内部的Table增加一个insertInto的操作。</p>
@@ -285,7 +460,7 @@
 <li>Flink SQL 利用 Apache Calcite 将 SQL 翻译为关系代数表达式，使用表达式折叠（Expression Reduce），下推优化（Predicate / Projection Pushdown ）等优化技术生成物理执行计划（Physical Plan），利用 Codegen 技术生成高效执行代码。</li>
 <li>Flink SQL 使用高效的二进制数据存储结构 BinaryRow 加速计算性能；使用 Mini-batch 攒批提高吞吐，降低两层聚合时由 Retraction 引起的数据抖动；聚合场景下数据倾斜处理和 Top-N 排序的优化原理。</li>
 </ul>
-<h2 id="表注册"><a href="#表注册" class="headerlink" title="表注册"></a>表注册</h2><h3 id="虚表注册"><a href="#虚表注册" class="headerlink" title="虚表注册"></a>虚表注册</h3><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取一个TableEnvironment</span></span><br><span class="line"><span class="type">TableEnvironment</span> tableEnv = ...; </span><br><span class="line"><span class="comment">// table对象，查询的结果集</span></span><br><span class="line"><span class="type">Table</span> projTable = tableEnv.from(<span class="string">&quot;X&quot;</span>).select(...);</span><br><span class="line"><span class="comment">// 注册一个表，名称为 &quot;projectedTable&quot;</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;projectedTable&quot;</span>, projTable);</span><br></pre></td></tr></table></figure>
+<h2 id="表注册"><a href="#表注册" class="headerlink" title="表注册"></a>表注册</h2><h3 id="虚表注册"><a href="#虚表注册" class="headerlink" title="虚表注册"></a>虚表注册</h3><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取一个TableEnvironment</span></span><br><span class="line"><span class="type">TableEnvironment</span> tableEnv = ...;</span><br><span class="line"><span class="comment">// table对象，查询的结果集</span></span><br><span class="line"><span class="type">Table</span> projTable = tableEnv.from(<span class="string">&quot;X&quot;</span>).select(...);</span><br><span class="line"><span class="comment">// 注册一个表，名称为 &quot;projectedTable&quot;</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;projectedTable&quot;</span>, projTable);</span><br></pre></td></tr></table></figure>
 <h3 id="外部表注册"><a href="#外部表注册" class="headerlink" title="外部表注册"></a>外部表注册</h3><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tableEnvironment</span><br><span class="line">  .connect(...)</span><br><span class="line">  .withFormat(...)</span><br><span class="line">  .withSchema(...)</span><br><span class="line">  .inAppendMode()</span><br><span class="line">  .createTemporaryTable(<span class="string">&quot;MyTable&quot;</span>)</span><br></pre></td></tr></table></figure>
 <h3 id="catalog与db是两个概念"><a href="#catalog与db是两个概念" class="headerlink" title="catalog与db是两个概念"></a>catalog与db是两个概念</h3><p>表的注册总是包含三部分标识属性：catalog、数据库、表名。用户可以在内部设置一个catalog和一个数据库作为当前的catalog和数据库，所以对于catalog和数据库这两个标识属性是可选的，即如果不指定，默认使用的是“current catalog”和 “current database”。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">TableEnvironment tEnv = ...;</span><br><span class="line">tEnv.useCatalog(<span class="string">&quot;custom_catalog&quot;</span>);<span class="comment">//设置catalog</span></span><br><span class="line">tEnv.useDatabase(<span class="string">&quot;custom_database&quot;</span>);<span class="comment">//设置数据库</span></span><br><span class="line">Table table = ...;</span><br><span class="line"><span class="comment">// 注册一个名为exampleView的视图，catalog名为custom_catalog</span></span><br><span class="line"><span class="comment">// 数据库的名为custom_database</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;exampleView&quot;</span>, table);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册一个名为exampleView的视图，catalog的名为custom_catalog</span></span><br><span class="line"><span class="comment">// 数据库的名为other_database</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;other_database.exampleView&quot;</span>, table);</span><br><span class="line"> </span><br><span class="line"><span class="comment">// 注册一个名为&#x27;View&#x27;的视图，catalog的名称为custom_catalog</span></span><br><span class="line"><span class="comment">// 数据库的名为custom_database，&#x27;View&#x27;是保留关键字，需要使用``(反引号)</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;`View`&quot;</span>, table);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册一个名为example.View的视图，catalog的名为custom_catalog，</span></span><br><span class="line"><span class="comment">// 数据库名为custom_database</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;`example.View`&quot;</span>, table);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册一个名为&#x27;exampleView&#x27;的视图， catalog的名为&#x27;other_catalog&#x27;</span></span><br><span class="line"><span class="comment">// 数据库名为other_database&#x27; </span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;other_catalog.other_database.exampleView&quot;</span>, table);</span><br></pre></td></tr></table></figure>
@@ -732,11 +907,23 @@
 <td>2017-11-11 12:10:00</td>
 </tr>
 </tbody></table>
+<p>大家都知道，在 Flink 中，通过 Table API 和 SQL 实现的流处理逻辑，最终会翻译为基于 DataStreamAPI 实现的 DataStream 作业，返回这个作业输出的 DataStream (writeToSink 本质上也是先得到 DataStream 作业，再为其输出 DataStream 加上一个DataStreamSink) 。</p>
+<p>从一段 SQL 到 DataStream 作业，其过程简单描述如下：</p>
+<ol>
+<li><p> 在 TableEnvironment，即“表环境”，将数据源注册为动态表。例如，通过表环境的接口`registerDataStream`, 作为源的DataStream，即数据流, 在表环境注册为动态表</p>
+</li>
+<li><p> 通过表环境的接口 `sqlQuery`，将 SQL 构造为 Table 对象</p>
+</li>
+<li><p> 通过toAppendStream/toRetractedStream接口，即翻译接口，将 Table 对象表达的作业逻辑，翻译为 DataStream 作业。</p>
+</li>
+</ol>
+<p><img src="vx_images/4467647168580" alt="图片"></p>
+<p>在调用翻译接口，将 Table 对象翻译为 DataStream 作业时，通过翻译接口传入的 TTL 配置，递归传递到各个计算节点的翻译、构造逻辑里，使得翻译出来的 DataStream 算子的内部状态按照该 TTL 配置及时清理。</p>
 <p>【参考文献】</p>
 <ol>
 <li><p><a target="_blank" rel="noopener" href="http://www.10tiao.com/html/157/201707/2653162664/1.html">在数据流中使用SQL查询：Apache Flink中的动态表的持续查询</a></p>
 </li>
-<li><p>[Flink Table API &amp; SQL编程指南(1)]<a target="_blank" rel="noopener" href="https://jiamaoxiang.top/2020/05/25/Flink-Table-API-SQL%E7%BC%96%E7%A8%8B%E6%8C%87%E5%8D%97/">https://jiamaoxiang.top/2020/05/25/Flink-Table-API-SQL%E7%BC%96%E7%A8%8B%E6%8C%87%E5%8D%97/</a>)</p>
+<li><p><a target="_blank" rel="noopener" href="https://jiamaoxiang.top/2020/05/25/Flink-Table-API-SQL%E7%BC%96%E7%A8%8B%E6%8C%87%E5%8D%97/">Flink Table API &amp; SQL编程指南</a></p>
 </li>
 </ol>
 
@@ -749,6 +936,7 @@
       <footer class="post-footer">
           <div class="post-tags">
               <a href="/tags/Flink/" rel="tag"># Flink</a>
+              <a href="/tags/SQL/" rel="tag"># SQL</a>
           </div>
 
         
@@ -757,12 +945,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/bigdata/Flink/Flink-State-TTL/" rel="prev" title="Flink-state-ttl">
-      <i class="fa fa-chevron-left"></i> Flink-state-ttl
+    <a href="/bigdata/Flink/Flink-SQL-syntactic-sugar/" rel="prev" title="Flink-语法糖">
+      <i class="fa fa-chevron-left"></i> Flink-语法糖
     </a></div>
       <div class="post-nav-item">
-    <a href="/bigdata/Flink/dev_platform/flink-streaming-platform-web/" rel="next" title="flink-streaming-platform-web">
-      flink-streaming-platform-web <i class="fa fa-chevron-right"></i>
+    <a href="/bigdata/Flink/Flink-DataStream-join/" rel="next" title="Flink join">
+      Flink join <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -822,7 +1010,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink-SQL"><span class="nav-number">1.</span> <span class="nav-text">Flink SQL</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">实现原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL%E5%8E%9F%E7%90%86"><span class="nav-number">1.2.</span> <span class="nav-text">SQL原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flink-SQL-%E7%9A%84%E7%BC%96%E8%AF%91%E5%8F%8A%E4%BC%98%E5%8C%96%E8%BF%87%E7%A8%8B"><span class="nav-number">1.3.</span> <span class="nav-text">Flink SQL 的编译及优化过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A8%E6%B3%A8%E5%86%8C"><span class="nav-number">1.4.</span> <span class="nav-text">表注册</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E8%A1%A8%E6%B3%A8%E5%86%8C"><span class="nav-number">1.4.1.</span> <span class="nav-text">虚表注册</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%96%E9%83%A8%E8%A1%A8%E6%B3%A8%E5%86%8C"><span class="nav-number">1.4.2.</span> <span class="nav-text">外部表注册</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#catalog%E4%B8%8Edb%E6%98%AF%E4%B8%A4%E4%B8%AA%E6%A6%82%E5%BF%B5"><span class="nav-number">1.4.3.</span> <span class="nav-text">catalog与db是两个概念</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%90"><span class="nav-number">1.5.</span> <span class="nav-text">案例分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Retract-mode-%E5%92%8C-Append-mode"><span class="nav-number">1.6.</span> <span class="nav-text">Retract mode 和 Append mode</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%9B%9E%E9%80%80%E6%9B%B4%E6%96%B0"><span class="nav-number">1.6.1.</span> <span class="nav-text">如何实现回退更新?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#keyedBy%E4%B8%8Egroup-by%E5%8C%BA%E5%88%AB"><span class="nav-number">1.7.</span> <span class="nav-text">keyedBy与group by区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL%E8%A7%A3%E6%9E%90%E5%B7%A5%E5%85%B7"><span class="nav-number">1.8.</span> <span class="nav-text">SQL解析工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Window"><span class="nav-number">1.9.</span> <span class="nav-text">Window</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Over-Window"><span class="nav-number">1.9.1.</span> <span class="nav-text">Over Window</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Bounded-ROWS-OVER-Window"><span class="nav-number">1.9.1.1.</span> <span class="nav-text">Bounded ROWS OVER Window</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89"><span class="nav-number">1.9.1.1.1.</span> <span class="nav-text">语义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95"><span class="nav-number">1.9.1.1.2.</span> <span class="nav-text">语法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SQL-%E7%A4%BA%E4%BE%8B"><span class="nav-number">1.9.1.1.3.</span> <span class="nav-text">SQL 示例</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Result"><span class="nav-number">1.9.1.2.</span> <span class="nav-text">Result</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Bounded-RANGE-OVER-Window"><span class="nav-number">1.9.1.3.</span> <span class="nav-text">Bounded RANGE OVER Window</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89-1"><span class="nav-number">1.9.1.3.1.</span> <span class="nav-text">语义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95-1"><span class="nav-number">1.9.1.3.2.</span> <span class="nav-text">语法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SQL-%E7%A4%BA%E4%BE%8B-1"><span class="nav-number">1.9.1.3.3.</span> <span class="nav-text">SQL 示例</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Result%EF%BC%88Bounded-RANGE-OVER-Window%EF%BC%89"><span class="nav-number">1.9.1.3.4.</span> <span class="nav-text">Result（Bounded RANGE OVER Window）</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%89%B9%E5%88%AB%E8%AF%B4%E6%98%8E"><span class="nav-number">1.9.1.4.</span> <span class="nav-text">特别说明</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Group-Window"><span class="nav-number">1.9.2.</span> <span class="nav-text">Group Window</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Tumble"><span class="nav-number">1.9.2.1.</span> <span class="nav-text">Tumble</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89-2"><span class="nav-number">1.9.2.1.1.</span> <span class="nav-text">语义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95-2"><span class="nav-number">1.9.2.1.2.</span> <span class="nav-text">语法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SQL-%E7%A4%BA%E4%BE%8B-2"><span class="nav-number">1.9.2.1.3.</span> <span class="nav-text">SQL 示例</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Result-1"><span class="nav-number">1.9.2.1.4.</span> <span class="nav-text">Result</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Hop"><span class="nav-number">1.9.2.2.</span> <span class="nav-text">Hop</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89-3"><span class="nav-number">1.9.2.2.1.</span> <span class="nav-text">语义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95-3"><span class="nav-number">1.9.2.2.2.</span> <span class="nav-text">语法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SQL-%E7%A4%BA%E4%BE%8B-3"><span class="nav-number">1.9.2.2.3.</span> <span class="nav-text">SQL 示例</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Result-2"><span class="nav-number">1.9.2.2.4.</span> <span class="nav-text">Result</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Session"><span class="nav-number">1.9.2.3.</span> <span class="nav-text">Session</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89-4"><span class="nav-number">1.9.2.3.1.</span> <span class="nav-text">语义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95-4"><span class="nav-number">1.9.2.3.2.</span> <span class="nav-text">语法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SQL-%E7%A4%BA%E4%BE%8B-4"><span class="nav-number">1.9.2.3.3.</span> <span class="nav-text">SQL 示例</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Result-3"><span class="nav-number">1.9.2.3.4.</span> <span class="nav-text">Result</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDX"><span class="nav-number">1.10.</span> <span class="nav-text">UDX</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#UDF"><span class="nav-number">1.10.1.</span> <span class="nav-text">UDF</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDTF"><span class="nav-number">1.10.2.</span> <span class="nav-text">UDTF</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDAF"><span class="nav-number">1.10.3.</span> <span class="nav-text">UDAF</span></a></li></ol></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink-SQL"><span class="nav-number">1.</span> <span class="nav-text">Flink SQL</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Blink-Planner-%E6%94%B9%E8%BF%9B%E5%8F%8A%E4%BC%98%E5%8C%96"><span class="nav-number">1.0.1.</span> <span class="nav-text">Blink Planner 改进及优化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B7%B1%E5%85%A5%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E5%8F%8A%E5%AE%9E%E8%B7%B5"><span class="nav-number">1.0.2.</span> <span class="nav-text">深入性能优化及实践</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E6%AE%B5%E4%BC%98%E5%8C%96"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">分段优化</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Sub-Plan-Reuse"><span class="nav-number">1.0.2.2.</span> <span class="nav-text">Sub-Plan Reuse</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Agg-%E5%88%86%E7%B1%BB%E4%BC%98%E5%8C%96"><span class="nav-number">1.0.2.3.</span> <span class="nav-text">Agg 分类优化</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.1.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">1.2.</span> <span class="nav-text">实现原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL%E5%8E%9F%E7%90%86"><span class="nav-number">1.3.</span> <span class="nav-text">SQL原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flink-SQL-%E7%9A%84%E7%BC%96%E8%AF%91%E5%8F%8A%E4%BC%98%E5%8C%96%E8%BF%87%E7%A8%8B"><span class="nav-number">1.4.</span> <span class="nav-text">Flink SQL 的编译及优化过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A8%E6%B3%A8%E5%86%8C"><span class="nav-number">1.5.</span> <span class="nav-text">表注册</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E8%A1%A8%E6%B3%A8%E5%86%8C"><span class="nav-number">1.5.1.</span> <span class="nav-text">虚表注册</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%96%E9%83%A8%E8%A1%A8%E6%B3%A8%E5%86%8C"><span class="nav-number">1.5.2.</span> <span class="nav-text">外部表注册</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#catalog%E4%B8%8Edb%E6%98%AF%E4%B8%A4%E4%B8%AA%E6%A6%82%E5%BF%B5"><span class="nav-number">1.5.3.</span> <span class="nav-text">catalog与db是两个概念</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%90"><span class="nav-number">1.6.</span> <span class="nav-text">案例分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Retract-mode-%E5%92%8C-Append-mode"><span class="nav-number">1.7.</span> <span class="nav-text">Retract mode 和 Append mode</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%9B%9E%E9%80%80%E6%9B%B4%E6%96%B0"><span class="nav-number">1.7.1.</span> <span class="nav-text">如何实现回退更新?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#keyedBy%E4%B8%8Egroup-by%E5%8C%BA%E5%88%AB"><span class="nav-number">1.8.</span> <span class="nav-text">keyedBy与group by区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL%E8%A7%A3%E6%9E%90%E5%B7%A5%E5%85%B7"><span class="nav-number">1.9.</span> <span class="nav-text">SQL解析工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Window"><span class="nav-number">1.10.</span> <span class="nav-text">Window</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Over-Window"><span class="nav-number">1.10.1.</span> <span class="nav-text">Over Window</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Bounded-ROWS-OVER-Window"><span class="nav-number">1.10.1.1.</span> <span class="nav-text">Bounded ROWS OVER Window</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89"><span class="nav-number">1.10.1.1.1.</span> <span class="nav-text">语义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95"><span class="nav-number">1.10.1.1.2.</span> <span class="nav-text">语法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SQL-%E7%A4%BA%E4%BE%8B"><span class="nav-number">1.10.1.1.3.</span> <span class="nav-text">SQL 示例</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Result"><span class="nav-number">1.10.1.2.</span> <span class="nav-text">Result</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Bounded-RANGE-OVER-Window"><span class="nav-number">1.10.1.3.</span> <span class="nav-text">Bounded RANGE OVER Window</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89-1"><span class="nav-number">1.10.1.3.1.</span> <span class="nav-text">语义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95-1"><span class="nav-number">1.10.1.3.2.</span> <span class="nav-text">语法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SQL-%E7%A4%BA%E4%BE%8B-1"><span class="nav-number">1.10.1.3.3.</span> <span class="nav-text">SQL 示例</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Result%EF%BC%88Bounded-RANGE-OVER-Window%EF%BC%89"><span class="nav-number">1.10.1.3.4.</span> <span class="nav-text">Result（Bounded RANGE OVER Window）</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%89%B9%E5%88%AB%E8%AF%B4%E6%98%8E"><span class="nav-number">1.10.1.4.</span> <span class="nav-text">特别说明</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Group-Window"><span class="nav-number">1.10.2.</span> <span class="nav-text">Group Window</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Tumble"><span class="nav-number">1.10.2.1.</span> <span class="nav-text">Tumble</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89-2"><span class="nav-number">1.10.2.1.1.</span> <span class="nav-text">语义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95-2"><span class="nav-number">1.10.2.1.2.</span> <span class="nav-text">语法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SQL-%E7%A4%BA%E4%BE%8B-2"><span class="nav-number">1.10.2.1.3.</span> <span class="nav-text">SQL 示例</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Result-1"><span class="nav-number">1.10.2.1.4.</span> <span class="nav-text">Result</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Hop"><span class="nav-number">1.10.2.2.</span> <span class="nav-text">Hop</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89-3"><span class="nav-number">1.10.2.2.1.</span> <span class="nav-text">语义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95-3"><span class="nav-number">1.10.2.2.2.</span> <span class="nav-text">语法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SQL-%E7%A4%BA%E4%BE%8B-3"><span class="nav-number">1.10.2.2.3.</span> <span class="nav-text">SQL 示例</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Result-2"><span class="nav-number">1.10.2.2.4.</span> <span class="nav-text">Result</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Session"><span class="nav-number">1.10.2.3.</span> <span class="nav-text">Session</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E4%B9%89-4"><span class="nav-number">1.10.2.3.1.</span> <span class="nav-text">语义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%AF%AD%E6%B3%95-4"><span class="nav-number">1.10.2.3.2.</span> <span class="nav-text">语法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SQL-%E7%A4%BA%E4%BE%8B-4"><span class="nav-number">1.10.2.3.3.</span> <span class="nav-text">SQL 示例</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Result-3"><span class="nav-number">1.10.2.3.4.</span> <span class="nav-text">Result</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UDX"><span class="nav-number">1.11.</span> <span class="nav-text">UDX</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#UDF"><span class="nav-number">1.11.1.</span> <span class="nav-text">UDF</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDTF"><span class="nav-number">1.11.2.</span> <span class="nav-text">UDTF</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#UDAF"><span class="nav-number">1.11.3.</span> <span class="nav-text">UDAF</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -836,7 +1024,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">222</span>
+          <span class="site-state-item-count">411</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -849,7 +1037,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-count">118</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

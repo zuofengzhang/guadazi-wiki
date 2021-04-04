@@ -183,7 +183,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL-syntactic-sugar/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/images/java/JVM/vx/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-SQL-syntactic-sugar/" class="post-title-link" itemprop="url">Flink-语法糖</a>
+            <a href="/images/java/JVM/vx/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -207,23 +207,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
+              <time title="Created: 2021-04-04 08:25:39" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:39+08:00">2021-04-04</time>
             </span>
 
           
@@ -237,43 +221,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-SQL语法"><a href="#Flink-SQL语法" class="headerlink" title="Flink-SQL语法"></a>Flink-SQL语法</h1><p><a target="_blank" rel="noopener" href="https://github.com/ververica/sql-training/wiki">Apache Flink SQL training</a></p>
-<h2 id="group-window"><a href="#group-window" class="headerlink" title="group window"></a>group window</h2><p>groupByWindow会直接生成回撤流</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span>       </span><br><span class="line"><span class="keyword">into</span></span><br><span class="line">    dim_result_lct_activy_config</span><br><span class="line">    <span class="keyword">select</span></span><br><span class="line">        Fact_id,</span><br><span class="line">        <span class="built_in">LAST_VALUE</span>(Fact_name),</span><br><span class="line">        regexp_Replace( <span class="built_in">LAST_VALUE</span>(Fact_start_time), <span class="string">&#x27;-|:|\s&#x27;</span>,<span class="string">&#x27;&#x27;</span>) <span class="keyword">as</span> startTime,</span><br><span class="line">        regexp_Replace(<span class="built_in">LAST_VALUE</span>(Fact_end_time),<span class="string">&#x27;-|:|\s&#x27;</span>,<span class="string">&#x27;&#x27;</span>) <span class="keyword">as</span> endTime,</span><br><span class="line">        <span class="built_in">LAST_VALUE</span>(Fstate)                               </span><br><span class="line">    <span class="keyword">from</span></span><br><span class="line">        db_act_config_t_act_logic_config         </span><br><span class="line">    <span class="keyword">group</span> <span class="keyword">by</span></span><br><span class="line">        Fact_id</span><br></pre></td></tr></table></figure>
-<p>这是一个同步数据的demo，db_act_config_t_act_logic_config 是kafka数据源，来自源MySQL的变更数据；dim_result_lct_activy_config是目的表，Fact_id为主键。</p>
-<h4 id="group-window生成retract-stream"><a href="#group-window生成retract-stream" class="headerlink" title="group window生成retract stream"></a>group window生成retract stream</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> mysql_sink <span class="keyword">select</span> fkey,<span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">as</span> cnt <span class="keyword">from</span> kafka_source <span class="keyword">group</span> <span class="keyword">by</span> fkey</span><br></pre></td></tr></table></figure>
-<p>上述语句是一个group window, 每从kafka中过来一条数据，都会产生两条记录(<code>Tuple2&lt;Row,Boolean&gt;</code>), 删除旧记录，添加新记录。</p>
-<p>group window会产生 <code>retract stream</code>, 下游系统必须支持<code>retract stream</code>，(目前共有三种sink: <code>AppendStreamSink</code>, <code>UpsertStreamSink</code>, <code>RetractStreamSink</code> )</p>
-<p>Flink-connector-JDBC 使用的是<code>JDBCUpsertTableSink.java</code>写入MySQL, 支持Retract</p>
-<p> <a target="_blank" rel="noopener" href="https://github.com/apache/flink/tree/master/flink-connectors/flink-jdbc/src/main/java/org/apache/flink/api/java/io/jdbc">https://github.com/apache/flink/tree/master/flink-connectors/flink-jdbc/src/main/java/org/apache/flink/api/java/io/jdbc</a> </p>
-<p>Flink-connector-kafka 实现的是 <code>AppendStreamSink</code>，只支持insert，不支持retract. 会报错</p>
-<p><code>AppendStreamTableSink requires that Table has only insert changes</code></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> mysql_sink <span class="keyword">select</span> fkey,<span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">as</span> cnt <span class="keyword">from</span> kafka_source</span><br></pre></td></tr></table></figure>
-<p>如果不带<code>group by</code>, 无法推导出unique key, 无法按照unique key更新</p>
-<p><a target="_blank" rel="noopener" href="http://apache-flink.147419.n8.nabble.com/FlinkSQL-Upsert-Retraction-MySQL-td2785.html">http://apache-flink.147419.n8.nabble.com/FlinkSQL-Upsert-Retraction-MySQL-td2785.html</a></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * Get dialect upsert statement, the database has its own upsert syntax, such as Mysql </span></span><br><span class="line"><span class="comment"> * using DUPLICATE KEY UPDATE, and PostgresSQL using ON CONFLICT... DO UPDATE SET.. </span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@return</span> None if dialect does not support upsert statement, the writer will degrade to </span></span><br><span class="line"><span class="comment"> * the use of select + update/insert, this performance is poor. </span></span><br><span class="line"><span class="comment"> */</span> </span><br><span class="line"><span class="function"><span class="keyword">default</span> Optional&lt;String&gt; <span class="title">getUpsertStatement</span><span class="params">( </span></span></span><br><span class="line"><span class="function"><span class="params">   String tableName, String[] fieldNames, String[] uniqueKeyFields)</span> </span>&#123; </span><br><span class="line"><span class="keyword">return</span> Optional.empty(); </span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
-
-<p>不同的数据库产品有不同的语句，所以默认实现是delete +insert </p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span> </span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">executeBatch</span><span class="params">()</span> <span class="keyword">throws</span> SQLException </span>&#123; </span><br><span class="line">  <span class="keyword">if</span> (keyToRows.size() &gt; <span class="number">0</span>) &#123; </span><br><span class="line">  <span class="keyword">for</span> (Map.Entry&lt;Row, Tuple2&lt;Boolean, Row&gt;&gt; entry : keyToRows.entrySet()) &#123; </span><br><span class="line">       Row pk = entry.getKey(); </span><br><span class="line">       Tuple2&lt;Boolean, Row&gt; tuple = entry.getValue(); </span><br><span class="line">       <span class="keyword">if</span> (tuple.f0) &#123; </span><br><span class="line">          processOneRowInBatch(pk, tuple.f1); </span><br><span class="line">       &#125; <span class="keyword">else</span> &#123; </span><br><span class="line">          setRecordToStatement(deleteStatement, pkTypes, pk); </span><br><span class="line">          deleteStatement.addBatch(); </span><br><span class="line">       &#125; </span><br><span class="line">     &#125; </span><br><span class="line">     internalExecuteBatch(); </span><br><span class="line">     deleteStatement.executeBatch(); </span><br><span class="line">     keyToRows.clear(); </span><br><span class="line">  &#125; </span><br><span class="line">&#125; </span><br></pre></td></tr></table></figure>
-<h2 id="Over-window"><a href="#Over-window" class="headerlink" title="Over window"></a>Over window</h2><p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/92654574">SQL窗口函数</a> 传统SQL窗口函数的介绍</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> </span><br><span class="line">	to_char(SYSTIMESTAMP(),<span class="string">&#x27;yyyymmddhh24miss&#x27;</span>) fetl_time,</span><br><span class="line">	<span class="operator">*</span> </span><br><span class="line"><span class="keyword">from</span></span><br><span class="line">(</span><br><span class="line">  <span class="keyword">select</span></span><br><span class="line">      <span class="operator">*</span>,</span><br><span class="line">  		<span class="built_in">row_number</span>() <span class="keyword">over</span>(<span class="keyword">partition</span> <span class="keyword">by</span> fid <span class="keyword">order</span> <span class="keyword">by</span> fmodify_time <span class="keyword">desc</span>,exp_time_stample_order <span class="keyword">desc</span>) rn </span><br><span class="line">  <span class="keyword">from</span> </span><br><span class="line">  		db.table1 </span><br><span class="line">  <span class="keyword">where</span> </span><br><span class="line">  		fdate<span class="operator">=</span><span class="number">20210101</span></span><br><span class="line">) t</span><br><span class="line"><span class="keyword">where</span> rn<span class="operator">=</span><span class="number">1</span> </span><br></pre></td></tr></table></figure>
-
-
-<h3 id="OVER-窗口应用示例"><a href="#OVER-窗口应用示例" class="headerlink" title="OVER 窗口应用示例"></a>OVER 窗口应用示例</h3><p>首先通过 DDL 定义源数据表和结果表，如下输入是用户行为消息，输出到计算结果消息。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `user_action` (</span><br><span class="line">    `user_id` <span class="type">VARCHAR</span>,</span><br><span class="line">    `page_id` <span class="type">VARCHAR</span>,</span><br><span class="line">    `action_type` <span class="type">VARCHAR</span>,</span><br><span class="line">    `event_time` <span class="type">TIMESTAMP</span>,</span><br><span class="line">    WATERMARK <span class="keyword">FOR</span> event_time <span class="keyword">AS</span> event_time <span class="operator">-</span> <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span></span><br><span class="line">) <span class="keyword">WITH</span> (</span><br><span class="line">    <span class="string">&#x27;connector.type&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;kafka&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;connector.topic&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;user_action&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;connector.version&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;0.11&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;connector.properties.0.key&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;bootstrap.servers&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;connector.properties.0.value&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;xxx:9092&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;connector.startup-mode&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;latest-offset&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;update-mode&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;append&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;...&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;...&#x27;</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `agg_result` (</span><br><span class="line">    `user_id` <span class="type">VARCHAR</span>,</span><br><span class="line">    `page_id` <span class="type">VARCHAR</span>,</span><br><span class="line">    `result_type` <span class="type">VARCHAR</span>,</span><br><span class="line">    `result_value` <span class="type">BIGINT</span></span><br><span class="line">) <span class="keyword">WITH</span> (</span><br><span class="line">    <span class="string">&#x27;connector.type&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;kafka&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;connector.topic&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;agg_result&#x27;</span>,</span><br><span class="line">    <span class="string">&#x27;...&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;...&#x27;</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-<p>场景一，实时触发的最近2小时用户+页面维度的点击量，注意窗口是向前2小时，类似于实时触发的滑动窗口。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span></span><br><span class="line">    agg_result</span><br><span class="line"><span class="keyword">select</span></span><br><span class="line">    user_id,</span><br><span class="line">    page_id,</span><br><span class="line">    <span class="string">&#x27;click-type1&#x27;</span> <span class="keyword">as</span> result_type</span><br><span class="line">    <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">OVER</span> (</span><br><span class="line">        <span class="keyword">PARTITION</span> <span class="keyword">BY</span> user_id, page_id</span><br><span class="line">        <span class="keyword">ORDER</span> <span class="keyword">BY</span> event_time </span><br><span class="line">        <span class="keyword">RANGE</span> <span class="keyword">BETWEEN</span> <span class="type">INTERVAL</span> <span class="string">&#x27;2&#x27;</span> <span class="keyword">HOUR</span> PRECEDING <span class="keyword">AND</span> <span class="keyword">CURRENT</span> <span class="type">ROW</span></span><br><span class="line">    ) <span class="keyword">as</span> result_value</span><br><span class="line"><span class="keyword">from</span></span><br><span class="line">    user_action</span><br><span class="line"><span class="keyword">where</span></span><br><span class="line">    action_type <span class="operator">=</span> <span class="string">&#x27;click&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>场景二，实时触发的当天用户+页面维度的浏览量，这就是开篇问题解法，其中多了一个日期维度分组条件，这样就做到输出结果从滑动时间转为固定时间（根据时间区间分组），因为 WATERMARK 机制，今天并不会有昨天数据到来（如果有都被自动抛弃），因此只会输出今天的分组结果。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span></span><br><span class="line">    agg_result</span><br><span class="line"><span class="keyword">select</span></span><br><span class="line">    user_id,</span><br><span class="line">    page_id,</span><br><span class="line">    <span class="string">&#x27;view-type1&#x27;</span> <span class="keyword">as</span> result_type</span><br><span class="line">    <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">OVER</span> (</span><br><span class="line">        <span class="keyword">PARTITION</span> <span class="keyword">BY</span> user_id, page_id, DATE_FORMAT(event_time, <span class="string">&#x27;yyyyMMdd&#x27;</span>)</span><br><span class="line">        <span class="keyword">ORDER</span> <span class="keyword">BY</span> event_time </span><br><span class="line">        <span class="keyword">RANGE</span> <span class="keyword">BETWEEN</span> <span class="type">INTERVAL</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">DAY</span> PRECEDING <span class="keyword">AND</span> <span class="keyword">CURRENT</span> <span class="type">ROW</span></span><br><span class="line">    ) <span class="keyword">as</span> result_value</span><br><span class="line"><span class="keyword">from</span></span><br><span class="line">    user_action</span><br><span class="line"><span class="keyword">where</span></span><br><span class="line">    action_type <span class="operator">=</span> <span class="string">&#x27;view&#x27;</span></span><br></pre></td></tr></table></figure>
-<p>场景三，实时触发的当天用户+页面点击率 CTR（Click-Through-Rate），这相比前面增加了多个 OVER 聚合计算，可以将窗口定义写在最后。注意示例中缺少了类型转换，因为除法结果是 decimal，也缺少精度处理函数 ROUND。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span></span><br><span class="line">    agg_result</span><br><span class="line"><span class="keyword">select</span></span><br><span class="line">    user_id,</span><br><span class="line">    page_id,</span><br><span class="line">    <span class="string">&#x27;ctr-type1&#x27;</span> <span class="keyword">as</span> result_type,</span><br><span class="line">    <span class="built_in">sum</span>(</span><br><span class="line">        <span class="keyword">case</span></span><br><span class="line">            <span class="keyword">when</span> action_type <span class="operator">=</span> <span class="string">&#x27;click&#x27;</span> <span class="keyword">then</span> <span class="number">1</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">        <span class="keyword">end</span></span><br><span class="line">    ) <span class="keyword">OVER</span> w </span><br><span class="line">    <span class="operator">/</span> </span><br><span class="line">    if(</span><br><span class="line">        <span class="built_in">sum</span>(</span><br><span class="line">            <span class="keyword">case</span></span><br><span class="line">                <span class="keyword">when</span> action_type <span class="operator">=</span> <span class="string">&#x27;view&#x27;</span> <span class="keyword">then</span> <span class="number">1</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">            <span class="keyword">end</span></span><br><span class="line">        ) <span class="keyword">OVER</span> w <span class="operator">=</span> <span class="number">0</span>,</span><br><span class="line">        <span class="number">1</span>,</span><br><span class="line">        <span class="built_in">sum</span>(</span><br><span class="line">            <span class="keyword">case</span></span><br><span class="line">                <span class="keyword">when</span> action_type <span class="operator">=</span> <span class="string">&#x27;view&#x27;</span> <span class="keyword">then</span> <span class="number">1</span> <span class="keyword">else</span> <span class="number">0</span></span><br><span class="line">            <span class="keyword">end</span></span><br><span class="line">        ) <span class="keyword">OVER</span> w</span><br><span class="line">    )</span><br><span class="line">    <span class="keyword">as</span> result_value</span><br><span class="line"><span class="keyword">from</span></span><br><span class="line">    user_action</span><br><span class="line"><span class="keyword">where</span></span><br><span class="line">    <span class="number">1</span> <span class="operator">=</span> <span class="number">1</span> </span><br><span class="line"><span class="keyword">WINDOW</span> w <span class="keyword">AS</span> (</span><br><span class="line">        <span class="keyword">PARTITION</span> <span class="keyword">BY</span> user_id, page_id, DATE_FORMAT(event_time,<span class="string">&#x27;yyyyMMdd&#x27;</span>)</span><br><span class="line">        <span class="keyword">ORDER</span> <span class="keyword">BY</span> event_time </span><br><span class="line">        <span class="keyword">RANGE</span> <span class="keyword">BETWEEN</span> <span class="type">INTERVAL</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">DAY</span> PRECEDING <span class="keyword">AND</span> <span class="keyword">CURRENT</span> <span class="type">ROW</span></span><br><span class="line">    )</span><br></pre></td></tr></table></figure>
-<p>此外，OVER 窗口聚合还可以支持查询子句、关联查询、UNION ALL 等组合，并可以实现对关联出来的列进行聚合等复杂情况。</p>
-<h3 id="实时TopN"><a href="#实时TopN" class="headerlink" title="实时TopN"></a>实时TopN</h3><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/wangpei1949/article/details/105471974">SQL实时TopN</a></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> source_kafka </span><br><span class="line">( </span><br><span class="line">    userID String, </span><br><span class="line">    eventType String, </span><br><span class="line">    eventTime String, </span><br><span class="line">    productID String </span><br><span class="line">) <span class="keyword">with</span> ( </span><br><span class="line">    <span class="string">&#x27;connector.type&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;kafka&#x27;</span>, </span><br><span class="line">    <span class="string">&#x27;connector.version&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;0.10&#x27;</span>, </span><br><span class="line">    <span class="string">&#x27;connector.properties.bootstrap.servers&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;kafka01:9092&#x27;</span>, </span><br><span class="line">    <span class="string">&#x27;connector.properties.zookeeper.connect&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;kafka01:2181&#x27;</span>, </span><br><span class="line">    <span class="string">&#x27;connector.topic&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;test_1&#x27;</span>, </span><br><span class="line">    <span class="string">&#x27;connector.properties.group.id&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;c1_test_1&#x27;</span>, </span><br><span class="line">    <span class="string">&#x27;connector.startup-mode&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;latest-offset&#x27;</span>, </span><br><span class="line">    <span class="string">&#x27;format.type&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;json&#x27;</span> </span><br><span class="line">);</span><br><span class="line"><span class="keyword">create</span> <span class="keyword">table</span> sink_mysql</span><br><span class="line">(</span><br><span class="line">    datetime STRING,</span><br><span class="line">    productID STRING,</span><br><span class="line">    userID STRING,</span><br><span class="line">    clickPV <span class="type">BIGINT</span></span><br><span class="line">) <span class="keyword">with</span> (</span><br><span class="line"><span class="string">&#x27;connector.type&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;jdbc&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;connector.url&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;jdbc:mysql://localhost:3306/bigdata&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;connector.table&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;t_product_click_topn&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;connector.username&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;root&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;connector.password&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;bigdata&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;connector.write.flush.max-rows&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;50&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;connector.write.flush.interval&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;2s&#x27;</span>,</span><br><span class="line"><span class="string">&#x27;connector.write.max-retries&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;3&#x27;</span></span><br><span class="line">);</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> sink_mysql </span><br><span class="line"><span class="keyword">SELECT</span> datetime, productID, userID, clickPV </span><br><span class="line"><span class="keyword">FROM</span> ( </span><br><span class="line">  <span class="keyword">SELECT</span> <span class="operator">*</span>, </span><br><span class="line">     <span class="built_in">ROW_NUMBER</span>() <span class="keyword">OVER</span> (<span class="keyword">PARTITION</span> <span class="keyword">BY</span> datetime, productID <span class="keyword">ORDER</span> <span class="keyword">BY</span> clickPV <span class="keyword">desc</span>) <span class="keyword">AS</span> rownum </span><br><span class="line">  <span class="keyword">FROM</span> ( </span><br><span class="line">        <span class="keyword">SELECT</span> <span class="built_in">SUBSTRING</span>(eventTime,<span class="number">1</span>,<span class="number">13</span>) <span class="keyword">AS</span> datetime, </span><br><span class="line">            productID, </span><br><span class="line">            userID, </span><br><span class="line">            <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">AS</span> clickPV </span><br><span class="line">        <span class="keyword">FROM</span> source_kafka </span><br><span class="line">        <span class="keyword">GROUP</span> <span class="keyword">BY</span> <span class="built_in">SUBSTRING</span>(eventTime,<span class="number">1</span>,<span class="number">13</span>), productID, userID </span><br><span class="line">    ) a </span><br><span class="line">) t </span><br><span class="line"><span class="keyword">WHERE</span> rownum <span class="operator">&lt;=</span> <span class="number">3</span>&quot;;               </span><br></pre></td></tr></table></figure>
-
-
-<h3 id="OVER-窗口问题和优化"><a href="#OVER-窗口问题和优化" class="headerlink" title="OVER 窗口问题和优化"></a>OVER 窗口问题和优化</h3><p>在底层实现中，所有细分 OVER 窗口的数据都是共享的，只存一份，这点不像滑动窗口会保存多份窗口数据。但是 OVER  窗口会把所有数据明细存在状态后端中（内存、RocksDB 或  HDFS），每一次窗口计算后会清除过期数据。因此如果向前窗口时间较大，或数据明细过多，可能会占用大量内存，即使通过 RocksDB  存在磁盘上，也有因为磁盘访问慢导致性能下降进而产生反压问题。在实现源码 <code>RowTimeRangeBoundedPrecedingFunction</code> 可以看到虽然每次窗口计算时新增聚合值和减少过期聚合值是增量式的，不用遍历全部窗口明细，但是为了计算过期数据，即超过 PRECEDING  的数据，仍然需要把存储的那些时间戳全部拿出来遍历，判断是否过期，以及是否要减少聚合值。我们尝试了通过数据有序性减少查询操作，但是效果并不明显，目前主要是配置调优和加大任务分片数进行优化。</p>
-
+          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"ClassLoader-01.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"jvm-heap-generations.jpg","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"jvm-stack-frame.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"jvm-struct-thread.jpg","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"jvm-struct.jpg","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
       
     </div>
 
@@ -292,7 +240,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL-temporal-table-join/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/images/java/io/NIO/vx/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -306,7 +254,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-SQL-temporal-table-join/" class="post-title-link" itemprop="url">Flink-temporal-table-join</a>
+            <a href="/images/java/io/NIO/vx/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -316,23 +264,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
+              <time title="Created: 2021-04-04 08:25:39" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:39+08:00">2021-04-04</time>
             </span>
 
           
@@ -346,43 +278,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-temporal-table-join"><a href="#Flink-temporal-table-join" class="headerlink" title="Flink-temporal-table-join"></a>Flink-temporal-table-join</h1><p>Temporal Table记录了表历史上任何时间点所有的数据改动</p>
-<h2 id="ANSI-SQL-2011-Temporal-Table示例"><a href="#ANSI-SQL-2011-Temporal-Table示例" class="headerlink" title="ANSI-SQL 2011 Temporal Table示例"></a>ANSI-SQL 2011 Temporal Table示例</h2><p>我们以一个DDL和一套DML示例说明Temporal Table的原理，DDL定义PK是可选的，下面的示例我们以不定义PK的为例进行说明：</p>
-<ul>
-<li>  DDL 示例</li>
-</ul>
-<p>CREATE TABLE Emp<br>ENo INTEGER,<br>Sys_start TIMESTAMP(12) GENERATED<br>ALWAYS AS ROW START,<br>Sys_end TIMESTAMP(12) GENERATED<br>ALWAYS AS ROW END,<br>EName VARCHAR(30),<br>PERIOD FOR SYSTEM_TIME (Sys_start,Sys_end)<br>) WITH SYSTEM VERSIONING</p>
-<ul>
-<li>DML 示例<ul>
-<li>  INSERT</li>
-</ul>
-</li>
-</ul>
-<p>INSERT INTO Emp (ENo, EName) VALUES (22217, ‘Joe’)</p>
-<p><a target="_blank" rel="noopener" href="https://img.colabug.com/2018/06/5ed5fa9fbdc39f3a26b3dec9816bf691.png" title="Blink 漫谈系列 - Temporal Table JOIN"><img src="vx_images/3323646810742.png"></a></p>
-<p>说明: 其中Sys_Start和Sys_End是数据库系统默认填充的。</p>
-<ul>
-<li><ul>
-<li>  UPDATE</li>
-</ul>
-</li>
-</ul>
-<p>UPDATE Emp SET EName = ‘Tom’ WHERE ENo = 22217</p>
-<p><a target="_blank" rel="noopener" href="https://img.colabug.com/2018/06/a7750b4fe6d6d7a9aa6f826a2e2c91e9.png" title="Blink 漫谈系列 - Temporal Table JOIN"><img src="vx_images/3312923484991.png"></a></p>
-<p>说明: 假设是在 <code>2012-02-03 10:00:00</code> 执行的UPDATE，执行之后上一个值 <code>&quot;Joe&quot;</code> 的Sys_End值由 <code>9999-12-31 23:59:59</code> 变成了 <code>2012-02-03 10:00:00</code> , 也就是下一个值 <code>&quot;Tom&quot;</code> 生效的开始时间。可见我们执行的是UPDATE但是数据库里面会存在两条数据，数据值和有效期不同，也就是版本不同 。</p>
-<ul>
-<li>  DELETE (假设执行DELETE之前的表内容如下)</li>
-</ul>
-<p><a target="_blank" rel="noopener" href="https://img.colabug.com/2018/06/d4524993a5a38ee8e41362845e9cab04.png" title="Blink 漫谈系列 - Temporal Table JOIN"><img src="vx_images/3301614695899.png"></a></p>
-<p>DELETE FROM Emp WHERE ENo = 22217</p>
-<p><a target="_blank" rel="noopener" href="https://img.colabug.com/2018/06/f8cd8a5d23000609cbc13cbb17508e84.png" title="Blink 漫谈系列 - Temporal Table JOIN"><img src="vx_images/3291132138376.png"></a></p>
-<p>说明: 假设我们是在 <code>2012-06-01 00:00:00</code> 执行的DELETE，则Sys_End值由 <code>9999-12-31 23:59:59</code> 变成了 <code>2012-06-01 00:00:00</code> , 也就是在执行DELETE时候没有真正的删除符合条件的行，而是系统将符合条件的行的Sys_end修改为执行DELETE的事物时间。标识数据的有效期到DELETE执行那一刻为止。</p>
-<ul>
-<li>  SELECT</li>
-</ul>
-<p>SELECT ENo,EName,Sys_Start,Sys_End FROM Emp<br>FOR SYSTEM_TIME AS OF TIMESTAMP ‘2011-01-02 00:00:00’</p>
-<p>说明: 这个查询会返回所有 <code>Sys_start &lt;= 2011-01-02 00:00:00</code> 并且 <code>Sys_end &gt; 2011-01-02 00:00:00</code> 的记录。</p>
-
+          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"01.gif","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"02.gif","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"03.gif","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"04.gif","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"05.gif","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"06.gif","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"07.gif","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"08.gif","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"09.gif","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
       
     </div>
 
@@ -401,7 +297,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-connector-hippo/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/images/java/io/model/vx/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -415,7 +311,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-connector-hippo/" class="post-title-link" itemprop="url">Flink connector hippo</a>
+            <a href="/images/java/io/model/vx/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -425,23 +321,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
+              <time title="Created: 2021-04-04 08:25:39" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:39+08:00">2021-04-04</time>
             </span>
 
           
@@ -455,15 +335,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-connector-hippo"><a href="#Flink-connector-hippo" class="headerlink" title="Flink-connector-hippo"></a>Flink-connector-hippo</h1><h2 id="broker分拆"><a href="#broker分拆" class="headerlink" title="broker分拆"></a>broker分拆</h2><p>获取子任务的index</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> taskId = <span class="keyword">this</span>.getRuntimeContext().getIndexOfThisSubtask();</span><br></pre></td></tr></table></figure>
-<h2 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h2><p>实现CheckpointedFunction</p>
-<p>在ListState中保存每个broker的偏移量 </p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ListState&lt;Tuple2&lt;String, String&gt;&gt; offsetState;</span><br></pre></td></tr></table></figure>
-
-<h2 id="watermark生成"><a href="#watermark生成" class="headerlink" title="watermark生成"></a>watermark生成</h2><h2 id="hippo-pullConsumer"><a href="#hippo-pullConsumer" class="headerlink" title="hippo pullConsumer"></a>hippo pullConsumer</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ConsumerConfig config =</span><br><span class="line">                <span class="keyword">new</span> ConsumerConfig(masterAddress, consumerGroup);</span><br><span class="line"><span class="keyword">if</span> (!isRestored &amp;&amp; bootstrapFromMax) &#123;</span><br><span class="line">    config.setConsumeFromMax(<span class="keyword">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">messagePullConsumer = <span class="keyword">new</span> PullMessageConsumer(config);</span><br></pre></td></tr></table></figure>
-<h2 id="子任务的checkpointLock"><a href="#子任务的checkpointLock" class="headerlink" title="子任务的checkpointLock"></a>子任务的checkpointLock</h2><p>往下游放入消息必须加锁</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SourceContext&lt;<span class="keyword">byte</span>[]&gt;.getCheckpointLock()</span><br></pre></td></tr></table></figure>
+          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"asynchronousIO.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"blocking.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"comparison.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"comparison2.jpg","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"ioMultiplexing.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"noblocking.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"proactor.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"reactor.png","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
       
     </div>
 
@@ -482,7 +354,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-data-skew/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/images/java/io/vx/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -496,7 +368,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-data-skew/" class="post-title-link" itemprop="url">Flink数据倾斜</a>
+            <a href="/images/java/io/vx/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -506,23 +378,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
+              <time title="Created: 2021-04-04 08:25:39" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:39+08:00">2021-04-04</time>
             </span>
 
           
@@ -536,12 +392,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-data-skew"><a href="#Flink-data-skew" class="headerlink" title="Flink-data-skew"></a>Flink-data-skew</h1><p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/nazeniwaresakini/article/details/104220120">用两阶段聚合法解决keyBy算子倾斜</a></li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/a1240466196/article/details/109012584">Flink调优: 数据倾斜优化</a></li>
-</ol>
-
+          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"InputStream-OutputStream-match.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"java-io-inheritance.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"java-io-InputStream.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"java-io-OutputStream.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"java-io-package.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"java-io-Reader.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"java-io-Writer.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"jsonFormat.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"Object.xmind","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"Reader-Writer-match.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"对应关系.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"过滤器对应关系.png","tags":[]}],"folders":[{"name":"model"},{"name":"NIO"}],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
       
     </div>
 
@@ -560,7 +411,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-runtime/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/images/java/vx/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -574,7 +425,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-runtime/" class="post-title-link" itemprop="url">Flink runtime</a>
+            <a href="/images/java/vx/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -584,23 +435,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
+              <time title="Created: 2021-04-04 08:25:39" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:39+08:00">2021-04-04</time>
             </span>
 
           
@@ -614,11 +449,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-runtime运行时"><a href="#Flink-runtime运行时" class="headerlink" title="Flink-runtime运行时"></a>Flink-runtime运行时</h1><h2 id="Task-share"><a href="#Task-share" class="headerlink" title="Task share"></a>Task share</h2><h2 id="Chain"><a href="#Chain" class="headerlink" title="Chain"></a>Chain</h2><p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://www.infoq.cn/article/RWTM9o0SHHV3Xr8o8giT">Apache Flink进阶一: Runtime核心机制剖析</a></li>
-</ol>
-
+          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"JSSE-classes.gif","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"quartz-central.png","tags":[]}],"folders":[{"name":"Collection_Map"},{"name":"image"},{"name":"io"},{"name":"jdbc"},{"name":"JVM"},{"name":"multithread"},{"name":"performance"},{"name":"socket"},{"name":"Throwable"},{"name":"util"}],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
       
     </div>
 
@@ -637,7 +468,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-syncIO/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/images/java/util/vx/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -651,7 +482,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-syncIO/" class="post-title-link" itemprop="url">Flink asyncIO</a>
+            <a href="/images/java/util/vx/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -661,23 +492,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
+              <time title="Created: 2021-04-04 08:25:39" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:39+08:00">2021-04-04</time>
             </span>
 
           
@@ -691,66 +506,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-asyncIO"><a href="#Flink-asyncIO" class="headerlink" title="Flink-asyncIO"></a>Flink-asyncIO</h1><p> <img src="_v_images/20201207210251979_867932479.png"></p>
-<p>阿里贡献给flink的，优点就不说了嘛，官网上都有，就是写库不会阻塞性能更好</p>
-<p>然后来看一下， Flink 中异步io主要分为两种</p>
-<p>　　一种是有序Ordered</p>
-<p>　　一种是无序UNordered</p>
-<p>主要区别是往下游output的顺序（注意这里顺序不是写库的顺序既然都异步了写库的顺序自然是无法保证的），有序的会按接收的顺序继续往下游output发送，无序就是谁先处理完谁就先往下游发送</p>
-<p>两张图了解这两种模式的实现</p>
-<p> <img src="_v_images/20201207210251873_2096107056.png"></p>
-<p>有序：record数据会通过异步线程写库，Emitter是一个守护进程，会不停的拉取queue头部的数据，如果头部的数据异步写库完成，Emitter将头数据往下游发送，如果头元素还没有异步写库完成，柱塞 <img src="_v_images/20201207210251766_1309898873.png">     </p>
-<p>无序：record数据会通过异步线程写库，这里有两个queue,一开始放在uncompleteedQueue，当哪个record异步写库成功后就直接放到completedQueue中，Emitter是一个守护进程，completedQueue只要有数据，会不停的拉取queue数据往下游发送 </p>
-<p>可以看到原理还是很简单的，两句话就总结完了，就是利用queue和java的异步线程，现在来看下源码</p>
-<p>这里AsyncIO在Flink中被设计成operator中的一种，自然去OneInputStreamOperator的实现类中去找</p>
-<p>于是来看一下AsyncWaitOperator.java</p>
-<p>　　<img src="_v_images/20201207210251559_1488153726.png"></p>
-<p>看到它的open方法（open方法会在taskmanager启动job的时候全部统一调用，可以翻一下以前的文章）</p>
-<p>这里启动了一个守护线程Emitter,来看下线程具体做了什么</p>
-<p> <img src="_v_images/20201207210251351_312304785.png"></p>
-<p> 1处拉取数据，2处就是常规的将拉取到的数据往下游emit，Emitter拉取数据，这里先不讲因为分为有序的和无序的</p>
-<p> 这里已经知道了这个Emitter的作用是循环的拉取数据往下游发送</p>
-<p> 回到AsyncWaitOperator.java在它的open方法初始化了Emitter,那它是如何处理接收到的数据的呢，看它的ProcessElement（）方法</p>
-<p> <img src="_v_images/20201207210251144_1378849400.png"></p>
-<pre><code>![](_v_images/20201207210250637_60325951.png)</code></pre>
-<p> <img src="_v_images/20201207210250031_255901575.png"></p>
-<p> 其实主要就是三个个方法</p>
-<p>先是！！！将record封装成了一个包装类StreamRecordQueueEntry，主要是这个包装类的构造方法中,创建了一个CompleteableFuture(这个的complete方法其实会等到用户代码执行的时候用户自己决定什么时候完成）</p>
-<p>1处主要就是讲元素加入到了对应的queue,这里也分为两种有序和无序的</p>
-<p> <img src="_v_images/20201207210249826_218236941.png"></p>
-<p>这里也先不讲这两种模式加入数据的区别</p>
-<p>接着2处就是调用用户的代码了，来看看官网的异步io的例子</p>
-<p> <img src="_v_images/20201207210249221_1218191589.png"></p>
-<p> 给了一个Future作为参数，用户自己起了一个线程（这里思考一下就知道了为什么要新起一个异步线程去执行，因为如果不起线程的话，那processElement方法就柱塞了，无法异步了）去写库读库等，然后调用了这个参数的complete方法（也就是前面那个包装类中的CompleteableFuture）并且传入了一个结果</p>
-<p>看下complete方法源码</p>
-<p> <img src="_v_images/20201207210248614_1185315462.png"></p>
-<p> 这个resultFuture是每个record的包装类StreamRecordQueueEntry的其中一个属性是一个CompletableFuture</p>
-<p> 那现在就清楚了，用户代码在自己新起的线程中当自己的逻辑执行完以后会使这个异步线程结束，并输入一个结果</p>
-<p> 那这个干嘛用的呢</p>
-<p>最开始的图中看到有序和无序实现原理，有序用一个queue,无序用两个queue分别就对应了</p>
-<p>OrderedStreamElementQueue类中</p>
-<p> <img src="_v_images/20201207210248409_107213650.png"></p>
-<p> UnorderedStreamElementQueue类中</p>
-<p> <img src="_v_images/20201207210248304_1712699416.png"></p>
-<p>回到前面有两个地方没有细讲，一是两种模式的Emitter是如何拉取数据的，二是两种模式下数据是如何加入OrderedStreamElementQueue的</p>
-<p>有序模式：</p>
-<p>1.先来看一下有序模式的，Emitter的数据拉取，和数据的加入</p>
-<p>　　　　其tryPut（）方法</p>
-<p>　　　　  <img src="_v_images/20201207210248099_682570540.png"></p>
-<p> 　　　  <img src="_v_images/20201207210247594_534665308.png"></p>
-<p> 　　　　<em>onComplete**方法</em></p>
-<p>　　　　　　　<em><img src="_v_images/20201207210247288_2059500658.png"></em></p>
-<pre><code>   onCompleteHandler方法</code></pre>
-<p>　　　　  　<img src="_v_images/20201207210247082_286767362.png">　</p>
-<p>　　这里比较绕，先将接收的数据加入queue中，然后onComplete()中当上一个异步线程getFuture() 其实就是每个元素包装类里面的那个CompletableFuture,当他结束时（会在用户方法用户调用complete时结束）异步调用传入的对象的 accept方法，accept方法中调用了onCompleteHandler（）方法，onCompleteHandler方法中会判断queue是否为空，以及queue的头元素是否完成了用户的异步方法，当完成的时候，就会将headIsCompleted这个对象signalAll（）唤醒</p>
-<p>2.接着看有序模式Emitter的拉取数据</p>
-<pre><code>   ![](_v_images/20201207210246482_1132368562.png)</code></pre>
-<p>   这里有序方式拉取数据的逻辑很清晰，如果为空或者头元素没有完成用户的异步方法，headIsCompleted这个对象会wait住（上面可以知道，当加入元素的到queue且头元素完成异步方法的时候会signalAll（））然后将头数据返回，往下游发送</p>
-<p>这样就实现了有序发送，因为Emitter只拉取头元素且已经完成用户异步方法的头元素</p>
-<p>无序模式： </p>
-<p>　　这里和有序模式就大同小异了，只是变成了,接收数据后直接加入uncompletedQueue，当数据完成异步方法的时候就，放到completedQueue里面去并signalAll（），只要completedqueue里面有数据，Emitter就拉取往下发</p>
-<p>这样就实现了无序模式，也就是异步写入谁先处理完就直接放到完成队列里面去，然后往下发，不用管接收数据的顺序</p>
-
+          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"imageCombinResult.png","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
       
     </div>
 
@@ -769,7 +525,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-window/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/images/java/Throwable/vx/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -783,7 +539,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-window/" class="post-title-link" itemprop="url">Flink-window</a>
+            <a href="/images/java/Throwable/vx/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -793,23 +549,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
+              <time title="Created: 2021-04-04 08:25:39" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:39+08:00">2021-04-04</time>
             </span>
 
           
@@ -823,21 +563,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-window"><a href="#Flink-window" class="headerlink" title="Flink-window"></a>Flink-window</h1><h2 id="窗口的触发"><a href="#窗口的触发" class="headerlink" title="窗口的触发"></a>窗口的触发</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line">SingleOutputStreamOperator&lt;ItemEntity&gt; streamOperator = env</span><br><span class="line">        .socketTextStream(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">9091</span>)</span><br><span class="line">        .map(<span class="keyword">new</span> MapFunction&lt;String, ItemEntity&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> ItemEntity <span class="title">map</span><span class="params">(String s)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                String[] split = <span class="keyword">null</span>;</span><br><span class="line">                <span class="keyword">if</span> (s.isEmpty() || (split = s.split(<span class="string">&quot;,&quot;</span>)).length != <span class="number">2</span>) &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                ItemEntity itemEntity = ItemEntity.builder().timestamp(split[<span class="number">0</span>])</span><br><span class="line">                        .eventId(split[<span class="number">1</span>])</span><br><span class="line">                        .build();</span><br><span class="line">                <span class="keyword">return</span> itemEntity;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;)</span><br><span class="line">        .filter(Objects::nonNull)</span><br><span class="line">        .assignTimestampsAndWatermarks(<span class="keyword">new</span> AscendingTimestampExtractor&lt;ItemEntity&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">extractAscendingTimestamp</span><span class="params">(ItemEntity itemEntity)</span> </span>&#123;</span><br><span class="line">                <span class="keyword">long</span> timestamp = itemEntity.getTimestamp();</span><br><span class="line">                <span class="keyword">return</span> timestamp;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">streamOperator</span><br><span class="line">        .keyBy(<span class="keyword">new</span> KeySelector&lt;ItemEntity, String&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> String <span class="title">getKey</span><span class="params">(ItemEntity itemEntity)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                String eventId = itemEntity.getEventId();</span><br><span class="line">                <span class="keyword">return</span> eventId;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;)</span><br><span class="line">        .window(TumblingEventTimeWindows.of(Time.seconds(<span class="number">5</span>)))</span><br><span class="line">        .process(</span><br><span class="line">                <span class="keyword">new</span> ProcessWindowFunction&lt;ItemEntity, Tuple2&lt;String, String&gt;, String, TimeWindow&gt;() &#123;</span><br><span class="line">                    <span class="meta">@Override</span></span><br><span class="line">                    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">process</span><span class="params">(String s, Context context,</span></span></span><br><span class="line"><span class="function"><span class="params">                            Iterable&lt;ItemEntity&gt; iterable,</span></span></span><br><span class="line"><span class="function"><span class="params">                            Collector&lt;Tuple2&lt;String, String&gt;&gt; collector)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">                        <span class="keyword">for</span> (ItemEntity itemEntity : iterable) &#123;</span><br><span class="line">                            <span class="keyword">long</span> timestamp = itemEntity.getTimestamp();</span><br><span class="line">                            Date date = <span class="keyword">new</span> Date(timestamp);</span><br><span class="line">                            SimpleDateFormat simpleDateFormat = <span class="keyword">new</span> SimpleDateFormat(</span><br><span class="line">                                    <span class="string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);</span><br><span class="line">                            collector.collect(Tuple2.of(itemEntity.getEventId(),</span><br><span class="line">                                    timestamp + <span class="string">&quot;-&gt;&quot;</span> + simpleDateFormat.format(date)));</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;)</span><br><span class="line">        .print();</span><br><span class="line">env.execute(<span class="string">&quot;test-window&quot;</span>);</span><br></pre></td></tr></table></figure>
-<p>5秒的窗口</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">2020-04-01 00:01:00,1</span><br><span class="line">2020-04-01 00:01:00,1</span><br><span class="line">2020-04-01 00:01:06,1 # 触发计算</span><br><span class="line">(1,1585670460000-&gt;2020-04-01 00:01:00)</span><br><span class="line">(1,1585670460000-&gt;2020-04-01 00:01:00)</span><br><span class="line">2020-04-01 00:01:00,1 # 窗口已经关闭，旧数据</span><br><span class="line"><span class="meta">#</span><span class="bash"> WARN  org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor [] - Timestamp monotony violated: 1585670460000 &lt; 1585670466000</span></span><br><span class="line">2020-04-01 00:01:06,1</span><br><span class="line">2020-04-01 00:01:07,1</span><br><span class="line">2020-04-01 00:01:11,1 # 触发计算</span><br><span class="line">(1,1585670466000-&gt;2020-04-01 00:01:06)</span><br><span class="line">(1,1585670466000-&gt;2020-04-01 00:01:06)</span><br><span class="line">(1,1585670467000-&gt;2020-04-01 00:01:07)</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="window的抽象概念"><a href="#window的抽象概念" class="headerlink" title="window的抽象概念"></a>window的抽象概念</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">Keyed Windows</span><br><span class="line"></span><br><span class="line">stream</span><br><span class="line">       .keyBy(...)               &lt;-  keyed versus non-keyed windows</span><br><span class="line">       .window(...)              &lt;-  required: &quot;assigner&quot;</span><br><span class="line">      [.trigger(...)]            &lt;-  optional: &quot;trigger&quot; (else default trigger)</span><br><span class="line">      [.evictor(...)]            &lt;-  optional: &quot;evictor&quot; (else no evictor)</span><br><span class="line">      [.allowedLateness(...)]    &lt;-  optional: &quot;lateness&quot; (else zero)</span><br><span class="line">      [.sideOutputLateData(...)] &lt;-  optional: &quot;output tag&quot; (else no side output for late data)</span><br><span class="line">       .reduce&#x2F;aggregate&#x2F;fold&#x2F;apply()      &lt;-  required: &quot;function&quot;</span><br><span class="line">      [.getSideOutput(...)]      &lt;-  optional: &quot;output tag&quot;</span><br><span class="line">Non-Keyed Windows</span><br><span class="line"></span><br><span class="line">stream</span><br><span class="line">       .windowAll(...)           &lt;-  required: &quot;assigner&quot;</span><br><span class="line">      [.trigger(...)]            &lt;-  optional: &quot;trigger&quot; (else default trigger)</span><br><span class="line">      [.evictor(...)]            &lt;-  optional: &quot;evictor&quot; (else no evictor)</span><br><span class="line">      [.allowedLateness(...)]    &lt;-  optional: &quot;lateness&quot; (else zero)</span><br><span class="line">      [.sideOutputLateData(...)] &lt;-  optional: &quot;output tag&quot; (else no side output for late data)</span><br><span class="line">       .reduce&#x2F;aggregate&#x2F;fold&#x2F;apply()      &lt;-  required: &quot;function&quot;</span><br><span class="line">      [.getSideOutput(...)]      &lt;-  optional: &quot;output tag&quot;</span><br></pre></td></tr></table></figure>
-<h3 id="window-assigner"><a href="#window-assigner" class="headerlink" title="window assigner"></a>window assigner</h3><h3 id="window-trigger"><a href="#window-trigger" class="headerlink" title="window trigger"></a>window trigger</h3><h3 id="window-evictor"><a href="#window-evictor" class="headerlink" title="window evictor"></a>window evictor</h3><h2 id="windowOperator工作流程"><a href="#windowOperator工作流程" class="headerlink" title="windowOperator工作流程"></a>windowOperator工作流程</h2><p><img src="_v_images/20201206173044901_44534749.png"></p>
-<h3 id="window-state"><a href="#window-state" class="headerlink" title="window state"></a>window state</h3><p><img src="_v_images/20201206173354630_1171217287.png"></p>
-<p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2016/05/25/flink-internals-window-mechanism/">flink原理与实现: window机制</a></li>
-<li><a target="_blank" rel="noopener" href="https://xie.infoq.cn/article/0d5038bc42862b3db79c571bd">flink窗口应用与实现</a></li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/a1240466196/article/details/108334436">Flink原理: 窗口原理详解</a></li>
-</ol>
-
+          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"inherit.png","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
       
     </div>
 
@@ -856,7 +582,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Uber-AthenaX/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/images/j2ee/hibernateAnnotation/vx/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -870,7 +596,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Uber-AthenaX/" class="post-title-link" itemprop="url">Uber-AthenaX</a>
+            <a href="/images/j2ee/hibernateAnnotation/vx/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -880,23 +606,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
+              <time title="Created: 2021-04-04 08:25:39" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:39+08:00">2021-04-04</time>
             </span>
 
           
@@ -910,7 +620,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Uber-AthenaX"><a href="#Uber-AthenaX" class="headerlink" title="Uber-AthenaX"></a>Uber-AthenaX</h1>
+          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"column.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"GeneratedValue.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"module.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"mtm.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"mtm_bfk.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"otm.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"otm_bfk.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"oto_bfk.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"oto_fk.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"oto_recombination.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"recombination_key.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"schema_catalog.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"schema_catalog2.png","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
       
     </div>
 
@@ -929,7 +639,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-SQL/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/images/j2ee/AJAX/vx/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -943,7 +653,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Spark/Spark-SQL/" class="post-title-link" itemprop="url">Spark SQL</a>
+            <a href="/images/j2ee/AJAX/vx/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -953,23 +663,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
+              <time title="Created: 2021-04-04 08:25:39" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:39+08:00">2021-04-04</time>
             </span>
 
           
@@ -983,75 +677,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Spark-SQL"><a href="#Spark-SQL" class="headerlink" title="Spark-SQL"></a>Spark-SQL</h1><table>
-<thead>
-<tr>
-<th align="left"><strong>优化规则</strong></th>
-<th align="left"><strong>规则名称</strong></th>
-<th align="left"><strong>简介</strong></th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">列裁剪</td>
-<td align="left">column_prune</td>
-<td align="left">对于上层算子不需要的列，不在下层算子输出该列，减少计算</td>
-</tr>
-<tr>
-<td align="left">子查询去关联</td>
-<td align="left">decorrelate</td>
-<td align="left">尝试对相关子查询进行改写，将其转换为普通 join 或 aggregation 计算</td>
-</tr>
-<tr>
-<td align="left">聚合消除</td>
-<td align="left">aggregation_eliminate</td>
-<td align="left">尝试消除执行计划中的某些不必要的聚合算子</td>
-</tr>
-<tr>
-<td align="left">投影消除</td>
-<td align="left">projection_eliminate</td>
-<td align="left">消除执行计划中不必要的投影算子</td>
-</tr>
-<tr>
-<td align="left">最大最小消除</td>
-<td align="left">max_min_eliminate</td>
-<td align="left">改写聚合中的 max/min 计算，转化为 <code>order by</code> + <code>limit 1</code></td>
-</tr>
-<tr>
-<td align="left">谓词下推</td>
-<td align="left">predicate_push_down</td>
-<td align="left">尝试将执行计划中过滤条件下推到离数据源更近的算子上</td>
-</tr>
-<tr>
-<td align="left">外连接消除</td>
-<td align="left">outer_join_eliminate</td>
-<td align="left">尝试消除执行计划中不必要的 left join 或者 right join</td>
-</tr>
-<tr>
-<td align="left">分区裁剪</td>
-<td align="left">partition_processor</td>
-<td align="left">将分区表查询改成为用 union all，并裁剪掉不满足过滤条件的分区</td>
-</tr>
-<tr>
-<td align="left">聚合下推</td>
-<td align="left">aggregation_push_down</td>
-<td align="left">尝试将执行计划中的聚合算子下推到更底层的计算节点</td>
-</tr>
-<tr>
-<td align="left">TopN 下推</td>
-<td align="left">topn_push_down</td>
-<td align="left">尝试将执行计划中的 TopN 算子下推到离数据源更近的算子上</td>
-</tr>
-<tr>
-<td align="left">Join 重排序</td>
-<td align="left">join_reorder</td>
-<td align="left">对多表 join 确定连接顺序</td>
-</tr>
-</tbody></table>
-<h2 id="逻辑优化"><a href="#逻辑优化" class="headerlink" title="逻辑优化"></a>逻辑优化</h2><h3 id="子查询相关的优化"><a href="#子查询相关的优化" class="headerlink" title="子查询相关的优化"></a>子查询相关的优化</h3><p>关联子查询去关联</p>
-<h3 id="列裁剪"><a href="#列裁剪" class="headerlink" title="列裁剪"></a>列裁剪</h3><h3 id="关联子查询去关联"><a href="#关联子查询去关联" class="headerlink" title="关联子查询去关联"></a>关联子查询去关联</h3><h3 id="Max-Min-消除"><a href="#Max-Min-消除" class="headerlink" title="Max/Min 消除"></a>Max/Min 消除</h3><h3 id="谓词下推"><a href="#谓词下推" class="headerlink" title="谓词下推"></a>谓词下推</h3><h3 id="分区裁剪"><a href="#分区裁剪" class="headerlink" title="分区裁剪"></a>分区裁剪</h3><h3 id="TopN-和-Limit-下推"><a href="#TopN-和-Limit-下推" class="headerlink" title="TopN 和 Limit 下推"></a>TopN 和 Limit 下推</h3><h3 id="Join-Reorder"><a href="#Join-Reorder" class="headerlink" title="Join Reorder"></a>Join Reorder</h3><h2 id="物理优化"><a href="#物理优化" class="headerlink" title="物理优化"></a>物理优化</h2><h3 id="选择最优的索引进行表的访问"><a href="#选择最优的索引进行表的访问" class="headerlink" title="选择最优的索引进行表的访问"></a>选择最优的索引进行表的访问</h3><h3 id="收集统计信息来获得表的数据分布情况"><a href="#收集统计信息来获得表的数据分布情况" class="headerlink" title="收集统计信息来获得表的数据分布情况"></a>收集统计信息来获得表的数据分布情况</h3><h3 id="在错误索引的解决方案中会介绍当发现-TiDB-索引选错时，你应该使用那些手段来让它使用正确的索引"><a href="#在错误索引的解决方案中会介绍当发现-TiDB-索引选错时，你应该使用那些手段来让它使用正确的索引" class="headerlink" title="在错误索引的解决方案中会介绍当发现 TiDB 索引选错时，你应该使用那些手段来让它使用正确的索引"></a>在错误索引的解决方案中会介绍当发现 TiDB 索引选错时，你应该使用那些手段来让它使用正确的索引</h3><h3 id="在-Distinct-优化中会介绍在物理优化中会做的一个有关-DISTINCT-关键字的优化，在这一小节中会介绍它的优缺点以及如何使用它。"><a href="#在-Distinct-优化中会介绍在物理优化中会做的一个有关-DISTINCT-关键字的优化，在这一小节中会介绍它的优缺点以及如何使用它。" class="headerlink" title="在 Distinct 优化中会介绍在物理优化中会做的一个有关 DISTINCT 关键字的优化，在这一小节中会介绍它的优缺点以及如何使用它。"></a>在 Distinct 优化中会介绍在物理优化中会做的一个有关 DISTINCT 关键字的优化，在这一小节中会介绍它的优缺点以及如何使用它。</h3><h2 id="参考文献"><a href="#参考文献" class="headerlink" title="[参考文献]"></a>[参考文献]</h2><ol>
-<li><a target="_blank" rel="noopener" href="https://www.infoq.cn/article/an-article-mastering-sql-on-hadoop-core-technology">The Business Intelligence for Hadoop Benchmark</a></li>
-</ol>
-
+          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"httpRequest.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"httpResponse.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"httpResponseContent.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"httpResponseStatue.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"httpResponseStatueCode.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"JQuery-ajax.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"jsonp.png","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
       
     </div>
 
@@ -1070,7 +696,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-join/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/images/j2ee/MySQL/vx/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1084,7 +710,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Spark/Spark-join/" class="post-title-link" itemprop="url">Spark join</a>
+            <a href="/images/j2ee/MySQL/vx/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -1094,23 +720,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-02-09 09:52:15" itemprop="dateModified" datetime="2021-02-09T09:52:15+08:00">2021-02-09</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
+              <time title="Created: 2021-04-04 08:25:39" itemprop="dateCreated datePublished" datetime="2021-04-04T08:25:39+08:00">2021-04-04</time>
             </span>
 
           
@@ -1124,38 +734,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Spark-Join"><a href="#Spark-Join" class="headerlink" title="Spark-Join"></a>Spark-Join</h1><h2 id="shuffle-join-VS-map-join"><a href="#shuffle-join-VS-map-join" class="headerlink" title="shuffle join VS map join"></a>shuffle join VS map join</h2><p>在对大表与大表之间进行连接操作时，通常都会触发 <code>Shuffle Join</code>，两表的所有分区节点会进行 <code>All-to-All</code> 的通讯，这种查询通常比较昂贵，会对网络 IO 会造成比较大的负担。</p>
-<p><img src="_v_images/20201009194634406_1569670303.png" alt="https://github.com/heibaiying"></p>
-<p>而对于大表和小表的连接操作，Spark 会在一定程度上进行优化，如果小表的数据量小于 Worker Node 的内存空间，Spark 会考虑将小表的数据广播到每一个 Worker Node，在每个工作节点内部执行连接计算，这可以降低网络的 IO，但会加大每个 Worker Node 的 CPU 负担。</p>
-<p><img src="_v_images/20201009194633499_170639920"></p>
-<p>是否采用广播方式进行 <code>Join</code> 取决于程序内部对小表的判断，如果想明确使用广播方式进行 <code>Join</code>，则可以在 DataFrame API 中使用 <code>broadcast</code> 方法指定需要广播的小表：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">empDF.join(broadcast(deptDF), joinExpression).show()</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
-
-<p>作者：heibaiying<br>链接：<a target="_blank" rel="noopener" href="https://juejin.im/post/6844903950349500430">https://juejin.im/post/6844903950349500430</a><br>来源：掘金<br>著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。</p>
-<h2 id="map-join小表误判"><a href="#map-join小表误判" class="headerlink" title="map-join小表误判"></a>map-join小表误判</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span> a是一个几亿行的大表，b是一个只有几十行的小表。a和b都是由hive创建的表</span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">where</span> id <span class="keyword">not</span> <span class="keyword">in</span> (<span class="keyword">select</span> id <span class="keyword">from</span> b)</span><br></pre></td></tr></table></figure>
-<p>在spark ui中看到了该sql的执行计划，该sql语句执行了Map-side Join操作，但是spark把a表当成了小表，准备把a表broadcast到其他的节点，然后就是一直卡在这步broadcast操作上。 造成上述问题的原因就是spark认为a表是一个小表，但是在spark ui上明显可以看到a表读了很多的行。但是为什么spark还会认为a表是一个小表呢？原因是spark判断一个hive表的大小会用hive的metastore数据来判断，因为我们的a表没有执行过ANALYZE TABLE，自然a表的metastore里面的数据就不准确了。</p>
-<h3 id="解决方法"><a href="#解决方法" class="headerlink" title="解决方法"></a>解决方法</h3><ol>
-<li><p>设置<code>spark.sql.statistics.fallBackToHdfs=True</code><br>该参数能让spark直接读取hdfs的文件大小来判断一个表达大小，从而代替从metastore里面的获取的关于表的信息。这样spark自然能正确的判断出表的大小，从而使用b表来进行broadcast。</p>
-</li>
-<li><p>使用hint<br>在使用sql语句执行的时候在sql语句里面加上mapjoin的注释，也能够达到相应的效果，比如把上述的sql语句改成:</p>
-</li>
-</ol>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="comment">/*+ BROADCAST (b) */</span> <span class="operator">*</span> <span class="keyword">from</span> a <span class="keyword">where</span> id <span class="keyword">not</span> <span class="keyword">in</span> (<span class="keyword">select</span> id <span class="keyword">from</span> b)</span><br></pre></td></tr></table></figure>
-<p>这样spark也会使用b表来进行broadcast。</p>
-<ol start="3">
-<li>使用spark代码的方式<br>使用broadcast函数就能达到此效果：</li>
-</ol>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pyspark.sql.functions import broadcast</span><br><span class="line">broadcast(spark.table(&quot;b&quot;)).<span class="keyword">join</span>(spark.table(&quot;a&quot;), &quot;id&quot;).<span class="keyword">show</span>()</span><br></pre></td></tr></table></figure>
-<ol start="4">
-<li>备注</li>
-</ol>
-<ul>
-<li><p>只有当要进行join的表的大小小于spark.sql.autoBroadcastJoinThreshold（默认是10M）的时候，才会进行mapjoin。</p>
-</li>
-<li><p>Impala通过hint和执行表的位置调整也能够优化join操作，通过explain也可以查看sql的执行计划，然后再进行优化。</p>
-</li>
-</ul>
-
+          {"created_time":"2021-04-03T00:37:51Z","files":[{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"full-outer-join.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"inner-join.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"left-outer-join.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySql-DataType-DateTime.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySql-DataType-Float.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySql-DataType-Number.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySql-DataType-String.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySql-DataType.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySql-Engine.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySQL-execute.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySQL-function-Aggregate01.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySQL-function-Compare01.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySQL-function-DateTime01.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySQL-function-Encryption01.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySQL-function-Information01.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySQL-function-Number01.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySQL-function-String01.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"MySQL-function-String02.png","tags":[]},{"attachment_folder":"","created_time":"2021-04-03T00:37:51Z","id":"0","modified_time":"2021-04-03T00:37:51Z","name":"right-outer-join.png","tags":[]}],"folders":[],"id":"0","modified_time":"2021-04-03T00:37:51Z","version":"1"}
       
     </div>
 
@@ -1173,7 +752,7 @@
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/23/">23</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/page/3/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/3/">3</a><span class="page-number current">4</span><a class="page-number" href="/page/5/">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/42/">42</a><a class="extend next" rel="next" href="/page/5/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1239,7 +818,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">222</span>
+          <span class="site-state-item-count">411</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1252,7 +831,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">114</span>
+        <span class="site-state-item-count">118</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
