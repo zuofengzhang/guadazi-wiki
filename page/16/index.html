@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -293,6 +293,107 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/Jenkins_Docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/docker/Jenkins_Docker/" class="post-title-link" itemprop="url">在Docker上搭建Jenkins环境</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ol>
+<li>从网易镜像仓库下载Jenkins</li>
+</ol>
+<p><a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/search/?keyword=jenkins">网易镜像仓库</a></p>
+<p>拉取到本地</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull hub.c.163.com/library/jenkins:latest</span><br></pre></td></tr></table></figure>
+<p>查看镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker images</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY                      TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">hub.c.163.com&#x2F;library&#x2F;jenkins   latest              88d9d8a30b47        8 months ago        810MB</span><br></pre></td></tr></table></figure>
+<p>从官网下载最新的Jenkins</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://updates.jenkins-ci.org/download/war/2.107.2/jenkins.war</span><br></pre></td></tr></table></figure>
+<p>DockerFile</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FROM hub.c.163.com/library/jenkins</span><br><span class="line"><span class="meta">#</span><span class="bash"> 将最新的Jenkins拷贝到`/usr/share/jenkins/`目录</span></span><br><span class="line">ADD jenkins.war /usr/share/jenkins/</span><br></pre></td></tr></table></figure>
+<p>常见镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t avery/jenkins .</span><br></pre></td></tr></table></figure>
+<p>启动一个Container</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run --name prod_jenkins2 -d -p 9005:8080 -p 9006:50000 -v  /Users/avery/docker/jenkins/backup/jenkins_home:/var/jenkins_home avery/jenkins</span><br></pre></td></tr></table></figure>
+<ol>
+<li>创建本地Jenkins数据目录，将该目录映射到docker中的Jenkins目录，方便备份数据</li>
+<li>8080端口是Jenkins web service的默认端口，将宿主机的端口映射到8080端口，可以直接访问</li>
+<li>–name 命名为prod_jenkins2</li>
+<li>-d 后台运行</li>
+<li>-p 端口映射</li>
+<li>-v 文件目录映射</li>
+</ol>
+<p>查看</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker container ls -a</span><br><span class="line">CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                     PORTS                   NAMES</span><br><span class="line">cb8cdf3be078        avery/jenkins       &quot;/bin/tini -- /usr/l…&quot;   3 hours ago         Exited (143) 3 hours ago                           prod_jenkins2</span><br></pre></td></tr></table></figure>
+<p>启动后，可以直接通过url ‘<a href="http://localhost:9001&#39;">http://localhost:9001&#39;</a> 访问，Jenkins首次打开，需要获取随机密码</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 获取jenkins密码</span></span><br><span class="line">docker container exec cb8cdf3be078 cat /var/jenkins_home/secrets/initialAdminPassword</span><br><span class="line">a7cefff7d2634cc6a9542491f465eb52</span><br><span class="line"><span class="meta">#</span><span class="bash"> 或者直接进入shell查看</span></span><br><span class="line">docker exec -it cb8cdf3be078 bash</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_2_in_or/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -324,7 +425,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:03" itemprop="dateModified" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -391,6 +492,90 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/online-bug/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/HBase/online-bug/" class="post-title-link" itemprop="url">HBase线上异常分析</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="online-bug"><a href="#online-bug" class="headerlink" title="online-bug"></a>online-bug</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">075</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 33697ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">175</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 114225ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">267</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_2] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 121313ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">375</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 259454ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">467</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_2] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 191262ms</span><br></pre></td></tr></table></figure>
+
+<p>关于MemStore的刷新方式：<br>1、MemStore达到上限hbase.hregion.memstore.flush.size 默认是128M的时候，会触发MemStore的刷新。这个参数表示单个MemStore的大小的阈值。这个时候是不阻塞写操作的。</p>
+<p>2、当一个Region的MemStore总量达到hbase.hregion.memstore.block.multiplier * hbase.hregion.memstore.flush.size（默认2*128M=256M）时，会阻塞这个region的写操作，并强制刷写到HFile。触发这个刷新只会发生在MemStore即将写满128M时put了一个巨大的记录的情况，这时会阻塞写操作，强制刷新成功才能继续写入。</p>
+<p>3、一个RegionServer会有很多个Region，很多的MemStore，所以可能单个Region并没有超过阈值，但是整个RegionServer的内存已经占用非常多了，这时候还有另外两个参数控制内存的刷写：hbase.regionserver.global.memstore.upperLimit 默认0.4，当RegionServer上全部的MemStore占用超过heap(heap的大小在hbase-env.sh中设置HBASE_HEAPSIZE，默认1G，我们设置的4G)的40%时，强制阻塞所有的写操作，将所有的MemStore刷写到HFile；hbase.regionserver.global.memstore.lowerLimit 默认0.35，表示所有的MemStore占用超过heap的35%时，会选择一些占用内存比较大的MemStore阻塞写操作并进行flush，这是为了降低阻塞全部写操作flush带来的问题。</p>
+<p>4、当HLog达到最大值（hbase.regionserver.maxlogs * hbase.regionserver.hlog.blocksize 默认32*64M = 2G）时，也会触发MemStore的刷新，强制将更新固化到HFile中，避免在RegionServer crash时恢复时间过长。</p>
+<p>5、定期会进行MemStore的刷新，hbase.regionserver.optionalcacheflushinterval 默认3600000，一小时，确保MemStore的数据不会长时间没有固化到HFile中。为避免所有的MemStore在同一时间都进行flush导致的问题，定期的flush操作有20000左右的随机延时。</p>
+<p>6、手工可以进行flush操作，在hbase shell调用flush，可以针对某个表或者某个region进行flush：<br>hbase(main):010:0&gt; help ‘flush’<br>Flush all regions in passed table or pass a region row to flush an individual region.  For example:</p>
+<p>  hbase&gt; flush ‘TABLENAME’<br>  hbase&gt; flush ‘REGIONNAME’</p>
+<p>7、手工flush：<br>在API中只看到有setMemStoreFlushSize 指定memstore flush到HDFS上的文件大小，默认是64M，不确定是否可以直接触发flush MemStore。</p>
+<p><a target="_blank" rel="noopener" href="https://lihuimintu.github.io/2019/06/27/HBase-IO-Case/">HBase Region 过多导致集群问题事件</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/PhantomJS/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -422,7 +607,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -492,7 +677,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/RPC/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/HBase-client/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -506,7 +691,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/RPC/" class="post-title-link" itemprop="url">RPC</a>
+            <a href="/bigdata/HBase/HBase-client/" class="post-title-link" itemprop="url">HBase-client</a>
         </h2>
 
         <div class="post-meta">
@@ -523,7 +708,81 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="HBase-client"><a href="#HBase-client" class="headerlink" title="HBase-client"></a>HBase-client</h1><h2 id="读取到旧region的原因"><a href="#读取到旧region的原因" class="headerlink" title="读取到旧region的原因"></a>读取到旧region的原因</h2><p> hbase查询，查询在两张表间切换，查询了三天另一张表，原表已经重建过了，查询切换回原表出现读取到旧region的问题</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" class="post-title-link" itemprop="url">mac搭建hadoop、hive、spark、flink环境</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -546,59 +805,101 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>RPC -  Remote Procedure Call 远程过程调用<br>是一种进程间通信方式。它允许程序调用另一个地址空间（通常是共享网络的另一台机器上）的过程或函数，而不用程序员显式编码这个远程调用的细节。即程序员无论是调用本地的还是远程的，本质上编写的调用代码基本相同。</p>
-<p>RPC 的鼻祖<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Bruce_Jay_Nelson">Bruce Jay Nelson</a> 在1980s提出了基本的实现结构<br><img src="/images/distributed/RPC/rpc-struct-01.png" alt="RPC基本实现结构"></p>
-<p>图中的<code>user</code>即为<code>client</code></p>
-<h1 id="常见的RPC协议"><a href="#常见的RPC协议" class="headerlink" title="常见的RPC协议"></a>常见的RPC协议</h1><p>CORBAR: 为了解决异构平台的 RPC，使用了 <code>IDL</code>（Interface Definition Language）来定义远程接口，并将其映射到特定的平台语言中。后来大部分的跨语言平台 RPC 基本都采用了此类方式，比如我们熟悉的 Web Service（SOAP），近年开源的Thrift 等。他们大部分都通过 IDL 定义，并提供工具来映射生成不同语言平台的 user-stub 和 server-stub，并通过框架库来提供 RPCRuntime 的支持。不过貌似每个不同的 RPC 框架都定义了各自不同的 IDL 格式，导致程序员的学习成本进一步上升（苦逼啊），Web Service 尝试建立业界标准，无赖标准规范复杂而效率偏低，否则 Thrift 等更高效的 RPC 框架就没必要出现了。</p>
-<p>IDL 是为了跨平台语言实现 RPC 不得已的选择，要解决更广泛的问题自然导致了更复杂的方案。而对于同一平台内的 RPC 而言显然没必要搞个中间语言出来，例如Java原生的 RMI，这样对于 java 程序员而言显得更直接简单，降低使用的学习成本。目前市面上提供的 RPC 框架已经可算是五花八门，百家争鸣了。需要根据实际使用场景谨慎选型，需要考虑的选型因素我觉得至少包括下面几点：</p>
-<ol>
-<li>性能指标</li>
-<li>是否需要跨语言平台</li>
-<li>内网开放还是公网开放</li>
-<li>开源 RPC 框架本身的质量、社区活跃度</li>
+          <h1 id="mysql"><a href="#mysql" class="headerlink" title="mysql"></a>mysql</h1><p>启动mysql</p>
+<p>brew services start mysql</p>
+<p>abc.ABC.123</p>
+<h1 id="集群搭建"><a href="#集群搭建" class="headerlink" title="集群搭建"></a>集群搭建</h1><ol>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/33117305">mac osx 搭建hadoop开发环境</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/u010638969/article/details/51283216">spark on yarn</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/65825211">hive环境搭建</a></li>
 </ol>
-<h2 id="CORBAR"><a href="#CORBAR" class="headerlink" title="CORBAR"></a>CORBAR</h2><h2 id="RMI"><a href="#RMI" class="headerlink" title="RMI"></a>RMI</h2><h2 id="Web-Service（SOAP）"><a href="#Web-Service（SOAP）" class="headerlink" title="Web Service（SOAP）"></a>Web Service（SOAP）</h2><h2 id="Thrift"><a href="#Thrift" class="headerlink" title="Thrift"></a>Thrift</h2><h1 id="异步调用与同步调用"><a href="#异步调用与同步调用" class="headerlink" title="异步调用与同步调用"></a>异步调用与同步调用</h1><ol>
-<li>同步调用<br>客户方等待调用执行完成并返回结果。  </li>
-<li>异步调用<br>客户方调用后不用等待执行结果返回，但依然可以通过回调通知等方式获取返回结果。<br>若客户方不关心调用返回结果，则变成单向异步调用，单向调用不用返回结果。  </li>
-</ol>
-<h2 id="RPC-结构拆解"><a href="#RPC-结构拆解" class="headerlink" title="RPC 结构拆解"></a>RPC 结构拆解</h2><p><img src="http://img.blog.csdn.net/20150108170231000?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbWluZGZsb2F0aW5n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>RPC 服务方通过 <code>RpcServer</code> 去导出（export）远程接口方法，而客户方通过 <code>RpcClient</code> 去引入（import）远程接口方法。客户方像调用本地方法一样去调用远程接口方法，RPC 框架提供接口的代理实现，实际的调用将委托给代理<code>RpcProxy</code> 。代理封装调用信息并将调用转交给<code>RpcInvoker</code> 去实际执行。在客户端的<code>RpcInvoker</code> 通过连接器<code>RpcConnector</code> 去维持与服务端的通道<code>RpcChannel</code>，并使用<code>RpcProtocol</code> 执行协议编码（encode）并将编码后的请求消息通过通道发送给服务方。</p>
-<p>RPC 服务端接收器 <code>RpcAcceptor</code> 接收客户端的调用请求，同样使用<code>RpcProtocol</code> 执行协议解码（decode）。解码后的调用信息传递给<code>RpcProcessor</code> 去控制处理调用过程，最后再委托调用给<code>RpcInvoker</code> 去实际执行并返回调用结果。</p>
-<h2 id="RPC-组件职责"><a href="#RPC-组件职责" class="headerlink" title="RPC 组件职责"></a>RPC 组件职责</h2><p>上面我们进一步拆解了 RPC 实现结构的各个组件组成部分，下面我们详细说明下每个组件的职责划分。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">1. RpcServer  </span><br><span class="line">   负责导出（export）远程接口  </span><br><span class="line">2. RpcClient  </span><br><span class="line">   负责导入（import）远程接口的代理实现  </span><br><span class="line">3. RpcProxy  </span><br><span class="line">   远程接口的代理实现  </span><br><span class="line">4. RpcInvoker  </span><br><span class="line">   客户方实现：负责编码调用信息和发送调用请求到服务方并等待调用结果返回  </span><br><span class="line">   服务方实现：负责调用服务端接口的具体实现并返回调用结果  </span><br><span class="line">5. RpcProtocol  </span><br><span class="line">   负责协议编&#x2F;解码  </span><br><span class="line">6. RpcConnector  </span><br><span class="line">   负责维持客户方和服务方的连接通道和发送数据到服务方  </span><br><span class="line">7. RpcAcceptor  </span><br><span class="line">   负责接收客户方请求并返回请求结果  </span><br><span class="line">8. RpcProcessor  </span><br><span class="line">   负责在服务方控制调用过程，包括管理调用线程池、超时时间等  </span><br><span class="line">9. RpcChannel  </span><br><span class="line">   数据传输通道  </span><br></pre></td></tr></table></figure>
-<h2 id="RPC-实现分析"><a href="#RPC-实现分析" class="headerlink" title="RPC 实现分析"></a>RPC 实现分析</h2><p>在进一步拆解了组件并划分了职责之后，这里以在  Java 平台实现该 RPC 框架概念模型为例，详细分析下实现中需要考虑的因素。</p>
-<h3 id="导出远程接口"><a href="#导出远程接口" class="headerlink" title="导出远程接口"></a>导出远程接口</h3><p>导出远程接口的意思是指只有导出的接口可以供远程调用，而未导出的接口则不能。在 java 中导出接口的代码片段可能如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">DemoService demo   = <span class="keyword">new</span> ...;  </span><br><span class="line">RpcServer   server = <span class="keyword">new</span> ...;  </span><br><span class="line">server.export(DemoService.class, demo, options);  </span><br></pre></td></tr></table></figure>
-<p>我们可以导出整个接口，也可以更细粒度一点只导出接口中的某些方法，如：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 只导出 DemoService 中签名为 hi(String s) 的方法  </span></span><br><span class="line">server.export(DemoService.class, demo, <span class="string">&quot;hi&quot;</span>, <span class="keyword">new</span> Class&lt;?&gt;[] &#123; String.class &#125;, options);  </span><br></pre></td></tr></table></figure>
-<p>java 中还有一种比较特殊的调用就是多态，也就是一个接口可能有多个实现，那么远程调用时到底调用哪个？这个本地调用的语义是通过 jvm 提供的引用多态性隐式实现的，那么对于 RPC 来说跨进程的调用就没法隐式实现了。如果前面<code>DemoService</code> 接口有 2 个实现，那么在导出接口时就需要特殊标记不同的实现，如：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">DemoService demo   = <span class="keyword">new</span> ...;  </span><br><span class="line">DemoService demo2  = <span class="keyword">new</span> ...;  </span><br><span class="line">RpcServer   server = <span class="keyword">new</span> ...;  </span><br><span class="line">server.export(DemoService.class, demo, options);  </span><br><span class="line">server.export(<span class="string">&quot;demo2&quot;</span>, DemoService.class, demo2, options);  </span><br></pre></td></tr></table></figure>
-<p>上面 demo2 是另一个实现，我们标记为 “demo2” 来导出，那么远程调用时也需要传递该标记才能调用到正确的实现类，这样就解决了多态调用的语义。</p>
-<h3 id="导入远程接口与客户端代理"><a href="#导入远程接口与客户端代理" class="headerlink" title="导入远程接口与客户端代理"></a>导入远程接口与客户端代理</h3><p>导入相对于导出远程接口，客户端代码为了能够发起调用必须要获得远程接口的方法或过程定义。目前，大部分跨语言平台 RPC 框架采用根据 IDL 定义通过 code generator 去生成 stub 代码，这种方式下实际导入的过程就是通过代码生成器在编译期完成的。我所使用过的一些跨语言平台 RPC 框架如 CORBAR、WebService、ICE、Thrift 均是此类方式。</p>
-<p>代码生成的方式对跨语言平台 RPC 框架而言是必然的选择，而对于同一语言平台的 RPC 则可以通过共享接口定义来实现。在 java 中导入接口的代码片段可能如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">RpcClient client = <span class="keyword">new</span> ...;  </span><br><span class="line">DemoService demo = client.refer(DemoService.class);  </span><br><span class="line">demo.hi(<span class="string">&quot;how are you?&quot;</span>);  </span><br></pre></td></tr></table></figure>
-<p>在 java 中 ‘import’ 是关键字，所以代码片段中我们用 refer 来表达导入接口的意思。这里的导入方式本质也是一种代码生成技术，只不过是在运行时生成，比静态编译期的代码生成看起来更简洁些。java 里至少提供了两种技术来提供动态代码生成，一种是 jdk 动态代理，另外一种是字节码生成。动态代理相比字节码生成使用起来更方便，但动态代理方式在性能上是要逊色于直接的字节码生成的，而字节码生成在代码可读性上要差很多。两者权衡起来，个人认为牺牲一些性能来获得代码可读性和可维护性显得更重要。</p>
-<h3 id="协议编解码"><a href="#协议编解码" class="headerlink" title="协议编解码"></a>协议编解码</h3><p>客户端代理在发起调用前需要对调用信息进行编码，这就要考虑需要编码些什么信息并以什么格式传输到服务端才能让服务端完成调用。出于效率考虑，编码的信息越少越好（传输数据少），编码的规则越简单越好（执行效率高）。我们先看下需要编码些什么信息：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">-- 调用编码 --  </span><br><span class="line">1. 接口方法  </span><br><span class="line">   包括接口名、方法名  </span><br><span class="line">2. 方法参数  </span><br><span class="line">   包括参数类型、参数值  </span><br><span class="line">3. 调用属性  </span><br><span class="line">   包括调用属性信息，例如调用附件隐式参数、调用超时时间等  </span><br><span class="line">  </span><br><span class="line">-- 返回编码 --  </span><br><span class="line"> 1. 返回结果  </span><br><span class="line">    接口方法中定义的返回值  </span><br><span class="line"> 2. 返回码  </span><br><span class="line">    异常返回码  </span><br><span class="line"> 3. 返回异常信息  </span><br><span class="line">    调用异常信息  </span><br></pre></td></tr></table></figure>
-<p>除了以上这些必须的调用信息，我们可能还需要一些元信息以方便程序编解码以及未来可能的扩展。这样我们的编码消息里面就分成了两部分，一部分是元信息、另一部分是调用的必要信息。如果设计一种 RPC 协议消息的话，元信息我们把它放在协议消息头中，而必要信息放在协议消息体中。下面给出一种概念上的 RPC 协议消息设计格式：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">-- 消息头 --  </span><br><span class="line">magic      : 协议魔数，为解码设计  </span><br><span class="line">header size: 协议头长度，为扩展设计  </span><br><span class="line">version    : 协议版本，为兼容设计  </span><br><span class="line">st         : 消息体序列化类型  </span><br><span class="line">hb         : 心跳消息标记，为长连接传输层心跳设计  </span><br><span class="line">ow         : 单向消息标记，  </span><br><span class="line">rp         : 响应消息标记，不置位默认是请求消息  </span><br><span class="line">status code: 响应消息状态码  </span><br><span class="line">reserved   : 为字节对齐保留  </span><br><span class="line">message id : 消息 id  </span><br><span class="line">body size  : 消息体长度  </span><br><span class="line">  </span><br><span class="line">-- 消息体 --  </span><br><span class="line">采用序列化编码，常见有以下格式  </span><br><span class="line">xml   : 如 webservie soap  </span><br><span class="line">json  : 如 JSON-RPC  </span><br><span class="line">binary: 如 thrift; hession; kryo 等  </span><br></pre></td></tr></table></figure>
-<p>格式确定后编解码就简单了，由于头长度一定所以我们比较关心的就是消息体的序列化方式。序列化我们关心三个方面：<br>\1. 序列化和反序列化的效率，越快越好。 <br>\2. 序列化后的字节长度，越小越好。 <br>\3. 序列化和反序列化的兼容性，接口参数对象若增加了字段，是否兼容。<br>上面这三点有时是鱼与熊掌不可兼得，这里面涉及到具体的序列化库实现细节，就不在本文进一步展开分析了。</p>
-<h3 id="传输服务"><a href="#传输服务" class="headerlink" title="传输服务"></a>传输服务</h3><p>协议编码之后，自然就是需要将编码后的 RPC 请求消息传输到服务方，服务方执行后返回结果消息或确认消息给客户方。RPC 的应用场景实质是一种可靠的请求应答消息流，和 HTTP 类似。因此选择长连接方式的 TCP 协议会更高效，与 HTTP 不同的是在协议层面我们定义了每个消息的唯一 id，因此可以更容易的复用连接。</p>
-<p>既然使用长连接，那么第一个问题是到底 client 和 server 之间需要多少根连接？实际上单连接和多连接在使用上没有区别，对于数据传输量较小的应用类型，单连接基本足够。单连接和多连接最大的区别在于，每根连接都有自己私有的发送和接收缓冲区，因此大数据量传输时分散在不同的连接缓冲区会得到更好的吞吐效率。所以，如果你的数据传输量不足以让单连接的缓冲区一直处于饱和状态的话，那么使用多连接并不会产生任何明显的提升，反而会增加连接管理的开销。</p>
-<p>连接是由 client 端发起建立并维持。如果 client 和 server 之间是直连的，那么连接一般不会中断（当然物理链路故障除外）。如果 client 和 server 连接经过一些负载中转设备，有可能连接一段时间不活跃时会被这些中间设备中断。为了保持连接有必要定时为每个连接发送心跳数据以维持连接不中断。心跳消息是 RPC 框架库使用的内部消息，在前文协议头结构中也有一个专门的心跳位，就是用来标记心跳消息的，它对业务应用透明。</p>
-<h3 id="执行调用"><a href="#执行调用" class="headerlink" title="执行调用"></a>执行调用</h3><p>client stub 所做的事情仅仅是编码消息并传输给服务方，而真正调用过程发生在服务方。server stub 从前文的结构拆解中我们细分了 <code>RpcProcessor</code> 和<code>RpcInvoker</code> 两个组件，一个负责控制调用过程，一个负责真正调用。这里我们还是以 java 中实现这两个组件为例来分析下它们到底需要做什么？</p>
-<p>java 中实现代码的动态接口调用目前一般通过反射调用。除了原生的 jdk 自带的反射，一些第三方库也提供了性能更优的反射调用，因此 <code>RpcInvoker</code> 就是封装了反射调用的实现细节。</p>
-<p>调用过程的控制需要考虑哪些因素，<code>RpcProcessor</code> 需要提供什么样地调用控制服务呢？下面提出几点以启发思考：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. 效率提升  </span><br><span class="line">   每个请求应该尽快被执行，因此我们不能每请求来再创建线程去执行，需要提供线程池服务。  </span><br><span class="line">2. 资源隔离  </span><br><span class="line">   当我们导出多个远程接口时，如何避免单一接口调用占据所有线程资源，而引发其他接口执行阻塞。  </span><br><span class="line">3. 超时控制  </span><br><span class="line">   当某个接口执行缓慢，而 client 端已经超时放弃等待后，server 端的线程继续执行此时显得毫无意义。  </span><br></pre></td></tr></table></figure>
+<p>按照上面文章的方式搭建，启动hdfs、yarn</p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/33968422/bin-bash-bin-java-no-such-file-or-directory"><strong>必须使用这个命令</strong></a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动yarn</span></span></span><br><span class="line">hadoop/sbin/./yarn-daemon.sh start resourcemanager</span><br><span class="line">hadoop/sbin./yarn-daemon.sh start nodemanager</span><br><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动hdfs</span></span></span><br><span class="line">hadoop/sbin/start-hdfs.sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
-<h2 id="RPC-异常处理"><a href="#RPC-异常处理" class="headerlink" title="RPC 异常处理"></a>RPC 异常处理</h2><p>无论 RPC 怎样努力把远程调用伪装的像本地调用，但它们依然有很大的不同点，而且有一些异常情况是在本地调用时绝对不会碰到的。在说异常处理之前，我们先比较下本地调用和 RPC 调用的一些差异：</p>
-<ol>
-<li>本地调用一定会执行，而远程调用则不一定，调用消息可能因为网络原因并未发送到服务方。</li>
-<li>本地调用只会抛出接口声明的异常，而远程调用还会跑出 RPC 框架运行时的其他异常。</li>
-<li>本地调用和远程调用的性能可能差距很大，这取决于 RPC 固有消耗所占的比重。<br>正是这些区别决定了使用 RPC 时需要更多考量。当调用远程接口抛出异常时，异常可能是一个业务异常，也可能是 RPC 框架抛出的运行时异常（如：网络中断等）。业务异常表明服务方已经执行了调用，可能因为某些原因导致未能正常执行，而 RPC 运行时异常则有可能服务方根本没有执行，对调用方而言的异常处理策略自然需要区分。</li>
-</ol>
-<p>由于 RPC 固有的消耗相对本地调用高出几个数量级，本地调用的固有消耗是纳秒级，而 RPC 的固有消耗是在毫秒级。那么对于过于轻量的计算任务就并不合适导出远程接口由独立的进程提供服务，只有花在计算任务上时间远远高于 RPC 的固有消耗才值得导出为远程接口提供服务。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此我们提出了一个 RPC 实现的概念框架，并详细分析了需要考虑的一些实现细节。无论 RPC 的概念是如何优雅，但是“草丛中依然有几条蛇隐藏着”，只有深刻理解了 RPC 的本质，才能更好地应用。</p>
+<p><a target="_blank" rel="noopener" href="http://localhost:50070/">hdfs-web</a><br><a target="_blank" rel="noopener" href="http://localhost:8088/">yarn-web</a></p>
+<h2 id="hive"><a href="#hive" class="headerlink" title="hive"></a>hive</h2><p>create user ‘hadoop’@’%’ identified by ‘hadoop%HADOOP%123’;</p>
+<p>grant all privileges on <em>.</em> to ‘hadoop’@’%’ with grant option;</p>
+<p>flush privileges;</p>
+<h2 id="flink-on-yarn"><a href="#flink-on-yarn" class="headerlink" title="flink on yarn"></a>flink on yarn</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/xu470438000/article/details/79576989">flink on yarn部署</a></p>
+<p>在flink lib下增加flink-hadoop兼容包<a target="_blank" rel="noopener" href="https://repo.maven.apache.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.7.5-7.0/flink-shaded-hadoop-2-uber-2.7.5-7.0.jar">Pre-bundled Hadoop 2.7.5</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动</span></span><br><span class="line">bin/start-cluster.sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="搭建AthenaX"><a href="#搭建AthenaX" class="headerlink" title="搭建AthenaX"></a>搭建AthenaX</h2><p><a target="_blank" rel="noopener" href="https://athenax.readthedocs.io/en/latest/getting_started/">Building AthenaX and Flink</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/superset/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/superset/" class="post-title-link" itemprop="url">SuperSet</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">docker serach superset</span><br><span class="line">docker pull amancevice/superset</span><br><span class="line">docker images</span><br><span class="line">mkdir ~/apps/data/superset/</span><br><span class="line">docker run -d -p 8088:8088 -v  ~/apps/data/superset/:/home/superset amancevice/superset</span><br><span class="line">docker ps</span><br><span class="line"></span><br><span class="line">CONTAINER ID   IMAGE                 COMMAND                  CREATED          STATUS                            PORTS                    NAMES</span><br><span class="line">71a1400d1e98   amancevice/superset   &quot;gunicorn superset.a…&quot;   10 seconds ago   Up 9 seconds (health: starting)   0.0.0.0:8088-&gt;8088/tcp   quizzical_wright</span><br><span class="line">docker exec -it 71a1400d1e98 superset-init</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -649,7 +950,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -719,332 +1020,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/superset/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/superset/" class="post-title-link" itemprop="url">SuperSet</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">docker serach superset</span><br><span class="line">docker pull amancevice/superset</span><br><span class="line">docker images</span><br><span class="line">mkdir ~/apps/data/superset/</span><br><span class="line">docker run -d -p 8088:8088 -v  ~/apps/data/superset/:/home/superset amancevice/superset</span><br><span class="line">docker ps</span><br><span class="line"></span><br><span class="line">CONTAINER ID   IMAGE                 COMMAND                  CREATED          STATUS                            PORTS                    NAMES</span><br><span class="line">71a1400d1e98   amancevice/superset   &quot;gunicorn superset.a…&quot;   10 seconds ago   Up 9 seconds (health: starting)   0.0.0.0:8088-&gt;8088/tcp   quizzical_wright</span><br><span class="line">docker exec -it 71a1400d1e98 superset-init</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" class="post-title-link" itemprop="url">mac搭建hadoop、hive、spark、flink环境</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="mysql"><a href="#mysql" class="headerlink" title="mysql"></a>mysql</h1><p>启动mysql</p>
-<p>brew services start mysql</p>
-<p>abc.ABC.123</p>
-<h1 id="集群搭建"><a href="#集群搭建" class="headerlink" title="集群搭建"></a>集群搭建</h1><ol>
-<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/33117305">mac osx 搭建hadoop开发环境</a></li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/u010638969/article/details/51283216">spark on yarn</a></li>
-<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/65825211">hive环境搭建</a></li>
-</ol>
-<p>按照上面文章的方式搭建，启动hdfs、yarn</p>
-<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/33968422/bin-bash-bin-java-no-such-file-or-directory"><strong>必须使用这个命令</strong></a></p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动yarn</span></span></span><br><span class="line">hadoop/sbin/./yarn-daemon.sh start resourcemanager</span><br><span class="line">hadoop/sbin./yarn-daemon.sh start nodemanager</span><br><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动hdfs</span></span></span><br><span class="line">hadoop/sbin/start-hdfs.sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p><a target="_blank" rel="noopener" href="http://localhost:50070/">hdfs-web</a><br><a target="_blank" rel="noopener" href="http://localhost:8088/">yarn-web</a></p>
-<h2 id="hive"><a href="#hive" class="headerlink" title="hive"></a>hive</h2><p>create user ‘hadoop’@’%’ identified by ‘hadoop%HADOOP%123’;</p>
-<p>grant all privileges on <em>.</em> to ‘hadoop’@’%’ with grant option;</p>
-<p>flush privileges;</p>
-<h2 id="flink-on-yarn"><a href="#flink-on-yarn" class="headerlink" title="flink on yarn"></a>flink on yarn</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/xu470438000/article/details/79576989">flink on yarn部署</a></p>
-<p>在flink lib下增加flink-hadoop兼容包<a target="_blank" rel="noopener" href="https://repo.maven.apache.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.7.5-7.0/flink-shaded-hadoop-2-uber-2.7.5-7.0.jar">Pre-bundled Hadoop 2.7.5</a></p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动</span></span><br><span class="line">bin/start-cluster.sh</span><br></pre></td></tr></table></figure>
-
-<h2 id="搭建AthenaX"><a href="#搭建AthenaX" class="headerlink" title="搭建AthenaX"></a>搭建AthenaX</h2><p><a target="_blank" rel="noopener" href="https://athenax.readthedocs.io/en/latest/getting_started/">Building AthenaX and Flink</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/HBase-client/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/HBase/HBase-client/" class="post-title-link" itemprop="url">HBase-client</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="HBase-client"><a href="#HBase-client" class="headerlink" title="HBase-client"></a>HBase-client</h1><h2 id="读取到旧region的原因"><a href="#读取到旧region的原因" class="headerlink" title="读取到旧region的原因"></a>读取到旧region的原因</h2><p> hbase查询，查询在两张表间切换，查询了三天另一张表，原表已经重建过了，查询切换回原表出现读取到旧region的问题</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/online-bug/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/HBase/online-bug/" class="post-title-link" itemprop="url">HBase线上异常分析</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="online-bug"><a href="#online-bug" class="headerlink" title="online-bug"></a>online-bug</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">075</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 33697ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">175</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 114225ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">267</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_2] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 121313ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">375</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 259454ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">467</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_2] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 191262ms</span><br></pre></td></tr></table></figure>
-
-<p>关于MemStore的刷新方式：<br>1、MemStore达到上限hbase.hregion.memstore.flush.size 默认是128M的时候，会触发MemStore的刷新。这个参数表示单个MemStore的大小的阈值。这个时候是不阻塞写操作的。</p>
-<p>2、当一个Region的MemStore总量达到hbase.hregion.memstore.block.multiplier * hbase.hregion.memstore.flush.size（默认2*128M=256M）时，会阻塞这个region的写操作，并强制刷写到HFile。触发这个刷新只会发生在MemStore即将写满128M时put了一个巨大的记录的情况，这时会阻塞写操作，强制刷新成功才能继续写入。</p>
-<p>3、一个RegionServer会有很多个Region，很多的MemStore，所以可能单个Region并没有超过阈值，但是整个RegionServer的内存已经占用非常多了，这时候还有另外两个参数控制内存的刷写：hbase.regionserver.global.memstore.upperLimit 默认0.4，当RegionServer上全部的MemStore占用超过heap(heap的大小在hbase-env.sh中设置HBASE_HEAPSIZE，默认1G，我们设置的4G)的40%时，强制阻塞所有的写操作，将所有的MemStore刷写到HFile；hbase.regionserver.global.memstore.lowerLimit 默认0.35，表示所有的MemStore占用超过heap的35%时，会选择一些占用内存比较大的MemStore阻塞写操作并进行flush，这是为了降低阻塞全部写操作flush带来的问题。</p>
-<p>4、当HLog达到最大值（hbase.regionserver.maxlogs * hbase.regionserver.hlog.blocksize 默认32*64M = 2G）时，也会触发MemStore的刷新，强制将更新固化到HFile中，避免在RegionServer crash时恢复时间过长。</p>
-<p>5、定期会进行MemStore的刷新，hbase.regionserver.optionalcacheflushinterval 默认3600000，一小时，确保MemStore的数据不会长时间没有固化到HFile中。为避免所有的MemStore在同一时间都进行flush导致的问题，定期的flush操作有20000左右的随机延时。</p>
-<p>6、手工可以进行flush操作，在hbase shell调用flush，可以针对某个表或者某个region进行flush：<br>hbase(main):010:0&gt; help ‘flush’<br>Flush all regions in passed table or pass a region row to flush an individual region.  For example:</p>
-<p>  hbase&gt; flush ‘TABLENAME’<br>  hbase&gt; flush ‘REGIONNAME’</p>
-<p>7、手工flush：<br>在API中只看到有setMemStoreFlushSize 指定memstore flush到HDFS上的文件大小，默认是64M，不确定是否可以直接触发flush MemStore。</p>
-<p><a target="_blank" rel="noopener" href="https://lihuimintu.github.io/2019/06/27/HBase-IO-Case/">HBase Region 过多导致集群问题事件</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/solr/SolrCloud/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1076,7 +1051,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1159,7 +1134,7 @@
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/15/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/">15</a><span class="page-number current">16</span><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/24/">24</a><a class="extend next" rel="next" href="/page/17/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/page/15/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/">15</a><span class="page-number current">16</span><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/25/">25</a><a class="extend next" rel="next" href="/page/17/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1225,7 +1200,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">240</span>
+          <span class="site-state-item-count">241</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1238,7 +1213,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">120</span>
+        <span class="site-state-item-count">122</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

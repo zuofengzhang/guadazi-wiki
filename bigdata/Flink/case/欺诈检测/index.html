@@ -20,15 +20,13 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="Flink实时规则引擎探究2020年Flink已经成为实时计算的事实标准, 以Flink高性能、灵活、易用等特性为依托，大数据计算和数据的实时性得到了较大的提升。为了解决商业运作中的业务问题，提高工作效率和经济利益，实时的商业决策势在必行，如:  金融量化:  金融应用程序来查看股票市场的趋势 风险控制：欺诈检测–对用户异常行为模式进行实时检测，当一个用户发生了不该发生的行为，判定这个用户是不是有">
-<meta property="og:type" content="article">
+  <meta property="og:type" content="article">
 <meta property="og:title" content="Guadazi">
 <meta property="og:url" content="http://example.com/bigdata/Flink/case/%E6%AC%BA%E8%AF%88%E6%A3%80%E6%B5%8B/index.html">
 <meta property="og:site_name" content="Guadazi">
-<meta property="og:description" content="Flink实时规则引擎探究2020年Flink已经成为实时计算的事实标准, 以Flink高性能、灵活、易用等特性为依托，大数据计算和数据的实时性得到了较大的提升。为了解决商业运作中的业务问题，提高工作效率和经济利益，实时的商业决策势在必行，如:  金融量化:  金融应用程序来查看股票市场的趋势 风险控制：欺诈检测–对用户异常行为模式进行实时检测，当一个用户发生了不该发生的行为，判定这个用户是不是有">
 <meta property="og:locale">
-<meta property="article:published_time" content="2021-04-05T02:47:06.132Z">
-<meta property="article:modified_time" content="2021-04-05T02:47:06.133Z">
+<meta property="article:published_time" content="2021-04-10T09:39:20.556Z">
+<meta property="article:modified_time" content="2021-04-10T09:39:20.556Z">
 <meta property="article:author" content="aaronzhang">
 <meta name="twitter:card" content="summary">
 
@@ -211,7 +209,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-05 10:47:06" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
             </span>
 
           
@@ -225,29 +223,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="Flink实时规则引擎探究"><a href="#Flink实时规则引擎探究" class="headerlink" title="Flink实时规则引擎探究"></a>Flink实时规则引擎探究</h1><p>2020年Flink已经成为实时计算的事实标准, 以Flink高性能、灵活、易用等特性为依托，大数据计算和数据的实时性得到了较大的提升。为了解决商业运作中的业务问题，提高工作效率和经济利益，实时的商业决策势在必行，如:</p>
-<ul>
-<li>金融量化:  金融应用程序来查看股票市场的趋势</li>
-<li>风险控制：欺诈检测–对用户异常行为模式进行实时检测，当一个用户发生了不该发生的行为，判定这个用户是不是有违规操作的嫌疑。</li>
-<li>策略营销：用预先定义好的规则对用户的行为轨迹进行实时跟踪，对行为轨迹匹配预定义规则的用户实时发送相应策略的推广。</li>
-<li>运维监控：灵活配置多指标、多依赖来实现更复杂的监控模式; 基于RFID的跟踪和监控系统(如检测仓库盗窃案); 通过指定可疑行为的模式来检测网络入侵。</li>
-</ul>
-<p>然而，对于实时规则引擎来说，既要保证事件快速处理，又要保证新规则快速生效。</p>
-<p>从</p>
-<h2 id="Flink-CEP-复杂事件处理"><a href="#Flink-CEP-复杂事件处理" class="headerlink" title="Flink CEP(复杂事件处理)"></a>Flink CEP(复杂事件处理)</h2><p>CEP是一个在Flink之上实现的库。在当前这个数据被认为和石油一样重要的时代，这是非常有用的，而石油一直在增长。数据源源不断地从智能设备中流出，需要大量的数据进行实时分析。CEP在这种情况下会发挥作用。</p>
-<ul>
-<li>解决了数据流中事件模式检测实时处理的关键问题。</li>
-<li>它根据建议的模式连续匹配传入的数据。这有助于保留当前需要的数据，丢弃不相关的数据。输入立即匹配，结果直接发出。</li>
-<li>它帮助您检测数据流中的模式，允许您只掌握重要的数据。</li>
-</ul>
-<h3 id="规则动态注入"><a href="#规则动态注入" class="headerlink" title="规则动态注入"></a>规则动态注入</h3><h2 id="Drools"><a href="#Drools" class="headerlink" title="Drools"></a>Drools</h2><h3 id="Flink-Drools"><a href="#Flink-Drools" class="headerlink" title="Flink + Drools"></a>Flink + Drools</h3><h3 id="Drools-on-Flink"><a href="#Drools-on-Flink" class="headerlink" title="Drools on Flink"></a>Drools on Flink</h3><h2 id="Broadcast-state-Groovy"><a href="#Broadcast-state-Groovy" class="headerlink" title="Broadcast state + Groovy"></a>Broadcast state + Groovy</h2><h3 id="Flink-CEP-应用场景"><a href="#Flink-CEP-应用场景" class="headerlink" title="Flink CEP 应用场景"></a>Flink CEP 应用场景</h3><p>实时规则引擎可以分为两种类型：纯Flink或Flink+离线规则引擎</p>
-<p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/04fd02c4db3c">Flink cep，使用groovy脚本及表达式求值</a></p>
-<p><a href="">哈罗出行</a><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000021260907">Apache Flink CEP 实战</a></p>
-<p><a target="_blank" rel="noopener" href="http://hecenjie.cn/2019/05/28/Drools%E8%A7%84%E5%88%99%E5%BC%95%E6%93%8E%E5%8E%9F%E7%90%86%E7%AE%80%E4%BB%8B/">Drools规则引擎原理简介</a></p>
-<p><a target="_blank" rel="noopener" href="https://www.xenonstack.com/insights/flink-cep/">Flink CEP: Answer to All Stream Processing Difficulties</a></p>
-<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/u013516966/article/details/110412808?utm_medium=distribute.pc_relevant.none-task-blog-baidujs_title-0&spm=1001.2101.3001.4242">Flink-Cep实现规则动态更新</a></p>
-<p><a target="_blank" rel="noopener" href="https://developer.aliyun.com/article/738454">Apache Flink CEP 实战</a></p>
-
+        
     </div>
 
     
@@ -327,7 +303,6 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink%E5%AE%9E%E6%97%B6%E8%A7%84%E5%88%99%E5%BC%95%E6%93%8E%E6%8E%A2%E7%A9%B6"><span class="nav-number">1.</span> <span class="nav-text">Flink实时规则引擎探究</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Flink-CEP-%E5%A4%8D%E6%9D%82%E4%BA%8B%E4%BB%B6%E5%A4%84%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">Flink CEP(复杂事件处理)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%84%E5%88%99%E5%8A%A8%E6%80%81%E6%B3%A8%E5%85%A5"><span class="nav-number">1.1.1.</span> <span class="nav-text">规则动态注入</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Drools"><span class="nav-number">1.2.</span> <span class="nav-text">Drools</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Flink-Drools"><span class="nav-number">1.2.1.</span> <span class="nav-text">Flink + Drools</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Drools-on-Flink"><span class="nav-number">1.2.2.</span> <span class="nav-text">Drools on Flink</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Broadcast-state-Groovy"><span class="nav-number">1.3.</span> <span class="nav-text">Broadcast state + Groovy</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Flink-CEP-%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="nav-number">1.3.1.</span> <span class="nav-text">Flink CEP 应用场景</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -341,7 +316,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">240</span>
+          <span class="site-state-item-count">241</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -354,7 +329,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">120</span>
+        <span class="site-state-item-count">122</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

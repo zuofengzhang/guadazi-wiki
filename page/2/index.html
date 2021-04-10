@@ -183,7 +183,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/watermark/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-watermark/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/watermark/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/bigdata/Flink/Flink-watermark/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -207,7 +207,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-05 10:47:06" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
             </span>
 
           
@@ -265,7 +265,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-05 10:47:05" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:05+08:00">2021-04-05</time>
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
             </span>
 
           
@@ -281,9 +281,9 @@
       
           <h1 id="Flink-join"><a href="#Flink-join" class="headerlink" title="Flink join"></a>Flink join</h1><p>Flink DataStream API为用户提供了3个算子来实现双流join，分别是：</p>
 <ul>
-<li>  join():   inner join，on window</li>
-<li>  coGroup():   custom join, on window</li>
-<li>  intervalJoin():   inner join, on time range, keyed stream</li>
+<li>join():   inner join，on window</li>
+<li>coGroup():   custom join, on window</li>
+<li>intervalJoin():   inner join, on time range, keyed stream</li>
 </ul>
 <p>另外，还提供了broadcast join来关联较小的</p>
 <h2 id="准备数据"><a href="#准备数据" class="headerlink" title="准备数据"></a>准备数据</h2><p>从Kafka分别接入点击流和订单流，并转化为POJO。</p>
@@ -327,7 +327,7 @@
 <li> 调用<code>TimerService.registerEventTimeTimer()</code>注册时间戳为<code>timestamp + relativeUpperBound</code>的定时器，该定时器负责在水印超过区间的上界时执行状态的清理逻辑，防止数据堆积。注意左右流的定时器所属的<code>namespace</code>是不同的，具体逻辑则位于<code>onEventTime()</code>方法中。</li>
 </ol>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onEventTime</span><span class="params">(InternalTimer&lt;K, String&gt; timer)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> timerTimestamp = timer.getTimestamp();</span><br><span class="line">    String namespace = timer.getNamespace();</span><br><span class="line">    logger.trace(<span class="string">&quot;onEventTime @ &#123;&#125;&quot;</span>, timerTimestamp);</span><br><span class="line">    <span class="keyword">switch</span> (namespace) &#123;</span><br><span class="line">        <span class="keyword">case</span> CLEANUP_NAMESPACE_LEFT: &#123;</span><br><span class="line">            <span class="keyword">long</span> timestamp = (upperBound &lt;= <span class="number">0L</span>) ? timerTimestamp : timerTimestamp - upperBound;</span><br><span class="line">            logger.trace(<span class="string">&quot;Removing from left buffer @ &#123;&#125;&quot;</span>, timestamp);</span><br><span class="line">            leftBuffer.remove(timestamp);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">case</span> CLEANUP_NAMESPACE_RIGHT: &#123;</span><br><span class="line">            <span class="keyword">long</span> timestamp = (lowerBound &lt;= <span class="number">0L</span>) ? timerTimestamp + lowerBound : timerTimestamp;</span><br><span class="line">            logger.trace(<span class="string">&quot;Removing from right buffer @ &#123;&#125;&quot;</span>, timestamp);</span><br><span class="line">            rightBuffer.remove(timestamp);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Invalid namespace &quot;</span> + namespace);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="broadcast-join"><a href="#broadcast-join" class="headerlink" title="broadcast join"></a>broadcast join</h2>
+<h2 id="broadcast-join"><a href="#broadcast-join" class="headerlink" title="broadcast join"></a>broadcast join</h2><h2 id="interval-join"><a href="#interval-join" class="headerlink" title="interval join"></a>interval join</h2>
       
     </div>
 
@@ -370,7 +370,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-05 10:47:05" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:05+08:00">2021-04-05</time>
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
             </span>
 
           
@@ -427,7 +427,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-05 10:47:05" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:05+08:00">2021-04-05</time>
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
             </span>
 
           
@@ -442,129 +442,6 @@
 
       
           <h1 id="Flink-connectors"><a href="#Flink-connectors" class="headerlink" title="Flink-connectors"></a>Flink-connectors</h1>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/TTL/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/TTL/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-05 10:47:05" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:05+08:00">2021-04-05</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="简析Flink状态生存时间（State-TTL）机制的底层实现"><a href="#简析Flink状态生存时间（State-TTL）机制的底层实现" class="headerlink" title="简析Flink状态生存时间（State TTL）机制的底层实现"></a>简析Flink状态生存时间（State TTL）机制的底层实现</h1><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/nazeniwaresakini/article/details/106094778">简析Flink状态生存时间（State TTL）机制的底层实现</a></p>
-<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>从Flink 1.6版本开始，社区为状态引入了TTL（time-to-live，生存时间）机制，支持Keyed State的自动过期，有效解决了状态数据在无干预情况下无限增长导致OOM的问题。State TTL的用法很简单，<a target="_blank" rel="noopener" href="https://ci.apache.org/projects/flink/flink-docs-release-1.10/dev/stream/state/state.html#state-time-to-live-ttll">官方文档</a>中给出的示例代码如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">StateTtlConfig ttlConfig =</span><br><span class="line"> StateTtlConfig</span><br><span class="line"> .newBuilder(Time.seconds(<span class="number">1</span>))</span><br><span class="line"> .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)</span><br><span class="line"> .setStateVisibility(StateTtlConfig.StateVisibility.NeverReturnExpired)</span><br><span class="line"> .build();</span><br><span class="line">ValueStateDescriptor&lt;String&gt; stateDescriptor = <span class="keyword">new</span> ValueStateDescriptor&lt;&gt;(<span class="string">&quot;text state&quot;</span>, String.class);</span><br><span class="line">stateDescriptor.enableTimeToLive(ttlConfig);</span><br></pre></td></tr></table></figure>
-<p>那么State TTL的背后又隐藏着什么样的思路呢？下面就从设置类StateTtlConfig入手开始研究（Flink代码版本为1.9.3）。</p>
-<h3 id="StateTtlConfig"><a href="#StateTtlConfig" class="headerlink" title="StateTtlConfig"></a>StateTtlConfig</h3><p>该类中有5个成员属性，它们就是用户需要指定的全部参数了。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> UpdateType updateType</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> StateVisibility stateVisibility</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> TtlTimeCharacteristic ttlTimeCharacteristic</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Time ttl</span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> CleanupStrategies cleanupStrategies</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>其中，ttl参数表示用户设定的状态生存时间。而UpdateType、StateVisibility和TtlTimeCharacteristic都是枚举，分别代表状态时间戳的更新方式、过期状态数据的可见性，以及对应的时间特征。它们的含义在注释中已经解释得很清楚了。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** </span></span><br><span class="line"><span class="comment"> * This option value configures when to update last access timestamp which prolongs state TTL. </span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">UpdateType</span> </span>&#123;    </span><br><span class="line"><span class="comment">/** TTL is disabled. State does not expire. */</span>    </span><br><span class="line">  Disabled,    </span><br><span class="line"><span class="comment">/** Last access timestamp is initialised when state is created and updated on every write operation. </span></span><br><span class="line"><span class="comment">当每次写操作时，更新时间戳</span></span><br><span class="line"><span class="comment"> */</span>    </span><br><span class="line">  OnCreateAndWrite,    </span><br><span class="line"><span class="comment">/** The same as &lt;code&gt;OnCreateAndWrite&lt;/code&gt; but also updated on read.</span></span><br><span class="line"><span class="comment">当每次读写操作时，更新时间戳</span></span><br><span class="line"><span class="comment"> */</span>    </span><br><span class="line">  OnReadAndWrite</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/** * This option configures whether expired user value can be returned or not. */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">StateVisibility</span> </span>&#123;    </span><br><span class="line">  <span class="comment">/** Return expired user value if it is not cleaned up yet. */</span>    </span><br><span class="line">  ReturnExpiredIfNotCleanedUp,    </span><br><span class="line">  <span class="comment">/** Never return expired user value. */</span>    </span><br><span class="line">  NeverReturnExpired</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/** * This option configures time scale to use for ttl. */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">enum</span> <span class="title">TtlTimeCharacteristic</span> </span>&#123;    </span><br><span class="line">  <span class="comment">/** Processing time, see also &lt;code&gt;org.apache.flink.streaming.api.TimeCharacteristic.ProcessingTime&lt;/code&gt;. */</span>    </span><br><span class="line">  ProcessingTime</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Flink目前仅支持基于处理时间的State TTL，事件时间会在不久的将来支持。</p>
-<p>CleanupStrategies内部类则用来规定过期状态的特殊清理策略，用户在构造StateTtlConfig时，可以通过调用以下方法之一指定。</p>
-<ul>
-<li><strong><code>cleanupFullSnapshot()</code></strong><br>  当对状态做全量快照时清理过期数据，对开启了增量检查点（incremental checkpoint）的RocksDB状态后端无效，对应源码中的EmptyCleanupStrategy。<br>  为什么叫做“空的”清理策略呢？因为该选项只能保证状态持久化时不包含过期数据，但TaskManager本地的过期状态则不作任何处理，所以无法从根本上解决OOM的问题，需要定期重启作业。</li>
-<li><strong><code>cleanupIncrementally(int cleanupSize, boolean runCleanupForEveryRecord)</code></strong><br>  增量清理过期数据，默认在每次访问状态时进行清理，将runCleanupForEveryRecord设为true可以附加在每次写入/删除时清理。cleanupSize指定每次触发清理时检查的状态条数。<br>  仅对基于堆的状态后端有效，对应源码中的IncrementalCleanupStrategy。</li>
-<li><strong><code>cleanupInRocksdbCompactFilter(long queryTimeAfterNumEntries)</code></strong><br>  当RocksDB做compaction操作时，通过Flink定制的过滤器（FlinkCompactionFilter）过滤掉过期状态数据。参数queryTimeAfterNumEntries用于指定在写入多少条状态数据后，通过状态时间戳来判断是否过期。<br>  该策略仅对RocksDB状态后端有效，对应源码中的RocksdbCompactFilterCleanupStrategy。CompactionFilter是RocksDB原生提供的机制，其说明可见<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://github.com/facebook/rocksdb/wiki/Compaction-Filter">这里</a>。</li>
-</ul>
-<p>如果不调用上述方法，则采用默认的后台清理策略，下文有讲。</p>
-<h3 id="TtlStateFactory、TtlStateContext"><a href="#TtlStateFactory、TtlStateContext" class="headerlink" title="TtlStateFactory、TtlStateContext"></a>TtlStateFactory、TtlStateContext</h3><p>在所有Keyed State状态后端的抽象基类AbstractKeyedStateBackend中，创建并记录一个状态实例的方法如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="keyword">public</span> &lt;N, S extends State, V&gt; <span class="function">S <span class="title">getOrCreateKeyedState</span><span class="params">( </span></span></span><br><span class="line"><span class="function"><span class="params">   <span class="keyword">final</span> TypeSerializer&lt;N&gt; namespaceSerializer, StateDescriptor&lt;S, V&gt; stateDescriptor)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  checkNotNull(namespaceSerializer, <span class="string">&quot;Namespace serializer&quot;</span>);</span><br><span class="line">  checkNotNull(keySerializer, <span class="string">&quot;State key serializer has not been configured in the config. &quot;</span> +</span><br><span class="line">  <span class="string">&quot;This operation cannot use partitioned state.&quot;</span>);</span><br><span class="line">  InternalKvState&lt;K, ?, ?&gt; kvState = keyValueStatesByName.get(stateDescriptor.getName());</span><br><span class="line">  <span class="keyword">if</span> (kvState == <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!stateDescriptor.isSerializerInitialized()) &#123;</span><br><span class="line">      stateDescriptor.initializeSerializerUnlessSet(executionConfig);</span><br><span class="line">    &#125;</span><br><span class="line">    kvState = TtlStateFactory.createStateAndWrapWithTtlIfEnabled( namespaceSerializer, stateDescriptor, <span class="keyword">this</span>, ttlTimeProvider);</span><br><span class="line">    keyValueStatesByName.put(stateDescriptor.getName(), kvState);</span><br><span class="line">    publishQueryableStateIfEnabled(stateDescriptor, kvState);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> (S) kvState;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可见是调用了TtlStateFactory.createStateAndWrapWithTtlIfEnabled()方法来真正创建。顾名思义，TtlStateFactory是产生TTL状态的工厂类。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;K, N, SV, TTLSV, S extends State, IS extends S&gt; <span class="function">IS <span class="title">createStateAndWrapWithTtlIfEnabled</span><span class="params">( </span></span></span><br><span class="line"><span class="function"><span class="params">    TypeSerializer&lt;N&gt; namespaceSerializer, </span></span></span><br><span class="line"><span class="function"><span class="params">    StateDescriptor&lt;S, SV&gt; stateDesc, </span></span></span><br><span class="line"><span class="function"><span class="params">    KeyedStateBackend&lt;K&gt; stateBackend, </span></span></span><br><span class="line"><span class="function"><span class="params">    TtlTimeProvider timeProvider</span></span></span><br><span class="line"><span class="function"><span class="params">    )</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  Preconditions.checkNotNull(namespaceSerializer);</span><br><span class="line">  Preconditions.checkNotNull(stateDesc);</span><br><span class="line">  Preconditions.checkNotNull(stateBackend);</span><br><span class="line">  Preconditions.checkNotNull(timeProvider);</span><br><span class="line">  <span class="keyword">return</span> stateDesc.getTtlConfig().isEnabled() ? <span class="keyword">new</span> TtlStateFactory&lt;K, N, SV, TTLSV, S, IS&gt;( namespaceSerializer, stateDesc, stateBackend, timeProvider) .createState() : stateBackend.createInternalState(namespaceSerializer, stateDesc);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>由上可知，如果我们为状态描述符StateDescriptor加入了TTL，那么就会调用TtlStateFactory.createState()方法创建一个带有TTL的状态实例；否则，就调用StateBackend.createInternalState()创建一个普通的状态实例。TtlStateFactory.createState()的代码如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> IS <span class="title">createState</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  SupplierWithException&lt;IS, Exception&gt; stateFactory = stateFactories.get(stateDesc.getClass());</span><br><span class="line">  <span class="keyword">if</span> (stateFactory == <span class="keyword">null</span>) &#123;</span><br><span class="line">    String message = String.format(<span class="string">&quot;State %s is not supported by %s&quot;</span>, stateDesc.getClass(), TtlStateFactory.class);</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> FlinkRuntimeException(message);</span><br><span class="line">  &#125;</span><br><span class="line">  IS state = stateFactory.get();</span><br><span class="line">  <span class="keyword">if</span> (incrementalCleanup != <span class="keyword">null</span>) &#123;</span><br><span class="line">    incrementalCleanup.setTtlState((AbstractTtlState&lt;K, N, ?, TTLSV, ?&gt;) state);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> state;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>其中，stateFactories是一个Map结构，维护了各种状态描述符与对应产生该种状态对象的工厂方法映射。所有的工厂方法都被包装成了Supplier（Java 8提供的函数式接口），所以在上述createState()方法中，可以通过Supplier.get()方法来实际执行createTtl.State()工厂方法，并获得新的状态实例。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">this</span>.stateFactories = createStateFactories();</span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;deprecation&quot;)</span></span><br><span class="line"><span class="keyword">private</span> Map&lt;Class&lt;? extends StateDescriptor&gt;, SupplierWithException&lt;IS, Exception&gt;&gt; createStateFactories() &#123;</span><br><span class="line">  <span class="keyword">return</span> Stream.of(</span><br><span class="line">    Tuple2.of(ValueStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createValueState),</span><br><span class="line">    Tuple2.of(ListStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createListState),</span><br><span class="line">    Tuple2.of(MapStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createMapState),</span><br><span class="line">    Tuple2.of(ReducingStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createReducingState),</span><br><span class="line">    Tuple2.of(AggregatingStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createAggregatingState),</span><br><span class="line">    Tuple2.of(FoldingStateDescriptor.class, (SupplierWithException&lt;IS, Exception&gt;) <span class="keyword">this</span>::createFoldingState)</span><br><span class="line">  ).collect(Collectors.toMap(t -&gt; t.f0, t -&gt; t.f1));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> IS <span class="title">createValueState</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  ValueStateDescriptor&lt;TtlValue&lt;SV&gt;&gt; ttlDescriptor = <span class="keyword">new</span> ValueStateDescriptor&lt;&gt;(</span><br><span class="line">      stateDesc.getName(), </span><br><span class="line">      <span class="keyword">new</span> TtlSerializer&lt;&gt;(LongSerializer.INSTANCE, stateDesc.getSerializer())</span><br><span class="line">  );</span><br><span class="line">  <span class="keyword">return</span> (IS) <span class="keyword">new</span> TtlValueState&lt;&gt;(createTtlStateContext(ttlDescriptor));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="keyword">private</span> &lt;T&gt; <span class="function">IS <span class="title">createListState</span><span class="params">()</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">  ListStateDescriptor&lt;T&gt; listStateDesc = (ListStateDescriptor&lt;T&gt;) stateDesc;</span><br><span class="line">  ListStateDescriptor&lt;TtlValue&lt;T&gt;&gt; ttlDescriptor = <span class="keyword">new</span> ListStateDescriptor&lt;&gt;(</span><br><span class="line">      stateDesc.getName(), </span><br><span class="line">      <span class="keyword">new</span> TtlSerializer&lt;&gt;(LongSerializer.INSTANCE, listStateDesc.getElementSerializer())</span><br><span class="line">  );</span><br><span class="line">  <span class="keyword">return</span> (IS) <span class="keyword">new</span> TtlListState&lt;&gt;(createTtlStateContext(ttlDescriptor));</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 以下略去...</span></span><br></pre></td></tr></table></figure>
-<p>可见，带有TTL的状态类名其实就是普通状态类名加上Ttl前缀，只是没有公开给用户而已。并且在生成<code>Ttl$State</code>时，还会通过createTtlStateContext()方法生成TTL状态的上下文。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line"><span class="keyword">private</span> &lt;OIS extends State, TTLS extends State, V, TTLV&gt; TtlStateContext&lt;OIS, V&gt;</span><br><span class="line">createTtlStateContext(StateDescriptor&lt;TTLS, TTLV&gt; ttlDescriptor) <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    ttlDescriptor.enableTimeToLive(stateDesc.getTtlConfig()); </span><br><span class="line">    <span class="comment">// also used by RocksDB backend for TTL compaction filter config</span></span><br><span class="line">    OIS originalState = (OIS) stateBackend.createInternalState(</span><br><span class="line">        namespaceSerializer, </span><br><span class="line">        ttlDescriptor, </span><br><span class="line">        getSnapshotTransformFactory()</span><br><span class="line">    );</span><br><span class="line"><span class="keyword">return</span> <span class="keyword">new</span> TtlStateContext&lt;&gt;(</span><br><span class="line">        originalState, </span><br><span class="line">        ttlConfig, </span><br><span class="line">        timeProvider, </span><br><span class="line">        (TypeSerializer&lt;V&gt;) stateDesc.getSerializer(),</span><br><span class="line">        registerTtlIncrementalCleanupCallback((InternalKvState&lt;?, ?, ?&gt;) originalState)</span><br><span class="line">    );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>TtlStateContext的本质是对以下几个实例做了封装。</p>
-<ul>
-<li>原始State（通过StateBackend.createInternalState()方法创建）及其序列化器（通过StateDescriptor.getSerializer()方法取得）；</li>
-<li>StateTtlConfig，前文已经讲过；</li>
-<li>TtlTimeProvider，用来提供判断状态过期标准的时间戳。当前只是简单地代理了System.currentTimeMillis()，没有任何其他代码；</li>
-<li>一个Runnable类型的回调方法，通过registerTtlIncrementalCleanupCallback()方法产生，用于状态数据的增量清理，后面会看到它的用途。</li>
-</ul>
-<p>接下来就具体看看TTL状态是如何实现的。</p>
-<h3 id="AbstractTtlState、AbstractTtlDecorator"><a href="#AbstractTtlState、AbstractTtlDecorator" class="headerlink" title="AbstractTtlState、AbstractTtlDecorator"></a>AbstractTtlState、AbstractTtlDecorator</h3><p>在解说之前，先放一幅类图。</p>
-<p><img src="_v_images/20200917142252357_1752793097"></p>
-<p>所有Ttl.State都是AbstractTtlState的子类，而AbstractTtlState又是装饰器AbstractTtlDecorator的子类。AbstractTtlDecorator提供了最基本的TTL逻辑，代码不长，全部抄录如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">abstract</span> <span class="class"><span class="keyword">class</span> <span class="title">AbstractTtlDecorator</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">  <span class="comment">/** Wrapped original state handler. */</span></span><br><span class="line">  <span class="keyword">final</span> T original;</span><br><span class="line">  <span class="keyword">final</span> StateTtlConfig config;</span><br><span class="line">  <span class="keyword">final</span> TtlTimeProvider timeProvider;</span><br><span class="line">  <span class="comment">/** Whether to renew expiration timestamp on state read access. */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">boolean</span> updateTsOnRead;</span><br><span class="line">  <span class="comment">/** Whether to renew expiration timestamp on state read access. */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">boolean</span> returnExpired;</span><br><span class="line">  <span class="comment">/** State value time to live in milliseconds. */</span></span><br><span class="line">  <span class="keyword">final</span> <span class="keyword">long</span> ttl;</span><br><span class="line">  AbstractTtlDecorator( T original, StateTtlConfig config, TtlTimeProvider timeProvider) &#123;</span><br><span class="line">  <span class="comment">// ......</span></span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 查到已过期数据，返回null</span></span><br><span class="line">  &lt;V&gt; <span class="function">V <span class="title">getUnexpired</span><span class="params">(TtlValue&lt;V&gt; ttlValue)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> ttlValue == <span class="keyword">null</span> || (expired(ttlValue) &amp;&amp; !returnExpired) ? <span class="keyword">null</span> : ttlValue.getUserValue();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 过期掉数据</span></span><br><span class="line">  &lt;V&gt; <span class="function"><span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(TtlValue&lt;V&gt; ttlValue)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> TtlUtils.expired(ttlValue, ttl, timeProvider);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 包装数据</span></span><br><span class="line">  &lt;V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">wrapWithTs</span><span class="params">(V value)</span> </span>&#123;</span><br><span class="line">   <span class="keyword">return</span> TtlUtils.wrapWithTs(value, timeProvider.currentTimestamp());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 重新包装数据</span></span><br><span class="line">  &lt;V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">rewrapWithNewTs</span><span class="params">(TtlValue&lt;V&gt; ttlValue)</span> </span>&#123;</span><br><span class="line">   <span class="keyword">return</span> wrapWithTs(ttlValue.getUserValue());</span><br><span class="line">  &#125;</span><br><span class="line">  &lt;SE extends Throwable, CE extends Throwable, CLE extends Throwable, V&gt; <span class="function">V <span class="title">getWithTtlCheckAndUpdate</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      SupplierWithException&lt;TtlValue&lt;V&gt;, SE&gt; getter,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingConsumer&lt;TtlValue&lt;V&gt;, CE&gt; updater,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingRunnable&lt;CLE&gt; stateClear</span></span></span><br><span class="line"><span class="function"><span class="params">  )</span> <span class="keyword">throws</span> SE, CE, CLE </span>&#123;</span><br><span class="line">    TtlValue&lt;V&gt; ttlValue = getWrappedWithTtlCheckAndUpdate(getter, updater, stateClear);</span><br><span class="line">    <span class="keyword">return</span> ttlValue == <span class="keyword">null</span> ? <span class="keyword">null</span> : ttlValue.getUserValue();</span><br><span class="line">  &#125;</span><br><span class="line">  &lt;SE extends Throwable, CE extends Throwable, CLE extends Throwable, V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">getWrappedWithTtlCheckAndUpdate</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      SupplierWithException&lt;TtlValue&lt;V&gt;, SE&gt; getter,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingConsumer&lt;TtlValue&lt;V&gt;, CE&gt; updater,</span></span></span><br><span class="line"><span class="function"><span class="params">      ThrowingRunnable&lt;CLE&gt; stateClear</span></span></span><br><span class="line"><span class="function"><span class="params">  )</span> <span class="keyword">throws</span> SE, CE, CLE </span>&#123;</span><br><span class="line">      TtlValue&lt;V&gt; ttlValue = getter.get();</span><br><span class="line">      <span class="keyword">if</span> (ttlValue == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (expired(ttlValue)) &#123;</span><br><span class="line">        stateClear.run();</span><br><span class="line">        <span class="keyword">if</span> (!returnExpired) &#123;</span><br><span class="line">          <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> (updateTsOnRead) &#123;</span><br><span class="line">          updater.accept(rewrapWithNewTs(ttlValue));</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> ttlValue;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>它的成员属性比较容易理解，例如，updateTsOnRead表示在读取状态值时也更新时间戳（即UpdateType.OnReadAndWrite），returnExpired表示即使状态过期，在被真正删除之前也返回它的值（即StateVisibility.ReturnExpiredIfNotCleanedUp）。</p>
-<p>状态值与TTL的包装（成为TtlValue）以及过期检测都由工具类TtlUtils来负责，思路很简单，代码如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TtlUtils</span> </span>&#123;</span><br><span class="line">  <span class="keyword">static</span> &lt;V&gt; <span class="function"><span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="meta">@Nullable</span> TtlValue&lt;V&gt; ttlValue, <span class="keyword">long</span> ttl, TtlTimeProvider timeProvider)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> expired(ttlValue, ttl, timeProvider.currentTimestamp());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">static</span> &lt;V&gt; <span class="function"><span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="meta">@Nullable</span> TtlValue&lt;V&gt; ttlValue, <span class="keyword">long</span> ttl, <span class="keyword">long</span> currentTimestamp)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> ttlValue != <span class="keyword">null</span> &amp;&amp; expired(ttlValue.getLastAccessTimestamp(), ttl, currentTimestamp);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="keyword">long</span> ts, <span class="keyword">long</span> ttl, TtlTimeProvider timeProvider)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> expired(ts, ttl, timeProvider.currentTimestamp());</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">expired</span><span class="params">(<span class="keyword">long</span> ts, <span class="keyword">long</span> ttl, <span class="keyword">long</span> currentTimestamp)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> getExpirationTimestamp(ts, ttl) &lt;= currentTimestamp;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">long</span> <span class="title">getExpirationTimestamp</span><span class="params">(<span class="keyword">long</span> ts, <span class="keyword">long</span> ttl)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> ttlWithoutOverflow = ts &gt; <span class="number">0</span> ? Math.min(Long.MAX_VALUE - ts, ttl) : ttl;</span><br><span class="line">    <span class="keyword">return</span> ts + ttlWithoutOverflow;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">static</span> &lt;V&gt; <span class="function">TtlValue&lt;V&gt; <span class="title">wrapWithTs</span><span class="params">(V value, <span class="keyword">long</span> ts)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> TtlValue&lt;&gt;(value, ts);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>TtlValue的属性只有两个：状态值和时间戳，代码略去。</p>
-<p>AbstractTtlDecorator核心方法是获取状态值的getWrappedWithTtlCheckAndUpdate()，它接受三个参数：</p>
-<ul>
-<li>getter：一个可抛出异常的Supplier，用于获取状态值；</li>
-<li>updater：一个可抛出异常的Consumer，用于更新状态的时间戳；</li>
-<li>stateClear：一个可抛出异常的Runnable，用于异步删除过期状态。</li>
-</ul>
-<p>可见，在默认情况下的后台清理策略是：<strong>只有状态值被读取时，才会做过期检测，并异步清除过期的状态</strong>。这种<strong>惰性清理</strong>的机制会导致<strong>那些实际已经过期但从未被再次访问过的状态无法被删除</strong>，需要特别注意。官方文档中也已有提示：</p>
-<blockquote>
-<p>By default, expired values are explicitly removed on read, such as ValueState#value, and periodically garbage collected in the background if supported by the configured state backend.</p>
-</blockquote>
-<p>当确认到状态过期时，会调用stateClear的逻辑进行删除；如果需要在读取时顺便更新状态的时间戳，会调用updater的逻辑重新包装一个TtlValue。</p>
-<p>AbstractTtlState的代码更加简单，主要的方法列举如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> Runnable accessCallback; &lt;SE extends Throwable, CE extends Throwable, T&gt; <span class="function">T <span class="title">getWithTtlCheckAndUpdate</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">  SupplierWithException&lt;TtlValue&lt;T&gt;, SE&gt; getter,</span></span></span><br><span class="line"><span class="function"><span class="params">  ThrowingConsumer&lt;TtlValue&lt;T&gt;, CE&gt; updater)</span> <span class="keyword">throws</span> SE, CE </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> getWithTtlCheckAndUpdate(getter, updater, original::clear);&#125; <span class="meta">@Overridepublic</span> <span class="function"><span class="keyword">void</span> <span class="title">clear</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  original.clear();</span><br><span class="line">  accessCallback.run();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>其中，accessCallback就是TtlStateContext中注册的增量清理回调。</p>
-<p>下面以TtlMapState为例，看看具体的TTL状态如何利用上文所述的这些实现。</p>
-<h3 id="TtlMapState"><a href="#TtlMapState" class="headerlink" title="TtlMapState"></a>TtlMapState</h3><p>以下是部分代码。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TtlMapState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">UK</span>, <span class="title">UV</span>&gt;</span></span><br><span class="line"><span class="class"><span class="keyword">extends</span> <span class="title">AbstractTtlState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">Map</span>&lt;<span class="title">UK</span>, <span class="title">UV</span>&gt;, <span class="title">Map</span>&lt;<span class="title">UK</span>, <span class="title">TtlValue</span>&lt;<span class="title">UV</span>&gt;&gt;, <span class="title">InternalMapState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">UK</span>, <span class="title">TtlValue</span>&lt;<span class="title">UV</span>&gt;&gt;&gt;</span></span><br><span class="line"><span class="class"><span class="keyword">implements</span> <span class="title">InternalMapState</span>&lt;<span class="title">K</span>, <span class="title">N</span>, <span class="title">UK</span>, <span class="title">UV</span>&gt; </span>&#123;</span><br><span class="line">    TtlMapState(TtlStateContext&lt;InternalMapState&lt;K, N, UK, TtlValue&lt;UV&gt;&gt;, Map&lt;UK, UV&gt;&gt; ttlStateContext) &#123;</span><br><span class="line">        <span class="keyword">super</span>(ttlStateContext);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> UV <span class="title">get</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        TtlValue&lt;UV&gt; ttlValue = getWrapped(key);</span><br><span class="line">        <span class="keyword">return</span> ttlValue == <span class="keyword">null</span> ? <span class="keyword">null</span> : ttlValue.getUserValue();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> TtlValue&lt;UV&gt; <span class="title">getWrapped</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        accessCallback.run();</span><br><span class="line">        <span class="keyword">return</span> getWrappedWithTtlCheckAndUpdate(() -&gt; original.get(key), v -&gt; original.put(key, v), () -&gt; original.remove(key));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(UK key, UV value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        accessCallback.run();</span><br><span class="line">        original.put(key, wrapWithTs(value));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">putAll</span><span class="params">(Map&lt;UK, UV&gt; map)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        accessCallback.run();</span><br><span class="line">        <span class="keyword">if</span> (map == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        Map&lt;UK, TtlValue&lt;UV&gt;&gt; ttlMap = <span class="keyword">new</span> HashMap&lt;&gt;(map.size());</span><br><span class="line">        <span class="keyword">long</span> currentTimestamp = timeProvider.currentTimestamp();</span><br><span class="line">        <span class="keyword">for</span> (Map.Entry&lt;UK, UV&gt; entry : map.entrySet()) &#123;</span><br><span class="line">            UK key = entry.getKey();</span><br><span class="line">            ttlMap.put(key, TtlUtils.wrapWithTs(entry.getValue(), currentTimestamp));</span><br><span class="line">        &#125;</span><br><span class="line">        original.putAll(ttlMap);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    accessCallback.run();</span><br><span class="line">    original.remove(key);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">contains</span><span class="params">(UK key)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    TtlValue&lt;UV&gt; ttlValue = getWrapped(key);</span><br><span class="line">    <span class="keyword">return</span> ttlValue != <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">// ......</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可见，TtlMapState的增删改查操作都是在原MapState上进行，只是加上了TTL相关的逻辑，这也是装饰器模式的特点。例如，TtlMapState.get()方法调用了上述AbstractTtlDecorator.getWrappedWithTtlCheckAndUpdate()方法，传入的获取（getter）、插入（updater）和删除（stateClear）的逻辑就是原MapState的get()、put()和remove()方法。而TtlMapState.put()只是在调用原MapState的put()方法之前，将状态包装为TtlValue而已。</p>
-<h2 id="增量清理策略"><a href="#增量清理策略" class="headerlink" title="增量清理策略"></a>增量清理策略</h2><p>另外需要注意，所有增删改查操作之前都需要执行accessCallback.run()方法。如果启用了增量清理策略，该Runnable会通过在状态数据上维护一个全局迭代器向前清理过期数据。如果未启用增量清理策略，accessCallback为空。前文提到过的<code>TtlStateFactory.registerTtlIncrementalCleanupCallback()</code> 方法如下。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Runnable <span class="title">registerTtlIncrementalCleanupCallback</span><span class="params">(InternalKvState&lt;?, ?, ?&gt; originalState)</span> </span>&#123;</span><br><span class="line">    StateTtlConfig.IncrementalCleanupStrategy config =</span><br><span class="line">        ttlConfig.getCleanupStrategies().getIncrementalCleanupStrategy();</span><br><span class="line">    <span class="keyword">boolean</span> cleanupConfigured = config != <span class="keyword">null</span> &amp;&amp; incrementalCleanup != <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">boolean</span> isCleanupActive = cleanupConfigured &amp;&amp;</span><br><span class="line">        isStateIteratorSupported(originalState, incrementalCleanup.getCleanupSize());</span><br><span class="line">    Runnable callback = isCleanupActive ? incrementalCleanup::stateAccessed : () -&gt; &#123; &#125;;</span><br><span class="line">    <span class="keyword">if</span> (isCleanupActive &amp;&amp; config.runCleanupForEveryRecord()) &#123;</span><br><span class="line">        stateBackend.registerKeySelectionListener(stub -&gt; callback.run());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> callback;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>实际清理的代码则位于<code>TtlIncrementalCleanup</code>类中，stateIterator就是状态数据的迭代器。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">stateAccessed</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    initIteratorIfNot();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        runCleanup();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> FlinkRuntimeException(<span class="string">&quot;Failed to incrementally clean up state with TTL&quot;</span>, t);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">initIteratorIfNot</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (stateIterator == <span class="keyword">null</span> || !stateIterator.hasNext()) &#123;</span><br><span class="line">        stateIterator = ttlState.original.getStateIncrementalVisitor(cleanupSize);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">runCleanup</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> entryNum = <span class="number">0</span>;</span><br><span class="line">    Collection&lt;StateEntry&lt;K, N, S&gt;&gt; nextEntries;</span><br><span class="line">    <span class="keyword">while</span> (    entryNum &lt; cleanupSize &amp;&amp;</span><br><span class="line">    stateIterator.hasNext() &amp;&amp;    !(nextEntries = stateIterator.nextEntries()).isEmpty()) &#123;</span><br><span class="line">        <span class="keyword">for</span> (StateEntry&lt;K, N, S&gt; state : nextEntries) &#123;</span><br><span class="line">            S cleanState = ttlState.getUnexpiredOrNull(state.getState());</span><br><span class="line">            <span class="keyword">if</span> (cleanState == <span class="keyword">null</span>) &#123;</span><br><span class="line">                stateIterator.remove(state);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (cleanState != state.getState()) &#123;</span><br><span class="line">                stateIterator.update(state, cleanState);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        entryNum += nextEntries.size();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>RocksDB压缩过滤清理策略</p>
-<p>如果启用了该策略，Flink会通过维护一个<code>RocksDbTtlCompactFiltersManager</code>实例来管理<code>FlinkCompactionFilter</code>过滤器。<code>FlinkCompactionFilter</code>并不是在Flink工程中维护的，而是位于Data Artisans为Flink专门维护的FRocksDB库内。<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://issues.apache.org/jira/browse/FLINK-10471">FLINK-10471</a>实现了FlinkCompactionFilter及其附属逻辑，主要为C++代码，通过JNI调用。对应的commit详见<a target="_blank" rel="noopener" href="https://links.jianshu.com/go?to=https://github.com/dataArtisans/frocksdb/commit/01dca02244522e405c9258000903fee81496f72c">GitHub</a>，这里就不班门弄斧了。关于RocksDB的compaction相关细节，笔者之前也写过<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/e89cd503c9ae">一篇长文</a>做了些分析。</p>
-
       
     </div>
 
@@ -607,7 +484,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-05 10:47:05" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:05+08:00">2021-04-05</time>
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
             </span>
 
           
@@ -622,7 +499,252 @@
 
       
           <h1 id="Oceanus"><a href="#Oceanus" class="headerlink" title="Oceanus"></a>Oceanus</h1><p>org.springframework.web.servlet.HandlerInterceptor</p>
+<h2 id="任务编译"><a href="#任务编译" class="headerlink" title="任务编译"></a>任务编译</h2><h2 id="Oceanus-逻辑"><a href="#Oceanus-逻辑" class="headerlink" title="Oceanus 逻辑"></a>Oceanus 逻辑</h2><p>com.tencent.oceanus.controller.ProjectJobController#compileJob</p>
+<h2 id="Jar任务"><a href="#Jar任务" class="headerlink" title="Jar任务"></a>Jar任务</h2><p>猜想: 上传Jar包 -&gt; 编译</p>
+<ol>
+<li>创建log目录</li>
+<li>创建工作目录</li>
+<li>将所有的依赖包copy工作目录</li>
+<li>JobInstanceDTO 对象写入到.input文件</li>
+<li>执行编译</li>
+<li>编译结果写入到.output</li>
+</ol>
+<p>Oceanus编译的主类: com.tencent.oceanus.compiler.OceanusCompiler</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash">&#123;java.home&#125;/bin/java -Xms512m -Xmx2048m -Dlog4j.configuration=file:conf/log4j-client.properties -Dlog.file=log4j.xml -classpath xxx com.tencent.oceanus.compiler.OceanusCompiler</span></span><br></pre></td></tr></table></figure>
+<h2 id="com-tencent-oceanus-compiler-OceanusCompiler"><a href="#com-tencent-oceanus-compiler-OceanusCompiler" class="headerlink" title="com.tencent.oceanus.compiler.OceanusCompiler"></a>com.tencent.oceanus.compiler.OceanusCompiler</h2><ol>
+<li>读取.input文件，转换为 JobInstanceDTO</li>
+<li>执行编译</li>
+<li>编译结果写入到.output</li>
+</ol>
+<h3 id="Jar任务编译"><a href="#Jar任务编译" class="headerlink" title="Jar任务编译"></a>Jar任务编译</h3><ol>
+<li>参数列表使用空格分割</li>
+<li></li>
+</ol>
+<p><code>com.tencent.oceanus.compiler.OceanusJarCompiler#compileJar</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"> StreamExplainEnvironment streamExplainEnvironment = <span class="keyword">new</span> StreamExplainEnvironment();</span><br><span class="line"><span class="keyword">if</span> (defaultParallelism != <span class="keyword">null</span>) &#123;</span><br><span class="line">    streamExplainEnvironment.setParallelism(defaultParallelism);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    streamExplainEnvironment.setAsContext();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        mainMethod.invoke(<span class="keyword">null</span>, (Object) arguments);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InvocationTargetException e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> e.getTargetException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (ProgramExecutedException e) &#123;</span><br><span class="line">    StreamGraph streamGraph = streamExplainEnvironment.getPlan();</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> OceanusPlan(streamGraph, userJarFilePaths);</span><br><span class="line">&#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    streamExplainEnvironment.unsetAsContext()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="SQL任务"><a href="#SQL任务" class="headerlink" title="SQL任务"></a>SQL任务</h2><h2 id="任务运行"><a href="#任务运行" class="headerlink" title="任务运行"></a>任务运行</h2><h3 id="Oceanus逻辑"><a href="#Oceanus逻辑" class="headerlink" title="Oceanus逻辑"></a>Oceanus逻辑</h3><p>com.tencent.oceanus.controller.ProjectJobController#startJob</p>
+<h3 id="流程"><a href="#流程" class="headerlink" title="流程"></a>流程</h3>
+      
+    </div>
 
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/dev_platform/Oceanus2.0-logic/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/dev_platform/Oceanus2.0-logic/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Oceanus2-0-logic"><a href="#Oceanus2-0-logic" class="headerlink" title="Oceanus2.0 logic"></a>Oceanus2.0 logic</h1>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/dev_platform/Oceanus2.0-recalling/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/dev_platform/Oceanus2.0-recalling/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Oceanus-2-0拾忆"><a href="#Oceanus-2-0拾忆" class="headerlink" title="Oceanus 2.0拾忆"></a>Oceanus 2.0拾忆</h1><h2 id="validation-api"><a href="#validation-api" class="headerlink" title="validation-api"></a>validation-api</h2><p>校验bean</p>
+<table>
+<thead>
+<tr>
+<th>注解</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AssertFalse</td>
+<td>用于boolean字段，该字段的值只能为false</td>
+</tr>
+<tr>
+<td>AssertTrue</td>
+<td>用于boolean字段，该字段只能为true</td>
+</tr>
+<tr>
+<td>DecimalMax(value)</td>
+<td>被注释的元素必须是一个数字，只能大于或等于该值</td>
+</tr>
+<tr>
+<td>DecimalMin(value)</td>
+<td>被注释的元素必须是一个数字，只能小于或等于该值</td>
+</tr>
+<tr>
+<td>Digits(integer,fraction)</td>
+<td>检查是否是一种数字的(整数,小数)的位数</td>
+</tr>
+<tr>
+<td>Email</td>
+<td>被注释的元素必须是电子邮箱地址</td>
+</tr>
+<tr>
+<td>Future</td>
+<td>检查该字段的日期是否是属于将来的日期</td>
+</tr>
+<tr>
+<td>FutureOrPresent</td>
+<td>判断日期是否是将来或现在日期</td>
+</tr>
+<tr>
+<td>Max(value)</td>
+<td>该字段的值只能小于或等于该值</td>
+</tr>
+<tr>
+<td>Min(value)</td>
+<td>该字段的值只能大于或等于该值</td>
+</tr>
+<tr>
+<td>Negative</td>
+<td>判断负数</td>
+</tr>
+<tr>
+<td>NegativeOrZero</td>
+<td>判断负数或0</td>
+</tr>
+<tr>
+<td>NotBlank</td>
+<td>只能用于字符串不为null，并且字符串trim()以后length要大于0</td>
+</tr>
+<tr>
+<td>NotEmpty</td>
+<td>集合对象的元素不为0，即集合不为空，也可以用于字符串不为null</td>
+</tr>
+<tr>
+<td>NotNull</td>
+<td>不能为null</td>
+</tr>
+<tr>
+<td>Null    必须为</td>
+<td>null</td>
+</tr>
+<tr>
+<td>Past</td>
+<td>检查该字段的日期是在过去</td>
+</tr>
+<tr>
+<td>PastOrPresent</td>
+<td>判断日期是否是过去或现在日期</td>
+</tr>
+<tr>
+<td>Pattern(value)</td>
+<td>被注释的元素必须符合指定的正则表达式</td>
+</tr>
+<tr>
+<td>Positive</td>
+<td>判断正数</td>
+</tr>
+<tr>
+<td>PositiveOrZero</td>
+<td>判断正数或0</td>
+</tr>
+<tr>
+<td>Size(max, min)</td>
+<td>检查该字段的size是否在min和max之间，可以是字符串、数组、集合、Map等</td>
+</tr>
+<tr>
+<td>Length(max, min)</td>
+<td>判断字符串长度</td>
+</tr>
+<tr>
+<td>CreditCardNumber</td>
+<td>被注释的字符串必须通过Luhn校验算法，银行卡，信用卡等号码一般都用Luhn计算合法性</td>
+</tr>
+</tbody></table>
+<h2 id="jackson-annotation"><a href="#jackson-annotation" class="headerlink" title="jackson.annotation"></a>jackson.annotation</h2><p>bean转换为json时候，重新指定字段名称</p>
+<h2 id="MyBatis出入记录，bean的id自增"><a href="#MyBatis出入记录，bean的id自增" class="headerlink" title="MyBatis出入记录，bean的id自增"></a>MyBatis出入记录，bean的id自增</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">insert</span> <span class="attr">id</span>=<span class="string">&quot;addJob&quot;</span> <span class="attr">useGeneratedKeys</span>=<span class="string">&quot;true&quot;</span> <span class="attr">keyProperty</span>=<span class="string">&quot;id&quot;</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="Spring-security-Spring-boot"><a href="#Spring-security-Spring-boot" class="headerlink" title="Spring security + Spring boot"></a>Spring security + Spring boot</h2><h2 id="com-fasterxml-jackson-databind-ObjectMapper"><a href="#com-fasterxml-jackson-databind-ObjectMapper" class="headerlink" title="com.fasterxml.jackson.databind.ObjectMapper"></a>com.fasterxml.jackson.databind.ObjectMapper</h2><h2 id="Thread-currentThread-setContextClassLoader"><a href="#Thread-currentThread-setContextClassLoader" class="headerlink" title="Thread.currentThread().setContextClassLoader"></a>Thread.currentThread().setContextClassLoader</h2><h2 id="org-apache-flink-streaming-api-environment-StreamExplainEnvironment"><a href="#org-apache-flink-streaming-api-environment-StreamExplainEnvironment" class="headerlink" title="org.apache.flink.streaming.api.environment.StreamExplainEnvironment"></a>org.apache.flink.streaming.api.environment.StreamExplainEnvironment</h2>
       
     </div>
 
@@ -665,7 +787,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-05 10:47:03" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
             </span>
 
           
@@ -789,7 +911,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-05 10:47:03" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
             </span>
 
           
@@ -846,7 +968,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-05 10:47:03" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
             </span>
 
           
@@ -876,81 +998,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/upsert/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/upsert/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-05 10:47:03" itemprop="dateCreated datePublished" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="upsert-on-duplicate-key-update"><a href="#upsert-on-duplicate-key-update" class="headerlink" title="upsert: on duplicate key update"></a>upsert: on duplicate key update</h1><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/better-farther-world2099/articles/11737376.html">MySQL upsert语法</a></p>
-<h2 id="不能加where条件"><a href="#不能加where条件" class="headerlink" title="不能加where条件"></a>不能加where条件</h2><p>因为这是个插入语句，所以不能加where条件。</p>
-<h2 id="影响的行数"><a href="#影响的行数" class="headerlink" title="影响的行数"></a>影响的行数</h2><ul>
-<li>如果是插入操作，受到影响行的值为1；</li>
-<li>如果更新操作，受到影响行的值为2；</li>
-<li>如果更新的数据和已有的数据一样（就相当于没变，所有值保持不变），受到影响的行的值为0。</li>
-</ul>
-<h2 id="样例一"><a href="#样例一" class="headerlink" title="样例一"></a>样例一</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&gt;</span> <span class="keyword">desc</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">-------+------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> Field <span class="operator">|</span> Type <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Key <span class="operator">|</span> <span class="keyword">Default</span> <span class="operator">|</span> Extra          <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------+------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> f1    <span class="operator">|</span> <span class="type">int</span>  <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span> PRI <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>  <span class="operator">|</span> auto_increment <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> f2    <span class="operator">|</span> <span class="type">int</span>  <span class="operator">|</span> YES  <span class="operator">|</span>     <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>  <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> f3    <span class="operator">|</span> <span class="type">int</span>  <span class="operator">|</span> YES  <span class="operator">|</span>     <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span>  <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------+------+------+-----+---------+----------------+</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2     <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t1(f1,f3) <span class="keyword">values</span> (<span class="number">1</span>,<span class="number">3</span>),(<span class="number">2</span>,<span class="number">7</span>) <span class="keyword">on</span> duplicate key <span class="keyword">update</span> f3<span class="operator">=</span>f3<span class="operator">+</span><span class="number">1</span>;</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected</span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2     <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">7</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t1(f1,f3) <span class="keyword">values</span> (<span class="number">1</span>,<span class="number">3</span>),(<span class="number">2</span>,<span class="number">7</span>) <span class="keyword">on</span> duplicate key <span class="keyword">update</span> f3<span class="operator">=</span>f3<span class="operator">+</span><span class="number">1</span>;</span><br><span class="line">Query OK, <span class="number">4</span> <span class="keyword">rows</span> affected</span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2     <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">8</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t1(f1,f3) <span class="keyword">values</span> (<span class="number">1</span>,<span class="number">3</span>),(<span class="number">1</span>,<span class="number">7</span>) <span class="keyword">on</span> duplicate key <span class="keyword">update</span> f3<span class="operator">=</span>f3<span class="operator">+</span><span class="number">1</span>;</span><br><span class="line"><span class="comment">-- 同一行冲突两次，会执行两次更新语句</span></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2     <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">6</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">8</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2     <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">6</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="operator">&lt;</span><span class="keyword">null</span><span class="operator">&gt;</span> <span class="operator">|</span> <span class="number">8</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+--------+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h2 id="VALUES引用"><a href="#VALUES引用" class="headerlink" title="VALUES引用"></a>VALUES引用</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&gt;</span> <span class="keyword">truncate</span> t1;</span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1,f2,f3) <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>),(<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>)  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> f3<span class="operator">=</span><span class="keyword">VALUES</span>(f1)<span class="operator">+</span><span class="keyword">VALUES</span>(f2);</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected</span><br><span class="line"><span class="type">Time</span>: <span class="number">0.003</span>s</span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="comment">-- 没有出现冲突，直接赋值</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span> <span class="number">5</span>  <span class="operator">|</span> <span class="number">6</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"><span class="type">Time</span>: <span class="number">0.008</span>s</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 再执行一次，冲突了.执行冲突后的处理语句</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1,f2,f3) <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>),(<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>)  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> f3<span class="operator">=</span><span class="keyword">VALUES</span>(f1)<span class="operator">+</span><span class="keyword">VALUES</span>(f2);</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected</span><br><span class="line"><span class="type">Time</span>: <span class="number">0.002</span>s</span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span> <span class="number">5</span>  <span class="operator">|</span> <span class="number">9</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"><span class="type">Time</span>: <span class="number">0.008</span>s</span><br></pre></td></tr></table></figure>
-<h2 id="ALAIS引用"><a href="#ALAIS引用" class="headerlink" title="ALAIS引用"></a>ALAIS引用</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&gt;</span> <span class="keyword">truncate</span> <span class="keyword">table</span> t1;</span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1,f2,f3) <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>),(<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>) <span class="keyword">AS</span> <span class="keyword">new</span>  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> f3 <span class="operator">=</span> new.f1<span class="operator">+</span>new.f2;</span><br><span class="line"><span class="comment">-- 空表没有冲突，直接添加了</span></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span> <span class="number">5</span>  <span class="operator">|</span> <span class="number">6</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br><span class="line"><span class="type">Time</span>: <span class="number">0.008</span>s</span><br><span class="line"><span class="comment">-- 再来</span></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1,f2,f3) <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>),(<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>) <span class="keyword">AS</span> <span class="keyword">new</span>  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> f3 <span class="operator">=</span> new.f1<span class="operator">+</span>new.f2;</span><br><span class="line"><span class="comment">-- 出现冲突了, 两行更新</span></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span> <span class="number">5</span>  <span class="operator">|</span> <span class="number">9</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br></pre></td></tr></table></figure>
-<p>等价写法</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1,f2,f3) <span class="keyword">VALUES</span> (<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>),(<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>) <span class="keyword">AS</span> <span class="keyword">new</span>(m,n,p)</span><br><span class="line">  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> c <span class="operator">=</span> m<span class="operator">+</span>n;</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 <span class="keyword">SET</span> f1<span class="operator">=</span><span class="number">1</span>,f2<span class="operator">=</span><span class="number">2</span>,f3<span class="operator">=</span><span class="number">3</span> <span class="keyword">AS</span> <span class="keyword">new</span></span><br><span class="line">  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> c <span class="operator">=</span> new.a<span class="operator">+</span>new.b;</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 <span class="keyword">SET</span> f1<span class="operator">=</span><span class="number">1</span>,f2<span class="operator">=</span><span class="number">2</span>,f3<span class="operator">=</span><span class="number">3</span> <span class="keyword">AS</span> <span class="keyword">new</span>(m,n,p)</span><br><span class="line">  <span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> c <span class="operator">=</span> m<span class="operator">+</span>n;</span><br></pre></td></tr></table></figure>
-<h2 id="UNION引用"><a href="#UNION引用" class="headerlink" title="UNION引用"></a>UNION引用</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> t1 (f1, f2)</span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span></span><br><span class="line">  (<span class="keyword">SELECT</span> c, d <span class="keyword">FROM</span> t2</span><br><span class="line">   <span class="keyword">UNION</span></span><br><span class="line">   <span class="keyword">SELECT</span> e, f <span class="keyword">FROM</span> t3) <span class="keyword">AS</span> dt</span><br><span class="line"><span class="keyword">ON</span> DUPLICATE KEY <span class="keyword">UPDATE</span> f2 <span class="operator">=</span> f2 <span class="operator">+</span> f3;</span><br></pre></td></tr></table></figure>
-
-<h2 id="key自增情况"><a href="#key自增情况" class="headerlink" title="key自增情况"></a>key自增情况</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">&gt;</span> <span class="keyword">truncate</span> <span class="keyword">table</span> t1;</span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t1(f2,f3) <span class="keyword">values</span> (<span class="number">1</span>,<span class="number">3</span>),(<span class="number">1</span>,<span class="number">7</span>) <span class="keyword">on</span> duplicate key <span class="keyword">update</span> f3<span class="operator">=</span>f2<span class="operator">+</span>f3;</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected</span><br><span class="line"><span class="type">Time</span>: <span class="number">0.002</span>s</span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">insert</span> <span class="keyword">into</span> t1(f2,f3) <span class="keyword">values</span> (<span class="number">1</span>,<span class="number">3</span>),(<span class="number">1</span>,<span class="number">7</span>) <span class="keyword">on</span> duplicate key <span class="keyword">update</span> f3<span class="operator">=</span>f2<span class="operator">+</span>f3;</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected</span><br><span class="line"><span class="type">Time</span>: <span class="number">0.002</span>s</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 不存在主键冲突，连续可以插入两次</span></span><br><span class="line"></span><br><span class="line"><span class="operator">&gt;</span> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> t1;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> f1 <span class="operator">|</span> f2 <span class="operator">|</span> f3 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2</span>  <span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">7</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">3</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> <span class="number">4</span>  <span class="operator">|</span> <span class="number">1</span>  <span class="operator">|</span> <span class="number">7</span>  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----+----+</span></span><br><span class="line"><span class="number">4</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span></span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/24/">24</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/25/">25</a><a class="extend next" rel="next" href="/page/3/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1016,7 +1067,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">240</span>
+          <span class="site-state-item-count">241</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1029,7 +1080,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">120</span>
+        <span class="site-state-item-count">122</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

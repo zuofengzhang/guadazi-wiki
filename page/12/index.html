@@ -183,6 +183,307 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/flink-cep-office/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/flink-cep-office/" class="post-title-link" itemprop="url">【转载】flink cep官方文档</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-06-09 00:00:00" itemprop="dateCreated datePublished" datetime="2019-06-09T00:00:00+08:00">2019-06-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><a target="_blank" rel="noopener" href="https://github.com/crestofwave1/oneFlink/blob/master/doc/CEP/FlinkCEPOfficeWeb.md">转载自 https://github.com/crestofwave1/oneFlink/blob/master/doc/CEP/FlinkCEPOfficeWeb.md</a></p>
+<h2 id="0-本文概述简介"><a href="#0-本文概述简介" class="headerlink" title="0. 本文概述简介"></a>0. 本文概述简介</h2><p>FlinkCEP是在Flink之上实现的复杂事件处理（CEP）库。 它允许你在无界的事件流中检测事件模式，让你有机会掌握数据中重要的事项。</p>
+<p>本文描述了Flink CEP中可用的API调用。 首先介绍Pattern API，它允许你指定要在流中检测的模式，然后介绍如何检测匹配事件序列并对其进行操作。 然后，我们将介绍CEP库在处理事件时间延迟时所做的假设。</p>
+<h2 id="1-入门"><a href="#1-入门" class="headerlink" title="1.入门"></a>1.入门</h2><p>首先是要在你的pom.xml文件中，引入CEP库。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.apache.flink<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>flink-cep_2.11<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.5.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>注意要应用模式匹配的DataStream中的事件必须实现正确的equals（）和hashCode（）方法，因为FlinkCEP使用它们来比较和匹配事件。</p>
+<p>第一个demo如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">DataStream&lt;Event&gt; input = ...</span><br><span class="line"></span><br><span class="line">Pattern&lt;Event, ?&gt; pattern = Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>).where(</span><br><span class="line">        <span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event event)</span> </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> event.getId() == <span class="number">42</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    ).next(<span class="string">&quot;middle&quot;</span>).subtype(SubEvent.class).where(</span><br><span class="line">        <span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(SubEvent subEvent)</span> </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> subEvent.getVolume() &gt;= <span class="number">10.0</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    ).followedBy(<span class="string">&quot;end&quot;</span>).where(</span><br><span class="line">         <span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event event)</span> </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> event.getName().equals(<span class="string">&quot;end&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">         &#125;</span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line">PatternStream&lt;Event&gt; patternStream = CEP.pattern(input, pattern);</span><br><span class="line"></span><br><span class="line">DataStream&lt;Alert&gt; result = patternStream.select(</span><br><span class="line">    <span class="keyword">new</span> PatternSelectFunction&lt;Event, Alert&gt; &#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> Alert <span class="title">select</span><span class="params">(Map&lt;String, List&lt;Event&gt;&gt; pattern)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> createAlertFrom(pattern);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<h2 id="2-Pattern-API"><a href="#2-Pattern-API" class="headerlink" title="2.Pattern API"></a>2.Pattern API</h2><p>Pattern API允许你定义要从输入流中提取的复杂模式序列。</p>
+<p>每个复杂模式序列都是由多个简单模式组成，即寻找具有相同属性的单个事件的模式。我们可以先定义一些简单的模式，然后组合成复杂的模式序列。 可以将模式序列视为此类模式的结构图，基于用户指定的条件从一个模式转换到下一个模式，例如， event.getName().equals(“start”)。 匹配是一系列输入事件，通过一系列有效的模式转换访问复杂模式图中的所有模式。</p>
+<p>注意每个模式必须具有唯一的名称，以便后续可以使用该名称来标识匹配的事件。</p>
+<p>注意模式名称不能包含字符“：”。</p>
+<p>在本节接下来的部分，我们将首先介绍如何定义单个模式，然后如何将各个模式组合到复杂模式中。</p>
+<h3 id="2-1-单个模式"><a href="#2-1-单个模式" class="headerlink" title="2.1 单个模式"></a>2.1 单个模式</h3><p>Pattern可以是单单个，也可以是循环模式。单个模式接受单个事件，而循环模式可以接受多个事件。在模式匹配符号中，模式“a b + c？d”（或“a”，后跟一个或多个“b”，可选地后跟“c”，后跟“d”），a，c ？，和d是单例模式，而b +是循环模式。 默认情况下，模式是单个模式，您可以使用Quantifiers将其转换为循环模式。每个模式可以有一个或多个条件，基于它接受事件。</p>
+<h4 id="2-1-1-Quantifiers"><a href="#2-1-1-Quantifiers" class="headerlink" title="2.1.1 Quantifiers"></a>2.1.1 Quantifiers</h4><p>在FlinkCEP中，您可以使用以下方法指定循环模式：pattern.oneOrMore（），用于期望一个或多个事件发生的模式（例如之前提到的b +）;和pattern.times（#ofTimes）， 用于期望给定类型事件的特定出现次数的模式，例如4个;和patterntimes（#fromTimes，＃toTimes），用于期望给定类型事件的最小出现次数和最大出现次数的模式，例如， 2-4。</p>
+<p>您可以使用pattern.greedy（）方法使循环模式变得贪婪，但是还不能使组模式变得贪婪。您可以使用pattern.optional（）方法使得所有模式，循环与否，变为可选。</p>
+<p>对于名为start的模式，以下是有效的Quantifiers：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// expecting 4 occurrences</span></span><br><span class="line">start.times(<span class="number">4</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 0 or 4 occurrences</span></span><br><span class="line">start.times(<span class="number">4</span>).optional();</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 2, 3 or 4 occurrences</span></span><br><span class="line">start.times(<span class="number">2</span>, <span class="number">4</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 2, 3 or 4 occurrences and repeating as many as possible</span></span><br><span class="line">start.times(<span class="number">2</span>, <span class="number">4</span>).greedy();</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 0, 2, 3 or 4 occurrences</span></span><br><span class="line">start.times(<span class="number">2</span>, <span class="number">4</span>).optional();</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 0, 2, 3 or 4 occurrences and repeating as many as possible</span></span><br><span class="line">start.times(<span class="number">2</span>, <span class="number">4</span>).optional().greedy();</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 1 or more occurrences</span></span><br><span class="line">start.oneOrMore();</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 1 or more occurrences and repeating as many as possible</span></span><br><span class="line">start.oneOrMore().greedy();</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 0 or more occurrences</span></span><br><span class="line">start.oneOrMore().optional();</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 0 or more occurrences and repeating as many as possible</span></span><br><span class="line">start.oneOrMore().optional().greedy();</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 2 or more occurrences</span></span><br><span class="line">start.timesOrMore(<span class="number">2</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 2 or more occurrences and repeating as many as possible</span></span><br><span class="line">start.timesOrMore(<span class="number">2</span>).greedy();</span><br><span class="line"></span><br><span class="line"><span class="comment">// expecting 0, 2 or more occurrences and repeating as many as possible</span></span><br><span class="line">start.timesOrMore(<span class="number">2</span>).optional().greedy();</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h4 id="2-1-2-Conditions-条件"><a href="#2-1-2-Conditions-条件" class="headerlink" title="2.1.2 Conditions-条件"></a>2.1.2 Conditions-条件</h4><p>在每个模式中，从一个模式转到下一个模式，可以指定其他条件。您可以将使用下面这些条件：</p>
+<ol>
+<li>传入事件的属性，例如其值应大于5，或大于先前接受的事件的平均值。</li>
+<li>匹配事件的连续性，例如检测模式a，b，c，序列中间不能有任何非匹配事件。</li>
+</ol>
+<h4 id="2-1-3-Conditions-on-Properties-关于属性的条件"><a href="#2-1-3-Conditions-on-Properties-关于属性的条件" class="headerlink" title="2.1.3 Conditions on Properties-关于属性的条件"></a>2.1.3 Conditions on Properties-关于属性的条件</h4><p>可以通过pattern.where（），pattern.or（）或pattern.until（）方法指定事件属性的条件。 条件可以是IterativeConditions或SimpleConditions。</p>
+<ol>
+<li>迭代条件：</li>
+</ol>
+<p>这是最常见的条件类型。 你可以指定一个条件，该条件基于先前接受的事件的属性或其子集的统计信息来接受后续事件。</p>
+<p>下面代码说的是：如果名称以“foo”开头同时如果该模式的先前接受的事件的价格总和加上当前事件的价格不超过该值 5.0，则迭代条件接受名为“middle”的模式的下一个事件，。 迭代条件可以很强大的，尤其是与循环模式相结合，例如， oneOrMore()。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">middle.oneOrMore().where(<span class="keyword">new</span> IterativeCondition&lt;SubEvent&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(SubEvent value, Context&lt;SubEvent&gt; ctx)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (!value.getName().startsWith(<span class="string">&quot;foo&quot;</span>)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">double</span> sum = value.getPrice();</span><br><span class="line">        <span class="keyword">for</span> (Event event : ctx.getEventsForPattern(<span class="string">&quot;middle&quot;</span>)) &#123;</span><br><span class="line">            sum += event.getPrice();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> Double.compare(sum, <span class="number">5.0</span>) &lt; <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>注意对context.getEventsForPattern（…）的调用,将为给定潜在匹配项查找所有先前接受的事件。 此操作的代价可能会变化巨大，因此在使用条件时，请尽量减少其使用。</p>
+<ol>
+<li>简单条件：</li>
+</ol>
+<p>这种类型的条件扩展了前面提到的IterativeCondition类，并且仅根据事件本身的属性决定是否接受事件。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">start.where(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> value.getName().startsWith(<span class="string">&quot;foo&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>最后，还可以通过pattern.subtype（subClass）方法将接受事件的类型限制为初始事件类型的子类型。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">start.subtype(SubEvent.class).where(<span class="keyword">new</span> SimpleCondition&lt;SubEvent&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(SubEvent value)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ... <span class="comment">// some condition</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>组合条件：</li>
+</ol>
+<p>如上所示，可以将子类型条件与其他条件组合使用。 这适用于所有条件。 您可以通过顺序调用where（）来任意组合条件。 最终结果将是各个条件的结果的逻辑AND。 要使用OR组合条件，可以使用or（）方法，如下所示。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">pattern.where(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ... <span class="comment">// some condition</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;).or(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ... <span class="comment">// or condition</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>停止条件：</li>
+</ol>
+<p>在循环模式（oneOrMore()和oneOrMore().optional()）的情况下，还可以指定停止条件，例如： 接受值大于5的事件，直到值的总和小于50。</p>
+<p>为了更好的理解，可以看看下面的例子：</p>
+<p>给定模式：(a+ until b)，b之前，要出现一个或者多个a。</p>
+<p>给定输入序列：a1，c，a2，b，a3</p>
+<p>输出结果: {a1 a2}{a1}{a2}{a3}</p>
+<p>可以看到{a1,a2,a3},{a2,a3}这两个并没有输出，这就是停止条件的作用。</p>
+<ol>
+<li>连续事件条件</li>
+</ol>
+<p>FlinkCEP支持事件之间以下形式进行连续：</p>
+<ul>
+<li>严格连续性：希望所有匹配事件一个接一个地出现，中间没有任何不匹配的事件。</li>
+<li>宽松连续性：忽略匹配的事件之间出现的不匹配事件。 不能忽略两个事件之间的匹配事件。</li>
+<li>非确定性轻松连续性：进一步放宽连续性，允许忽略某些匹配事件的其他匹配。</li>
+</ul>
+<p>为了解释上面的内容，我们举个例子。假如有个模式序列”a+ b”，输入序列”a1,c,a2,b”，不同连续条件下有不同的区别：</p>
+<ol>
+<li>严格连续性：{a2 b} - 由于c的存在导致a1被废弃</li>
+<li>宽松连续性：{a1,b}和{a1 a2 b} - c被忽略</li>
+<li>非确定性宽松连续性：{a1 b}, {a2 b}, 和 {a1 a2 b}</li>
+</ol>
+<p>对于循环模式（例如oneOrMore()和times()），默认是宽松的连续性。 如果你想要严格的连续性，你必须使用consecutive()显式指定它， 如果你想要非确定性的松弛连续性，你可以使用allowCombinations()方法。</p>
+<p>注意在本节中，我们讨论的是单个循环模式中的连续性，并且需要在该上下文中理解consecutive()和allowCombinations()。 稍后在讲解组合模式时，我们将讨论其他方法，例如next（）和followedBy（），用于指定模式之间的连续条件。</p>
+<h4 id="2-1-4-API简介"><a href="#2-1-4-API简介" class="headerlink" title="2.1.4 API简介"></a>2.1.4 API简介</h4><h5 id="1-where-condition"><a href="#1-where-condition" class="headerlink" title="1. where(condition)"></a>1. where(condition)</h5><p>定义当前模式的条件。 为了匹配模式，事件必须满足条件。 多个连续的where()，其条件为AND：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pattern.where(<span class="keyword">new</span> IterativeCondition&lt;Event&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value, Context ctx)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ... <span class="comment">// some condition</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<h5 id="2-or-condition"><a href="#2-or-condition" class="headerlink" title="2. or(condition)"></a>2. or(condition)</h5><p>添加与现有条件进行OR运算的新条件。 只有在至少通过其中一个条件时，事件才能匹配该模式：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">pattern.where(<span class="keyword">new</span> IterativeCondition&lt;Event&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value, Context ctx)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ... <span class="comment">// some condition</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;).or(<span class="keyword">new</span> IterativeCondition&lt;Event&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value, Context ctx)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ... <span class="comment">// alternative condition</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<h5 id="3-until-condition"><a href="#3-until-condition" class="headerlink" title="3. until(condition)"></a>3. until(condition)</h5><p>指定循环模式的停止条件。 意味着如果匹配给定条件的事件发生，则不再接受该模式中的事件。</p>
+<p>仅适用于oneOrMore（）</p>
+<p>注意：它允许在基于事件的条件下清除相应模式的状态。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pattern.oneOrMore().until(<span class="keyword">new</span> IterativeCondition&lt;Event&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value, Context ctx)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ... <span class="comment">// alternative condition</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<h5 id="4-subtype-subClass"><a href="#4-subtype-subClass" class="headerlink" title="4. subtype(subClass)"></a>4. subtype(subClass)</h5><p>定义当前模式的子类型条件。 如果事件属于此子类型，则事件只能匹配该模式：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pattern.subtype(SubEvent.class);</span><br></pre></td></tr></table></figure>
+<h5 id="5-oneOrMore"><a href="#5-oneOrMore" class="headerlink" title="5. oneOrMore()"></a>5. oneOrMore()</h5><p>指定此模式至少发生一次匹配事件。</p>
+<p>默认情况下，使用宽松的内部连续性。</p>
+<p>注意：建议使用until（）或within（）来启用状态清除</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pattern.oneOrMore().until(<span class="keyword">new</span> IterativeCondition&lt;Event&gt;() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value, Context ctx)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> ... <span class="comment">// alternative condition</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<h5 id="6-timesOrMore-times"><a href="#6-timesOrMore-times" class="headerlink" title="6. timesOrMore(#times)"></a>6. timesOrMore(#times)</h5><p>指定此模式至少需要#times次出现匹配事件。</p>
+<p>默认情况下，使用宽松的内部连续性（在后续事件之间）。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pattern.timesOrMore(<span class="number">2</span>);</span><br></pre></td></tr></table></figure>
+<h5 id="7-times-ofTimes"><a href="#7-times-ofTimes" class="headerlink" title="7. times(#ofTimes)"></a>7. times(#ofTimes)</h5><p>指定此模式需要匹配事件的确切出现次数。</p>
+<p>默认情况下，使用宽松的内部连续性（在后续事件之间）。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pattern.times(<span class="number">2</span>);</span><br></pre></td></tr></table></figure>
+<h5 id="8-times-fromTimes-toTimes"><a href="#8-times-fromTimes-toTimes" class="headerlink" title="8. times(#fromTimes, #toTimes)"></a>8. times(#fromTimes, #toTimes)</h5><p>指定此模式期望在匹配事件的#fromTimes次和#toTimes次之间出现。</p>
+<p>默认情况下，使用宽松的内部连续性。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pattern.times(<span class="number">2</span>, <span class="number">4</span>);</span><br></pre></td></tr></table></figure>
+<h5 id="9-optional"><a href="#9-optional" class="headerlink" title="9. optional()"></a>9. optional()</h5><p>指定此模式是可选的，即有可能根本不会发生。 这适用于所有上述量词。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pattern.oneOrMore().optional();</span><br></pre></td></tr></table></figure>
+<h5 id="10-greedy"><a href="#10-greedy" class="headerlink" title="10. greedy()"></a>10. greedy()</h5><p>指定此模式是贪婪的，即它将尽可能多地重复。 这仅适用于quantifiers，目前不支持组模式。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pattern.oneOrMore().greedy();</span><br></pre></td></tr></table></figure>
+<h5 id="11-consecutive"><a href="#11-consecutive" class="headerlink" title="11. consecutive()"></a>11. consecutive()</h5><p>与oneOrMore（）和times（）一起使用并在匹配事件之间强加严格的连续性，即任何不匹配的元素都会中断匹配。</p>
+<p>如果不使用，则使用宽松的连续性（如followBy（））。</p>
+<p>例如，这样的模式：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>).where(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> value.getName().equals(<span class="string">&quot;c&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br><span class="line">.followedBy(<span class="string">&quot;middle&quot;</span>).where(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> value.getName().equals(<span class="string">&quot;a&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;).oneOrMore().consecutive()</span><br><span class="line">.followedBy(<span class="string">&quot;end1&quot;</span>).where(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> value.getName().equals(<span class="string">&quot;b&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>针对上面的模式，我们假如输入序列如：C D A1 A2 A3 D A4 B</p>
+<p>使用consecutive：{C A1 B}, {C A1 A2 B}, {C A1 A2 A3 B}</p>
+<p>不使用:{C A1 B}, {C A1 A2 B}, {C A1 A2 A3 B}, {C A1 A2 A3 A4 B}</p>
+<h5 id="12-allowCombinations"><a href="#12-allowCombinations" class="headerlink" title="12. allowCombinations()"></a>12. allowCombinations()</h5><p>与oneOrMore（）和times（）一起使用，并在匹配事件之间强加非确定性宽松连续性（如 followedByAny()）。</p>
+<p>如果不应用，则使用宽松的连续性（如followBy()）。</p>
+<p>例如,这样的模式：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>).where(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> value.getName().equals(<span class="string">&quot;c&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;)</span><br><span class="line">.followedBy(<span class="string">&quot;middle&quot;</span>).where(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> value.getName().equals(<span class="string">&quot;a&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;).oneOrMore().allowCombinations()</span><br><span class="line">.followedBy(<span class="string">&quot;end1&quot;</span>).where(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">  <span class="meta">@Override</span></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> value.getName().equals(<span class="string">&quot;b&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>针对上面的模式，我们假如输入序列如：C D A1 A2 A3 D A4 B</p>
+<p>使用allowCombinations：{C A1 B}, {C A1 A2 B}, {C A1 A3 B}, {C A1 A4 B}, {C A1 A2 A3 B}, {C A1 A2 A4 B}, {C A1 A3 A4 B}, {C A1 A2 A3 A4 B}</p>
+<p>不使用:{C A1 B}, {C A1 A2 B}, {C A1 A2 A3 B}, {C A1 A2 A3 A4 B}</p>
+<h3 id="2-2-组合模式"><a href="#2-2-组合模式" class="headerlink" title="2.2 组合模式"></a>2.2 组合模式</h3><h4 id="2-2-1-简介"><a href="#2-2-1-简介" class="headerlink" title="2.2.1 简介"></a>2.2.1 简介</h4><p>已经了解了单个模式的样子，现在是时候看看如何将它们组合成一个完整的模式序列。</p>
+<p>模式序列必须以初始模式开始，如下所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; start = Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>);</span><br></pre></td></tr></table></figure>
+<p>接下来，您可以通过指定它们之间所需的连续条件，为模式序列添加更多模式。 在上一节中，我们描述了Flink支持的不同邻接模式，即严格，宽松和非确定性宽松，以及如何在循环模式中应用它们。 要在连续模式之间应用它们，可以使用：</p>
+<blockquote>
+<p>next() 对应 严格, followedBy() 对应 宽松连续性 followedByAny() 对应 非确定性宽松连续性</p>
+</blockquote>
+<p>亦或</p>
+<blockquote>
+<p>notNext() 如果不希望一个事件类型紧接着另一个类型出现。 notFollowedBy() 不希望两个事件之间任何地方出现该事件。</p>
+</blockquote>
+<blockquote>
+<p>注意 模式序列不能以notFollowedBy（）结束。</p>
+</blockquote>
+<blockquote>
+<p>注意 NOT模式前面不能有可选模式。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// strict contiguity</span></span><br><span class="line">Pattern&lt;Event, ?&gt; strict = start.next(<span class="string">&quot;middle&quot;</span>).where(...);</span><br><span class="line"></span><br><span class="line"><span class="comment">// relaxed contiguity</span></span><br><span class="line">Pattern&lt;Event, ?&gt; relaxed = start.followedBy(<span class="string">&quot;middle&quot;</span>).where(...);</span><br><span class="line"></span><br><span class="line"><span class="comment">// non-deterministic relaxed contiguity</span></span><br><span class="line">Pattern&lt;Event, ?&gt; nonDetermin = start.followedByAny(<span class="string">&quot;middle&quot;</span>).where(...);</span><br><span class="line"></span><br><span class="line"><span class="comment">// NOT pattern with strict contiguity</span></span><br><span class="line">Pattern&lt;Event, ?&gt; strictNot = start.notNext(<span class="string">&quot;not&quot;</span>).where(...);</span><br><span class="line"></span><br><span class="line"><span class="comment">// NOT pattern with relaxed contiguity</span></span><br><span class="line">Pattern&lt;Event, ?&gt; relaxedNot = start.notFollowedBy(<span class="string">&quot;not&quot;</span>).where(...);</span><br></pre></td></tr></table></figure>
+<p>宽松连续性指的是仅第一个成功匹配的事件会被匹配到，然而非确定性宽松连续性，相同的开始会有多个匹配结果发出。距离，如果一个模式是”a b”，给定输入序列是”a c b1 b2”。对于不同连续性会有不同输出。</p>
+<ol>
+<li>a和b之间严格连续性，将会返回{},也即是没有匹配。因为c的出现导致a，抛弃了。</li>
+<li>a和b之间宽松连续性，返回的是{a，b1},因为宽松连续性将会抛弃为匹配成功的元素，直至匹配到下一个要匹配的事件。</li>
+<li>a和b之间非确定性宽松连续性，返回的是{a,b1},{a,b2}。</li>
+</ol>
+<p>也可以为模式定义时间约束。 例如，可以通过pattern.within（）方法定义模式应在10秒内发生。 时间模式支持处理和事件时间。 注意模式序列只能有一个时间约束。 如果在不同的单独模式上定义了多个这样的约束，则应用最小的约束。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">next.within(Time.seconds(<span class="number">10</span>));</span><br></pre></td></tr></table></figure>
+<p>可以为begin，followBy，followByAny和next定义一个模式序列作为条件。模式序列将被逻辑地视为匹配条件，而且将返回GroupPattern并且 可对GroupPattern使用oneOrMore（），times（#ofTimes），times（＃fromTimes，＃toTimes），optional（），consecutive（）， allowCombinations（）等方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">PatternPatte &lt;Event, ?&gt; start = Pattern.begin(</span><br><span class="line">    Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>).where(...).followedBy(<span class="string">&quot;start_middle&quot;</span>).where(...)</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="comment">// strict contiguity</span></span><br><span class="line">Pattern&lt;Event, ?&gt; strict = start.next(</span><br><span class="line">    Pattern.&lt;Event&gt;begin(<span class="string">&quot;next_start&quot;</span>).where(...).followedBy(<span class="string">&quot;next_middle&quot;</span>).where(...)</span><br><span class="line">).times(<span class="number">3</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// relaxed contiguity</span></span><br><span class="line">Pattern&lt;Event, ?&gt; relaxed = start.followedBy(</span><br><span class="line">    Pattern.&lt;Event&gt;begin(<span class="string">&quot;followedby_start&quot;</span>).where(...).followedBy(<span class="string">&quot;followedby_middle&quot;</span>).where(...)</span><br><span class="line">).oneOrMore();</span><br><span class="line"></span><br><span class="line"><span class="comment">// non-deterministic relaxed contiguity</span></span><br><span class="line">Pattern&lt;Event, ?&gt; nonDetermin = start.followedByAny(</span><br><span class="line">    Pattern.&lt;Event&gt;begin(<span class="string">&quot;followedbyany_start&quot;</span>).where(...).followedBy(<span class="string">&quot;followedbyany_middle&quot;</span>).where(...)</span><br><span class="line">).optional();</span><br></pre></td></tr></table></figure>
+<h4 id="2-2-2-API"><a href="#2-2-2-API" class="headerlink" title="2.2.2 API"></a>2.2.2 API</h4><ol>
+<li>begin(#name)</li>
+</ol>
+<p>定义一个开始模式</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; start = Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>begin(#pattern_sequence)</li>
+</ol>
+<p>定义一个开始模式</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; start = Pattern.&lt;Event&gt;begin(</span><br><span class="line">    Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>).where(...).followedBy(<span class="string">&quot;middle&quot;</span>).where(...)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>next(#name)</li>
+</ol>
+<p>追加一个新的模式。匹配事件必须直接跟着先前的匹配事件（严格连续性）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; next = start.next(<span class="string">&quot;middle&quot;</span>);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>next(#pattern_sequence)</li>
+</ol>
+<p>追加一个新的模式。匹配事件必须直接接着先前的匹配事件（严格连续性）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; next = start.next(</span><br><span class="line">    Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>).where(...).followedBy(<span class="string">&quot;middle&quot;</span>).where(...)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>followedBy(#name)</li>
+</ol>
+<p>追加加新模式。 匹配事件和先前匹配事件（宽松连续）之间可能发生其他非匹配事件：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; followedBy = start.followedBy(<span class="string">&quot;middle&quot;</span>);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>followedBy(#pattern_sequence)</li>
+</ol>
+<p>追加新模式。 匹配事件和先前匹配事件（宽松连续）之间可能发生其他非匹配事件：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; followedBy = start.followedBy(</span><br><span class="line">    Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>).where(...).followedBy(<span class="string">&quot;middle&quot;</span>).where(...)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>followedByAny(#name)</li>
+</ol>
+<p>添加新模式。 匹配事件和先前匹配事件之间可能发生其他事件，并且将针对每个备选匹配事件（非确定性放松连续性）呈现替代匹配：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; followedByAny = start.followedByAny(<span class="string">&quot;middle&quot;</span>);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>followedByAny(#pattern_sequence)</li>
+</ol>
+<p>添加新模式。 匹配事件和先前匹配事件之间可能发生其他事件，并且将针对每个备选匹配事件（非确定性放松连续性）呈现替代匹配：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; followedByAny = start.followedByAny(</span><br><span class="line">    Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>).where(...).followedBy(<span class="string">&quot;middle&quot;</span>).where(...)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>notNext()</li>
+</ol>
+<p>添加新的否定模式。 匹配（否定）事件必须直接跟着先前的匹配事件（严格连续性）才能丢弃部分匹配：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; notNext = start.notNext(<span class="string">&quot;not&quot;</span>);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>notFollowedBy()</li>
+</ol>
+<p>追加一个新的否定模式匹配。即使在匹配（否定）事件和先前匹配事件（宽松连续性）之间发生其他事件，也将丢弃部分匹配事件序列：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Pattern&lt;Event, ?&gt; notFollowedBy = start.notFollowedBy(<span class="string">&quot;not&quot;</span>);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>within(time)</li>
+</ol>
+<p>定义事件序列进行模式匹配的最大时间间隔。 如果未完成的事件序列超过此时间，则将其丢弃：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pattern.within(Time.seconds(<span class="number">10</span>));</span><br></pre></td></tr></table></figure>
+<h3 id="2-3-匹配后的跳过策略"><a href="#2-3-匹配后的跳过策略" class="headerlink" title="2.3 匹配后的跳过策略"></a>2.3 匹配后的跳过策略</h3><p>对于给定模式，可以将同一事件分配给多个成功匹配。 要控制将分配事件的匹配数，需要指定名为AfterMatchSkipStrategy的跳过策略。 跳过策略有四种类型，如下所示：</p>
+<ul>
+<li>NO_SKIP：将发出每个可能的匹配。</li>
+<li>SKIP_PAST_LAST_EVENT：丢弃包含匹配事件的每个部分匹配。</li>
+<li>SKIP_TO_FIRST：丢弃包含PatternName第一个之前匹配事件的每个部分匹配。</li>
+<li>SKIP_TO_LAST：丢弃包含PatternName最后一个匹配事件之前的每个部分匹配。</li>
+</ul>
+<p>请注意，使用SKIP_TO_FIRST和SKIP_TO_LAST跳过策略时，还应指定有效的PatternName。</p>
+<p>例如，对于给定模式a b {2}和数据流ab1，ab2，ab3，ab4，ab5，ab6，这四种跳过策略之间的差异如下：</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/crestofwave1/oneFlink/blob/master/pic/CEP/%E8%B7%B3%E8%BF%87%E7%AD%96%E7%95%A5.png"><img src="https://github.com/crestofwave1/oneFlink/raw/master/pic/CEP/%E8%B7%B3%E8%BF%87%E7%AD%96%E7%95%A5.png" alt="image"></a></p>
+<p>要指定要使用的跳过策略，只需调用以下命令创建AfterMatchSkipStrategy：</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/crestofwave1/oneFlink/blob/master/pic/CEP/%E5%88%9B%E5%BB%BA%E8%B7%B3%E8%BF%87%E7%AD%96%E7%95%A5.png"><img src="https://github.com/crestofwave1/oneFlink/raw/master/pic/CEP/%E5%88%9B%E5%BB%BA%E8%B7%B3%E8%BF%87%E7%AD%96%E7%95%A5.png" alt="image"></a></p>
+<p>使用方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">AfterMatchSkipStrategy skipStrategy = ...</span><br><span class="line">Pattern.begin(<span class="string">&quot;patternName&quot;</span>, skipStrategy);</span><br></pre></td></tr></table></figure>
+<h3 id="2-4-检测模式-Detecting-Patterns"><a href="#2-4-检测模式-Detecting-Patterns" class="headerlink" title="2.4 检测模式-Detecting Patterns"></a>2.4 检测模式-Detecting Patterns</h3><p>指定要查找的模式序列后，就可以将其应用于输入流以检测潜在匹配。 要针对模式序列运行事件流，必须创建PatternStream。 给定输入流 input，模式 pattern 和可选的比较器 comparator，用于在EventTime的情况下对具有相同时间戳的事件进行排序或在同一时刻到达，通过调用以下命令创建PatternStream：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">DataStream&lt;Event&gt; input = ...</span><br><span class="line">Pattern&lt;Event, ?&gt; pattern = ...</span><br><span class="line">EventComparator&lt;Event&gt; comparator = ... <span class="comment">// optional</span></span><br><span class="line"></span><br><span class="line">PatternStream&lt;Event&gt; patternStream = CEP.pattern(input, pattern, comparator);</span><br></pre></td></tr></table></figure>
+<p>根据实际情况，创建的流可以是有key，也可以是无key的。</p>
+<p>请注意，在无key的流上使用模式，将导致job的并行度为1。</p>
+<h3 id="2-5-Selecting-from-Patterns"><a href="#2-5-Selecting-from-Patterns" class="headerlink" title="2.5 Selecting from Patterns"></a>2.5 Selecting from Patterns</h3><p>获得PatternStream后，您可以通过select或flatSelect方法从检测到的事件序列中进行查询。</p>
+<p>select（）方法需要PatternSelectFunction的实现。 PatternSelectFunction具有为每个匹配事件序列调用的select方法。 它以Map &lt;String，List &gt;的形式接收匹配，其中key是模式序列中每个模式的名称，值是该模式的所有已接受事件的列表（IN是输入元素的类型）。 给定模式的事件按时间戳排序。 返回每个模式的接受事件列表的原因是当使用循环模式（例如oneToMany（）和times（））时，对于给定模式可以接受多个事件。 选择函数只返回一个结果。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyPatternSelectFunction</span>&lt;<span class="title">IN</span>, <span class="title">OUT</span>&gt; <span class="keyword">implements</span> <span class="title">PatternSelectFunction</span>&lt;<span class="title">IN</span>, <span class="title">OUT</span>&gt; </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> OUT <span class="title">select</span><span class="params">(Map&lt;String, List&lt;IN&gt;&gt; pattern)</span> </span>&#123;</span><br><span class="line">        IN startEvent = pattern.get(<span class="string">&quot;start&quot;</span>).get(<span class="number">0</span>);</span><br><span class="line">        IN endEvent = pattern.get(<span class="string">&quot;end&quot;</span>).get(<span class="number">0</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> OUT(startEvent, endEvent);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>PatternFlatSelectFunction类似于PatternSelectFunction，唯一的区别是它可以返回任意数量的结果。 为此，select方法有一个额外的Collector参数，用于将输出元素向下游转发。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyPatternFlatSelectFunction</span>&lt;<span class="title">IN</span>, <span class="title">OUT</span>&gt; <span class="keyword">implements</span> <span class="title">PatternFlatSelectFunction</span>&lt;<span class="title">IN</span>, <span class="title">OUT</span>&gt; </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">flatSelect</span><span class="params">(Map&lt;String, List&lt;IN&gt;&gt; pattern, Collector&lt;OUT&gt; collector)</span> </span>&#123;</span><br><span class="line">        IN startEvent = pattern.get(<span class="string">&quot;start&quot;</span>).get(<span class="number">0</span>);</span><br><span class="line">        IN endEvent = pattern.get(<span class="string">&quot;end&quot;</span>).get(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; startEvent.getValue(); i++ ) &#123;</span><br><span class="line">            collector.collect(<span class="keyword">new</span> OUT(startEvent, endEvent));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="2-6-处理超时部分模式"><a href="#2-6-处理超时部分模式" class="headerlink" title="2.6 处理超时部分模式"></a>2.6 处理超时部分模式</h3><p>每当模式具有通过within关键字附加的时间窗口长度时，部分事件序列可能因为超出时间窗口长度而被丢弃。 为了对这些超时的部分匹配作出相应的处理，select和flatSelect API调用允许指定超时处理程序。 为每个超时的部分事件序列调用此超时处理程序。 超时处理程序接收到目前为止由模式匹配的所有事件，以及检测到超时时的时间戳。</p>
+<p>为了处理部分模式，select和flatSelect API提供了一个带参数的重载版本</p>
+<ul>
+<li>PatternTimeoutFunction/ PatternFlatTimeoutFunction。</li>
+<li>OutputTag 超时的匹配将会在其中返回。</li>
+<li>PatternSelectFunction / PatternFlatSelectFunction。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">PatternStreamPatte &lt;Event&gt; patternStream = CEP.pattern(input, pattern);</span><br><span class="line"></span><br><span class="line">OutputTag&lt;String&gt; outputTag = <span class="keyword">new</span> OutputTag&lt;String&gt;(<span class="string">&quot;side-output&quot;</span>)&#123;&#125;;</span><br><span class="line"></span><br><span class="line">SingleOutputStreamOperator&lt;ComplexEvent&gt; result = patternStream.select(</span><br><span class="line">    <span class="keyword">new</span> PatternTimeoutFunction&lt;Event, TimeoutEvent&gt;() &#123;...&#125;,</span><br><span class="line">    outputTag,</span><br><span class="line">    <span class="keyword">new</span> PatternSelectFunction&lt;Event, ComplexEvent&gt;() &#123;...&#125;</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">DataStream&lt;TimeoutEvent&gt; timeoutResult = result.getSideOutput(outputTag);</span><br><span class="line"></span><br><span class="line">SingleOutputStreamOperator&lt;ComplexEvent&gt; flatResult = patternStream.flatSelect(</span><br><span class="line">    <span class="keyword">new</span> PatternFlatTimeoutFunction&lt;Event, TimeoutEvent&gt;() &#123;...&#125;,</span><br><span class="line">    outputTag,</span><br><span class="line">    <span class="keyword">new</span> PatternFlatSelectFunction&lt;Event, ComplexEvent&gt;() &#123;...&#125;</span><br><span class="line">);</span><br><span class="line"></span><br><span class="line">DataStream&lt;TimeoutEvent&gt; timeoutFlatResult = flatResult.getSideOutput(outputTag);</span><br></pre></td></tr></table></figure>
+<h3 id="2-7-事件事件模式下处理滞后数据"><a href="#2-7-事件事件模式下处理滞后数据" class="headerlink" title="2.7 事件事件模式下处理滞后数据"></a>2.7 事件事件模式下处理滞后数据</h3><p>在CEP中，元素处理的顺序很重要。为了保证在采用事件事件时以正确的顺序处理事件，最初将传入的事件放入缓冲区，其中事件基于它们的时间戳以升序排序， 并且当watermark到达时，处理该缓冲区中时间戳小于watermark时间的所有元素。这意味着watermark之间的事件按事件时间顺序处理。</p>
+<p>请注意，在采用事件时间时，CEP library会假设watermark是正确的。</p>
+<p>为了保证跨watermark的记录按照事件事件顺序处理，Flink的CEP库假定watermark是正确的，并将时间戳小于上次可见watermark的时间视为滞后事件。滞后事件不会被进一步处理。</p>
+<h3 id="2-8-栗子"><a href="#2-8-栗子" class="headerlink" title="2.8 栗子"></a>2.8 栗子</h3><p>以下示例检测事件的带key数据流上的模式start，middle（name =“error”） - &gt; end（name =“critical”）。 事件的key是其id，并且有效模式必须在10秒内发生。 整个处理是用事件时间完成的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">StreamExecutionEnvironment env = ...</span><br><span class="line">env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line"></span><br><span class="line">DataStream&lt;Event&gt; input = ...</span><br><span class="line"></span><br><span class="line">DataStream&lt;Event&gt; partitionedInput = input.keyBy(<span class="keyword">new</span> KeySelector&lt;Event, Integer&gt;() &#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Integer <span class="title">getKey</span><span class="params">(Event value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> value.getId();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">Pattern&lt;Event, ?&gt; pattern = Pattern.&lt;Event&gt;begin(<span class="string">&quot;start&quot;</span>)</span><br><span class="line">	.next(<span class="string">&quot;middle&quot;</span>).where(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">			<span class="keyword">return</span> value.getName().equals(<span class="string">&quot;error&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;).followedBy(<span class="string">&quot;end&quot;</span>).where(<span class="keyword">new</span> SimpleCondition&lt;Event&gt;() &#123;</span><br><span class="line">		<span class="meta">@Override</span></span><br><span class="line">		<span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">filter</span><span class="params">(Event value)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">			<span class="keyword">return</span> value.getName().equals(<span class="string">&quot;critical&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;).within(Time.seconds(<span class="number">10</span>));</span><br><span class="line"></span><br><span class="line">PatternStream&lt;Event&gt; patternStream = CEP.pattern(partitionedInput, pattern);</span><br><span class="line"></span><br><span class="line">DataStream&lt;Alert&gt; alerts = patternStream.select(<span class="keyword">new</span> PatternSelectFunction&lt;Event, Alert&gt;() &#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Alert <span class="title">select</span><span class="params">(Map&lt;String, List&lt;Event&gt;&gt; pattern)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">		<span class="keyword">return</span> createAlert(pattern);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/flink-config-dynamic/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +515,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -290,7 +591,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -363,7 +664,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -444,7 +745,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -613,7 +914,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -868,7 +1169,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:03" itemprop="dateModified" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1022,7 +1323,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:03" itemprop="dateModified" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1169,7 +1470,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:03" itemprop="dateModified" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1245,7 +1546,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:03" itemprop="dateModified" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1377,116 +1678,10 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/lockless-disruptor/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/multithread/lockless-disruptor/" class="post-title-link" itemprop="url">无锁队列与Disruptor</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-03-20 00:00:00" itemprop="dateCreated datePublished" datetime="2019-03-20T00:00:00+08:00">2019-03-20</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:03" itemprop="dateModified" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>转自<a target="_blank" rel="noopener" href="http://www.importnew.com/19877.html">剖析Disruptor为什么会这么快</a></p>
-<p><strong>Disruptor如何解决这些问题。</strong></p>
-<p>首先，Disruptor根本就不用锁。</p>
-<p>取而代之的是，在需要确保操作是线程安全的（特别是，在<a target="_blank" rel="noopener" href="http://mechanitis.blogspot.com/2011/07/dissecting-disruptor-writing-to-ring.html">多生产者</a>的环境下，更新下一个可用的序列号）地方，我们使用<a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/Compare-and-swap">CAS</a>（Compare And Swap/Set）操作。这是一个CPU级别的指令，在我的意识中，它的工作方式有点像乐观锁——CPU去更新一个值，但如果想改的值不再是原来的值，操作就失败，因为很明显，有其它操作先改变了这个值。</p>
-<p><a target="_blank" rel="noopener" href="http://ifeve.com/wp-content/uploads/2013/01/ConcurrencyCAS.png"><img src="http://ifeve.com/wp-content/uploads/2013/01/ConcurrencyCAS.png" alt="img"></a></p>
-<p>注意，这可以是CPU的两个不同的核心，但不会是两个独立的CPU。</p>
-<p>CAS操作比锁消耗资源少的多，因为它们不牵涉操作系统，它们直接在CPU上操作。但它们并非没有代价——在上面的试验中，单线程无锁耗时300ms，单线程有锁耗时10000ms，单线程使用CAS耗时5700ms。所以它比使用锁耗时少，但比不需要考虑竞争的单线程耗时多。</p>
-<p>回到Disruptor，在我<a target="_blank" rel="noopener" href="http://ifeve.com/disruptor-writing-ringbuffer/">讲生产者</a>时讲过<a target="_blank" rel="noopener" href="https://github.com/LMAX-Exchange/disruptor/blob/version-2.x/code/src/main/com/lmax/disruptor/ClaimStrategy.java">ClaimStrategy</a>。在这些代码中，你可以看见两个策略，一个是SingleThreadedStrategy（单线程策略）另一个是MultiThreadedStrategy（多线程策略）。你可能会有疑问，为什么在只有单个生产者时不用多线程的那个策略？它是否能够处理这种场景？当然可以。但多线程的那个使用了<a target="_blank" rel="noopener" href="http://download.oracle.com/javase/6/docs/api/java/util/concurrent/atomic/AtomicLong.html">AtomicLong</a>（Java提供的CAS操作），而单线程的使用long，没有锁也没有CAS。这意味着单线程版本会非常快，因为它只有一个生产者，不会产生序号上的冲突。</p>
-<p>我知道，你可能在想：把一个数字转成AtomicLong不可能是Disruptor速度快的唯一秘密。当然，它不是，否则它不可能称为“为什么这么快（第一部分）”。</p>
-<p>但这是非常重要的一点</p>
-<p>——在整个复杂的框架中，只有这一个地方出现多线程竞争修改同一个变量值。这就是秘密。还记得所有的访问对象都拥有序号吗？如果只有一个生产者，那么系统中的每一个序列号只会由一个线程写入。这意味着没有竞争、不需要锁、甚至不需要CAS。在ClaimStrategy中，如果存在多个生产者，唯一会被多线程竞争写入的序号就是 ClaimStrategy 对象里的那个。</p>
-<p>这也是为什么Entry中的每一个变量都<a target="_blank" rel="noopener" href="http://ifeve.com/dissecting-disruptor-wiring-up/">只能被一个消费者写</a>。它确保了没有写竞争，因此不需要锁或者CAS。</p>
-<p><strong>回到为什么队列不能胜任这个工作</strong></p>
-<p>因此你可能会有疑问，为什么队列底层用RingBuffer来实现，仍然在性能上无法与 Disruptor 相比。队列和<a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/Circular_buffer">最简单的ring buffer</a>只有两个指针——一个指向队列的头，一个指向队尾：</p>
-<p><a target="_blank" rel="noopener" href="http://ifeve.com/wp-content/uploads/2013/01/QueueMultiple.png"><img src="http://ifeve.com/wp-content/uploads/2013/01/QueueMultiple.png" alt="img"></a></p>
-<p>如果有超过一个生产者想要往队列里放东西，尾指针就将成为一个冲突点，因为有多个线程要更新它。如果有多个消费者，那么头指针就会产生竞争，因为元素被消费之后，需要更新指针，所以不仅有读操作还有写操作了。</p>
-<p>等等，我听到你喊冤了！因为我们已经知道这些了，所以队列常常是单生产者和单消费者（或者至少在我们的测试里是）。<br>队列的目的就是为生产者和消费者提供一个地方存放要交互的数据，帮助缓冲它们之间传递的消息。这意味着缓冲常常是满的（生产者比消费者快）或者空的（消费者比生产者快）。生产者和消费者能够步调一致的情况非常少见。</p>
-<p>所以，这就是事情的真面目。一个空的队列：</p>
-<p><a target="_blank" rel="noopener" href="http://ifeve.com/wp-content/uploads/2013/01/QueueEmpty.png"><img src="http://ifeve.com/wp-content/uploads/2013/01/QueueEmpty.png" alt="img"></a></p>
-<p>…</p>
-<p>一个满的队列：</p>
-<p><a target="_blank" rel="noopener" href="http://ifeve.com/wp-content/uploads/2013/01/QueueFull.png"><img src="http://ifeve.com/wp-content/uploads/2013/01/QueueFull.png" alt="img"></a></p>
-<p><em>(校对注：这应该是一个双向队列)</em></p>
-<p>队列需要保存一个关于大小的变量，以便区分队列是空还是满。否则，它需要根据队列中的元素的内容来判断，这样的话，消费一个节点（Entry）后需要做一次写入来清除标记，或者标记节点已经被消费过了。无论采用何种方式实现，在头、尾和大小变量上总是会有很多竞争，或者如果消费操作移除元素时需要使用一个写操作，那元素本身也包含竞争。</p>
-<p>基于以上，这三个变量常常在一个<a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/CPU_cache">cache line</a>里面，有可能导致伪分享<a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/False_sharing">false sharing</a>。因此，不仅要担心生产者和消费者同时写size变量（或者元素），还要注意由于头指针尾指针在同一位置，当头指针更新时，更新尾指针会导致缓存不命中。这篇文章已经很长了，所以我就不再详述细节了。</p>
-<p>这就是我们所说的“分离竞争点问题”或者队列的“合并竞争点问题”。通过将所有的东西都赋予私有的序列号，并且只允许一个消费者写Entry对象中的变量来消除竞争，Disruptor 唯一需要处理访问冲突的地方，是多个生产者写入 Ring Buffer 的场景。</p>
-<p><strong>总结</strong></p>
-<p>Disruptor相对于传统方式的优点：</p>
-<ol>
-<li>没有竞争=没有锁=非常快。</li>
-<li>所有访问者都记录自己的序号的实现方式，允许多个生产者与多个消费者共享相同的数据结构。</li>
-<li>在每个对象中都能跟踪序列号（ring buffer，claim Strategy，生产者和消费者），加上神奇的<a target="_blank" rel="noopener" href="http://code.google.com/p/disruptor/source/browse/trunk/code/src/main/com/lmax/disruptor/RingBuffer.java">cache line padding</a>，就意味着没有为伪共享和非预期的竞争。</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/11/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/11/">11</a><span class="page-number current">12</span><a class="page-number" href="/page/13/">13</a><span class="space">&hellip;</span><a class="page-number" href="/page/24/">24</a><a class="extend next" rel="next" href="/page/13/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/page/11/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/11/">11</a><span class="page-number current">12</span><a class="page-number" href="/page/13/">13</a><span class="space">&hellip;</span><a class="page-number" href="/page/25/">25</a><a class="extend next" rel="next" href="/page/13/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1552,7 +1747,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">240</span>
+          <span class="site-state-item-count">241</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1565,7 +1760,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">120</span>
+        <span class="site-state-item-count">122</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

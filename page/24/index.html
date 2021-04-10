@@ -183,6 +183,273 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/01.thread-lifecycle/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/multithread/01.thread-lifecycle/" class="post-title-link" itemprop="url">线程生命周期</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2015-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2015-08-12T00:00:00+08:00">2015-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <pre><code>理解Java多线程, 需要深入理解`线程状态和锁`</code></pre>
+<p>[TOC]</p>
+<h1 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h1><p>由于每个时钟周期内, CPU 实际上只能执行一条指令. CPU每一个时刻只能做一件事, 多线程是通过任务调度给CPU分配任务实现的, 多线程的目的是为了最大限度的利用CPU资源.</p>
+<p>操作系统负责管理进程和线程, 轮流(没有固定的顺序)分配每个进程很短的时间(不一定是均分), 然后在每个线程内部, 程序代码自己处理该进程内部线程的时间分配, 多个线程之间相互的切换去执行, 这个切换时间也是非常短的.</p>
+<h2 id="程序、进程、线程之间的关系"><a href="#程序、进程、线程之间的关系" class="headerlink" title="程序、进程、线程之间的关系"></a>程序、进程、线程之间的关系</h2><ul>
+<li>程序是一段静态的代码，是应用软件执行的蓝本。</li>
+<li>进程是程序一次动态执行的过程，它对应了从代码加载、执行完毕的一个完整过程，这也是进程开始到消亡的过程。</li>
+<li>线程是进程中独立、可调度的执行单元，是执行中最小单位。</li>
+<li>一个程序一般是一个进程，但一个程序中也可以有多个进程。</li>
+<li>一个进程中可以有多个线程，但只有一个主线程。</li>
+<li>Java应用程序中默认的主线程是main方法，如果main方法中创建了其他线程，JVM就会执行其他的线程。</li>
+</ul>
+<h2 id="Java-进程"><a href="#Java-进程" class="headerlink" title="Java 进程"></a>Java 进程</h2><p>Java编写的程序是运行在JVM中的, 启动一个Java应用程序,  就会启动一个JVM进程. 在同一个JVM进程中, 有且只有一个进程, 就是它自己. 因此, 所有的程序代码的运行都是以线程运行的. 同一个进程中的所有线程共享一块内存块,  <strong>因此线程间通信很容易且速度很快</strong>.</p>
+<ul>
+<li>Java 中的线程是一个对象, 与其他 Java 中的对象一样, 具有变量和方法, 生死于堆上.</li>
+</ul>
+<p>调用栈</p>
+<ul>
+<li>Java 中的每个线程都有一个调用栈, 即使不创建任何新的线程,  线程也在后台运行着.</li>
+<li>一旦创建一个新的线程,  就产生一个新的调用栈.</li>
+</ul>
+<h2 id="主线程"><a href="#主线程" class="headerlink" title="主线程"></a>主线程</h2><p>在JVM上运行一个应用程序时,  JVM首先寻找程序入口的<code>main()</code>方法,  然后运行<code>main()</code>方法, 此时就产生了一个Java线程, 这个线程就是主线程. 当main方法结束后,  主线程运行完成,  如果不存在额外的线程运行,  JVM进程随即退出.</p>
+<p>调度的方式有两种：分时调度和抢占式调度, Java中采用的是<em>抢占式调度</em></p>
+<h2 id="线程优先级"><a href="#线程优先级" class="headerlink" title="线程优先级"></a>线程优先级</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">static int MAX_PRIORITY</span><br><span class="line">          线程可以具有的最高优先级.</span><br><span class="line">static int MIN_PRIORITY</span><br><span class="line">          线程可以具有的最低优先级.</span><br><span class="line">static int NORM_PRIORITY</span><br><span class="line">          分配给线程的默认优先级.</span><br></pre></td></tr></table></figure>
+<p>当线程池中线程都具有相同的优先级, 调度程序的JVM实现自由选择它喜欢的线程. 这时候调度程序的操作有两种可能：<br>一是选择一个线程运行, 直到它阻塞或者运行完成为止.<br>二是时间分片, 为池内的每个线程提供均等的运行机会.</p>
+<p>1~10之间的值是没有保证的. 一些JVM可能不能识别10个不同的值, 而将这些优先级进行每两个或多个合并, 变成少于10个的优先级, 则两个或多个优先级的线程可能被映射为一个优先级.</p>
+<p>与线程休眠类似, 线程的优先级仍然无法保障线程的执行次序. 只不过, 优先级高的线程获取CPU资源的概率较大, 优先级低的并非没机会执行.</p>
+<h1 id="线程的生命周期"><a href="#线程的生命周期" class="headerlink" title="线程的生命周期"></a>线程的生命周期</h1><p>创建–运行–中断–死亡</p>
+<ul>
+<li>创建：线程构造</li>
+<li>运行：调用start()方法，进入run()方法</li>
+<li>中断：sleep()、wait()</li>
+<li>死亡：执行完run()方法或强制run()方法结束，线程死亡</li>
+</ul>
+<h1 id="线程的状态与转换"><a href="#线程的状态与转换" class="headerlink" title="线程的状态与转换"></a>线程的状态与转换</h1><p><img src="/images/java/multithread/01.base/Java-Thread-statue-01.png" alt="线程生命周期与状态转换"></p>
+<h2 id="new与新建状态"><a href="#new与新建状态" class="headerlink" title="new与新建状态"></a>new与新建状态</h2><p>新建线程有两个方法: 继承Thread类 和 实现Runnable接口.</p>
+<p>Runnable 接口的定义如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>实现<code>Runnable</code>接口就需要实现run方法. <code>run</code>方法的内容就是线程要执行的任务.<br>Thread类, 是实现了Runable接口的类, 因此在Thread类中也存在run方法.</p>
+<p>新建线程有若干种重载方法:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">Thread</span><span class="params">(Runnable target)</span> </span>&#123;</span><br><span class="line"><span class="comment">//</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">Thread</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line"><span class="comment">//</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//由于 Thread 实现了 Runnable 接口,</span></span><br><span class="line"><span class="comment">//这种形式也可以以 Thread 对象为参数</span></span><br></pre></td></tr></table></figure>
+<h2 id="start-启动与就绪状态-即可运行状态"><a href="#start-启动与就绪状态-即可运行状态" class="headerlink" title="start 启动与就绪状态(即可运行状态)"></a>start 启动与就绪状态(即可运行状态)</h2><p>调用<code>Thread.start()</code>方法, 该线程进入Runable(可运行)状态, 等待分配 CPU 资源, 当抢占到CPU资源时,<br>该线程启动,开始执行run方法.</p>
+<p><code>Thread.start()</code>是唯一可以新建线程的方法. 执行 Thread.run() 和 Runable.run() 只会执行run方法, 不会启动新的线程.</p>
+<p>一旦线程启动, 它就永远不能再重新启动. 只有一个新的线程可以被启动, 并且只能一次. 一个可运行的线程或死线程可以被重新启动.</p>
+<p>线程的调度是JVM的一部分, 在一个CPU的机器上, 实际上一次只能运行一个线程. 一次只有一个<strong>线程栈</strong>执行. JVM线程调度程序决定实际运行哪个处于可运行状态的线程. 众多可运行线程中的某一个会被选中作为当前线程. 可运行线程被选择运行的顺序是没有保障的. 尽管通常采用队列形式, 但这是没有保障的. 队列形式是指当一个线程完成“一轮”时, 它移到可运行队列的尾部等待, 直到它最终排队到该队列的前端为止, 它才能被再次选中. 事实上, 我们把它称为<em>可运行池</em>而不是一个可运行队列, 目的是帮助认识线程并<em>不都是</em>以某种有保障的顺序排列成一个队列的事实.</p>
+<h2 id="Running-运行"><a href="#Running-运行" class="headerlink" title="Running 运行"></a>Running 运行</h2><p>运行状态, 执行<code>run()</code>方法的内容.</p>
+<p>当 Java 虚拟机继续执行线程, 直到下面任一情况出现为止:</p>
+<ul>
+<li>调用 Runtime的 exit 方法 <code>System.exit()</code></li>
+<li>非守护线程全部停止运行, 无论是从 <code>run</code> 方法返回还是通过抛出一个传播到 <code>run</code> 方法之外的异常.</li>
+</ul>
+<p>几种特殊情况可能使线程离开运行状态：</p>
+<ol>
+<li>线程的<code>run()</code>方法完成.</li>
+<li>在对象上调用<code>wait()</code>方法（不是在线程上调用）.</li>
+<li>线程不能在对象上获得锁定, 它正试图运行该对象的方法代码.</li>
+<li>线程调度程序可以决定将当前运行状态移动到可运行状态, 以便让另一个线程获得运行机会, 而不需要任何理由.</li>
+</ol>
+<h2 id="sleep-休眠"><a href="#sleep-休眠" class="headerlink" title="sleep() 休眠"></a>sleep() 休眠</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span>&#123;</span><br><span class="line">  Thread.sleep();</span><br><span class="line">&#125;<span class="keyword">catch</span>(Exception e)&#123;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//原始定义</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title">sleep</span><span class="params">(<span class="keyword">long</span> millis)</span> <span class="keyword">throws</span> InterruptedException</span>;</span><br></pre></td></tr></table></figure>
+<p>调用 Thread 的静态方法可以进入休眠, sleep()作用：</p>
+<ul>
+<li>执行带锁的代码时, 不会释放锁</li>
+<li>进入Blocked状态</li>
+<li>线程在mills时间内不会醒来</li>
+<li>mills时间到了, 线程变为<code>Runnable</code>状态</li>
+<li>再次进入运行状态, 继续执行 sleep() 后面的代码</li>
+</ul>
+<p><code>Thread.sleep(long millis)</code>和<code>Thread.sleep(long millis, int nanos)</code>静态方法强制当前正在执行的线程休眠（暂停执行）, 以“减慢线程”.<br>当线程睡眠时, 它入睡在某个地方, 在苏醒之前不会返回到可运行状态. 当睡眠时间到期, 则返回到可运行状态.<br>线程睡眠的原因：线程执行太快, 或者需要强制进入下一轮, 因为Java规范不保证合理的轮换.</p>
+<p>当休眠一定时间后, 线程会苏醒, 进入准备状态等待执行.</p>
+<h2 id="Blocked-阻塞状态"><a href="#Blocked-阻塞状态" class="headerlink" title="Blocked 阻塞状态"></a>Blocked 阻塞状态</h2><p>阻塞状态是线程因为某种原因放弃CPU使用权, 暂时停止运行. 直到线程进入就绪状态, 才有机会转到运行状态. 阻塞的情况分三种：</p>
+<ul>
+<li>等待阻塞：运行的线程执行<code>wait()</code>方法, JVM会把该线程放入等待池中.</li>
+<li>同步阻塞：运行的线程在获取对象的同步锁时, 若该同步锁被别的线程占用, 则JVM会把该线程放入锁池中.</li>
+<li>其他阻塞：运行的线程执行<code>sleep()</code>或<code>join()</code>方法, 或者发出了<code>I/O</code>请求时, JVM会把该线程置为阻塞状态.<pre><code> 当`sleep()`状态超时、`join()`等待线程终止或者超时、或者`I/O`处理完毕时, 线程重新转入就绪状态.</code></pre>
+</li>
+</ul>
+<h2 id="Synchronized锁与同步"><a href="#Synchronized锁与同步" class="headerlink" title="Synchronized锁与同步"></a>Synchronized锁与同步</h2><p><a href="/Java/multithread/01.1.monitor-synchronized/">monitor与synchronized</a></p>
+<p>在 Java 中每个对象都有一个锁,(问题来了: Java对象锁信息保存在哪里?) 并且对象的锁同时只能被一个线程使用, 因此当某个线程得到对象的锁时, 其他线程也就没办法获得锁.<br>利用对象的锁, 可以实现只允许一个线程访问, 即同步.</p>
+<p>当线程运行到 <code>synchronized</code> 时, 首先检测是否可以获得对象的锁, 如果可以获得,则马上获取锁. 如果不能获取锁, 线程阻塞, 开始等待其他线程释放锁.</p>
+<p>当同步锁被释放时, 线程重新进入 Runnable 可运行状态.</p>
+<p>需要同步时,一定要搞清楚<code>加锁的对象是什么</code></p>
+<p>关于锁和同步, 有一下几个要点：</p>
+<ul>
+<li>只能同步方法, 而不能同步变量和类；</li>
+<li>每个对象只有一个锁；当提到同步时, 应该清楚在什么上同步？也就是说, 在哪个对象上同步？</li>
+<li>不必同步类中所有的方法, 类可以同时拥有同步和非同步方法.</li>
+<li>线程睡眠(执行<code>sleep</code>)时, 它所持的任何锁都不会释放.</li>
+<li>线程可以获得多个锁. 比如, 在一个对象的同步方法里面调用另外一个对象的同步方法, 则获取了两个对象的同步锁.</li>
+</ul>
+<h3 id="同步方法"><a href="#同步方法" class="headerlink" title="同步方法"></a>同步方法</h3><p>在方法名称前面增加 <code>synchronized</code> 关键字, 此时相当于以类的对象(即<code>this</code>)作为对象锁.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">function</span><span class="params">()</span></span>&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="同步代码块"><a href="#同步代码块" class="headerlink" title="同步代码块"></a>同步代码块</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">synchronized</span>(object1)&#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以 <code>object1</code>作为对象锁</p>
+<h3 id="同步静态方法"><a href="#同步静态方法" class="headerlink" title="同步静态方法"></a>同步静态方法</h3><ol>
+<li><p>静态方法同步是以方法所在的class对象作为锁的.<br> 要同步静态方法, 需要一个用于整个类对象的锁, 这个对象是就是这个类（XXX.class).<br> 例如：</p>
+ <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">synchronized</span> <span class="keyword">int</span> <span class="title">setName</span><span class="params">(String name)</span></span>&#123;</span><br><span class="line">    Xxx.name = name;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 等价于</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> <span class="title">setName</span><span class="params">(String name)</span></span>&#123;</span><br><span class="line">    <span class="keyword">synchronized</span>(Xxx.class)&#123;</span><br><span class="line">            Xxx.name = name;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p> 实质上, 线程进入该对象的的一种池中, 必须在那里等待, 直到其锁被释放</p>
+</li>
+<li><p>调用同一个类中的静态同步方法的线程将彼此阻塞, 它们都是锁定在相同的Class对象上.</p>
+</li>
+<li><p>静态同步方法和非静态同步方法将永远不会彼此阻塞, 因为静态方法锁定在Class对象上, 非静态方法锁定在该类的对象上.<br>对于非静态字段中可更改的数据, 通常使用非静态方法访问.<br>对于静态字段中可更改的数据, 通常使用静态方法访问.</p>
+</li>
+</ol>
+<p><strong>减少锁定时间</strong></p>
+<p>线程同步的目的是为了保护多个线程访问一个资源时对资源的破坏. 线程同步方法是通过锁来实现, 每个对象都有且仅有一个锁, 这个锁与一个特定的对象关联, 线程一旦获取了对象锁, 其他访问该对象的线程就无法再访问该对象的其他同步方法.</p>
+<p><strong>synchronized中慎用sleep和yield</strong></p>
+<p>在使用<code>synchronized</code>关键字时候, 应该尽可能避免在<code>synchronized</code>方法或<code>synchronized块</code>中使用<code>sleep</code>或者<code>yield</code>方法:<br>因为<code>synchronized</code>程序块占有着对象锁, 你休息那么其他的线程只能一边等着你醒来执行完了才能执行. 不但严重影响效率, 也不合逻辑. 同样, 在同步程序块内调用<code>yield</code>方法让出CPU资源也没有意义, 因为你占用着锁, 其他互斥线程还是无法访问同步程序块. 当然与同步程序块无关的线程可以获得更多的执行时间.</p>
+<h2 id="wait-等待-与-notify-notifyAll-通知"><a href="#wait-等待-与-notify-notifyAll-通知" class="headerlink" title="wait 等待 与 notify/notifyAll 通知"></a><code>wait</code> 等待 与 <code>notify</code>/<code>notifyAll</code> 通知</h2><p><code>wait</code> 让本线程等待, <code>notify</code> 通知某个线程不再等待</p>
+<p><code>wait()</code>作用主要有:</p>
+<ul>
+<li>释放锁</li>
+<li>不继续执行 wait 后面的代码</li>
+<li>本线程进入等待阻塞</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/1038007/why-should-wait-always-be-called-inside-a-loop">wait必须与while一起使用:(避免假唤醒)</a></p>
+<blockquote>
+<p>A thread can also wake up without being notified, interrupted, or timing out, a so-called spurious wakeup. While this will rarely occur in practice, applications must guard against it by testing for the condition that should have caused the thread to be awakened, and continuing to wait if the condition is not satisfied. In other words, waits should always occur in loops, like this one:<br>线程也可以在没有被通知，中断或超时的情况下唤醒，即所谓的虚假唤醒。 虽然这在实践中很少发生，但应用程序必须通过测试应该导致线程被唤醒的条件来防范它，并且如果条件不满足则继续等待。 换句话说，等待应该总是出现在循环中</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (!condition) &#123;</span><br><span class="line">     obj.wait();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>notify</code>()与 <code>notifyAll</code>()<br>针对同一个对象锁上的线程, 主要的作用是:</p>
+<ul>
+<li>不再等待, 从等待 Blocked 中转出</li>
+<li>进入 Runnable 状态, 等待获取 CPU 资源. ??</li>
+</ul>
+<p><strong>线程唤醒 notify</strong></p>
+<p>Object类中的<code>notify()</code>方法, 唤醒在此对象监视器上等待的单个线程. 如果所有线程都在此对象上等待, 则会选择唤醒其中一个线程. 选择是任意性的, 并在对实现做出决定时发生. 线程通过调用其中一个 <code>wait</code> 方法, 在对象的监视器上等待.  直到当前的线程放弃此对象上的锁定, 才能继续执行被唤醒的线程. 被唤醒的线程将以常规方式与在该对象上主动同步的其他所有线程进行竞争；例如, 唤醒的线程在作为锁定此对象的下一个线程方面没有可靠的特权或劣势. 类似的方法还有一个<code>notifyAll()</code>, 唤醒在此对象监视器上等待的所有线程.</p>
+<p><code>wait()</code>、<code>notify()</code>、<code>notifyAll()</code>都是Object的实例方法. 与每个对象具有锁一样, 每个对象可以有一个<code>线程列表</code>, 他们等待来自该信号（通知）. 线程通过执行对象上的wait()方法获得这个等待列表.</p>
+<p>这3个方法<strong>必须处于synchronized代码块或者synchronized方法中</strong>，否则就会抛出IllegalMonitorStateException异常，这是因为这几个方法必须拿到当前对象的监视器monitor对象，也就是说notify/notifyAll和wait方法依赖于monitor对象，</p>
+<p><strong>千万注意</strong></p>
+<p>当在对象上调用<code>wait()</code>方法时, 执行该代码的线程立即<code>放弃</code>它在对象上的锁. 然而调用<code>notify()</code>时, 并不意味着这时线程会放弃其锁. 如果线程仍然在完成同步代码, 则线程在移出之前不会放弃锁. 因此, 只要调用notify()并不意味着这时该锁变得可用.</p>
+<p><code>notifyAll()</code> 方法, 起到的是一个通知作用,<strong>不释放锁, 也不获取锁.</strong> 只是告诉该对象上等待的线程“可以竞争执行了, 都醒来去执行吧”</p>
+<h2 id="yield-让步"><a href="#yield-让步" class="headerlink" title="yield() 让步"></a>yield() 让步</h2><ul>
+<li>当前线程让出, 进入<code>Runnable可执行状态</code></li>
+<li>但是<strong>继续占着锁</strong></li>
+<li>同级别或较高级别的开始竞争 CPU 资源</li>
+</ul>
+<p>Thread.yield()方法作用是：暂停当前正在执行的线程对象, 并执行其他线程.<br>yield()应该做的是让当前运行线程回到可运行状态, 以允许具有相同优先级的其他线程获得运行机会.</p>
+<p>yield()从未导致线程转到等待/睡眠/阻塞状态. 在大多数情况下, yield()将导致线程从运行状态转到可运行状态, 但有可能没有效果.</p>
+<p>// TODO 使用场景</p>
+<h2 id="join-合并"><a href="#join-合并" class="headerlink" title="join() 合并"></a>join() 合并</h2><p>假设在 A 线程中,执行<code>B.join()</code> , B 线程放到 A 线程前面执行. A 线程转入阻塞状态首先执行 B 线程,<br>直到执行完 B 线程后, A 线程转入可运行状态就绪, 获取到 CPU 资源后再继续执行 join 后面的代码</p>
+<p>还有 join() 的重载形式:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">B.join(<span class="number">1000</span>);  </span><br></pre></td></tr></table></figure>
+<p>首先执行 B 1000毫秒, 1000毫秒后, 即使是没有执行完, 也会停止执行 B 线程, 开始执行join 语句后面的代码</p>
+<p>请看join的原始定义</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Waits at most &#123;<span class="doctag">@code</span> millis&#125; milliseconds for this thread to</span></span><br><span class="line"><span class="comment">* die. A timeout of &#123;<span class="doctag">@code</span> 0&#125; means to wait forever.</span></span><br><span class="line"><span class="comment">*</span></span><br><span class="line"><span class="comment">* &lt;p&gt; This implementation uses a loop of &#123;<span class="doctag">@code</span> this.wait&#125; calls</span></span><br><span class="line"><span class="comment">* conditioned on &#123;<span class="doctag">@code</span> this.isAlive&#125;. As a thread terminates the</span></span><br><span class="line"><span class="comment">* &#123;<span class="doctag">@code</span> this.notifyAll&#125; method is invoked. It is recommended that</span></span><br><span class="line"><span class="comment">* applications not use &#123;<span class="doctag">@code</span> wait&#125;, &#123;<span class="doctag">@code</span> notify&#125;, or</span></span><br><span class="line"><span class="comment">* &#123;<span class="doctag">@code</span> notifyAll&#125; on &#123;<span class="doctag">@code</span> Thread&#125; instances.</span></span><br><span class="line"><span class="comment">*</span></span><br><span class="line"><span class="comment">* <span class="doctag">@param</span>  millis</span></span><br><span class="line"><span class="comment">*         the time to wait in milliseconds</span></span><br><span class="line"><span class="comment">*</span></span><br><span class="line"><span class="comment">* <span class="doctag">@throws</span>  IllegalArgumentException</span></span><br><span class="line"><span class="comment">*          if the value of &#123;<span class="doctag">@code</span> millis&#125; is negative</span></span><br><span class="line"><span class="comment">*</span></span><br><span class="line"><span class="comment">* <span class="doctag">@throws</span>  InterruptedException</span></span><br><span class="line"><span class="comment">*          if any thread has interrupted the current thread. The</span></span><br><span class="line"><span class="comment">*          &lt;i&gt;interrupted status&lt;/i&gt; of the current thread is</span></span><br><span class="line"><span class="comment">*          cleared when this exception is thrown.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">join</span><span class="params">(<span class="keyword">long</span> millis)</span></span></span><br><span class="line"><span class="function"><span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">long</span> base = System.currentTimeMillis();</span><br><span class="line">    <span class="keyword">long</span> now = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (millis &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">&quot;timeout value is negative&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (millis == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">while</span> (isAlive()) &#123;</span><br><span class="line">            wait(<span class="number">0</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (isAlive()) &#123;</span><br><span class="line">            <span class="keyword">long</span> delay = millis - now;</span><br><span class="line">            <span class="keyword">if</span> (delay &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            wait(delay);</span><br><span class="line">            now = System.currentTimeMillis() - base;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其实Join 方法实现是通过wait实现的.<br>当main 线程调用t.join 时候, main 线程会获得线程对象t 的锁 （wait 意味着拿到该对象的锁), 调用该对象的wait( 等待时间) ,直到该对象唤醒main 线程, 比如退出后.</p>
+<h2 id="stop-停止"><a href="#stop-停止" class="headerlink" title="stop 停止"></a>stop 停止</h2><p>避免使用stop()，是因为它不安全。它会解除由线程获取的所有锁定，而且如果对象处于一种不连贯状态，那么其他线程能在那种状态下检查和修改它们。结果很难检查出真正的问题所在。</p>
+<h2 id="suspend-暂停"><a href="#suspend-暂停" class="headerlink" title="suspend 暂停"></a>suspend 暂停</h2><p>suspend()方法容易发生死锁。调用suspend()的时候，目标线程会停下来，但却仍然持有在这之前获得的锁定。此时，其他任何线程都不能访问锁定的资源，除非被”挂起”的线程恢复运行。对任何线程来说，如果它们想恢复目标线程，同时又试图使用任何一个锁定的资源，就会造成死锁。所以不应该使用suspend()，而应在自己的Thread类中置入一个标志，指出线程应该活动还是挂起。若标志指出线程应该挂起，便用wait()命其进入等待状态。若标志指出线程应当恢复，则用一个notify()重新启动线程。</p>
+<h2 id="Thread"><a href="#Thread" class="headerlink" title="Thread"></a>Thread</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> Thread <span class="title">currentThread</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        返回对当前正在执行的线程对象的引用.</span></span><br><span class="line"><span class="function">ClassLoader <span class="title">getContextClassLoader</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        返回该线程的上下文 ClassLoader.</span></span><br><span class="line"><span class="function">Thread.State <span class="title">getState</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        返回该线程的状态.</span></span><br><span class="line"><span class="function">ThreadGroup <span class="title">getThreadGroup</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        返回该线程所属的线程组.</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">boolean</span> <span class="title">holdsLock</span><span class="params">(Object obj)</span></span></span><br><span class="line"><span class="function">        当且仅当当前线程在指定的对象上保持监视器锁时, 才返回 <span class="keyword">true</span>.</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">setDefaultUncaughtExceptionHandler</span><span class="params">(Thread.UncaughtExceptionHandler eh)</span></span></span><br><span class="line"><span class="function">          设置当线程”由于未捕获到异常而突然终止, 并且没有为该线程定义其他处理程序时”所调用的默认处理程序.</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">stop</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        已过时.</span></span><br><span class="line"><span class="function">        stop 的许多使用都应由只修改某些变量以指示目标线程应该停止运行的代码来取代.</span></span><br><span class="line"><span class="function">        目标线程应定期检查该变量, 并且如果该变量指示它要停止运行,  则从其运行方法依次返回.</span></span><br><span class="line"><span class="function">        如果目标线程等待很长时间（例如基于一个条件变量）,  则应使用 interrupt 方法来中断该等待.</span></span><br></pre></td></tr></table></figure>
+<h3 id="线程中断与synchronized"><a href="#线程中断与synchronized" class="headerlink" title="线程中断与synchronized"></a>线程中断与synchronized</h3><p>线程中断</p>
+<p>正如中断二字所表达的意义，在线程运行(run方法)中间打断它，在Java中，提供了以下3个有关线程中断的方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//中断线程（实例方法）</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> Thread.interrupt();</span><br><span class="line"></span><br><span class="line"><span class="comment">//判断线程是否被中断（实例方法）</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">boolean</span> Thread.isInterrupted();</span><br><span class="line"></span><br><span class="line"><span class="comment">//判断是否被中断并清除当前中断状态（静态方法）</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">boolean</span> Thread.interrupted();</span><br></pre></td></tr></table></figure>
+<p>当一个线程处于被阻塞状态或者试图执行一个阻塞操作时，使用Thread.interrupt()方式中断该线程，注意此时将会抛出一个InterruptedException的异常，同时中断状态将会被复位(由中断状态改为非中断状态)，如下代码将演示该过程：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">InterruptSleepThread3</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        Thread t1 = <span class="keyword">new</span> Thread() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                <span class="comment">//while在try中，通过异常中断就可以退出run循环</span></span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">                        <span class="comment">//当前线程处于阻塞状态，异常必须捕捉处理，无法往外抛出</span></span><br><span class="line">                        TimeUnit.SECONDS.sleep(<span class="number">2</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                    System.out.println(<span class="string">&quot;Interruted When Sleep&quot;</span>);</span><br><span class="line">                    <span class="keyword">boolean</span> interrupt = <span class="keyword">this</span>.isInterrupted();</span><br><span class="line">                    <span class="comment">//中断状态被复位</span></span><br><span class="line">                    System.out.println(<span class="string">&quot;interrupt:&quot;</span>+interrupt);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">        t1.start();</span><br><span class="line">        TimeUnit.SECONDS.sleep(<span class="number">2</span>);</span><br><span class="line">        <span class="comment">//中断处于阻塞状态的线程</span></span><br><span class="line">        t1.interrupt();</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 输出结果:</span></span><br><span class="line"><span class="comment">           Interruted When Sleep</span></span><br><span class="line"><span class="comment">           interrupt:false</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如上述代码所示，我们创建一个线程，并在线程中调用了sleep方法从而使线程进入阻塞状态，启动线程后，调用线程实例对象的interrupt方法中断阻塞异常，并抛出InterruptedException异常，此时中断状态也将被复位。除了阻塞中断的情景，我们还可能会遇到处于运行期且非阻塞的状态的线程，这种情况下，直接调用Thread.interrupt()中断线程是不会得到任响应的，如下代码，将无法中断非阻塞状态下的线程：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">InterruputThread</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        Thread t1=<span class="keyword">new</span> Thread()&#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span></span>&#123;</span><br><span class="line">                <span class="keyword">while</span>(<span class="keyword">true</span>)&#123;</span><br><span class="line">                    System.out.println(<span class="string">&quot;未被中断&quot;</span>);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">        t1.start();</span><br><span class="line">        TimeUnit.SECONDS.sleep(<span class="number">2</span>);</span><br><span class="line">        t1.interrupt();</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 输出结果(无限执行):</span></span><br><span class="line"><span class="comment">             未被中断</span></span><br><span class="line"><span class="comment">             未被中断</span></span><br><span class="line"><span class="comment">             未被中断</span></span><br><span class="line"><span class="comment">             ......</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>虽然我们调用了interrupt方法，但线程t1并未被中断，因为<strong>处于非阻塞状态的线程需要我们手动进行中断检测并结束程序</strong>，改进后代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">InterruputThread</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        Thread t1=<span class="keyword">new</span> Thread()&#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span></span>&#123;</span><br><span class="line">                <span class="keyword">while</span>(<span class="keyword">true</span>)&#123;</span><br><span class="line">                    <span class="comment">//判断当前线程是否被中断</span></span><br><span class="line">                    <span class="keyword">if</span> (<span class="keyword">this</span>.isInterrupted())&#123;</span><br><span class="line">                        System.out.println(<span class="string">&quot;线程中断&quot;</span>);</span><br><span class="line">                        <span class="keyword">break</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line"></span><br><span class="line">                System.out.println(<span class="string">&quot;已跳出循环,线程中断!&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">        t1.start();</span><br><span class="line">        TimeUnit.SECONDS.sleep(<span class="number">2</span>);</span><br><span class="line">        t1.interrupt();</span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 输出结果:</span></span><br><span class="line"><span class="comment">            线程中断</span></span><br><span class="line"><span class="comment">            已跳出循环,线程中断!</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>一种是当线程处于阻塞状态或者试图执行一个阻塞操作时，我们可以使用实例方法interrupt()进行线程中断，执行中断操作后将会抛出interruptException异常(该异常必须捕捉无法向外抛出)并将中断状态复位，</li>
+<li>另外一种是当线程处于运行状态时，我们也可调用实例方法interrupt()进行线程中断，但同时必须手动判断中断状态，并编写中断线程的代码(其实就是结束run方法体的代码)。有时我们在编码时可能需要兼顾以上两种情况，那么就可以如下编写：</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span></span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="comment">//判断当前线程是否已中断,注意interrupted方法是静态的,执行后会对中断状态进行复位</span></span><br><span class="line">    <span class="keyword">while</span> (!Thread.interrupted()) &#123;</span><br><span class="line">        TimeUnit.SECONDS.sleep(<span class="number">2</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>事实上线程的中断操作对于正在等待获取的锁对象的synchronized方法或者代码块并不起作用，也就是对于synchronized来说，<strong>如果一个线程在等待锁，那么结果只有两种，要么它获得这把锁继续执行，要么它就保存等待，即使调用中断线程的方法，也不会生效</strong>。演示代码如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Created by zejian on 2017/6/2.</span></span><br><span class="line"><span class="comment">* Blog : http://blog.csdn.net/javazejian [原文地址,请尊重原创]</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SynchronizedBlocked</span> <span class="keyword">implements</span> <span class="title">Runnable</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">f</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Trying to call f()&quot;</span>);</span><br><span class="line">        <span class="keyword">while</span>(<span class="keyword">true</span>)&#123; <span class="comment">// Never releases lock</span></span><br><span class="line">            Thread.yield();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">    * 在构造器中创建新线程并启动获取对象锁</span></span><br><span class="line"><span class="comment">    */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SynchronizedBlocked</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">//该线程已持有当前实例锁</span></span><br><span class="line">        <span class="keyword">new</span> Thread() &#123;</span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                f(); <span class="comment">// Lock acquired by this thread</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;.start();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">//中断判断</span></span><br><span class="line">        <span class="keyword">while</span> (<span class="keyword">true</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (Thread.interrupted()) &#123;</span><br><span class="line">                System.out.println(<span class="string">&quot;中断线程!!&quot;</span>);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                f();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">        SynchronizedBlocked sync = <span class="keyword">new</span> SynchronizedBlocked();</span><br><span class="line">        Thread t = <span class="keyword">new</span> Thread(sync);</span><br><span class="line">        <span class="comment">//启动后调用f()方法,无法获取当前实例锁处于等待状态</span></span><br><span class="line">        t.start();</span><br><span class="line">        TimeUnit.SECONDS.sleep(<span class="number">1</span>);</span><br><span class="line">        <span class="comment">//中断线程,无法生效</span></span><br><span class="line">        t.interrupt();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们在<code>SynchronizedBlocked</code>构造函数中创建一个新线程并启动获取调用f()获取到当前实例锁，由于<code>SynchronizedBlocked</code>自身也是线程，启动后在其run方法中也调用了f()，但由于对象锁被其他线程占用，导致t线程只能等到锁，此时我们调用了<code>t.interrupt();</code>但并不能中断线程。</p>
+<h1 id="线程死锁"><a href="#线程死锁" class="headerlink" title="线程死锁"></a>线程死锁</h1><p>线程A当前持有互斥所锁 lock1 ，线程B当前持有互斥锁 lock2 。 接下来，当线程A仍然持有lock1时，它试图获取lock2，因为线程B正持有lock2，因此线程A会阻塞等待线程B对lock2的释放。如果此时线程B在持有lock2的时候，也在试图获取lock1，因为线程A正持有lock1，因此线程B会阻塞等待A对lock1的释放。二者都在等待对方所持有锁的释放，而二者却又都没释放自己所持有的锁，这时二者便会一直阻塞下去。这种情形称为死锁。</p>
+<p>规避死锁：</p>
+<ol>
+<li>只在必要的最短时间内持有锁，考虑使用同步语句块代替整个同步方法；</li>
+<li>尽量编写不在同一时刻需要持有多个锁的代码，如果不可避免，则确保线程持有第二个锁的时间尽量短暂；</li>
+<li>创建和使用一个大锁来代替若干小锁，并把这个锁用于互斥，而不是用作单个对象的对象级别锁；</li>
+</ol>
+<h1 id="同步方案"><a href="#同步方案" class="headerlink" title="同步方案"></a>同步方案</h1><p>在需要同步的时候，第一选择应该是synchronized关键字，这是最安全的方式，尝试其他任何方式都是有风险的。尤其在jdK1.5之后，对synchronized同步机制做了很多优化，如：自适应的自旋锁、锁粗化、锁消除、轻量级锁等，使得它的性能明显有了很大的提升。</p>
+<p>[volatile][a-volatile] 也是确保可见性的方法之一，但是不能实现原子性</p>
+<h2 id="互斥锁"><a href="#互斥锁" class="headerlink" title="互斥锁"></a>互斥锁</h2><p>如果同一个方法内同时有两个或更多线程，则每个线程有自己的局部变量拷贝， 采用 <code>synchronized</code> 修饰符实现的同步机制叫做互斥锁机制，它所获得的锁叫做互斥锁。 每个对象都有一个monitor(锁标记)，当线程拥有这个锁标记时才能访问这个资源，没有锁标记便进入锁池。 任何一个对象系统都会为其创建一个互斥锁，这个锁是为了分配给线程的，防止打断原子操作。每个对象的锁只能分配给一个线程，因此叫做互斥锁。</p>
+<p>互斥是实现同步的一种手段，临界区、互斥量和信号量都是主要的互斥实现方式。synchronized 关键字经过编译后，会在同步块的前后分别形成 <code>monitorenter</code> 和 <code>monitorexit</code> <code>这两个字节码指令。根据虚拟机规范的要求，在执行monitorenter</code> 指令时，首先要尝试获取对象的锁，如果获得了锁，把锁的计数器加1，相应地，在执行 <code>monitorexit</code> 指令时会将锁计数器减1，当计数器为0时，锁便被释放了。由于synchronized同步块对同一个线程是可重入的，因此一个线程可以多次获得同一个对象的互斥锁，同样，要释放相应次数的该互斥锁，才能最终释放掉该锁。</p>
+<p>当一个线程进入一个对象的一个synchronized方法后，其它线程是否可进入此对象的其它方法? 分几种情况：</p>
+<ol>
+<li>其他方法前是否加了synchronized关键字，如果没加，则能。</li>
+<li>如果这个方法内部调用了wait，则可以进入其他synchronized方法。</li>
+<li>如果其他个方法都加了synchronized关键字，并且内部没有调用wait，则不能。</li>
+<li>如果其他方法是static，它用的同步锁是当前类的字节码，与非静态的方法不能同步，因为非静态的方法用的是this。</li>
+</ol>
+<h1 id="线程安全类"><a href="#线程安全类" class="headerlink" title="线程安全类"></a>线程安全类</h1><p>请查看 <a href="/Java/collection-map/">Java集合</a></p>
+<h1 id="守护线程"><a href="#守护线程" class="headerlink" title="守护线程"></a>守护线程</h1><p>线程总体分两类：用户线程和守候线程.</p>
+<p>当所有用户线程执行完毕的时候, JVM自动关闭. 但是守候线程却不独立于JVM, 守候线程一般是由操作系统或者用户自己创建的.</p>
+<p>举例来说, JVM的垃圾回收、内存管理等线程都是守护线程.<br>还有就是在做数据库应用时候, 使用的数据库连接池, 连接池本身也包含着很多后台线程, 监控连接个数、超时时间、状态等等.</p>
+<h1 id="Timer"><a href="#Timer" class="headerlink" title="Timer"></a>Timer</h1><p>有一个后台运行的线程,  按照指定的时间执行定时任务. <code>Timer.schedual()</code>方法向后台线程添加定时任务,<br>后台线程按照的既定的时间执行定时任务.</p>
+<p>调用<code>Timer.cancel()</code>取消所有已安排的定时任务,  正在的执行的任务不会被取消.</p>
+<p>调用构造方法, 后台线程就已经启动.</p>
+<hr>
+<p>[参考文献]：</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/hive/mapjoin-optimization/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +481,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -329,7 +596,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -536,7 +803,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:03" itemprop="dateModified" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:19" itemprop="dateModified" datetime="2021-04-10T17:39:19+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -642,7 +909,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:03" itemprop="dateModified" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -666,302 +933,6 @@
 
       
           <h1 id="通信协议"><a href="#通信协议" class="headerlink" title="通信协议"></a>通信协议</h1><h1 id="存储结构"><a href="#存储结构" class="headerlink" title="存储结构"></a>存储结构</h1>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/step-book/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/step-book/" class="post-title-link" itemprop="url">Java软件工程师知识结构</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2014-05-30 12:26:00" itemprop="dateCreated datePublished" datetime="2014-05-30T12:26:00+08:00">2014-05-30</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:03" itemprop="dateModified" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="1-Java基础"><a href="#1-Java基础" class="headerlink" title="1 Java基础"></a>1 Java基础</h1><h2 id="1-1-Collection和Map"><a href="#1-1-Collection和Map" class="headerlink" title="1.1 Collection和Map"></a>1.1 Collection和Map</h2><ol>
-<li>掌握Collection和Map的继承体系。<a href="/Java/collection/collection-map.html" title="Java Collection与Map">Java Collection与map</a></li>
-<li>掌握ArrayList、LinkedList、Vector、Stack、PriorityQueue、HashSet、LinkedHashSet、TreeSet、HashMap、LinkedHashMap、TreeMap、WeakHashMap、EnumMap、TreeMap(红黑树)、HashTable的特点和实现原理。</li>
-<li>掌握CopyOnWriteArrayList、CopyOnWriteArraySet、<a href="/Java/collection/ConcurrentHashMap.html">ConcurrentHashMap</a>的实现原理和适用场景。</li>
-<li>Java并发容器</li>
-</ol>
-<h2 id="1-2-IO"><a href="#1-2-IO" class="headerlink" title="1.2 IO"></a>1.2 IO</h2><ol>
-<li>掌握InputStream、OutputStream、Reader、Writer的继承体系。 <a href="/Java/io/BIO.html" title="Java IO">Java IO</a> , <a href="/Java/io/java-zip.html">Java 压缩</a> , <a href="/Java/io/java-XML-JSON.html">Java XML与JSON</a>, <a href="/Java/io/object-serialization.html">Java序列化</a></li>
-<li>掌握字节流(FileInputStream、DataInputStream、BufferedInputStream、FileOutputSteam、DataOutputStream、BufferedOutputStream)和 字符流(BufferedReader、InputStreamReader、FileReader、BufferedWriter、OutputStreamWriter、PrintWriter、FileWriter)，并熟练运用。</li>
-<li>掌握NIO实现原理及使用方法。 <a href="/Java/io/IO-Model.html">IO模式</a> <a href="/Java/io/NIO.html">Java NIO</a></li>
-<li>Netty原理 <a href="/JavaWeb/Netty/Netty-theory.html">这可能是目前最透彻的Netty原理架构解析</a></li>
-<li>IO理论 <a href="/Java/io/high-performance-network-programming.html">高性能网络编程</a></li>
-</ol>
-<h2 id="1-3-异常"><a href="#1-3-异常" class="headerlink" title="1.3 异常"></a>1.3 异常</h2><ol>
-<li>掌握Throwable继承体系。<a target="_blank" rel="noopener" href="http://blog.csdn.net/hguisu/article/details/6155636" title="深入理解java异常处理机制">深入理解java异常处理机制</a></li>
-<li>掌握异常工作原理。</li>
-<li>了解常见受检异常(比如FileNotFoundException)、非受检异常(比如NullPointerException)和错误(比如IOError)。</li>
-</ol>
-<h2 id="1-4-多线程"><a href="#1-4-多线程" class="headerlink" title="1.4 多线程"></a>1.4 多线程</h2><ol>
-<li><p><a href="/Java/multithread/05.ThreadPool.html">线程池的实现原理、参数配置、平滑关机</a> 了解Executors可以创建的三种 (JAVA8增加了一种，共四种)线程池的特点及适用范围。 <a href="/Java/multithread/05.ThreadPool.html">Java多线程5: 线程池</a></p>
-</li>
-<li><p>掌握多线程同步机制，并熟练运用。</p>
-</li>
-</ol>
-<ul>
-<li>CPU、操作系统锁机制与Java编译优化(指令重排与内存栅栏)</li>
-<li><a href="/Java/multithread/01.thread-lifecycle.html">线程生命周期</a></li>
-<li><a href="/Java/multithread/03.volatile.html">volatile</a>、内存屏障、缓存行</li>
-<li><a href="/Java/multithread/01.1.monitor-synchronized.html">monitor与Synchronized: 实现原理、偏向锁-轻型锁-重型锁</a></li>
-<li><a target="_blank" rel="noopener" href="http://www.cnblogs.com/waterystone/p/4920797.html">AQS</a></li>
-<li>CAS</li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/fuyuwei2015/article/details/83719444">RetreentLock</a>、ReadAndWriteLook</li>
-<li>CountDownLatch、Atomic、Semaphore</li>
-<li>Fork/Join</li>
-<li><a href="/Java/multithread/06.BlockingQueue.html">阻塞队列</a></li>
-<li>Disruptor队列</li>
-<li>生产者消费者模式</li>
-<li><a href="/Java/multithread/02.Lock-Semaphore-Atomic.html">Java多线程2: Lock、信号量、原子量与队列</a></li>
-<li><a href="/Java/multithread/04.thread-synchronization.html">Java多线程4: 同步锁与Java线程同步方法比较</a></li>
-<li><a href="/Java/multithread/06.BlockingQueue.html">Java多线程6: Java阻塞队列与生产者消费者模式</a></li>
-<li><a href="1">Java多线程7: 分段锁</a></li>
-<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/b3c4dd85901e">CompletableFuture</a> 、<a target="_blank" rel="noopener" href="https://blog.csdn.net/CoderBruis/article/details/103181520">深入解读CompletableFuture源码与原理</a></li>
-<li>Quartz定时任务内部实现</li>
-<li>Guava并发包</li>
-</ul>
-<ol start="3">
-<li>并发包</li>
-</ol>
-<h2 id="1-5-Socket"><a href="#1-5-Socket" class="headerlink" title="1.5 Socket"></a>1.5 Socket</h2><ol>
-<li>掌握Socket通信原理。<a href="/Java/Socket.html">Java Socket</a></li>
-<li>熟练使用多线程结合Socket进行编程。</li>
-</ol>
-<h2 id="1-6-Stream-API"><a href="#1-6-Stream-API" class="headerlink" title="1.6 Stream API"></a>1.6 Stream API</h2><ol>
-<li>Lambda 实现原理</li>
-<li>懒加载实现原理</li>
-</ol>
-<h1 id="2-Java虚拟机"><a href="#2-Java虚拟机" class="headerlink" title="2 Java虚拟机"></a>2 Java虚拟机</h1><h2 id="2-1-JVM内存区域划分"><a href="#2-1-JVM内存区域划分" class="headerlink" title="2.1 JVM内存区域划分"></a>2.1 JVM内存区域划分</h2><p><a href="/Java/JVM.html">深入理解JVM(Java虚拟机)</a><br><a href="/Java/metric/01_tuner.html">Java性能专题</a></p>
-<ol>
-<li>掌握JMM分区: 程序计数器、堆、虚拟机栈、本地方法栈、方法区（JAVA8已移除）、元空间（JAVA8新增）的作用及基本原理。</li>
-<li>掌握堆的划分：新生代（Eden、Survivor1、Survivor2）和老年代的作用及工作原理。</li>
-<li>垃圾回收：常见算法与策略、<a href="/Java/metric/02_CMS_GC.html">CMS GC</a>、G1</li>
-<li>[重点] 掌握JVM内存参数设置及调优<ul>
-<li>Eden与Survivor分配</li>
-<li><a href="/Java/metric/jstack.html">JStack</a>、Jstat、vmstat、jmap、jutil</li>
-<li>线上排查</li>
-</ul>
-</li>
-</ol>
-<h2 id="2-2-类加载"><a href="#2-2-类加载" class="headerlink" title="2.2 类加载"></a>2.2 类加载</h2><ol>
-<li>掌握类的加载阶段：加载、链接（验证、准备、解析）、初始化、使用、卸载。</li>
-<li>掌握类加载器分类及其应用：启动类加载器、扩展类加载器、应用程序类加载器、自定义加载器。</li>
-<li>双亲委派</li>
-<li>动态加载</li>
-<li>CodeGen</li>
-</ol>
-<h1 id="3-J2EE"><a href="#3-J2EE" class="headerlink" title="3 J2EE"></a>3 J2EE</h1><ol>
-<li>掌握JSP内置对象、动作及相关特点和工作原理。<a href="/JavaWeb/JSP.html">JSP</a></li>
-<li>掌握Servlet的特点和工作原理。 <a href="/JavaWeb/Servlet.html">Servlet</a></li>
-<li>Spring: IOC和AOP实现原理（控制反转和动态代理）。 <a href="/JavaWeb/Spring/base.html">Spring</a></li>
-<li>MVC框架（Spring MVC，Struts等）的工作原理，并熟练运用。 <a href="/JavaWeb/Struts2-basic">Struts2</a> <a href="1">Spring MVC</a>工作原理、事务</li>
-<li>Spring MVC: 线程安全、请求原理、事务与传递、异步</li>
-<li>ORM框架(Hibernate，MyBatis等)的工作原理，并熟练运用。 <a href="/JavaWeb/Hibernate/concept">Hibernate基本概念</a> <a href="/JavaWeb/Hibernate/Association-Relationship.html">Hibernate关联关系XML实现</a> <a href="/JavaWeb/Hibernate/Annotation.html">Hibernate注解</a> <a href="1">MyBatis原理与缓存</a></li>
-</ol>
-<h1 id="4-数据结构与算法"><a href="#4-数据结构与算法" class="headerlink" title="4 数据结构与算法"></a>4 数据结构与算法</h1><ol>
-<li>掌握<a target="_blank" rel="noopener" href="http://www.docin.com/p-1532910757.html">线性表</a>和<a target="_blank" rel="noopener" href="http://www.docin.com/p-682548027.html">树</a>的特点并熟练运用: B-Tree节点结构</li>
-<li>掌握<a href="/data-struct/SortAndSearchAlgrithom.html">常用排序和查找算法</a>：插入排序(直接插入排序、希尔排序)、选择排序(直接选择排序、堆排序)、交换排序(冒泡排序、快速排序)、归并排序，顺序查找、二分查找、二叉查找树、哈希查找。广度优先搜索(队列实现)</li>
-<li>熟练运用常见排序和查找算法思想解决编程问题: Top K问题、大数组查找TopN、数组去重、跳台阶问题、不定长字符串转定长字符串</li>
-<li>了解<a href="/data-struct/BasicAlgrithom.html">几大基本算法</a>：贪心算法、分治策略、动态规划、蓄水池抽样</li>
-</ol>
-<h1 id="5-计算机网络"><a href="#5-计算机网络" class="headerlink" title="5 计算机网络"></a>5 计算机网络</h1><ol>
-<li>掌握网络的分层结构，及每层的功能特点。<a href="/network/base.html">计算机网络基础知识</a></li>
-<li>Http报文、状态码</li>
-<li>掌握TCP/IP的通信原理(三次握手、四次挥手)</li>
-<li><a href="/network/security/HTTPS-SSL.html" title="HTTPS与SSL">HTTPS</a>,<a href="/network/security/encrypt-decrypt-signature-certificate.html">加密、验签与证书</a></li>
-</ol>
-<h1 id="6-数据库"><a href="#6-数据库" class="headerlink" title="6 数据库"></a>6 数据库</h1><ol>
-<li>掌握复杂的SQL语句编写。<a href="/database/MySQL/base.html">MySQL</a>   <a href="/database/concept.html">数据库设计</a></li>
-<li>掌握数据库的优化（SQL层面和表设计层面）。<a target="_blank" rel="noopener" href="http://www.jb51.net/article/24392.htm">MySQL 性能优化的最佳20多条经验</a></li>
-<li><a href="/database/MySQL/base.html">MySQL</a><ul>
-<li>InnoDB数据结构、索引</li>
-<li>InnoDB与MyASIM区别</li>
-<li>行级锁与表级锁</li>
-</ul>
-</li>
-<li>MySQL集群<ul>
-<li>集群</li>
-<li>读写分离与实现</li>
-<li>双写</li>
-</ul>
-</li>
-<li>熟悉高并发、大数据情况下的数据库开发。</li>
-</ol>
-<h1 id="7-Web技术"><a href="#7-Web技术" class="headerlink" title="7 Web技术"></a>7 Web技术</h1><ol>
-<li>掌握<a href="/web/AJAX.html">AJAX</a>的工作原理。</li>
-<li>至少熟悉一款JS框架(比如JQuery)。<a href="/web/JQuery.html">JQuery</a></li>
-</ol>
-<h1 id="8-设计模式"><a href="#8-设计模式" class="headerlink" title="8 设计模式"></a>8 设计模式</h1><ol>
-<li>熟悉常见的<a href="/design-pattern/base.html">设计模式</a>。</li>
-<li>会将设计模式理论应用到实际开发中。</li>
-</ol>
-<h1 id="9-Linux"><a href="#9-Linux" class="headerlink" title="9 Linux"></a>9 Linux</h1><ol>
-<li>熟练运用Linux常见命令。</li>
-<li>熟悉Linux操作系统基本概念及特点。</li>
-<li>熟悉<a target="_blank" rel="noopener" href="http://www.codeceo.com/article/shell-learn-30-mins.html">Shell脚本</a>。</li>
-</ol>
-<h1 id="10-操作系统"><a href="#10-操作系统" class="headerlink" title="10 操作系统"></a>10 操作系统</h1><ol>
-<li>掌握操作系统的进程管理。</li>
-<li>了解操作系统的I/O。</li>
-<li>Linux系统调优: 命令与方法</li>
-</ol>
-<h1 id="11-正则表达式"><a href="#11-正则表达式" class="headerlink" title="11 正则表达式"></a>11 正则表达式</h1><ol>
-<li>掌握常见正则表达式符号。</li>
-<li>熟练运用正则表达式解决实际问题(比如匹配电话号码、邮箱、域名等)。<a href="/Java/regular-expression.html">常用的正则表达式与Java中的运用</a></li>
-</ol>
-<h1 id="12-安全"><a href="#12-安全" class="headerlink" title="12 安全"></a>12 安全</h1><ol>
-<li><a href="/web/XSS.html">XSS</a></li>
-<li><a href="/web/JSONP.html">CROS</a></li>
-<li>RTFS</li>
-<li>加密解密与验签</li>
-<li>HTTPS</li>
-<li>跨域请求的方法</li>
-</ol>
-<h1 id="13-分布式"><a href="#13-分布式" class="headerlink" title="13 分布式"></a>13 分布式</h1><ol>
-<li>分布式事务<ul>
-<li>分布式锁：基于DB事务、基于Redis、基于ZooKeeper</li>
-<li>ACID</li>
-<li>CAP、BASE</li>
-<li>TCC</li>
-</ul>
-</li>
-<li>微服务</li>
-<li>Nginx: 原理、负载均衡算法、动态切换</li>
-<li>消息中间件 Kafka、ActiveMQ</li>
-<li>分布式缓存及其集群: 雪崩、穿透、Master选举切换</li>
-<li><a href="/database/Redis/base.html">Redis</a>：集群、并发竞争问题、事务与CAS操作、持久化、订阅、缓存失败策略</li>
-<li><a href="/database/memcached/base.html">Memcached</a>: 数据结构</li>
-<li>ZooKeeper: 数据结构、集群、Master选举切换</li>
-<li><a href="/distributed/RPC.html">RPC</a>：<a href="/">WebService: SOAP、UUDI、WSDL</a>等</li>
-<li>服务治理SOA框架的使用与原理<ul>
-<li><a href="1">Dubbo</a>: 架构、雪崩、服务异常与逻辑异常追踪、服务降级、服务发现</li>
-</ul>
-</li>
-<li>分库分表<ul>
-<li>常见分库分表方案：水平分表与垂直分表的业务设计</li>
-<li>扩容与迁移</li>
-<li>MyCat</li>
-<li>Sharding-JDBC</li>
-</ul>
-</li>
-<li>唯一主键生成器</li>
-<li>算法: 一致性hash、轮询、Paxos、fast leader、raft</li>
-<li>系统设计<ul>
-<li>高可用</li>
-<li>可扩展</li>
-<li>限流(滑动窗口、漏桶、令牌桶)</li>
-<li>幂等</li>
-</ul>
-</li>
-<li>常见场景<ul>
-<li>电商</li>
-</ul>
-</li>
-<li>Docker</li>
-</ol>
-<h1 id="14-大数据"><a href="#14-大数据" class="headerlink" title="14 大数据"></a>14 大数据</h1><ol>
-<li>实时计算: 基数算法</li>
-<li>Storm 原理</li>
-<li>Flink 原理</li>
-<li>Hadoop<ul>
-<li>NameNode动态切换</li>
-<li>MapReduce与shuffle、数据倾斜问题</li>
-</ul>
-</li>
-<li>Yarn</li>
-<li>HBase</li>
-<li>Kylin</li>
-<li>Hive</li>
-<li>Lucene、solar、ElasticSearch</li>
-<li>爬虫</li>
-<li>推荐算法：协同过滤</li>
-<li>画像系统原理</li>
-</ol>
-<h1 id="15-机器学习"><a href="#15-机器学习" class="headerlink" title="15. 机器学习"></a>15. 机器学习</h1><h1 id="16-其他"><a href="#16-其他" class="headerlink" title="16 其他"></a>16 其他</h1><ol>
-<li>Quartz 原理：调度与分布式</li>
-<li>缓存: Ehcache、Spring Data cache、Guava-cache<ul>
-<li>LRUCache</li>
-<li>FastLRUCache</li>
-</ul>
-</li>
-<li>连接池：Druid</li>
-<li><a href="/interview.html">虐菜</a></li>
-<li><a href="/software-engineering/base.html">软件工程基本知识</a></li>
-<li>CORBAR</li>
-<li>WebSocket</li>
-<li>Tomcat实现原理</li>
-</ol>
-<h1 id="17-2018-中期计划"><a href="#17-2018-中期计划" class="headerlink" title="17. 2018 中期计划"></a>17. 2018 中期计划</h1><ol>
-<li><a href="/distributed/tomcat/principle.html">apache Tomcat 源码分析</a></li>
-<li><a href="/distributed/storm/principle.html">apache Storm 源码分析</a></li>
-<li><a href="/Java/multithread/disruptor_principle.html">disruptor源码分析</a></li>
-<li>分布式服务架构：原理、设计与实战</li>
-<li>HBase</li>
-</ol>
-
       
     </div>
 
@@ -1011,7 +982,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:03" itemprop="dateModified" datetime="2021-04-05T10:47:03+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:19" itemprop="dateModified" datetime="2021-04-10T17:39:19+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1276,7 +1247,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/%E7%A7%92%E6%9E%81%E7%9B%91%E6%8E%A7%E8%AE%BE%E8%AE%A1/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/step-book/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1290,7 +1261,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/%E7%A7%92%E6%9E%81%E7%9B%91%E6%8E%A7%E8%AE%BE%E8%AE%A1/" class="post-title-link" itemprop="url">【草稿】妙极监控设计</a>
+            <a href="/Java/step-book/" class="post-title-link" itemprop="url">Java软件工程师知识结构</a>
         </h2>
 
         <div class="post-meta">
@@ -1300,14 +1271,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2010-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2010-08-10T14:58:00+08:00">2010-08-10</time>
+              <time title="Created: 2014-05-30 12:26:00" itemprop="dateCreated datePublished" datetime="2014-05-30T12:26:00+08:00">2014-05-30</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:19" itemprop="dateModified" datetime="2021-04-10T17:39:19+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1315,7 +1286,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
                 </span>
             </span>
 
@@ -1330,7 +1301,229 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="妙极监控设计"><a href="#妙极监控设计" class="headerlink" title="妙极监控设计"></a>妙极监控设计</h1><p>TDE是一个全内存的分布式KV存储系统，写操作即put单台机器能力为6.6万笔/秒，读操作即get达到38万笔/秒。</p>
+          <h1 id="1-Java基础"><a href="#1-Java基础" class="headerlink" title="1 Java基础"></a>1 Java基础</h1><h2 id="1-1-Collection和Map"><a href="#1-1-Collection和Map" class="headerlink" title="1.1 Collection和Map"></a>1.1 Collection和Map</h2><ol>
+<li>掌握Collection和Map的继承体系。<a href="/Java/collection/collection-map.html" title="Java Collection与Map">Java Collection与map</a></li>
+<li>掌握ArrayList、LinkedList、Vector、Stack、PriorityQueue、HashSet、LinkedHashSet、TreeSet、HashMap、LinkedHashMap、TreeMap、WeakHashMap、EnumMap、TreeMap(红黑树)、HashTable的特点和实现原理。</li>
+<li>掌握CopyOnWriteArrayList、CopyOnWriteArraySet、<a href="/Java/collection/ConcurrentHashMap.html">ConcurrentHashMap</a>的实现原理和适用场景。</li>
+<li>Java并发容器</li>
+</ol>
+<h2 id="1-2-IO"><a href="#1-2-IO" class="headerlink" title="1.2 IO"></a>1.2 IO</h2><ol>
+<li>掌握InputStream、OutputStream、Reader、Writer的继承体系。 <a href="/Java/io/BIO.html" title="Java IO">Java IO</a> , <a href="/Java/io/java-zip.html">Java 压缩</a> , <a href="/Java/io/java-XML-JSON.html">Java XML与JSON</a>, <a href="/Java/io/object-serialization.html">Java序列化</a></li>
+<li>掌握字节流(FileInputStream、DataInputStream、BufferedInputStream、FileOutputSteam、DataOutputStream、BufferedOutputStream)和 字符流(BufferedReader、InputStreamReader、FileReader、BufferedWriter、OutputStreamWriter、PrintWriter、FileWriter)，并熟练运用。</li>
+<li>掌握NIO实现原理及使用方法。 <a href="/Java/io/IO-Model.html">IO模式</a> <a href="/Java/io/NIO.html">Java NIO</a></li>
+<li>Netty原理 <a href="/JavaWeb/Netty/Netty-theory.html">这可能是目前最透彻的Netty原理架构解析</a></li>
+<li>IO理论 <a href="/Java/io/high-performance-network-programming.html">高性能网络编程</a></li>
+</ol>
+<h2 id="1-3-异常"><a href="#1-3-异常" class="headerlink" title="1.3 异常"></a>1.3 异常</h2><ol>
+<li>掌握Throwable继承体系。<a target="_blank" rel="noopener" href="http://blog.csdn.net/hguisu/article/details/6155636" title="深入理解java异常处理机制">深入理解java异常处理机制</a></li>
+<li>掌握异常工作原理。</li>
+<li>了解常见受检异常(比如FileNotFoundException)、非受检异常(比如NullPointerException)和错误(比如IOError)。</li>
+</ol>
+<h2 id="1-4-多线程"><a href="#1-4-多线程" class="headerlink" title="1.4 多线程"></a>1.4 多线程</h2><ol>
+<li><p><a href="/Java/multithread/05.ThreadPool.html">线程池的实现原理、参数配置、平滑关机</a> 了解Executors可以创建的三种 (JAVA8增加了一种，共四种)线程池的特点及适用范围。 <a href="/Java/multithread/05.ThreadPool.html">Java多线程5: 线程池</a></p>
+</li>
+<li><p>掌握多线程同步机制，并熟练运用。</p>
+</li>
+</ol>
+<ul>
+<li>CPU、操作系统锁机制与Java编译优化(指令重排与内存栅栏)</li>
+<li><a href="/Java/multithread/01.thread-lifecycle.html">线程生命周期</a></li>
+<li><a href="/Java/multithread/03.volatile.html">volatile</a>、内存屏障、缓存行</li>
+<li><a href="/Java/multithread/01.1.monitor-synchronized.html">monitor与Synchronized: 实现原理、偏向锁-轻型锁-重型锁</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.cnblogs.com/waterystone/p/4920797.html">AQS</a></li>
+<li>CAS</li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/fuyuwei2015/article/details/83719444">RetreentLock</a>、ReadAndWriteLook</li>
+<li>CountDownLatch、Atomic、Semaphore</li>
+<li>Fork/Join</li>
+<li><a href="/Java/multithread/06.BlockingQueue.html">阻塞队列</a></li>
+<li>Disruptor队列</li>
+<li>生产者消费者模式</li>
+<li><a href="/Java/multithread/02.Lock-Semaphore-Atomic.html">Java多线程2: Lock、信号量、原子量与队列</a></li>
+<li><a href="/Java/multithread/04.thread-synchronization.html">Java多线程4: 同步锁与Java线程同步方法比较</a></li>
+<li><a href="/Java/multithread/06.BlockingQueue.html">Java多线程6: Java阻塞队列与生产者消费者模式</a></li>
+<li><a href="1">Java多线程7: 分段锁</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/b3c4dd85901e">CompletableFuture</a> 、<a target="_blank" rel="noopener" href="https://blog.csdn.net/CoderBruis/article/details/103181520">深入解读CompletableFuture源码与原理</a></li>
+<li>Quartz定时任务内部实现</li>
+<li>Guava并发包</li>
+</ul>
+<ol start="3">
+<li>并发包</li>
+</ol>
+<h2 id="1-5-Socket"><a href="#1-5-Socket" class="headerlink" title="1.5 Socket"></a>1.5 Socket</h2><ol>
+<li>掌握Socket通信原理。<a href="/Java/Socket.html">Java Socket</a></li>
+<li>熟练使用多线程结合Socket进行编程。</li>
+</ol>
+<h2 id="1-6-Stream-API"><a href="#1-6-Stream-API" class="headerlink" title="1.6 Stream API"></a>1.6 Stream API</h2><ol>
+<li>Lambda 实现原理</li>
+<li>懒加载实现原理</li>
+</ol>
+<h1 id="2-Java虚拟机"><a href="#2-Java虚拟机" class="headerlink" title="2 Java虚拟机"></a>2 Java虚拟机</h1><h2 id="2-1-JVM内存区域划分"><a href="#2-1-JVM内存区域划分" class="headerlink" title="2.1 JVM内存区域划分"></a>2.1 JVM内存区域划分</h2><p><a href="/Java/JVM.html">深入理解JVM(Java虚拟机)</a><br><a href="/Java/metric/01_tuner.html">Java性能专题</a></p>
+<ol>
+<li>掌握JMM分区: 程序计数器、堆、虚拟机栈、本地方法栈、方法区（JAVA8已移除）、元空间（JAVA8新增）的作用及基本原理。</li>
+<li>掌握堆的划分：新生代（Eden、Survivor1、Survivor2）和老年代的作用及工作原理。</li>
+<li>垃圾回收：常见算法与策略、<a href="/Java/metric/02_CMS_GC.html">CMS GC</a>、G1</li>
+<li>[重点] 掌握JVM内存参数设置及调优<ul>
+<li>Eden与Survivor分配</li>
+<li><a href="/Java/metric/jstack.html">JStack</a>、Jstat、vmstat、jmap、jutil</li>
+<li>线上排查</li>
+</ul>
+</li>
+</ol>
+<h2 id="2-2-类加载"><a href="#2-2-类加载" class="headerlink" title="2.2 类加载"></a>2.2 类加载</h2><ol>
+<li>掌握类的加载阶段：加载、链接（验证、准备、解析）、初始化、使用、卸载。</li>
+<li>掌握类加载器分类及其应用：启动类加载器、扩展类加载器、应用程序类加载器、自定义加载器。</li>
+<li>双亲委派</li>
+<li>动态加载</li>
+<li>CodeGen</li>
+</ol>
+<h1 id="3-J2EE"><a href="#3-J2EE" class="headerlink" title="3 J2EE"></a>3 J2EE</h1><ol>
+<li>掌握JSP内置对象、动作及相关特点和工作原理。<a href="/JavaWeb/JSP.html">JSP</a></li>
+<li>掌握Servlet的特点和工作原理。 <a href="/JavaWeb/Servlet.html">Servlet</a></li>
+<li>Spring: IOC和AOP实现原理（控制反转和动态代理）。 <a href="/JavaWeb/Spring/base.html">Spring</a></li>
+<li>MVC框架（Spring MVC，Struts等）的工作原理，并熟练运用。 <a href="/JavaWeb/Struts2-basic">Struts2</a> <a href="1">Spring MVC</a>工作原理、事务</li>
+<li>Spring MVC: 线程安全、请求原理、事务与传递、异步</li>
+<li>ORM框架(Hibernate，MyBatis等)的工作原理，并熟练运用。 <a href="/JavaWeb/Hibernate/concept">Hibernate基本概念</a> <a href="/JavaWeb/Hibernate/Association-Relationship.html">Hibernate关联关系XML实现</a> <a href="/JavaWeb/Hibernate/Annotation.html">Hibernate注解</a> <a href="1">MyBatis原理与缓存</a></li>
+</ol>
+<h1 id="4-数据结构与算法"><a href="#4-数据结构与算法" class="headerlink" title="4 数据结构与算法"></a>4 数据结构与算法</h1><ol>
+<li>掌握<a target="_blank" rel="noopener" href="http://www.docin.com/p-1532910757.html">线性表</a>和<a target="_blank" rel="noopener" href="http://www.docin.com/p-682548027.html">树</a>的特点并熟练运用: B-Tree节点结构</li>
+<li>掌握<a href="/data-struct/SortAndSearchAlgrithom.html">常用排序和查找算法</a>：插入排序(直接插入排序、希尔排序)、选择排序(直接选择排序、堆排序)、交换排序(冒泡排序、快速排序)、归并排序，顺序查找、二分查找、二叉查找树、哈希查找。广度优先搜索(队列实现)</li>
+<li>熟练运用常见排序和查找算法思想解决编程问题: Top K问题、大数组查找TopN、数组去重、跳台阶问题、不定长字符串转定长字符串</li>
+<li>了解<a href="/data-struct/BasicAlgrithom.html">几大基本算法</a>：贪心算法、分治策略、动态规划、蓄水池抽样</li>
+</ol>
+<h1 id="5-计算机网络"><a href="#5-计算机网络" class="headerlink" title="5 计算机网络"></a>5 计算机网络</h1><ol>
+<li>掌握网络的分层结构，及每层的功能特点。<a href="/network/base.html">计算机网络基础知识</a></li>
+<li>Http报文、状态码</li>
+<li>掌握TCP/IP的通信原理(三次握手、四次挥手)</li>
+<li><a href="/network/security/HTTPS-SSL.html" title="HTTPS与SSL">HTTPS</a>,<a href="/network/security/encrypt-decrypt-signature-certificate.html">加密、验签与证书</a></li>
+</ol>
+<h1 id="6-数据库"><a href="#6-数据库" class="headerlink" title="6 数据库"></a>6 数据库</h1><ol>
+<li>掌握复杂的SQL语句编写。<a href="/database/MySQL/base.html">MySQL</a>   <a href="/database/concept.html">数据库设计</a></li>
+<li>掌握数据库的优化（SQL层面和表设计层面）。<a target="_blank" rel="noopener" href="http://www.jb51.net/article/24392.htm">MySQL 性能优化的最佳20多条经验</a></li>
+<li><a href="/database/MySQL/base.html">MySQL</a><ul>
+<li>InnoDB数据结构、索引</li>
+<li>InnoDB与MyASIM区别</li>
+<li>行级锁与表级锁</li>
+</ul>
+</li>
+<li>MySQL集群<ul>
+<li>集群</li>
+<li>读写分离与实现</li>
+<li>双写</li>
+</ul>
+</li>
+<li>熟悉高并发、大数据情况下的数据库开发。</li>
+</ol>
+<h1 id="7-Web技术"><a href="#7-Web技术" class="headerlink" title="7 Web技术"></a>7 Web技术</h1><ol>
+<li>掌握<a href="/web/AJAX.html">AJAX</a>的工作原理。</li>
+<li>至少熟悉一款JS框架(比如JQuery)。<a href="/web/JQuery.html">JQuery</a></li>
+</ol>
+<h1 id="8-设计模式"><a href="#8-设计模式" class="headerlink" title="8 设计模式"></a>8 设计模式</h1><ol>
+<li>熟悉常见的<a href="/design-pattern/base.html">设计模式</a>。</li>
+<li>会将设计模式理论应用到实际开发中。</li>
+</ol>
+<h1 id="9-Linux"><a href="#9-Linux" class="headerlink" title="9 Linux"></a>9 Linux</h1><ol>
+<li>熟练运用Linux常见命令。</li>
+<li>熟悉Linux操作系统基本概念及特点。</li>
+<li>熟悉<a target="_blank" rel="noopener" href="http://www.codeceo.com/article/shell-learn-30-mins.html">Shell脚本</a>。</li>
+</ol>
+<h1 id="10-操作系统"><a href="#10-操作系统" class="headerlink" title="10 操作系统"></a>10 操作系统</h1><ol>
+<li>掌握操作系统的进程管理。</li>
+<li>了解操作系统的I/O。</li>
+<li>Linux系统调优: 命令与方法</li>
+</ol>
+<h1 id="11-正则表达式"><a href="#11-正则表达式" class="headerlink" title="11 正则表达式"></a>11 正则表达式</h1><ol>
+<li>掌握常见正则表达式符号。</li>
+<li>熟练运用正则表达式解决实际问题(比如匹配电话号码、邮箱、域名等)。<a href="/Java/regular-expression.html">常用的正则表达式与Java中的运用</a></li>
+</ol>
+<h1 id="12-安全"><a href="#12-安全" class="headerlink" title="12 安全"></a>12 安全</h1><ol>
+<li><a href="/web/XSS.html">XSS</a></li>
+<li><a href="/web/JSONP.html">CROS</a></li>
+<li>RTFS</li>
+<li>加密解密与验签</li>
+<li>HTTPS</li>
+<li>跨域请求的方法</li>
+</ol>
+<h1 id="13-分布式"><a href="#13-分布式" class="headerlink" title="13 分布式"></a>13 分布式</h1><ol>
+<li>分布式事务<ul>
+<li>分布式锁：基于DB事务、基于Redis、基于ZooKeeper</li>
+<li>ACID</li>
+<li>CAP、BASE</li>
+<li>TCC</li>
+</ul>
+</li>
+<li>微服务</li>
+<li>Nginx: 原理、负载均衡算法、动态切换</li>
+<li>消息中间件 Kafka、ActiveMQ</li>
+<li>分布式缓存及其集群: 雪崩、穿透、Master选举切换</li>
+<li><a href="/database/Redis/base.html">Redis</a>：集群、并发竞争问题、事务与CAS操作、持久化、订阅、缓存失败策略</li>
+<li><a href="/database/memcached/base.html">Memcached</a>: 数据结构</li>
+<li>ZooKeeper: 数据结构、集群、Master选举切换</li>
+<li><a href="/distributed/RPC.html">RPC</a>：<a href="/">WebService: SOAP、UUDI、WSDL</a>等</li>
+<li>服务治理SOA框架的使用与原理<ul>
+<li><a href="1">Dubbo</a>: 架构、雪崩、服务异常与逻辑异常追踪、服务降级、服务发现</li>
+</ul>
+</li>
+<li>分库分表<ul>
+<li>常见分库分表方案：水平分表与垂直分表的业务设计</li>
+<li>扩容与迁移</li>
+<li>MyCat</li>
+<li>Sharding-JDBC</li>
+</ul>
+</li>
+<li>唯一主键生成器</li>
+<li>算法: 一致性hash、轮询、Paxos、fast leader、raft</li>
+<li>系统设计<ul>
+<li>高可用</li>
+<li>可扩展</li>
+<li>限流(滑动窗口、漏桶、令牌桶)</li>
+<li>幂等</li>
+</ul>
+</li>
+<li>常见场景<ul>
+<li>电商</li>
+</ul>
+</li>
+<li>Docker</li>
+</ol>
+<h1 id="14-大数据"><a href="#14-大数据" class="headerlink" title="14 大数据"></a>14 大数据</h1><ol>
+<li>实时计算: 基数算法</li>
+<li>Storm 原理</li>
+<li>Flink 原理</li>
+<li>Hadoop<ul>
+<li>NameNode动态切换</li>
+<li>MapReduce与shuffle、数据倾斜问题</li>
+</ul>
+</li>
+<li>Yarn</li>
+<li>HBase</li>
+<li>Kylin</li>
+<li>Hive</li>
+<li>Lucene、solar、ElasticSearch</li>
+<li>爬虫</li>
+<li>推荐算法：协同过滤</li>
+<li>画像系统原理</li>
+</ol>
+<h1 id="15-机器学习"><a href="#15-机器学习" class="headerlink" title="15. 机器学习"></a>15. 机器学习</h1><h1 id="16-其他"><a href="#16-其他" class="headerlink" title="16 其他"></a>16 其他</h1><ol>
+<li>Quartz 原理：调度与分布式</li>
+<li>缓存: Ehcache、Spring Data cache、Guava-cache<ul>
+<li>LRUCache</li>
+<li>FastLRUCache</li>
+</ul>
+</li>
+<li>连接池：Druid</li>
+<li><a href="/interview.html">虐菜</a></li>
+<li><a href="/software-engineering/base.html">软件工程基本知识</a></li>
+<li>CORBAR</li>
+<li>WebSocket</li>
+<li>Tomcat实现原理</li>
+</ol>
+<h1 id="17-2018-中期计划"><a href="#17-2018-中期计划" class="headerlink" title="17. 2018 中期计划"></a>17. 2018 中期计划</h1><ol>
+<li><a href="/distributed/tomcat/principle.html">apache Tomcat 源码分析</a></li>
+<li><a href="/distributed/storm/principle.html">apache Storm 源码分析</a></li>
+<li><a href="/Java/multithread/disruptor_principle.html">disruptor源码分析</a></li>
+<li>分布式服务架构：原理、设计与实战</li>
+<li>HBase</li>
+</ol>
 
       
     </div>
@@ -1381,81 +1574,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:05" itemprop="dateModified" datetime="2021-04-05T10:47:05+08:00">2021-04-05</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Flink/" itemprop="url" rel="index"><span itemprop="name">Flink</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="FlinkKuduSink"><a href="#FlinkKuduSink" class="headerlink" title="FlinkKuduSink"></a>FlinkKuduSink</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">org.apache.kudu.client.NonRecoverableException: Couldn<span class="string">&#x27;t find a valid master in (9.7.185.196:7050). Exceptions received: [org.apache.kudu.client.RpcRemoteException: [peer master-] server sent error Service unavailable: service kudu.master.MasterService not registered on TabletServer]</span></span><br><span class="line"><span class="string">	at org.apache.kudu.client.KuduException.transformException(KuduException.java:110)</span></span><br><span class="line"><span class="string">	at org.apache.kudu.client.KuduClient.joinAndHandleException(KuduClient.java:413)</span></span><br><span class="line"><span class="string">	at org.apache.kudu.client.KuduClient.tableExists(KuduClient.java:229)</span></span><br><span class="line"><span class="string">	at org.apache.flink.connectors.kudu.connector.writer.KuduWriter.obtainTable(KuduWriter.java:74)</span></span><br><span class="line"><span class="string">	at org.apache.flink.connectors.kudu.connector.writer.KuduWriter.&lt;init&gt;(KuduWriter.java:59)</span></span><br><span class="line"><span class="string">	at org.apache.flink.connectors.kudu.streaming.KuduSink.open(KuduSink.java:62)</span></span><br><span class="line"><span class="string">	at org.apache.flink.api.common.functions.util.FunctionUtils.openFunction(FunctionUtils.java:36)</span></span><br><span class="line"><span class="string">	at org.apache.flink.streaming.api.operators.AbstractUdfStreamOperator.open(AbstractUdfStreamOperator.java:102)</span></span><br><span class="line"><span class="string">	at org.apache.flink.streaming.api.operators.StreamSink.open(StreamSink.java:48)</span></span><br><span class="line"><span class="string">	at org.apache.flink.streaming.runtime.tasks.StreamTask.openAllOperators(StreamTask.java:426)</span></span><br><span class="line"><span class="string">	at org.apache.flink.streaming.runtime.tasks.StreamTask.invoke(StreamTask.java:292)</span></span><br><span class="line"><span class="string">	at org.apache.flink.runtime.taskmanager.Task.run(Task.java:726)</span></span><br><span class="line"><span class="string">	at java.lang.Thread.run(Thread.java:748)</span></span><br><span class="line"><span class="string">	Suppressed: org.apache.kudu.client.KuduException$OriginalException: Original asynchronous stack trace</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.ConnectToCluster.incrementCountAndCheckExhausted(ConnectToCluster.java:244)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.ConnectToCluster.access$100(ConnectToCluster.java:49)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.ConnectToCluster$ConnectToMasterErrCB.call(ConnectToCluster.java:363)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.ConnectToCluster$ConnectToMasterErrCB.call(ConnectToCluster.java:352)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.doCall(Deferred.java:1280)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.runCallbacks(Deferred.java:1259)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.handleContinuation(Deferred.java:1315)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.doCall(Deferred.java:1286)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.runCallbacks(Deferred.java:1259)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.callback(Deferred.java:1002)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.KuduRpc.handleCallback(KuduRpc.java:275)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.KuduRpc.errback(KuduRpc.java:329)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.RpcProxy.responseReceived(RpcProxy.java:247)</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line">org.apache.kudu.client.NonRecoverableException: must specify at least one key column</span><br><span class="line">	at org.apache.kudu.client.KuduException.transformException(KuduException.java:<span class="number">110</span>)</span><br><span class="line">	at org.apache.kudu.client.KuduClient.joinAndHandleException(KuduClient.java:<span class="number">413</span>)</span><br><span class="line">	at org.apache.kudu.client.KuduClient.createTable(KuduClient.java:<span class="number">118</span>)</span><br><span class="line">	at org.apache.flink.connectors.kudu.connector.writer.KuduWriter.obtainTable(KuduWriter.java:<span class="number">78</span>)</span><br><span class="line">	at org.apache.flink.connectors.kudu.connector.writer.KuduWriter.&lt;init&gt;(KuduWriter.java:<span class="number">59</span>)</span><br><span class="line">	at org.apache.flink.connectors.kudu.streaming.KuduSink.open(KuduSink.java:<span class="number">62</span>)</span><br><span class="line">	at org.apache.flink.api.common.functions.util.FunctionUtils.openFunction(FunctionUtils.java:<span class="number">36</span>)</span><br><span class="line">	at org.apache.flink.streaming.api.operators.AbstractUdfStreamOperator.open(AbstractUdfStreamOperator.java:<span class="number">102</span>)</span><br><span class="line">	at org.apache.flink.streaming.api.operators.StreamSink.open(StreamSink.java:<span class="number">48</span>)</span><br><span class="line">	at org.apache.flink.streaming.runtime.tasks.StreamTask.openAllOperators(StreamTask.java:<span class="number">426</span>)</span><br><span class="line">	at org.apache.flink.streaming.runtime.tasks.StreamTask.invoke(StreamTask.java:<span class="number">292</span>)</span><br><span class="line">	at org.apache.flink.runtime.taskmanager.Task.run(Task.java:<span class="number">726</span>)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:<span class="number">748</span>)</span><br><span class="line">	Suppressed: org.apache.kudu.client.KuduException$OriginalException: Original asynchronous stack trace</span><br><span class="line">		at org.apache.kudu.client.RpcProxy.dispatchMasterError(RpcProxy.java:<span class="number">386</span>)</span><br><span class="line">		at org.apache.kudu.client.RpcProxy.responseReceived(RpcProxy.java:<span class="number">279</span>)</span><br><span class="line">		at org.apache.kudu.client.RpcProxy.access$<span class="number">000</span>(RpcProxy.java:<span class="number">59</span>)</span><br><span class="line">		at org.apache.kudu.client.RpcProxy$<span class="number">1.</span>call(RpcProxy.java:<span class="number">149</span>)</span><br><span class="line">		at org.apache.kudu.client.RpcProxy$<span class="number">1.</span>call(RpcProxy.java:<span class="number">145</span>)</span><br><span class="line">		at org.apache.kudu.client.Connection.messageReceived(Connection.java:<span class="number">390</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.SimpleChannelUpstreamHandler.handleUpstream(SimpleChannelUpstreamHandler.java:<span class="number">70</span>)</span><br><span class="line">		at org.apache.kudu.client.Connection.handleUpstream(Connection.java:<span class="number">238</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:<span class="number">564</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline$DefaultChannelHandlerContext.sendUpstream(DefaultChannelPipeline.java:<span class="number">791</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.Channels.fireMessageReceived(Channels.java:<span class="number">296</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.oneone.OneToOneDecoder.handleUpstream(OneToOneDecoder.java:<span class="number">70</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:<span class="number">564</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline$DefaultChannelHandlerContext.sendUpstream(DefaultChannelPipeline.java:<span class="number">791</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.Channels.fireMessageReceived(Channels.java:<span class="number">296</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.unfoldAndFireMessageReceived(FrameDecoder.java:<span class="number">462</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.callDecode(FrameDecoder.java:<span class="number">443</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.messageReceived(FrameDecoder.java:<span class="number">303</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.SimpleChannelUpstreamHandler.handleUpstream(SimpleChannelUpstreamHandler.java:<span class="number">70</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:<span class="number">564</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline$DefaultChannelHandlerContext.sendUpstream(DefaultChannelPipeline.java:<span class="number">791</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.Channels.fireMessageReceived(Channels.java:<span class="number">296</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.unfoldAndFireMessageReceived(FrameDecoder.java:<span class="number">462</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.callDecode(FrameDecoder.java:<span class="number">443</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.messageReceived(FrameDecoder.java:<span class="number">303</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.SimpleChannelUpstreamHandler.handleUpstream(SimpleChannelUpstreamHandler.java:<span class="number">70</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:<span class="number">564</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:<span class="number">559</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.Channels.fireMessageReceived(Channels.java:<span class="number">268</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.Channels.fireMessageReceived(Channels.java:<span class="number">255</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.socket.nio.NioWorker.read(NioWorker.java:<span class="number">88</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.socket.nio.AbstractNioWorker.process(AbstractNioWorker.java:<span class="number">108</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.socket.nio.AbstractNioSelector.run(AbstractNioSelector.java:<span class="number">337</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.socket.nio.AbstractNioWorker.run(AbstractNioWorker.java:<span class="number">89</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.socket.nio.NioWorker.run(NioWorker.java:<span class="number">178</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.util.ThreadRenamingRunnable.run(ThreadRenamingRunnable.java:<span class="number">108</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.util.internal.DeadLockProofWorker$<span class="number">1.</span>run(DeadLockProofWorker.java:<span class="number">42</span>)</span><br><span class="line">		at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:<span class="number">1149</span>)</span><br><span class="line">		at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:<span class="number">624</span>)</span><br><span class="line">		... <span class="number">1</span> more</span><br><span class="line"></span><br><span class="line">Rows per page:</span><br><span class="line"><span class="number">5</span></span><br><span class="line"><span class="number">1</span> - <span class="number">1</span> of <span class="number">1</span></span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/FlinkKuduSink/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/FlinkKuduSink/" class="post-title-link" itemprop="url">【草稿】FlinkKuduSink</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2010-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2010-08-10T14:58:00+08:00">2010-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:05" itemprop="dateModified" datetime="2021-04-05T10:47:05+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1529,7 +1648,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-05 10:47:06" itemprop="dateModified" datetime="2021-04-05T10:47:06+08:00">2021-04-05</time>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1571,10 +1690,84 @@
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/%E7%A7%92%E6%9E%81%E7%9B%91%E6%8E%A7%E8%AE%BE%E8%AE%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/%E7%A7%92%E6%9E%81%E7%9B%91%E6%8E%A7%E8%AE%BE%E8%AE%A1/" class="post-title-link" itemprop="url">【草稿】妙极监控设计</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2010-08-10 14:58:00" itemprop="dateCreated datePublished" datetime="2010-08-10T14:58:00+08:00">2010-08-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-10 17:39:20" itemprop="dateModified" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="妙极监控设计"><a href="#妙极监控设计" class="headerlink" title="妙极监控设计"></a>妙极监控设计</h1><p>TDE是一个全内存的分布式KV存储系统，写操作即put单台机器能力为6.6万笔/秒，读操作即get达到38万笔/秒。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/23/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/23/">23</a><span class="page-number current">24</span>
+    <a class="extend prev" rel="prev" href="/page/23/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/23/">23</a><span class="page-number current">24</span><a class="page-number" href="/page/25/">25</a><a class="extend next" rel="next" href="/page/25/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1640,7 +1833,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">240</span>
+          <span class="site-state-item-count">241</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1653,7 +1846,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">120</span>
+        <span class="site-state-item-count">122</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
