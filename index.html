@@ -183,6 +183,164 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-sink/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-sink/" class="post-title-link" itemprop="url">Flink-sink</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-04-11 14:58:00 / Modified: 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T14:58:00+08:00">2021-04-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Sink的三种模式"><a href="#Sink的三种模式" class="headerlink" title="Sink的三种模式"></a>Sink的三种模式</h2><p><a target="_blank" rel="noopener" href="http://www.whitewood.me/2020/02/26/Flink-Table-%E7%9A%84%E4%B8%89%E7%A7%8D-Sink-%E6%A8%A1%E5%BC%8F/">Flink table的三种sink模式</a></p>
+<p>Sink有INSERT、UPDATE 和 DELETE 三类，Table的sink模式有append、upsert和retract三种</p>
+<table>
+<thead>
+<tr>
+<th>Sink模式</th>
+<th>Insert</th>
+<th>Update</th>
+<th>Delete</th>
+<th>支持的存储</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Append(追加)</td>
+<td>支持</td>
+<td>不支持</td>
+<td>不支持</td>
+<td></td>
+</tr>
+<tr>
+<td>Upsert(重复时更新)</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>KV: HBase JDBC</td>
+</tr>
+<tr>
+<td>Retract(允许撤销)</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td></td>
+</tr>
+</tbody></table>
+<h3 id="Upsert模式与Retract模式的区别"><a href="#Upsert模式与Retract模式的区别" class="headerlink" title="Upsert模式与Retract模式的区别"></a>Upsert模式与Retract模式的区别</h3><p>Upsert模式需要唯一的key来传递更新消息，外部连接器需要明确知道这个唯一key的属性</p>
+<p>Upsert模式和Retract模式</p>
+<p>消息: 都为(Boolean,Row)二元组, 第一个元素代表操作类型:</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>操作类型</th>
+<th>插入</th>
+<th>更新</th>
+<th>删除</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Upsert模式</td>
+<td>true 为 UPSERT消息(不存在则INSERT, 存在则UPDATE)<br/> false 为 DELETE消息</td>
+<td>upsert消息</td>
+<td>upsert消息</td>
+<td>delete消息</td>
+</tr>
+<tr>
+<td>Retract模式</td>
+<td>true为添加消息<br/>false为撤回消息</td>
+<td>添加消息</td>
+<td>已更新行(上一行)的撤回消息<br/>更新行(新行)的添加消息</td>
+<td>撤回消息</td>
+</tr>
+</tbody></table>
+<h3 id="Append模式-窗口聚合中的应用"><a href="#Append模式-窗口聚合中的应用" class="headerlink" title="Append模式-窗口聚合中的应用"></a>Append模式-窗口聚合中的应用</h3><p>在实时聚合统计中，聚合统计的结果输出是由 Trigger 决定的，而 Append-Only 则意味着对于每个窗口实例（Pane，窗格）Trigger 只能触发一次，则就导致无法在迟到数据到达时再刷新结果。</p>
+<p>通常来说，我们可以给 Watermark 设置一个较大的延迟容忍阈值来避免这种刷新（再有迟到数据则丢弃），但代价是却会引入较大的延迟。</p>
+<h3 id="Upsert模式"><a href="#Upsert模式" class="headerlink" title="Upsert模式"></a>Upsert模式</h3><p>支持 Append-Only 的操作和在有主键的前提下的 Update 和 Delete 操作.</p>
+<p><strong>重复时更新</strong></p>
+<p>Upsert 模式依赖业务主键来实现输出结果的更新和删除，因此非常适合 KV 数据库，比如 HBase、JDBC 的 TableSink 都使用了这种方式。</p>
+<p>Upsert 模式是目前来说比较实用的模式，因为大部分业务都会提供原子或复合类型的主键，而在支持 KV 的存储系统也非常多，但要注意的是不要变更主键，具体原因会在下一节谈到。</p>
+<h3 id="Retract模式"><a href="#Retract模式" class="headerlink" title="Retract模式"></a>Retract模式</h3><p><strong>允许撤销</strong></p>
+<p>举个例子，假设我们将电商订单按照承运快递公司进行分类计数，有如下的结果表。</p>
+<table>
+<thead>
+<tr>
+<th align="left">公司</th>
+<th align="left">订单数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">中通</td>
+<td align="left">2</td>
+</tr>
+<tr>
+<td align="left">圆通</td>
+<td align="left">1</td>
+</tr>
+<tr>
+<td align="left">顺丰</td>
+<td align="left">3</td>
+</tr>
+</tbody></table>
+<p>那么如果原本一单为中通的快递，后续更新为用顺丰发货，对于 Upsert 模式会产生 <code>(true, (顺丰, 4))</code> 这样一条 changelog，但中通的订单数没有被修正。相比之下，Retract 模式产出 <code>(false, (中通, 1))</code> 和 <code>(true, (顺丰, 1))</code> 两条数据，则可以正确地更新数据。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/01.%E5%AE%9E%E6%97%B6%E6%95%B0%E4%BB%93/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -207,7 +365,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
             </span>
 
           
@@ -264,7 +422,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
             </span>
 
           
@@ -321,7 +479,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
             </span>
 
           
@@ -378,7 +536,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
             </span>
 
           
@@ -425,6 +583,63 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/case/%E6%AC%BA%E8%AF%88%E6%A3%80%E6%B5%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/case/%E6%AC%BA%E8%AF%88%E6%A3%80%E6%B5%8B/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-backpress/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -449,7 +664,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
             </span>
 
           
@@ -559,63 +774,6 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/case/%E6%AC%BA%E8%AF%88%E6%A3%80%E6%B5%8B/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/case/%E6%AC%BA%E8%AF%88%E6%A3%80%E6%B5%8B/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL-Join-Lateral/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -640,7 +798,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
             </span>
 
           
@@ -697,7 +855,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
             </span>
 
           
@@ -721,64 +879,6 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
 <li>实时标签工厂: 标签-用户近三十天访问次数、近三十天访问某个页面的次数</li>
 <li>ABT</li>
 </ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/actions/02.%20%E5%AE%9E%E6%97%B6%E7%94%A8%E6%88%B7%E7%94%BB%E5%83%8F/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/actions/02.%20%E5%AE%9E%E6%97%B6%E7%94%A8%E6%88%B7%E7%94%BB%E5%83%8F/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="实时用户画像"><a href="#实时用户画像" class="headerlink" title="实时用户画像"></a>实时用户画像</h1><h2 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h2><p>企业面对不断增加的海量信息，其信息筛选和处理效率低下的困扰与日俱增。由于用户营销不够细化，企业App 中许多不合时宜或不合偏好的消息推送很大程度上影响了用户体验，甚至引发了用户流失</p>
 
       
     </div>
@@ -822,7 +922,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-10 17:39:20" itemprop="dateCreated datePublished" datetime="2021-04-10T17:39:20+08:00">2021-04-10</time>
+              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
             </span>
 
           
@@ -937,7 +1037,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">241</span>
+          <span class="site-state-item-count">242</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -950,7 +1050,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">122</span>
+        <span class="site-state-item-count">123</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
