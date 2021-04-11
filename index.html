@@ -183,7 +183,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-sink/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/00.Flink-outline/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-sink/" class="post-title-link" itemprop="url">Flink-sink</a>
+            <a href="/bigdata/Flink/00.Flink-outline/" class="post-title-link" itemprop="url">Flink-outline</a>
         </h2>
 
         <div class="post-meta">
@@ -206,10 +206,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2021-04-11 14:58:00 / Modified: 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T14:58:00+08:00">2021-04-11</time>
+              <time title="Created: 2021-10-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-10-15T19:47:00+08:00">2021-10-15</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -231,97 +237,170 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="Sink的三种模式"><a href="#Sink的三种模式" class="headerlink" title="Sink的三种模式"></a>Sink的三种模式</h2><p><a target="_blank" rel="noopener" href="http://www.whitewood.me/2020/02/26/Flink-Table-%E7%9A%84%E4%B8%89%E7%A7%8D-Sink-%E6%A8%A1%E5%BC%8F/">Flink table的三种sink模式</a></p>
-<p>Sink有INSERT、UPDATE 和 DELETE 三类，Table的sink模式有append、upsert和retract三种</p>
-<table>
-<thead>
-<tr>
-<th>Sink模式</th>
-<th>Insert</th>
-<th>Update</th>
-<th>Delete</th>
-<th>支持的存储</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Append(追加)</td>
-<td>支持</td>
-<td>不支持</td>
-<td>不支持</td>
-<td></td>
-</tr>
-<tr>
-<td>Upsert(重复时更新)</td>
-<td>支持</td>
-<td>支持</td>
-<td>支持</td>
-<td>KV: HBase JDBC</td>
-</tr>
-<tr>
-<td>Retract(允许撤销)</td>
-<td>支持</td>
-<td>支持</td>
-<td>支持</td>
-<td></td>
-</tr>
-</tbody></table>
-<h3 id="Upsert模式与Retract模式的区别"><a href="#Upsert模式与Retract模式的区别" class="headerlink" title="Upsert模式与Retract模式的区别"></a>Upsert模式与Retract模式的区别</h3><p>Upsert模式需要唯一的key来传递更新消息，外部连接器需要明确知道这个唯一key的属性</p>
-<p>Upsert模式和Retract模式</p>
-<p>消息: 都为(Boolean,Row)二元组, 第一个元素代表操作类型:</p>
-<table>
-<thead>
-<tr>
-<th>模式</th>
-<th>操作类型</th>
-<th>插入</th>
-<th>更新</th>
-<th>删除</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Upsert模式</td>
-<td>true 为 UPSERT消息(不存在则INSERT, 存在则UPDATE)<br/> false 为 DELETE消息</td>
-<td>upsert消息</td>
-<td>upsert消息</td>
-<td>delete消息</td>
-</tr>
-<tr>
-<td>Retract模式</td>
-<td>true为添加消息<br/>false为撤回消息</td>
-<td>添加消息</td>
-<td>已更新行(上一行)的撤回消息<br/>更新行(新行)的添加消息</td>
-<td>撤回消息</td>
-</tr>
-</tbody></table>
-<h3 id="Append模式-窗口聚合中的应用"><a href="#Append模式-窗口聚合中的应用" class="headerlink" title="Append模式-窗口聚合中的应用"></a>Append模式-窗口聚合中的应用</h3><p>在实时聚合统计中，聚合统计的结果输出是由 Trigger 决定的，而 Append-Only 则意味着对于每个窗口实例（Pane，窗格）Trigger 只能触发一次，则就导致无法在迟到数据到达时再刷新结果。</p>
-<p>通常来说，我们可以给 Watermark 设置一个较大的延迟容忍阈值来避免这种刷新（再有迟到数据则丢弃），但代价是却会引入较大的延迟。</p>
-<h3 id="Upsert模式"><a href="#Upsert模式" class="headerlink" title="Upsert模式"></a>Upsert模式</h3><p>支持 Append-Only 的操作和在有主键的前提下的 Update 和 Delete 操作.</p>
-<p><strong>重复时更新</strong></p>
-<p>Upsert 模式依赖业务主键来实现输出结果的更新和删除，因此非常适合 KV 数据库，比如 HBase、JDBC 的 TableSink 都使用了这种方式。</p>
-<p>Upsert 模式是目前来说比较实用的模式，因为大部分业务都会提供原子或复合类型的主键，而在支持 KV 的存储系统也非常多，但要注意的是不要变更主键，具体原因会在下一节谈到。</p>
-<h3 id="Retract模式"><a href="#Retract模式" class="headerlink" title="Retract模式"></a>Retract模式</h3><p><strong>允许撤销</strong></p>
-<p>举个例子，假设我们将电商订单按照承运快递公司进行分类计数，有如下的结果表。</p>
-<table>
-<thead>
-<tr>
-<th align="left">公司</th>
-<th align="left">订单数</th>
-</tr>
-</thead>
-<tbody><tr>
-<td align="left">中通</td>
-<td align="left">2</td>
-</tr>
-<tr>
-<td align="left">圆通</td>
-<td align="left">1</td>
-</tr>
-<tr>
-<td align="left">顺丰</td>
-<td align="left">3</td>
-</tr>
-</tbody></table>
-<p>那么如果原本一单为中通的快递，后续更新为用顺丰发货，对于 Upsert 模式会产生 <code>(true, (顺丰, 4))</code> 这样一条 changelog，但中通的订单数没有被修正。相比之下，Retract 模式产出 <code>(false, (中通, 1))</code> 和 <code>(true, (顺丰, 1))</code> 两条数据，则可以正确地更新数据。</p>
+          <h2 id="Flink-架构"><a href="#Flink-架构" class="headerlink" title="Flink 架构"></a>Flink 架构</h2><ul>
+<li><input disabled="" type="checkbox"> CoLocationGroup</li>
+<li><input disabled="" type="checkbox"> SlotSharingGroup</li>
+</ul>
+<h2 id="Flink-API"><a href="#Flink-API" class="headerlink" title="Flink API"></a>Flink API</h2><ul>
+<li><input checked="" disabled="" type="checkbox"> <a href="./Flink-sink/">Flink三种Sink模式: Append、Upsert和Retract</a></li>
+<li><input disabled="" type="checkbox"> Flink 2PC</li>
+<li><input disabled="" type="checkbox"> Flink 反压</li>
+<li><input disabled="" type="checkbox"> Flink 状态管理与TTL</li>
+<li><input disabled="" type="checkbox"> Flink time</li>
+<li><input disabled="" type="checkbox"> Flink timer</li>
+<li><input disabled="" type="checkbox"> Flink window</li>
+<li><input disabled="" type="checkbox"> Flink watermark</li>
+</ul>
+<h2 id="Flink-DataStream"><a href="#Flink-DataStream" class="headerlink" title="Flink DataStream"></a>Flink DataStream</h2><ol>
+<li>Flink join</li>
+</ol>
+<h2 id="Flink-SQL"><a href="#Flink-SQL" class="headerlink" title="Flink SQL"></a>Flink SQL</h2><ul>
+<li><input disabled="" type="checkbox"> Flink join</li>
+<li><input disabled="" type="checkbox"> Flink interval join</li>
+<li><input disabled="" type="checkbox"> Flink temporal join</li>
+<li><input disabled="" type="checkbox"> Flink broadcast join</li>
+<li><input disabled="" type="checkbox"> Flink SQL join的状态管理</li>
+<li><input disabled="" type="checkbox"> Flink SQL-window aggregate与group aggregate</li>
+<li><input disabled="" type="checkbox"> Flink over window与TopN</li>
+<li><input disabled="" type="checkbox"> Flink SQL原理与blink优化</li>
+</ul>
+<h2 id="Flink-metric"><a href="#Flink-metric" class="headerlink" title="Flink metric"></a>Flink metric</h2><h2 id="Flink-CEP"><a href="#Flink-CEP" class="headerlink" title="Flink CEP"></a>Flink CEP</h2><h2 id="Flink-connectors"><a href="#Flink-connectors" class="headerlink" title="Flink connectors"></a>Flink connectors</h2><ul>
+<li><input disabled="" type="checkbox"> kudu connector</li>
+</ul>
+<h2 id="Flink实践"><a href="#Flink实践" class="headerlink" title="Flink实践"></a>Flink实践</h2><ul>
+<li><input disabled="" type="checkbox"> interval join实现outjoin</li>
+<li><input disabled="" type="checkbox"> 双流join，一条流延迟</li>
+<li><input disabled="" type="checkbox"> keyedState扩容</li>
+<li><input disabled="" type="checkbox"> Flink-bloomfilter近似去重</li>
+</ul>
+<p><img src="_v_images/flink-structure.svg" alt="The processes involved in executing a Flink dataflow"></p>
+<h2 id="stateful-stream-processing"><a href="#stateful-stream-processing" class="headerlink" title="stateful stream processing"></a>stateful stream processing</h2><p>processFunction</p>
+<p>低阶API<br>构建一些新的组件<br>比如 利用定时做一定情况下的匹配和缓存<br>灵活，开发比较复杂</p>
+<p>凌晨更新  注册定时器 </p>
+<h2 id="state"><a href="#state" class="headerlink" title="state"></a>state</h2><p>状态托管<br>operator state 算子状态<br>keyed state<br>State Backend (rocksdb + hdfs)</p>
+<h2 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h2><p>barrier</p>
+<h2 id="DataStream-广播"><a href="#DataStream-广播" class="headerlink" title="DataStream 广播"></a>DataStream 广播</h2><h2 id="CoLocationGroup"><a href="#CoLocationGroup" class="headerlink" title="CoLocationGroup"></a>CoLocationGroup</h2><h2 id="SlotSharingGroup"><a href="#SlotSharingGroup" class="headerlink" title="SlotSharingGroup"></a>SlotSharingGroup</h2><h3 id="如何自定义-Window？"><a href="#如何自定义-Window？" class="headerlink" title="如何自定义 Window？"></a>如何自定义 Window？</h3><p>1、Window Assigner</p>
+<p>负责将元素分配到不同的 window。</p>
+<p>Window API 提供了自定义的 WindowAssigner 接口，我们可以实现 WindowAssigner 的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">public abstract Collection&lt;W&gt; assignWindows(T element, long timestamp)</span><br></pre></td></tr></table></figure>
+<p>方法。同时，对于基于 Count 的 window 而言，默认采用了 GlobalWindow 的 window assigner，例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">keyBy.window(GlobalWindows.create())</span><br></pre></td></tr></table></figure>
+<p>2、Trigger</p>
+<p>Trigger 即触发器，定义何时或什么情况下移除 window</p>
+<p>我们可以指定触发器来覆盖 WindowAssigner 提供的默认触发器。 请注意，指定的触发器不会添加其他触发条件，但会替换当前触发器。</p>
+<p>3、Evictor（可选）</p>
+<p>驱逐者，即保留上一 window 留下的某些元素</p>
+<p>4、通过 apply WindowFunction 来返回 DataStream 类型数据。</p>
+<p>利用 Flink 的内部窗口机制和 DataStream API 可以实现自定义的窗口逻辑，例如 session window。</p>
+<h3 id="EventTime-amp-ProcessTime-amp-IngestionTime"><a href="#EventTime-amp-ProcessTime-amp-IngestionTime" class="headerlink" title="EventTime &amp; ProcessTime &amp; IngestionTime"></a>EventTime &amp; ProcessTime &amp; IngestionTime</h3><p> Event time programs must specify how to generate <em>Event Time Watermarks</em>, which is the mechanism that signals progress in event time</p>
+<p>Internally, <em>ingestion time</em> is treated much like <em>event time</em>, but with automatic timestamp assignment and automatic watermark generation.</p>
+<h2 id="watermark"><a href="#watermark" class="headerlink" title="watermark"></a>watermark</h2><p>kafka的每个分区event-time到来的时间不一致</p>
+<p>using Flink’s Kafka-partition-aware watermark generation. watermarks are generated inside the Kafka consumer, per Kafka partition, and the per-partition watermarks are merged in the same way as watermarks are merged on stream shuffles.</p>
+<p>watermark在每个kafka分区的kafka消费者中产生，每个分区的watermark合并起来，如在stream shuffle中合并watermark一样</p>
+<h2 id="HadoopOutputFormat"><a href="#HadoopOutputFormat" class="headerlink" title="HadoopOutputFormat"></a>HadoopOutputFormat</h2><p>flink hbase connector</p>
+<h2 id="算子之间数据传递，是如何序列化的"><a href="#算子之间数据传递，是如何序列化的" class="headerlink" title="算子之间数据传递，是如何序列化的"></a>算子之间数据传递，是如何序列化的</h2><h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/crestofwave1/oneFlink">Flink官方文档翻译</a></li>
+</ul>
+<h2 id="flink-report"><a href="#flink-report" class="headerlink" title="flink report"></a>flink report</h2><h2 id="storm-trident"><a href="#storm-trident" class="headerlink" title="storm trident"></a>storm trident</h2><p>微批</p>
+<p>barrier对齐</p>
+<p><img src="_v_images/20190826164001201_1759200368.png" alt="flink-rm"></p>
+<h2 id="算子"><a href="#算子" class="headerlink" title="算子"></a>算子</h2><h3 id="Reduce在流计算的应用"><a href="#Reduce在流计算的应用" class="headerlink" title="Reduce在流计算的应用"></a>Reduce在流计算的应用</h3><p>org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor$LoggingHandler:140 -<br>Timestamp monotony violated: 1568772496000 &lt; 1568772500000</p>
+<p>ToDo list</p>
+<h1 id="avro-与-kryo-序列化的区别"><a href="#avro-与-kryo-序列化的区别" class="headerlink" title="avro 与 kryo 序列化的区别"></a>avro 与 kryo 序列化的区别</h1><p>使用场景</p>
+<h2 id="storm-allGrouping-元素广播"><a href="#storm-allGrouping-元素广播" class="headerlink" title="storm allGrouping 元素广播"></a>storm allGrouping 元素广播</h2><p>flink broadcast how to use </p>
+<p>broadcast vaiable value can not be modified</p>
+<p>用法<br>1：初始化数据<br>DataSet<Integer> toBroadcast = env.fromElements(1, 2, 3)<br>2：广播数据<br>.withBroadcastSet(toBroadcast, “broadcastSetName”);<br>3：获取数据<br>Collection<Integer> broadcastSet = getRuntimeContext().getBroadcastVariable(“broadcastSetName”);</p>
+<ul>
+<li>广播变量不能太大</li>
+<li>不能修改，保证数据一致性</li>
+</ul>
+<h1 id="Accumulators-amp-Counters"><a href="#Accumulators-amp-Counters" class="headerlink" title="Accumulators &amp; Counters"></a>Accumulators &amp; Counters</h1><p>累加器与计数器</p>
+<h2 id="spark-accumulate"><a href="#spark-accumulate" class="headerlink" title="spark accumulate"></a>spark accumulate</h2><p>用法<br>1：创建累加器<br>private IntCounter numLines = new IntCounter();<br>2：注册累加器<br>getRuntimeContext().addAccumulator(“num-lines”, this.numLines);<br>3：使用累加器<br>this.numLines.add(1);<br>4：获取累加器的结果<br>myJobExecutionResult.getAccumulatorResult(“num-lines”)</p>
+<h1 id="Distributed-Cache"><a href="#Distributed-Cache" class="headerlink" title="Distributed Cache"></a>Distributed Cache</h1><blockquote>
+<p>Spark 分布式缓存如何使用</p>
+</blockquote>
+<p>Flink提供了一个分布式缓存，类似于hadoop，可以使用户在并行函数中很方便的读取本地文件<br>此缓存的工作机制如下：程序注册一个文件或者目录(本地或者远程文件系统，例如hdfs或者s3)，通过ExecutionEnvironment注册缓存文件并为它起一个名称。当程序执行，Flink自动将文件或者目录复制到所有taskmanager节点的本地文件系统，用户可以通过这个指定的名称查找文件或者目录，然后从taskmanager节点的本地文件系统访问它<br>用法<br>1：注册一个文件<br>env.registerCachedFile(“hdfs:///path/to/your/file”, “hdfsFile”)<br>2：访问数据<br>File myFile = getRuntimeContext().getDistributedCache().getFile(“hdfsFile”);</p>
+<h1 id="at-least-once-amp-exactly-once"><a href="#at-least-once-amp-exactly-once" class="headerlink" title="at least once &amp; exactly once"></a>at least once &amp; exactly once</h1><p>从容错和消息处理的语义上(at least once, exactly once)，Flink引入了state和checkpoint。</p>
+<h1 id="state-1"><a href="#state-1" class="headerlink" title="state"></a>state</h1><p>默认保存在java堆中<br>checkpoint: 把state持久化存储，全局快照<br>blink做的优化</p>
+<p>失败恢复机制 </p>
+<p>状态分为原始状态和托管状态</p>
+<p>托管状态是由Flink框架管理的状态<br>而原始状态，由用户自行管理状态具体的数据结构，框架在做checkpoint的时候，使用byte[]来读写状态内容，对其内部数据结构一无所知。<br>通常在DataStream上的状态推荐使用托管的状态，当实现一个用户自定义的operator时，会使用到原始状态。</p>
+<blockquote>
+<p>ReducingState 如何使用</p>
+</blockquote>
+<h1 id="checkpoint-1"><a href="#checkpoint-1" class="headerlink" title="checkpoint"></a>checkpoint</h1><p>Flink的checkpoint机制可以与(stream和state)的持久化存储交互的前提：<br>持久化的source，它需要支持在一定时间内重放事件。这种sources的典型例子是持久化的消息队列（比如Apache Kafka，RabbitMQ等）或文件系统（比如HDFS，S3，GFS等）<br>用于state的持久化存储，例如分布式文件系统（比如HDFS，S3，GFS等）</p>
+<p>Checkpoint是Flink实现容错机制最核心的功能，它能够根据配置周期性地基于Stream中各个Operator/task的状态来生成快照，从而将这些状态数据定期持久化存储下来，当Flink程序一旦意外崩溃时，重新运行程序时可以有选择地从这些快照进行恢复，从而修正因为故障带来的程序数据异常</p>
+<p>checkpoint开启之后，默认的checkPointMode是Exactly-once<br>checkpoint的checkPointMode有两种，Exactly-once和At-least-once<br>Exactly-once对于大多数应用来说是最合适的。At-least-once可能用在某些延迟超低的应用程序（始终延迟为几毫秒）</p>
+<p>ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION:表示一旦Flink处理程序被cancel后，会保留Checkpoint数据，以便根据实际需要恢复到指定的Checkpoint<br>ExternalizedCheckpointCleanup.DELETE_ON_CANCELLATION: 表示一旦Flink处理程序被cancel后，会删除Checkpoint数据，只有job执行失败的时候才会保存checkpoint</p>
+<h1 id="state-backend"><a href="#state-backend" class="headerlink" title="state backend"></a>state backend</h1><p>默认情况下，state会保存在taskmanager的内存中，checkpoint会存储在JobManager的内存中。<br>state 的store和checkpoint的位置取决于State Backend的配置<br>env.setStateBackend(…)<br>一共有三种State Backend<br>MemoryStateBackend<br>FsStateBackend<br>RocksDBStateBackend</p>
+<p>MemoryStateBackend<br>state数据保存在java堆内存中，执行checkpoint的时候，会把state的快照数据保存到jobmanager的内存中<br>基于内存的state backend在生产环境下不建议使用<br>FsStateBackend<br>state数据保存在taskmanager的内存中，执行checkpoint的时候，会把state的快照数据保存到配置的文件系统中<br>可以使用hdfs等分布式文件系统<br>RocksDBStateBackend<br>RocksDB跟上面的都略有不同，它会在本地文件系统中维护状态，state会直接写入本地rocksdb中。同时它需要配置一个远端的filesystem uri（一般是HDFS），在做checkpoint的时候，会把本地的数据直接复制到filesystem中。fail over的时候从filesystem中恢复到本地<br>RocksDB克服了state受内存限制的缺点，同时又能够持久化到远端文件系统中，比较适合在生产中使用</p>
+<p>修改State Backend的两种方式<br>第一种：单任务调整<br>修改当前任务代码<br>env.setStateBackend(new FsStateBackend(“hdfs://namenode:9000/flink/checkpoints”));<br>或者new MemoryStateBackend()<br>或者new RocksDBStateBackend(filebackend, true);【需要添加第三方依赖】<br>第二种：全局调整<br>修改flink-conf.yaml<br>state.backend: filesystem<br>state.checkpoints.dir: hdfs://namenode:9000/flink/checkpoints<br>注意：state.backend的值可以是下面几种：jobmanager(MemoryStateBackend), filesystem(FsStateBackend), rocksdb(RocksDBStateBackend)</p>
+<h1 id="Restart-Strategies-重启策略"><a href="#Restart-Strategies-重启策略" class="headerlink" title="Restart Strategies(重启策略)"></a>Restart Strategies(重启策略)</h1><p>默认重启策略通过 flink-conf.yaml 指定</p>
+<p>常用的重启策略<br>固定间隔 (Fixed delay)<br>失败率 (Failure rate)<br>无重启 (No restart)<br>如果没有启用 checkpointing，则使用无重启 (no restart) 策略。<br>如果启用了 checkpointing，但没有配置重启策略，则使用固定间隔 (fixed-delay) 策略，其中 Integer.MAX_VALUE 参数是尝试重启次数<br>重启策略可以在flink-conf.yaml中配置，表示全局的配置。也可以在应用代码中动态指定，会覆盖全局配置</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">第一种：全局配置 flink-conf.yaml</span><br><span class="line">restart-strategy: fixed-delay</span><br><span class="line">restart-strategy.fixed-delay.attempts: <span class="number">3</span></span><br><span class="line">restart-strategy.fixed-delay.delay: <span class="number">10</span> s</span><br><span class="line">第二种：应用代码设置</span><br><span class="line">env.setRestartStrategy(RestartStrategies.fixedDelayRestart(</span><br><span class="line">  <span class="number">3</span>, <span class="comment">// 尝试重启的次数</span></span><br><span class="line">  Time.of(<span class="number">10</span>, TimeUnit.SECONDS) <span class="comment">// 间隔</span></span><br><span class="line">));</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+<h2 id="Flink-table"><a href="#Flink-table" class="headerlink" title="Flink table"></a>Flink table</h2><h3 id="over-window"><a href="#over-window" class="headerlink" title="over window"></a>over window</h3><h1 id="TODO"><a href="#TODO" class="headerlink" title="TODO"></a>TODO</h1><ul>
+<li><input disabled="" type="checkbox"> Flink Table API office</li>
+<li><input disabled="" type="checkbox"> 自定义窗口</li>
+<li><input disabled="" type="checkbox"> cogroup、connect与 join</li>
+<li><input disabled="" type="checkbox"> CDC</li>
+<li><input disabled="" type="checkbox"> flink流测试工具</li>
+<li><input disabled="" type="checkbox"> 今日活动总申购次数：并发度为1，是否windowAll都会是并发度为1，是否可以先keyBy再合并？</li>
+</ul>
+<p>If the parallelism of the environment is set to 3 and you are using a WindowAll operator, only the window operator runs in parallelism 1. The sink will still be running with parallelism 3. Hence, the plan looks as follows:</p>
+<p>In_1 -\               /- Out_1<br>In_2 — WindowAll_1 — Out_2<br>In_3 -/               - Out_3<br>The WindowAll operator emits its output to its subsequent tasks using a round-robin strategy. That’s the reason for the different threads emitting the result records of program.</p>
+<p>When you set the environment parallelism to 1, all operators run with a single task.</p>
+<p>keyed-windown —分布式计算—&gt; all-windown</p>
+<p>#【亿级流量 秒级统计】</p>
+<p>AI、ML、DL、ANN、CNN 蛰伏数十年，就为这个大数据时代。</p>
+<p>AI正以前所未有的速度改变世界，影响着我们生活的方方面面，AI走进人们的生活将成为未来的新常态。 而大数据和计算能力像水和氧气一样支撑着AI，我们的数据从手机端、服务器日志</p>
+<h1 id="参考文献-1"><a href="#参考文献-1" class="headerlink" title="参考文献"></a>参考文献</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/crestofwave1/oneFlink">Flink官方文档翻译</a></li>
+</ul>
+<h1 id="todo"><a href="#todo" class="headerlink" title="todo"></a>todo</h1><h2 id="checkpoint与savepoint区别"><a href="#checkpoint与savepoint区别" class="headerlink" title="checkpoint与savepoint区别"></a>checkpoint与savepoint区别</h2><h2 id="flink-report-1"><a href="#flink-report-1" class="headerlink" title="flink report"></a>flink report</h2><h2 id="storm-trident-1"><a href="#storm-trident-1" class="headerlink" title="storm trident"></a>storm trident</h2><p>微批</p>
+<p>barrier对齐</p>
+<p>![flink-rm](_v_images/20190826164001201_1759200368.png =510x)</p>
+<h2 id="算子-1"><a href="#算子-1" class="headerlink" title="算子"></a>算子</h2><h3 id="Reduce在流计算的应用-1"><a href="#Reduce在流计算的应用-1" class="headerlink" title="Reduce在流计算的应用"></a>Reduce在流计算的应用</h3><p>org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor$LoggingHandler:140 -<br>Timestamp monotony violated: 1568772496000 &lt; 1568772500000</p>
+<p>ToDo list</p>
+<h1 id="avro-与-kryo-序列化的区别-1"><a href="#avro-与-kryo-序列化的区别-1" class="headerlink" title="avro 与 kryo 序列化的区别"></a>avro 与 kryo 序列化的区别</h1><p>使用场景</p>
+<h1 id="broadcast"><a href="#broadcast" class="headerlink" title="broadcast"></a>broadcast</h1><h2 id="storm-allGrouping-元素广播-1"><a href="#storm-allGrouping-元素广播-1" class="headerlink" title="storm allGrouping 元素广播"></a>storm allGrouping 元素广播</h2><p>flink broadcast how to use </p>
+<p>broadcast vaiable value can not be modified</p>
+<p>用法<br>1：初始化数据<br>DataSet<Integer> toBroadcast = env.fromElements(1, 2, 3)<br>2：广播数据<br>.withBroadcastSet(toBroadcast, “broadcastSetName”);<br>3：获取数据<br>Collection<Integer> broadcastSet = getRuntimeContext().getBroadcastVariable(“broadcastSetName”);</p>
+<ul>
+<li>广播变量不能太大</li>
+<li>不能修改，保证数据一致性</li>
+</ul>
+<h1 id="Accumulators-amp-Counters-1"><a href="#Accumulators-amp-Counters-1" class="headerlink" title="Accumulators &amp; Counters"></a>Accumulators &amp; Counters</h1><p>累加器与计数器</p>
+<h2 id="spark-accumulate-1"><a href="#spark-accumulate-1" class="headerlink" title="spark accumulate"></a>spark accumulate</h2><p>用法<br>1：创建累加器<br>private IntCounter numLines = new IntCounter();<br>2：注册累加器<br>getRuntimeContext().addAccumulator(“num-lines”, this.numLines);<br>3：使用累加器<br>this.numLines.add(1);<br>4：获取累加器的结果<br>myJobExecutionResult.getAccumulatorResult(“num-lines”)</p>
+<h1 id="Distributed-Cache-1"><a href="#Distributed-Cache-1" class="headerlink" title="Distributed Cache"></a>Distributed Cache</h1><blockquote>
+<p>Spark 分布式缓存如何使用</p>
+</blockquote>
+<p>Flink提供了一个分布式缓存，类似于hadoop，可以使用户在并行函数中很方便的读取本地文件<br>此缓存的工作机制如下：程序注册一个文件或者目录(本地或者远程文件系统，例如hdfs或者s3)，通过ExecutionEnvironment注册缓存文件并为它起一个名称。当程序执行，Flink自动将文件或者目录复制到所有taskmanager节点的本地文件系统，用户可以通过这个指定的名称查找文件或者目录，然后从taskmanager节点的本地文件系统访问它<br>用法<br>1：注册一个文件<br>env.registerCachedFile(“hdfs:///path/to/your/file”, “hdfsFile”)<br>2：访问数据<br>File myFile = getRuntimeContext().getDistributedCache().getFile(“hdfsFile”);</p>
+<h1 id="at-least-once-amp-exactly-once-1"><a href="#at-least-once-amp-exactly-once-1" class="headerlink" title="at least once &amp; exactly once"></a>at least once &amp; exactly once</h1><p>从容错和消息处理的语义上(at least once, exactly once)，Flink引入了state和checkpoint。</p>
+<h1 id="state-2"><a href="#state-2" class="headerlink" title="state"></a>state</h1><p>默认保存在java堆中<br>checkpoint: 把state持久化存储，全局快照<br>blink做的优化</p>
+<p>失败恢复机制 </p>
+<p>状态分为原始状态和托管状态</p>
+<p>托管状态是由Flink框架管理的状态<br>而原始状态，由用户自行管理状态具体的数据结构，框架在做checkpoint的时候，使用byte[]来读写状态内容，对其内部数据结构一无所知。<br>通常在DataStream上的状态推荐使用托管的状态，当实现一个用户自定义的operator时，会使用到原始状态。</p>
+<blockquote>
+<p>ReducingState 如何使用</p>
+</blockquote>
+<h1 id="checkpoint-2"><a href="#checkpoint-2" class="headerlink" title="checkpoint"></a>checkpoint</h1><p>Flink的checkpoint机制可以与(stream和state)的持久化存储交互的前提：<br>持久化的source，它需要支持在一定时间内重放事件。这种sources的典型例子是持久化的消息队列（比如Apache Kafka，RabbitMQ等）或文件系统（比如HDFS，S3，GFS等）<br>用于state的持久化存储，例如分布式文件系统（比如HDFS，S3，GFS等）</p>
+<p>Checkpoint是Flink实现容错机制最核心的功能，它能够根据配置周期性地基于Stream中各个Operator/task的状态来生成快照，从而将这些状态数据定期持久化存储下来，当Flink程序一旦意外崩溃时，重新运行程序时可以有选择地从这些快照进行恢复，从而修正因为故障带来的程序数据异常</p>
+<p>checkpoint开启之后，默认的checkPointMode是Exactly-once<br>checkpoint的checkPointMode有两种，Exactly-once和At-least-once<br>Exactly-once对于大多数应用来说是最合适的。At-least-once可能用在某些延迟超低的应用程序（始终延迟为几毫秒）</p>
+<p>ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION:表示一旦Flink处理程序被cancel后，会保留Checkpoint数据，以便根据实际需要恢复到指定的Checkpoint<br>ExternalizedCheckpointCleanup.DELETE_ON_CANCELLATION: 表示一旦Flink处理程序被cancel后，会删除Checkpoint数据，只有job执行失败的时候才会保存checkpoint</p>
+<h1 id="state-backend-1"><a href="#state-backend-1" class="headerlink" title="state backend"></a>state backend</h1><p>默认情况下，state会保存在taskmanager的内存中，checkpoint会存储在JobManager的内存中。<br>state 的store和checkpoint的位置取决于State Backend的配置<br>env.setStateBackend(…)<br>一共有三种State Backend<br>MemoryStateBackend<br>FsStateBackend<br>RocksDBStateBackend</p>
+<p>MemoryStateBackend<br>state数据保存在java堆内存中，执行checkpoint的时候，会把state的快照数据保存到jobmanager的内存中<br>基于内存的state backend在生产环境下不建议使用<br>FsStateBackend<br>state数据保存在taskmanager的内存中，执行checkpoint的时候，会把state的快照数据保存到配置的文件系统中<br>可以使用hdfs等分布式文件系统<br>RocksDBStateBackend<br>RocksDB跟上面的都略有不同，它会在本地文件系统中维护状态，state会直接写入本地rocksdb中。同时它需要配置一个远端的filesystem uri（一般是HDFS），在做checkpoint的时候，会把本地的数据直接复制到filesystem中。fail over的时候从filesystem中恢复到本地<br>RocksDB克服了state受内存限制的缺点，同时又能够持久化到远端文件系统中，比较适合在生产中使用</p>
+<p>修改State Backend的两种方式<br>第一种：单任务调整<br>修改当前任务代码<br>env.setStateBackend(new FsStateBackend(“hdfs://namenode:9000/flink/checkpoints”));<br>或者new MemoryStateBackend()<br>或者new RocksDBStateBackend(filebackend, true);【需要添加第三方依赖】<br>第二种：全局调整<br>修改flink-conf.yaml<br>state.backend: filesystem<br>state.checkpoints.dir: hdfs://namenode:9000/flink/checkpoints<br>注意：state.backend的值可以是下面几种：jobmanager(MemoryStateBackend), filesystem(FsStateBackend), rocksdb(RocksDBStateBackend)</p>
+<h1 id="Restart-Strategies-重启策略-1"><a href="#Restart-Strategies-重启策略-1" class="headerlink" title="Restart Strategies(重启策略)"></a>Restart Strategies(重启策略)</h1><p>默认重启策略通过 flink-conf.yaml 指定</p>
+<p>常用的重启策略<br>固定间隔 (Fixed delay)<br>失败率 (Failure rate)<br>无重启 (No restart)<br>如果没有启用 checkpointing，则使用无重启 (no restart) 策略。<br>如果启用了 checkpointing，但没有配置重启策略，则使用固定间隔 (fixed-delay) 策略，其中 Integer.MAX_VALUE 参数是尝试重启次数<br>重启策略可以在flink-conf.yaml中配置，表示全局的配置。也可以在应用代码中动态指定，会覆盖全局配置</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">第一种：全局配置 flink-conf.yaml</span><br><span class="line">restart-strategy: fixed-delay</span><br><span class="line">restart-strategy.fixed-delay.attempts: <span class="number">3</span></span><br><span class="line">restart-strategy.fixed-delay.delay: <span class="number">10</span> s</span><br><span class="line">第二种：应用代码设置</span><br><span class="line">env.setRestartStrategy(RestartStrategies.fixedDelayRestart(</span><br><span class="line">  <span class="number">3</span>, <span class="comment">// 尝试重启的次数</span></span><br><span class="line">  Time.of(<span class="number">10</span>, TimeUnit.SECONDS) <span class="comment">// 间隔</span></span><br><span class="line">));</span><br></pre></td></tr></table></figure>
+
+
 
       
     </div>
@@ -365,7 +444,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
+              <time title="Created: 2021-04-11 16:41:41" itemprop="dateCreated datePublished" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
             </span>
 
           
@@ -422,7 +501,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
+              <time title="Created: 2021-04-11 16:41:41" itemprop="dateCreated datePublished" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
             </span>
 
           
@@ -479,7 +558,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
+              <time title="Created: 2021-04-11 16:41:41" itemprop="dateCreated datePublished" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
             </span>
 
           
@@ -536,7 +615,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
+              <time title="Created: 2021-04-11 16:41:41" itemprop="dateCreated datePublished" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
             </span>
 
           
@@ -583,63 +662,6 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/case/%E6%AC%BA%E8%AF%88%E6%A3%80%E6%B5%8B/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/case/%E6%AC%BA%E8%AF%88%E6%A3%80%E6%B5%8B/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-backpress/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -664,7 +686,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
+              <time title="Created: 2021-04-11 16:41:41" itemprop="dateCreated datePublished" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
             </span>
 
           
@@ -774,7 +796,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL-Join-Lateral/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/case/%E6%AC%BA%E8%AF%88%E6%A3%80%E6%B5%8B/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -788,7 +810,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-SQL-Join-Lateral/" class="post-title-link" itemprop="url">Untitled</a>
+            <a href="/bigdata/Flink/case/%E6%AC%BA%E8%AF%88%E6%A3%80%E6%B5%8B/" class="post-title-link" itemprop="url">Untitled</a>
         </h2>
 
         <div class="post-meta">
@@ -798,7 +820,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
+              <time title="Created: 2021-04-11 16:41:41" itemprop="dateCreated datePublished" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
             </span>
 
           
@@ -812,7 +834,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="JOIN-LATERAL"><a href="#JOIN-LATERAL" class="headerlink" title="JOIN LATERAL"></a>JOIN LATERAL</h1>
+          
       
     </div>
 
@@ -855,7 +877,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
+              <time title="Created: 2021-04-11 16:41:41" itemprop="dateCreated datePublished" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
             </span>
 
           
@@ -879,6 +901,64 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
 <li>实时标签工厂: 标签-用户近三十天访问次数、近三十天访问某个页面的次数</li>
 <li>ABT</li>
 </ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/actions/02.%20%E5%AE%9E%E6%97%B6%E7%94%A8%E6%88%B7%E7%94%BB%E5%83%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/actions/02.%20%E5%AE%9E%E6%97%B6%E7%94%A8%E6%88%B7%E7%94%BB%E5%83%8F/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-11 16:41:41" itemprop="dateCreated datePublished" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="实时用户画像"><a href="#实时用户画像" class="headerlink" title="实时用户画像"></a>实时用户画像</h1><h2 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h2><p>企业面对不断增加的海量信息，其信息筛选和处理效率低下的困扰与日俱增。由于用户营销不够细化，企业App 中许多不合时宜或不合偏好的消息推送很大程度上影响了用户体验，甚至引发了用户流失</p>
 
       
     </div>
@@ -922,7 +1002,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-11 11:49:10" itemprop="dateCreated datePublished" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
+              <time title="Created: 2021-04-11 16:41:41" itemprop="dateCreated datePublished" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
             </span>
 
           
@@ -971,7 +1051,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/25/">25</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/24/">24</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1037,7 +1117,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">242</span>
+          <span class="site-state-item-count">235</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1050,7 +1130,7 @@ maximum idle state retention time，定义非活动键的状态在删除前最�
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">123</span>
+        <span class="site-state-item-count">125</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

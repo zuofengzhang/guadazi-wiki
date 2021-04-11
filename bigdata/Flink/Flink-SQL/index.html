@@ -20,31 +20,23 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="Flink SQL实现原理 新版本的Table &amp; SQL API在原有的Table API基础上，由Calcite提供SQL解析和优化能力，将Table API调用和SQL查询统一转换成Calcite逻辑执行计划（Calcite RelNode树），并对此进行优化和代码生成，最终同样转化成Flink DataStream&#x2F;DataSet API调用代码。 一般在使用的时候需要分别注册So">
+  <meta name="description" content="Flink SQLRetract mode 和 Append modetoAppendStream  只支持inserttoRetractStream  其余模式都可以 如果动态表仅只有Insert操作，即之前输出的结果不会被更新，则使用该模式。如果更新或删除操作使用追加模式会失败报错，始终可以使用此模式。返回值是boolean类型。它用true或false来标记数据的插入和撤回，返回true代表">
 <meta property="og:type" content="article">
 <meta property="og:title" content="FlinkSQL与动态表">
 <meta property="og:url" content="http://example.com/bigdata/Flink/Flink-SQL/index.html">
 <meta property="og:site_name" content="Guadazi">
-<meta property="og:description" content="Flink SQL实现原理 新版本的Table &amp; SQL API在原有的Table API基础上，由Calcite提供SQL解析和优化能力，将Table API调用和SQL查询统一转换成Calcite逻辑执行计划（Calcite RelNode树），并对此进行优化和代码生成，最终同样转化成Flink DataStream&#x2F;DataSet API调用代码。 一般在使用的时候需要分别注册So">
+<meta property="og:description" content="Flink SQLRetract mode 和 Append modetoAppendStream  只支持inserttoRetractStream  其余模式都可以 如果动态表仅只有Insert操作，即之前输出的结果不会被更新，则使用该模式。如果更新或删除操作使用追加模式会失败报错，始终可以使用此模式。返回值是boolean类型。它用true或false来标记数据的插入和撤回，返回true代表">
 <meta property="og:locale">
-<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201030204716034_449053674">
-<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201030205455658_1363203717.jpg">
-<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201030205455452_457126200.jpg">
-<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201030205455347_1666287840.jpg">
-<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201030205455242_164668059.png">
-<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201030205455038_55047340.jpg">
-<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201030205601002_1446863552.jpg">
-<meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201030205600897_1720675340.jpg">
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201111111954370_1165111473.png">
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201111112036578_1272633365.png">
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20210410180758564_1166368853.png">
 <meta property="article:published_time" content="2019-08-10T06:58:00.000Z">
-<meta property="article:modified_time" content="2021-04-11T03:49:10.091Z">
+<meta property="article:modified_time" content="2021-04-11T08:41:41.113Z">
 <meta property="article:author" content="aaronzhang">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="Flink">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201030204716034_449053674">
+<meta name="twitter:image" content="http://example.com/bigdata/Flink/Flink-SQL/_v_images/20201111111954370_1165111473.png">
 
 <link rel="canonical" href="http://example.com/bigdata/Flink/Flink-SQL/">
 
@@ -232,7 +224,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 11:49:10" itemprop="dateModified" datetime="2021-04-11T11:49:10+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -255,45 +247,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="Flink-SQL"><a href="#Flink-SQL" class="headerlink" title="Flink SQL"></a>Flink SQL</h1><h2 id="实现原理"><a href="#实现原理" class="headerlink" title="实现原理"></a>实现原理</h2><p><img src="_v_images/20201030204716034_449053674"></p>
-<p>新版本的Table &amp; SQL API在原有的Table API基础上，由Calcite提供SQL解析和优化能力，将Table API调用和SQL查询统一转换成Calcite逻辑执行计划（Calcite RelNode树），并对此进行优化和代码生成，最终同样转化成Flink DataStream/DataSet API调用代码。</p>
-<p>一般在使用的时候需要分别注册Source表 和 Sink表，分别对应数据的输入和输出。<br>对于注册Source表，可以从内部的catalog注册；也可以从TableSource注册；还可以通过DataSet转换注册。<br>对于SInk表，一般就直接通过TableSink注册了。查询时可以通过Table API执行select或者filter之类，也可以通过env.sqlQuery执行查询。<br>写入时可以通过table.insertInto()执行写操作，也可以通过env.sqlUpdate()执行写入。<br>这里还要吐槽下：弄一个sql()自动判断查询和写入不好么，为什么要区分update和insert?</p>
-<h2 id="SQL原理"><a href="#SQL原理" class="headerlink" title="SQL原理"></a>SQL原理</h2><p>Table &amp; SQL API基于scala和java编写，内部基于calcite实现标准sql的解析和校验。跟spark不一样，flink直接基于开源的calcite编写。<br>calcite本身是一个apache的开源项目，它独立于存储和执行，专门负责sql的解析优化、语法树的校验等，并且通过插件的方式可以很方便的扩展优化规则，广泛的应用在hive、solr、flink等中。</p>
-<p><img src="_v_images/20201030205455658_1363203717.jpg"></p>
-<p>在Flink中通过tableEnv.sqlQuery和tableEnv.sqlUpdate可以看到具体的calcite使用流程。query与update的操作其实内部差不多，都是解析、校验、转换，不过sqlUpdate最后会基于内部的Table增加一个insertInto的操作。</p>
-<p><img src="_v_images/20201030205455452_457126200.jpg"></p>
-<p>以sqlQuery为例，先来看看整体的流程：</p>
-<p><img src="_v_images/20201030205455347_1666287840.jpg"></p>
-<p>首先创建FlinkPlannerImpl的执行计划，然后调用parse方法，内部直接使用calcite的SqlParser形成语法树。此时的语法树其实是一个个的SqlNode，这个SqlNode是calcite中定义，不同的sql有不同的sqlNode实现。比如最常见的SqlSelect，SqlJoin，SqlInsert等。每个类中会有自己的一些组件，比如SqlSelect会有group by, from, where, selectList等等。</p>
-<p>获得语法树后，会通过一个简单的校验，判断是否为QUERY或者INSERT。然后经过一个通用的validate校验，粗略的看了下有catalog、表达式等的校验。最后通过rel把calcite的SqlNode转换成RelNode即逻辑执行计划。</p>
-<p><img src="_v_images/20201030205455242_164668059.png"></p>
-<p>Table后续在使用时会通过translate转换成一个DataSet，内部会先进行优化（优化过程既包括calcite提供的默认优化规则，也有Flink扩展的规则），最后生成物理执行计划。物理执行计划会按照node类型的不同将node转换成dataset或datastream的API。</p>
-<p><img src="_v_images/20201030205455038_55047340.jpg"></p>
-<p>总结来说，Flink SQL通过calcite实现：</p>
-<ul>
-<li>解析（字符串SQL转AST抽象语法树）</li>
-<li>校验（语法、表达式、表信息）</li>
-<li>优化（剪枝、谓词下推）</li>
-<li>转换（逻辑计划转换成物理执行计划=Node转换成DataSet\DataStream API）</li>
-<li>最终把SQL转换成DataSet或DataStream的API。</li>
-</ul>
-<h2 id="Flink-SQL-的编译及优化过程"><a href="#Flink-SQL-的编译及优化过程" class="headerlink" title="Flink SQL 的编译及优化过程"></a>Flink SQL 的编译及优化过程</h2><ul>
-<li>Flink SQL 利用 Apache Calcite 将 SQL 翻译为关系代数表达式，使用表达式折叠（Expression Reduce），下推优化（Predicate / Projection Pushdown ）等优化技术生成物理执行计划（Physical Plan），利用 Codegen 技术生成高效执行代码。</li>
-<li>Flink SQL 使用高效的二进制数据存储结构 BinaryRow 加速计算性能；使用 Mini-batch 攒批提高吞吐，降低两层聚合时由 Retraction 引起的数据抖动；聚合场景下数据倾斜处理和 Top-N 排序的优化原理。</li>
-</ul>
-<h2 id="表注册"><a href="#表注册" class="headerlink" title="表注册"></a>表注册</h2><h3 id="虚表注册"><a href="#虚表注册" class="headerlink" title="虚表注册"></a>虚表注册</h3><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 获取一个TableEnvironment</span></span><br><span class="line"><span class="type">TableEnvironment</span> tableEnv = ...; </span><br><span class="line"><span class="comment">// table对象，查询的结果集</span></span><br><span class="line"><span class="type">Table</span> projTable = tableEnv.from(<span class="string">&quot;X&quot;</span>).select(...);</span><br><span class="line"><span class="comment">// 注册一个表，名称为 &quot;projectedTable&quot;</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;projectedTable&quot;</span>, projTable);</span><br></pre></td></tr></table></figure>
-<h3 id="外部表注册"><a href="#外部表注册" class="headerlink" title="外部表注册"></a>外部表注册</h3><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">tableEnvironment</span><br><span class="line">  .connect(...)</span><br><span class="line">  .withFormat(...)</span><br><span class="line">  .withSchema(...)</span><br><span class="line">  .inAppendMode()</span><br><span class="line">  .createTemporaryTable(<span class="string">&quot;MyTable&quot;</span>)</span><br></pre></td></tr></table></figure>
-<h3 id="catalog与db是两个概念"><a href="#catalog与db是两个概念" class="headerlink" title="catalog与db是两个概念"></a>catalog与db是两个概念</h3><p>表的注册总是包含三部分标识属性：catalog、数据库、表名。用户可以在内部设置一个catalog和一个数据库作为当前的catalog和数据库，所以对于catalog和数据库这两个标识属性是可选的，即如果不指定，默认使用的是“current catalog”和 “current database”。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">TableEnvironment tEnv = ...;</span><br><span class="line">tEnv.useCatalog(<span class="string">&quot;custom_catalog&quot;</span>);<span class="comment">//设置catalog</span></span><br><span class="line">tEnv.useDatabase(<span class="string">&quot;custom_database&quot;</span>);<span class="comment">//设置数据库</span></span><br><span class="line">Table table = ...;</span><br><span class="line"><span class="comment">// 注册一个名为exampleView的视图，catalog名为custom_catalog</span></span><br><span class="line"><span class="comment">// 数据库的名为custom_database</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;exampleView&quot;</span>, table);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册一个名为exampleView的视图，catalog的名为custom_catalog</span></span><br><span class="line"><span class="comment">// 数据库的名为other_database</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;other_database.exampleView&quot;</span>, table);</span><br><span class="line"> </span><br><span class="line"><span class="comment">// 注册一个名为&#x27;View&#x27;的视图，catalog的名称为custom_catalog</span></span><br><span class="line"><span class="comment">// 数据库的名为custom_database，&#x27;View&#x27;是保留关键字，需要使用``(反引号)</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;`View`&quot;</span>, table);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册一个名为example.View的视图，catalog的名为custom_catalog，</span></span><br><span class="line"><span class="comment">// 数据库名为custom_database</span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;`example.View`&quot;</span>, table);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 注册一个名为&#x27;exampleView&#x27;的视图， catalog的名为&#x27;other_catalog&#x27;</span></span><br><span class="line"><span class="comment">// 数据库名为other_database&#x27; </span></span><br><span class="line">tableEnv.createTemporaryView(<span class="string">&quot;other_catalog.other_database.exampleView&quot;</span>, table);</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="案例分析"><a href="#案例分析" class="headerlink" title="案例分析"></a>案例分析</h2><p>以WordCount为例，为了增加sql的复杂度，在外层增加了filter：</p>
-<p><img src="_v_images/20201030205601002_1446863552.jpg"></p>
-<p>使用System.out.println(tEnv.explain(table));可以输出执行计划：</p>
-<p><img src="_v_images/20201030205600897_1720675340.jpg"></p>
-<p>通过parse方法获得到抽象语法树，显示一个filter节点，然后跟着Agg和scan。经过优化后，查询条件优化到最底层。最后转换生成真正的物理执行计划。</p>
-<p>后续会继续研究下calcite以及optimize部分，到时再做分享。</p>
-<h2 id="Retract-mode-和-Append-mode"><a href="#Retract-mode-和-Append-mode" class="headerlink" title="Retract mode 和 Append mode"></a>Retract mode 和 Append mode</h2><p>toAppendStream  只支持insert<br>toRetractStream  其余模式都可以</p>
+        <h1 id="Flink-SQL"><a href="#Flink-SQL" class="headerlink" title="Flink SQL"></a>Flink SQL</h1><h2 id="Retract-mode-和-Append-mode"><a href="#Retract-mode-和-Append-mode" class="headerlink" title="Retract mode 和 Append mode"></a>Retract mode 和 Append mode</h2><p>toAppendStream  只支持insert<br>toRetractStream  其余模式都可以</p>
 <p>如果动态表仅只有Insert操作，即之前输出的结果不会被更新，则使用该模式。如果更新或删除操作使用追加模式会失败报错，始终可以使用此模式。返回值是boolean类型。它用true或false来标记数据的插入和撤回，返回true代表数据插入，false代表数据的撤回。</p>
 <p>使用flinkSQL处理实时数据当我们把表转化成流的时候，需要用toAppendStream与toRetractStream这两个方法。稍不注意可能直接选择了toAppendStream。</p>
 <p>始终可以使用此模式。返回值是boolean类型。它用true或false来标记数据的插入和撤回，返回true代表数据插入，false代表数据的撤回。</p>
@@ -346,8 +300,8 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/bigdata/Flink/DataTypesAndSerialization/" rel="prev" title="Flink:数据类型与序列化">
-      <i class="fa fa-chevron-left"></i> Flink:数据类型与序列化
+    <a href="/bigdata/Flink/Flink-SQL-active/" rel="prev" title="Flink-SQL实践">
+      <i class="fa fa-chevron-left"></i> Flink-SQL实践
     </a></div>
       <div class="post-nav-item">
     <a href="/bigdata/Flink/Flink-StateManagement/" rel="next" title="Flink状态管理">
@@ -411,7 +365,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink-SQL"><span class="nav-number">1.</span> <span class="nav-text">Flink SQL</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="nav-number">1.1.</span> <span class="nav-text">实现原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL%E5%8E%9F%E7%90%86"><span class="nav-number">1.2.</span> <span class="nav-text">SQL原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flink-SQL-%E7%9A%84%E7%BC%96%E8%AF%91%E5%8F%8A%E4%BC%98%E5%8C%96%E8%BF%87%E7%A8%8B"><span class="nav-number">1.3.</span> <span class="nav-text">Flink SQL 的编译及优化过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A8%E6%B3%A8%E5%86%8C"><span class="nav-number">1.4.</span> <span class="nav-text">表注册</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%99%9A%E8%A1%A8%E6%B3%A8%E5%86%8C"><span class="nav-number">1.4.1.</span> <span class="nav-text">虚表注册</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%96%E9%83%A8%E8%A1%A8%E6%B3%A8%E5%86%8C"><span class="nav-number">1.4.2.</span> <span class="nav-text">外部表注册</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#catalog%E4%B8%8Edb%E6%98%AF%E4%B8%A4%E4%B8%AA%E6%A6%82%E5%BF%B5"><span class="nav-number">1.4.3.</span> <span class="nav-text">catalog与db是两个概念</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%90"><span class="nav-number">1.5.</span> <span class="nav-text">案例分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Retract-mode-%E5%92%8C-Append-mode"><span class="nav-number">1.6.</span> <span class="nav-text">Retract mode 和 Append mode</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%9B%9E%E9%80%80%E6%9B%B4%E6%96%B0"><span class="nav-number">1.6.1.</span> <span class="nav-text">如何实现回退更新?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#keyedBy%E4%B8%8Egroup-by%E5%8C%BA%E5%88%AB"><span class="nav-number">1.7.</span> <span class="nav-text">keyedBy与group by区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL%E8%A7%A3%E6%9E%90%E5%B7%A5%E5%85%B7"><span class="nav-number">1.8.</span> <span class="nav-text">SQL解析工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E8%BF%87Table-api%E5%88%9B%E5%BB%BA%E8%A1%A8"><span class="nav-number">1.9.</span> <span class="nav-text">通过Table api创建表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%86%E5%9B%BE-view"><span class="nav-number">1.10.</span> <span class="nav-text">视图 view</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#window-aggregate%E4%B8%8Egroup-aggregate%E5%8C%BA%E5%88%AB"><span class="nav-number">1.11.</span> <span class="nav-text">window aggregate与group aggregate区别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Group-Aggregate%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="nav-number">1.11.1.</span> <span class="nav-text">Group Aggregate的例子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Window-Aggregate"><span class="nav-number">1.11.2.</span> <span class="nav-text">Window Aggregate</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Window-Aggregate-%E4%B8%8E-Group-Aggregate-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">1.11.3.</span> <span class="nav-text">Window Aggregate 与 Group Aggregate 的区别</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">1.12.</span> <span class="nav-text">[参考文献]</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink-SQL"><span class="nav-number">1.</span> <span class="nav-text">Flink SQL</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Retract-mode-%E5%92%8C-Append-mode"><span class="nav-number">1.1.</span> <span class="nav-text">Retract mode 和 Append mode</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%9B%9E%E9%80%80%E6%9B%B4%E6%96%B0"><span class="nav-number">1.1.1.</span> <span class="nav-text">如何实现回退更新?</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#keyedBy%E4%B8%8Egroup-by%E5%8C%BA%E5%88%AB"><span class="nav-number">1.2.</span> <span class="nav-text">keyedBy与group by区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SQL%E8%A7%A3%E6%9E%90%E5%B7%A5%E5%85%B7"><span class="nav-number">1.3.</span> <span class="nav-text">SQL解析工具</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%9A%E8%BF%87Table-api%E5%88%9B%E5%BB%BA%E8%A1%A8"><span class="nav-number">1.4.</span> <span class="nav-text">通过Table api创建表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A7%86%E5%9B%BE-view"><span class="nav-number">1.5.</span> <span class="nav-text">视图 view</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#window-aggregate%E4%B8%8Egroup-aggregate%E5%8C%BA%E5%88%AB"><span class="nav-number">1.6.</span> <span class="nav-text">window aggregate与group aggregate区别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Group-Aggregate%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="nav-number">1.6.1.</span> <span class="nav-text">Group Aggregate的例子</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Window-Aggregate"><span class="nav-number">1.6.2.</span> <span class="nav-text">Window Aggregate</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Window-Aggregate-%E4%B8%8E-Group-Aggregate-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">1.6.3.</span> <span class="nav-text">Window Aggregate 与 Group Aggregate 的区别</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">1.7.</span> <span class="nav-text">[参考文献]</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -425,7 +379,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">242</span>
+          <span class="site-state-item-count">235</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -438,7 +392,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">123</span>
+        <span class="site-state-item-count">125</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
