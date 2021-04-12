@@ -183,6 +183,185 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/ORC-file/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Hadoop/ORC-file/" class="post-title-link" itemprop="url">orcfile</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-26 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-26T00:00:00+08:00">2017-02-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:31:32" itemprop="dateModified" datetime="2021-04-12T17:31:32+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="ORC-file"><a href="#ORC-file" class="headerlink" title="ORC file"></a>ORC file</h1><p>源码主要有core和mapreduce两个module，其中MapReduce module就是Hadoop的InputFormat和OutFormat，这个module下有两个包，mapred和MapReduce分别符合MapReduce的V1和V2的Input/Output Format.</p>
+<p>四个类：OrcInputFormat、OrcOutputFormat、OrcMapreduceRecordReader和OrcMapreduceRecordWriter</p>
+<h2 id="OrcInputFormat与OrcOutputFormat"><a href="#OrcInputFormat与OrcOutputFormat" class="headerlink" title="OrcInputFormat与OrcOutputFormat"></a>OrcInputFormat与OrcOutputFormat</h2><p>OrcInputFormat继承了FileInputFormat，getSplits用的就是FileInputFormat的实现，只是重写了createRecordReader方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> RecordReader&lt;NullWritable, V&gt;</span><br><span class="line">    createRecordReader(InputSplit inputSplit,</span><br><span class="line">                       TaskAttemptContext taskAttemptContext</span><br><span class="line">                       ) <span class="keyword">throws</span> IOException, InterruptedException &#123;</span><br><span class="line">  FileSplit split = (FileSplit) inputSplit;</span><br><span class="line">  Configuration conf = taskAttemptContext.getConfiguration();</span><br><span class="line">  Reader file = OrcFile.createReader(split.getPath(),</span><br><span class="line">      OrcFile.readerOptions(conf)</span><br><span class="line">          .maxLength(OrcConf.MAX_FILE_LENGTH.getLong(conf)));</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> OrcMapreduceRecordReader&lt;&gt;(file,</span><br><span class="line">      org.apache.orc.mapred.OrcInputFormat.buildOptions(conf,</span><br><span class="line">          file, split.getStart(), split.getLength()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里面用到了org.apache.orc.Reader和org.apache.orc.OrcFile. 模板里面的V通常会是OrcStruct，Orc中一个表的schema可以表示为一个OrcStruct。<br>同样滴，OrcOutputFormat当中也是重写了craeteRecordWriter方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> RecordWriter&lt;NullWritable, V&gt;</span><br><span class="line">     getRecordWriter(TaskAttemptContext taskAttemptContext</span><br><span class="line">                     ) <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">  Configuration conf = taskAttemptContext.getConfiguration();</span><br><span class="line">  Path filename = getDefaultWorkFile(taskAttemptContext, EXTENSION);</span><br><span class="line">  Writer writer = OrcFile.createWriter(filename,</span><br><span class="line">      org.apache.orc.mapred.OrcOutputFormat.buildOptions(conf));</span><br><span class="line">   <span class="keyword">return</span> <span class="keyword">new</span> OrcMapreduceRecordWriter&lt;V&gt;(writer);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里面用到了org.apache.orc.Writer和org.apache.orc.OrcFile.<br>以上用到的这三个类都是core module里的，之后再去读。</p>
+<h2 id="OrcMapreduceRecordReader"><a href="#OrcMapreduceRecordReader" class="headerlink" title="OrcMapreduceRecordReader"></a>OrcMapreduceRecordReader</h2><p>这个类里面其实复用了org.apache.orc.mapred包下面的一些Writable类，这些Writable类用来在MapReduce中支持Orc中的一些特殊数据类型，比如Map、List、Struct等等，可以将这些数据类型从DataInput中反序列化出来，也可以将数据序列化到DataOutput中去。</p>
+<p>从构造方法可以看到：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">OrcMapreduceRecordReader</span><span class="params">(Reader fileReader,</span></span></span><br><span class="line"><span class="function"><span class="params">                                Reader.Options options)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.batchReader = fileReader.rows(options);</span><br><span class="line">  <span class="keyword">if</span> (options.getSchema() == <span class="keyword">null</span>) &#123;</span><br><span class="line">    schema = fileReader.getSchema();</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    schema = options.getSchema();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.batch = schema.createRowBatch();</span><br><span class="line">  rowInBatch = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">this</span>.row = (V) OrcStruct.createValue(schema);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中batchReader是org.apache.orc.RecordReader类型的，这个RecordReader在core中。batch是真正有数据的地方。batch的类型是org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch，从java doc可以看出来它是干嘛用的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * A VectorizedRowBatch is a set of rows, organized with each column</span></span><br><span class="line"><span class="comment"> * as a vector. It is the unit of query execution, organized to minimize</span></span><br><span class="line"><span class="comment"> * the cost per row and achieve high cycles-per-instruction.</span></span><br><span class="line"><span class="comment"> * The major fields are public by design to allow fast and convenient</span></span><br><span class="line"><span class="comment"> * access by the vectorized query execution code.</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure>
+<p>而schema是org.apache.orc.TypeDescription类型的，而TypeDescription其实是一个数据类型的描述，它有一个category，可以是INT、FLOAT等等，也可以是STRUCT。这里schema的category通常会是STRUCT。STRUCT和OrcStruct是对应的，是一个复合类型，其中可以包含其他类型的属性，用来表示一个表的schema。</p>
+<p>row就是batchReader从batch中读出来的一行记录。</p>
+<p>OrcMapreduceRecordReader中另外一个重要的方法是nextKeyValue：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">nextKeyValue</span><span class="params">()</span> <span class="keyword">throws</span> IOException, InterruptedException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!ensureBatch()) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (schema.getCategory() == TypeDescription.Category.STRUCT) &#123;</span><br><span class="line">    OrcStruct result = (OrcStruct) row;</span><br><span class="line">    List&lt;TypeDescription&gt; children = schema.getChildren();</span><br><span class="line">    <span class="keyword">int</span> numberOfChildren = children.size();</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i &lt; numberOfChildren; ++i) &#123;</span><br><span class="line">      result.setFieldValue(i, OrcMapredRecordReader.nextValue(batch.cols[i], rowInBatch,</span><br><span class="line">          children.get(i), result.getFieldValue(i)));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    OrcMapredRecordReader.nextValue(batch.cols[<span class="number">0</span>], rowInBatch, schema, row);</span><br><span class="line">  &#125;</span><br><span class="line">  rowInBatch += <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出来，这个方法中，判断当schema是STRUCT的category时，将它看做一个表的schema，取出里面包含的children，即各个字段的TypeDescription，然后读取各个字段的值，存入row中。这其中复用了OrcMapredRecordReader.nextValue()方法.</p>
+<h2 id="OrcMapreduceRecordWriter"><a href="#OrcMapreduceRecordWriter" class="headerlink" title="OrcMapreduceRecordWriter"></a>OrcMapreduceRecordWriter</h2><p>OrcMapreduceRecordWriter和OrcMapreduceRecordReader类似，只不过其中的batchReader换成了org.apache.orc<br>.Writer类型的writer。构造方法如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">OrcMapreduceRecordWriter</span><span class="params">(Writer writer)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.writer = writer;</span><br><span class="line">  schema = writer.getSchema();</span><br><span class="line">  <span class="keyword">this</span>.batch = schema.createRowBatch();</span><br><span class="line">  isTopStruct = schema.getCategory() == TypeDescription.Category.STRUCT;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个类的主要方法就是write方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(NullWritable nullWritable, V v)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="comment">// if the batch is full, write it out.</span></span><br><span class="line">  <span class="keyword">if</span> (batch.size == batch.getMaxSize()) &#123;</span><br><span class="line">    writer.addRowBatch(batch);</span><br><span class="line">    batch.reset();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// add the new row</span></span><br><span class="line">  <span class="keyword">int</span> row = batch.size++;</span><br><span class="line">  <span class="comment">// skip over the OrcKey or OrcValue</span></span><br><span class="line">  <span class="keyword">if</span> (v <span class="keyword">instanceof</span> OrcKey) &#123;</span><br><span class="line">    v = (V)((OrcKey) v).key;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (v <span class="keyword">instanceof</span> OrcValue) &#123;</span><br><span class="line">    v = (V)((OrcValue) v).value;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (isTopStruct) &#123;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> f=<span class="number">0</span>; f &lt; schema.getChildren().size(); ++f) &#123;</span><br><span class="line">      OrcMapredRecordWriter.setColumn(schema.getChildren().get(f),</span><br><span class="line">          batch.cols[f], row, ((OrcStruct) v).getFieldValue(f));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    OrcMapredRecordWriter.setColumn(schema, batch.cols[<span class="number">0</span>], row, v);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看出来，write先把V类型（通常是OrcStruct）的记录写入batch，如果batch写满了，就批量写入writer。</p>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/bhq2010/article/details/76213895">ORC源码阅读(1) - mapreduce module</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/yarn-2.8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/HBase/yarn-2.8/" class="post-title-link" itemprop="url">Yarn 2.8 bulkload HBase</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-26 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-26T00:00:00+08:00">2017-02-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:31:32" itemprop="dateModified" datetime="2021-04-12T17:31:32+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="yarn-2-8"><a href="#yarn-2-8" class="headerlink" title="yarn-2.8"></a>yarn-2.8</h1><p>yarn 2.8 访问 hbase 时，会带用户，hbase需要修改配置</p>
+<p><img src="vx_images/1201339079498.png"></p>
+<p><img src="vx_images/2522922637021.png"></p>
+<h2 id="Yarn-2-8"><a href="#Yarn-2-8" class="headerlink" title="Yarn 2.8"></a>Yarn 2.8</h2><p>Spark 写入 SSD HBase，配置后可以正常写入</p>
+<property>
+        <name>yarn.resourcemanager.principal</name>
+        <value>gaiaadmin</value>
+</property>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/HDFS-Java-API/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +393,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:32" itemprop="dateModified" datetime="2021-04-12T17:31:32+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -363,7 +542,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:32" itemprop="dateModified" datetime="2021-04-12T17:31:32+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -420,6 +599,94 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/hadoop-cluser-configuration/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Hadoop/hadoop-cluser-configuration/" class="post-title-link" itemprop="url">Hadoop集群节点配置及搭建</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:31:32" itemprop="dateModified" datetime="2021-04-12T17:31:32+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>[&lt;&lt;] Hadoop专题</p>
+<p>在<a href="hadoop-01">上一篇</a>中介绍了在Docker搭建三个节点的Hadoop集群，本文主要介绍hadoop集群节点的配置</p>
+<p>NameNode<br>SecondNameNode<br>DataNode</p>
+<p>JobTracker<br>JobTask</p>
+<p>移动计算 而非 移动数据</p>
+<h2 id="查看classpath"><a href="#查看classpath" class="headerlink" title="查看classpath"></a>查看classpath</h2><p>hadoop命令行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hadoop classpath</span><br><span class="line">/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
+<p>配置文件</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.application.classpath<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>[参考文献]</p>
+<ol>
+<li></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/base/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -451,7 +718,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:32" itemprop="dateModified" datetime="2021-04-12T17:31:32+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -650,7 +917,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/hadoop-cluser-configuration/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/Jenkins_Docker/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -664,7 +931,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Hadoop/hadoop-cluser-configuration/" class="post-title-link" itemprop="url">Hadoop集群节点配置及搭建</a>
+            <a href="/bigdata/docker/Jenkins_Docker/" class="post-title-link" itemprop="url">在Docker上搭建Jenkins环境</a>
         </h2>
 
         <div class="post-meta">
@@ -674,14 +941,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
+              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -704,21 +971,144 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>[&lt;&lt;] Hadoop专题</p>
-<p>在<a href="hadoop-01">上一篇</a>中介绍了在Docker搭建三个节点的Hadoop集群，本文主要介绍hadoop集群节点的配置</p>
-<p>NameNode<br>SecondNameNode<br>DataNode</p>
-<p>JobTracker<br>JobTask</p>
-<p>移动计算 而非 移动数据</p>
-<h2 id="查看classpath"><a href="#查看classpath" class="headerlink" title="查看classpath"></a>查看classpath</h2><p>hadoop命令行</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hadoop classpath</span><br><span class="line">/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
-<p>配置文件</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.application.classpath<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br></pre></td></tr></table></figure>
-
-<hr>
-<p>[参考文献]</p>
-<ol>
-<li></li>
+          <ol>
+<li>从网易镜像仓库下载Jenkins</li>
 </ol>
+<p><a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/search/?keyword=jenkins">网易镜像仓库</a></p>
+<p>拉取到本地</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull hub.c.163.com/library/jenkins:latest</span><br></pre></td></tr></table></figure>
+<p>查看镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker images</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY                      TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">hub.c.163.com&#x2F;library&#x2F;jenkins   latest              88d9d8a30b47        8 months ago        810MB</span><br></pre></td></tr></table></figure>
+<p>从官网下载最新的Jenkins</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://updates.jenkins-ci.org/download/war/2.107.2/jenkins.war</span><br></pre></td></tr></table></figure>
+<p>DockerFile</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FROM hub.c.163.com/library/jenkins</span><br><span class="line"><span class="meta">#</span><span class="bash"> 将最新的Jenkins拷贝到`/usr/share/jenkins/`目录</span></span><br><span class="line">ADD jenkins.war /usr/share/jenkins/</span><br></pre></td></tr></table></figure>
+<p>常见镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t avery/jenkins .</span><br></pre></td></tr></table></figure>
+<p>启动一个Container</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run --name prod_jenkins2 -d -p 9005:8080 -p 9006:50000 -v  /Users/avery/docker/jenkins/backup/jenkins_home:/var/jenkins_home avery/jenkins</span><br></pre></td></tr></table></figure>
+<ol>
+<li>创建本地Jenkins数据目录，将该目录映射到docker中的Jenkins目录，方便备份数据</li>
+<li>8080端口是Jenkins web service的默认端口，将宿主机的端口映射到8080端口，可以直接访问</li>
+<li>–name 命名为prod_jenkins2</li>
+<li>-d 后台运行</li>
+<li>-p 端口映射</li>
+<li>-v 文件目录映射</li>
+</ol>
+<p>查看</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker container ls -a</span><br><span class="line">CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                     PORTS                   NAMES</span><br><span class="line">cb8cdf3be078        avery/jenkins       &quot;/bin/tini -- /usr/l…&quot;   3 hours ago         Exited (143) 3 hours ago                           prod_jenkins2</span><br></pre></td></tr></table></figure>
+<p>启动后，可以直接通过url ‘<a href="http://localhost:9001&#39;">http://localhost:9001&#39;</a> 访问，Jenkins首次打开，需要获取随机密码</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 获取jenkins密码</span></span><br><span class="line">docker container exec cb8cdf3be078 cat /var/jenkins_home/secrets/initialAdminPassword</span><br><span class="line">a7cefff7d2634cc6a9542491f465eb52</span><br><span class="line"><span class="meta">#</span><span class="bash"> 或者直接进入shell查看</span></span><br><span class="line">docker exec -it cb8cdf3be078 bash</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/dubbo/base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/dubbo/base/" class="post-title-link" itemprop="url">Dubbo基础</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:31:32" itemprop="dateModified" datetime="2021-04-12T17:31:32+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Dubbo-分布式服务治理框架"><a href="#Dubbo-分布式服务治理框架" class="headerlink" title="Dubbo-分布式服务治理框架"></a>Dubbo-分布式服务治理框架</h1><blockquote>
+<p>学习dubbo教程 笔记整理</p>
+<p><a target="_blank" rel="noopener" href="http://dubbo.io/Developer+Guide-zh.htm">Dubbo官方文档</a></p>
+</blockquote>
+<p>关键词：分布式治理</p>
+<p>Dubbo是阿里巴巴推出的一款分布式服务治理框架（虽然现在阿里内部一些部门已经不再使用）。</p>
+<p>Dubbo将分布式服务分为四个角色：服务提供者、服务消费者、注册中心和监控中心。</p>
+<h1 id="Dubbo角色"><a href="#Dubbo角色" class="headerlink" title="Dubbo角色"></a>Dubbo角色</h1><p>![][dubbo-roles]</p>
+<ol>
+<li>服务提供者注册到服务注册中心</li>
+<li>服务消费者从服务提供者订阅服务</li>
+<li>当服务提供者发生变化（出现新服务提供者、旧的服务提供者死掉等），注册中心通知服务消费者</li>
+<li>当服务消费者调用服务时，首先从注册中心查找服务，注册中心直接将选定的服务提供者的ip和端口等信息返回给服务消费者，服务消费者直接调用服务提供者</li>
+<li>服务提供者和服务消费者每个一分钟将收集的运行信息上报到监控中心</li>
+</ol>
+<p>只有服务消费者调用服务生成者是同步调用，其他都是异步的。</p>
+<p>Provider与Registry、Consumer与Register之间都保持着长连接，用于保持信息同步</p>
+<h1 id="简洁的项目结构"><a href="#简洁的项目结构" class="headerlink" title="简洁的项目结构"></a>简洁的项目结构</h1><h1 id="Dubbo支持的RPC协议"><a href="#Dubbo支持的RPC协议" class="headerlink" title="Dubbo支持的RPC协议"></a>Dubbo支持的RPC协议</h1><ol>
+<li>支持常见的传输协议：RMI、Dubbo、Hessain、WebService、Http等，<br> 其中Dubbo和RMI协议基于TCP实现，Hessian和WebService基于HTTP实现。</li>
+<li>传输框架：Netty、Mina、以及基于servlet等方式。</li>
+<li>序列化方式：Hessian2、dubbo、JSON（ fastjson 实现）、JAVA、SOAP 等。</li>
+<li>注册中心可以选择 zooKeeper Redis Dubbo Multicast</li>
+</ol>
+<h1 id="Dubbo-服务降级"><a href="#Dubbo-服务降级" class="headerlink" title="Dubbo 服务降级"></a>Dubbo 服务降级</h1><p><a target="_blank" rel="noopener" href="http://blog.csdn.net/zuoanyinxiang/article/details/51027576">Dubbo学习(七)：服务的升级和降级</a></p>
+<p>服务降级方式：</p>
+<ul>
+<li>服务接口拒绝服务：无用户特定信息，页面能访问，但是添加删除提示服务器繁忙。页面内容也可在Varnish或CDN内获取。</li>
+<li>页面拒绝服务：页面提示由于服务繁忙此服务暂停。跳转到varnish或nginx的一个静态页面。</li>
+<li>延迟持久化：页面访问照常，但是涉及记录变更，会提示稍晚能看到结果，将数据记录到异步队列或log，服务恢复后执行。</li>
+<li>随机拒绝服务：服务接口随机拒绝服务，让用户重试，目前较少有人采用。因为用户体验不佳。</li>
+</ul>
+<p>服务降级埋点的地方：</p>
+<ul>
+<li>消息中间件：所有API调用可以使用消息中间件进行控制</li>
+<li>前端页面：指定网址不可访问（NGINX+LUA）</li>
+<li>底层数据驱动：拒绝所有增删改动作，只允许查询</li>
+</ul>
 
       
     </div>
@@ -769,7 +1159,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -907,217 +1297,6 @@ Dockerfile的内容为:</li>
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/dubbo/base/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/dubbo/base/" class="post-title-link" itemprop="url">Dubbo基础</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Dubbo-分布式服务治理框架"><a href="#Dubbo-分布式服务治理框架" class="headerlink" title="Dubbo-分布式服务治理框架"></a>Dubbo-分布式服务治理框架</h1><blockquote>
-<p>学习dubbo教程 笔记整理</p>
-<p><a target="_blank" rel="noopener" href="http://dubbo.io/Developer+Guide-zh.htm">Dubbo官方文档</a></p>
-</blockquote>
-<p>关键词：分布式治理</p>
-<p>Dubbo是阿里巴巴推出的一款分布式服务治理框架（虽然现在阿里内部一些部门已经不再使用）。</p>
-<p>Dubbo将分布式服务分为四个角色：服务提供者、服务消费者、注册中心和监控中心。</p>
-<h1 id="Dubbo角色"><a href="#Dubbo角色" class="headerlink" title="Dubbo角色"></a>Dubbo角色</h1><p>![][dubbo-roles]</p>
-<ol>
-<li>服务提供者注册到服务注册中心</li>
-<li>服务消费者从服务提供者订阅服务</li>
-<li>当服务提供者发生变化（出现新服务提供者、旧的服务提供者死掉等），注册中心通知服务消费者</li>
-<li>当服务消费者调用服务时，首先从注册中心查找服务，注册中心直接将选定的服务提供者的ip和端口等信息返回给服务消费者，服务消费者直接调用服务提供者</li>
-<li>服务提供者和服务消费者每个一分钟将收集的运行信息上报到监控中心</li>
-</ol>
-<p>只有服务消费者调用服务生成者是同步调用，其他都是异步的。</p>
-<p>Provider与Registry、Consumer与Register之间都保持着长连接，用于保持信息同步</p>
-<h1 id="简洁的项目结构"><a href="#简洁的项目结构" class="headerlink" title="简洁的项目结构"></a>简洁的项目结构</h1><h1 id="Dubbo支持的RPC协议"><a href="#Dubbo支持的RPC协议" class="headerlink" title="Dubbo支持的RPC协议"></a>Dubbo支持的RPC协议</h1><ol>
-<li>支持常见的传输协议：RMI、Dubbo、Hessain、WebService、Http等，<br> 其中Dubbo和RMI协议基于TCP实现，Hessian和WebService基于HTTP实现。</li>
-<li>传输框架：Netty、Mina、以及基于servlet等方式。</li>
-<li>序列化方式：Hessian2、dubbo、JSON（ fastjson 实现）、JAVA、SOAP 等。</li>
-<li>注册中心可以选择 zooKeeper Redis Dubbo Multicast</li>
-</ol>
-<h1 id="Dubbo-服务降级"><a href="#Dubbo-服务降级" class="headerlink" title="Dubbo 服务降级"></a>Dubbo 服务降级</h1><p><a target="_blank" rel="noopener" href="http://blog.csdn.net/zuoanyinxiang/article/details/51027576">Dubbo学习(七)：服务的升级和降级</a></p>
-<p>服务降级方式：</p>
-<ul>
-<li>服务接口拒绝服务：无用户特定信息，页面能访问，但是添加删除提示服务器繁忙。页面内容也可在Varnish或CDN内获取。</li>
-<li>页面拒绝服务：页面提示由于服务繁忙此服务暂停。跳转到varnish或nginx的一个静态页面。</li>
-<li>延迟持久化：页面访问照常，但是涉及记录变更，会提示稍晚能看到结果，将数据记录到异步队列或log，服务恢复后执行。</li>
-<li>随机拒绝服务：服务接口随机拒绝服务，让用户重试，目前较少有人采用。因为用户体验不佳。</li>
-</ul>
-<p>服务降级埋点的地方：</p>
-<ul>
-<li>消息中间件：所有API调用可以使用消息中间件进行控制</li>
-<li>前端页面：指定网址不可访问（NGINX+LUA）</li>
-<li>底层数据驱动：拒绝所有增删改动作，只允许查询</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/Jenkins_Docker/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/docker/Jenkins_Docker/" class="post-title-link" itemprop="url">在Docker上搭建Jenkins环境</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <ol>
-<li>从网易镜像仓库下载Jenkins</li>
-</ol>
-<p><a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/search/?keyword=jenkins">网易镜像仓库</a></p>
-<p>拉取到本地</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull hub.c.163.com/library/jenkins:latest</span><br></pre></td></tr></table></figure>
-<p>查看镜像</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker images</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY                      TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">hub.c.163.com&#x2F;library&#x2F;jenkins   latest              88d9d8a30b47        8 months ago        810MB</span><br></pre></td></tr></table></figure>
-<p>从官网下载最新的Jenkins</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://updates.jenkins-ci.org/download/war/2.107.2/jenkins.war</span><br></pre></td></tr></table></figure>
-<p>DockerFile</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FROM hub.c.163.com/library/jenkins</span><br><span class="line"><span class="meta">#</span><span class="bash"> 将最新的Jenkins拷贝到`/usr/share/jenkins/`目录</span></span><br><span class="line">ADD jenkins.war /usr/share/jenkins/</span><br></pre></td></tr></table></figure>
-<p>常见镜像</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t avery/jenkins .</span><br></pre></td></tr></table></figure>
-<p>启动一个Container</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run --name prod_jenkins2 -d -p 9005:8080 -p 9006:50000 -v  /Users/avery/docker/jenkins/backup/jenkins_home:/var/jenkins_home avery/jenkins</span><br></pre></td></tr></table></figure>
-<ol>
-<li>创建本地Jenkins数据目录，将该目录映射到docker中的Jenkins目录，方便备份数据</li>
-<li>8080端口是Jenkins web service的默认端口，将宿主机的端口映射到8080端口，可以直接访问</li>
-<li>–name 命名为prod_jenkins2</li>
-<li>-d 后台运行</li>
-<li>-p 端口映射</li>
-<li>-v 文件目录映射</li>
-</ol>
-<p>查看</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker container ls -a</span><br><span class="line">CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                     PORTS                   NAMES</span><br><span class="line">cb8cdf3be078        avery/jenkins       &quot;/bin/tini -- /usr/l…&quot;   3 hours ago         Exited (143) 3 hours ago                           prod_jenkins2</span><br></pre></td></tr></table></figure>
-<p>启动后，可以直接通过url ‘<a href="http://localhost:9001&#39;">http://localhost:9001&#39;</a> 访问，Jenkins首次打开，需要获取随机密码</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 获取jenkins密码</span></span><br><span class="line">docker container exec cb8cdf3be078 cat /var/jenkins_home/secrets/initialAdminPassword</span><br><span class="line">a7cefff7d2634cc6a9542491f465eb52</span><br><span class="line"><span class="meta">#</span><span class="bash"> 或者直接进入shell查看</span></span><br><span class="line">docker exec -it cb8cdf3be078 bash</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_2_in_or/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1149,7 +1328,7 @@ Dockerfile的内容为:</li>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1197,164 +1376,6 @@ Dockerfile的内容为:</li>
 <p><strong>使用UNION ALL：</strong></p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(<span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article <span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">2</span> <span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span> limit <span class="number">5</span>)</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span> (<span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article <span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">3</span> <span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span> limit <span class="number">5</span>)</span><br><span class="line"><span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">desc</span></span><br><span class="line">limit <span class="number">5</span></span><br></pre></td></tr></table></figure>
 <p>执行时间：0.0261</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/online-bug/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/HBase/online-bug/" class="post-title-link" itemprop="url">HBase线上异常分析</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="online-bug"><a href="#online-bug" class="headerlink" title="online-bug"></a>online-bug</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">075</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 33697ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">175</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 114225ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">267</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_2] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 121313ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">375</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 259454ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">467</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_2] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 191262ms</span><br></pre></td></tr></table></figure>
-
-<p>关于MemStore的刷新方式：<br>1、MemStore达到上限hbase.hregion.memstore.flush.size 默认是128M的时候，会触发MemStore的刷新。这个参数表示单个MemStore的大小的阈值。这个时候是不阻塞写操作的。</p>
-<p>2、当一个Region的MemStore总量达到hbase.hregion.memstore.block.multiplier * hbase.hregion.memstore.flush.size（默认2*128M=256M）时，会阻塞这个region的写操作，并强制刷写到HFile。触发这个刷新只会发生在MemStore即将写满128M时put了一个巨大的记录的情况，这时会阻塞写操作，强制刷新成功才能继续写入。</p>
-<p>3、一个RegionServer会有很多个Region，很多的MemStore，所以可能单个Region并没有超过阈值，但是整个RegionServer的内存已经占用非常多了，这时候还有另外两个参数控制内存的刷写：hbase.regionserver.global.memstore.upperLimit 默认0.4，当RegionServer上全部的MemStore占用超过heap(heap的大小在hbase-env.sh中设置HBASE_HEAPSIZE，默认1G，我们设置的4G)的40%时，强制阻塞所有的写操作，将所有的MemStore刷写到HFile；hbase.regionserver.global.memstore.lowerLimit 默认0.35，表示所有的MemStore占用超过heap的35%时，会选择一些占用内存比较大的MemStore阻塞写操作并进行flush，这是为了降低阻塞全部写操作flush带来的问题。</p>
-<p>4、当HLog达到最大值（hbase.regionserver.maxlogs * hbase.regionserver.hlog.blocksize 默认32*64M = 2G）时，也会触发MemStore的刷新，强制将更新固化到HFile中，避免在RegionServer crash时恢复时间过长。</p>
-<p>5、定期会进行MemStore的刷新，hbase.regionserver.optionalcacheflushinterval 默认3600000，一小时，确保MemStore的数据不会长时间没有固化到HFile中。为避免所有的MemStore在同一时间都进行flush导致的问题，定期的flush操作有20000左右的随机延时。</p>
-<p>6、手工可以进行flush操作，在hbase shell调用flush，可以针对某个表或者某个region进行flush：<br>hbase(main):010:0&gt; help ‘flush’<br>Flush all regions in passed table or pass a region row to flush an individual region.  For example:</p>
-<p>  hbase&gt; flush ‘TABLENAME’<br>  hbase&gt; flush ‘REGIONNAME’</p>
-<p>7、手工flush：<br>在API中只看到有setMemStoreFlushSize 指定memstore flush到HDFS上的文件大小，默认是64M，不确定是否可以直接触发flush MemStore。</p>
-<p><a target="_blank" rel="noopener" href="https://lihuimintu.github.io/2019/06/27/HBase-IO-Case/">HBase Region 过多导致集群问题事件</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/HBase-client/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/HBase/HBase-client/" class="post-title-link" itemprop="url">HBase-client</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="HBase-client"><a href="#HBase-client" class="headerlink" title="HBase-client"></a>HBase-client</h1><h2 id="读取到旧region的原因"><a href="#读取到旧region的原因" class="headerlink" title="读取到旧region的原因"></a>读取到旧region的原因</h2><p> hbase查询，查询在两张表间切换，查询了三天另一张表，原表已经重建过了，查询切换回原表出现读取到旧region的问题</p>
 
       
     </div>
@@ -1439,20 +1460,20 @@ Dockerfile的内容为:</li>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">235</span>
+          <span class="site-state-item-count">236</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">125</span>
+        <span class="site-state-item-count">126</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

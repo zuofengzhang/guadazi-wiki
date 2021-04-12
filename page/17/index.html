@@ -183,6 +183,584 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_4_advanced/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/syntax_4_advanced/" class="post-title-link" itemprop="url">MySQL高级语法</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-27 11:00:00" itemprop="dateCreated datePublished" datetime="2016-12-27T11:00:00+08:00">2016-12-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="replace-into"><a href="#replace-into" class="headerlink" title="replace into"></a>replace into</h1><p><code>replace into t(id, update_time) values(1, now());</code><br>或<br><code>replace into t(id, update_time) select 1, now();</code></p>
+<p><code>replace into</code> 跟 <code>insert</code> 功能类似，不同点在于：<br><code>replace into</code> 首先尝试插入数据到表中，</p>
+<ol>
+<li>如果发现表中已经有此行数据（根据主键或者唯一索引判断）则先删除此行数据，然后插入新的数据。</li>
+<li>否则，直接插入新数据。</li>
+</ol>
+<p>要注意的是：插入数据的表必须有主键或者是唯一索引！否则的话，<code>replace into</code> 会直接插入数据，这将导致表中出现重复的数据。<br>MySQL replace into 有三种形式：</p>
+<ol>
+<li><code>replace into tbl_name(col_name, ...) values(...)</code></li>
+<li><code>replace into tbl_name(col_name, ...) select ...</code></li>
+<li><code>replace into tbl_name set col_name=value, ...</code></li>
+</ol>
+<p>前两种形式用的多些。其中 “into” 关键字可以省略，不过最好加上 “into”，这样意思更加直观。另外，对于那些没有给予值的列，MySQL 将自动为这些列赋上默认值。</p>
+<h1 id="MySQL高级"><a href="#MySQL高级" class="headerlink" title="MySQL高级"></a>MySQL高级</h1><h1 id="理解SQL语句"><a href="#理解SQL语句" class="headerlink" title="理解SQL语句"></a>理解SQL语句</h1><h1 id="创建外键的SQL语句"><a href="#创建外键的SQL语句" class="headerlink" title="创建外键的SQL语句"></a>创建外键的SQL语句</h1><h2 id="创建数据表"><a href="#创建数据表" class="headerlink" title="创建数据表"></a>创建数据表</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> a(</span><br><span class="line">  id <span class="type">INT</span> <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span>,</span><br><span class="line">  b_id <span class="type">INT</span>,</span><br><span class="line">  <span class="keyword">CONSTRAINT</span> b_fk <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> (b_id) <span class="keyword">REFERENCES</span> b(id)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<h2 id="修改数据表"><a href="#修改数据表" class="headerlink" title="修改数据表"></a>修改数据表</h2><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[<span class="keyword">CONSTRAINT</span> symbol] <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> [id] (index_col_name, ...)  </span><br><span class="line">    <span class="keyword">REFERENCES</span> tbl_name (index_col_name, ...)  </span><br><span class="line">    [ON DELETE &#123;RESTRICT | CASCADE | SET NULL | NO ACTION&#125;]  </span><br><span class="line">    [ON UPDATE &#123;RESTRICT | CASCADE | SET NULL | NO ACTION&#125;]  </span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a</span><br><span class="line"><span class="keyword">ADD</span> <span class="keyword">CONSTRAINT</span> b_fk <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_id <span class="keyword">REFERENCES</span> b(id);</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a</span><br><span class="line"><span class="keyword">ADD</span> <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_fk(b_id)  <span class="keyword">REFERENCES</span> b(id);</span><br></pre></td></tr></table></figure>
+<h2 id="删除外键"><a href="#删除外键" class="headerlink" title="删除外键"></a>删除外键</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a <span class="keyword">DROP</span> <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_fk;</span><br></pre></td></tr></table></figure>
+<p>MySQL <code>KEY...REFERENCES</code>修饰符添加一个<code>ON DELETE</code> 或<code>ON UPDATE</code>子句简化任务，它告诉了数据库在这种情况如何处理孤立任务</p>
+<table>
+<thead>
+<tr>
+<th>关键字</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CASCADE</td>
+<td>删除包含与已删除键值有参照关系的所有记录</td>
+</tr>
+<tr>
+<td>SET NULL</td>
+<td>修改包含与已删除键值有参照关系的所有记录，使用NULL值替换（只能用于已标记为NOT NULL的字段）</td>
+</tr>
+<tr>
+<td>RESTRICT</td>
+<td>拒绝删除要求，直到使用删除键值的辅助表被手工删除，并且没有参照时(这是默认设置，也是最安全的设置)</td>
+</tr>
+<tr>
+<td>NO ACTION</td>
+<td>啥也不做</td>
+</tr>
+</tbody></table>
+<p>请注意，通过ON UPDATE 和 ON DELETE规则，设置MySQL能够实现自动操作时，如果键的关系没有设置好，可能会导致严重的数据破坏，<br>例如：如果一系列的表通过外键关系和ON DELETE CASCADE 规则连接时，任意一个主表的变化都会导致甚至只和原始删除有一些将要联系的记录在没有警告的情况被删除，所以，我们在操作之前还要检查这些规则的，操作之后还要再次检查.</p>
+<h1 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h1><p>事务回滚</p>
+<h1 id="视图"><a href="#视图" class="headerlink" title="视图"></a>视图</h1><h1 id="触发器"><a href="#触发器" class="headerlink" title="触发器"></a>触发器</h1><h1 id="序列号"><a href="#序列号" class="headerlink" title="序列号"></a>序列号</h1><h1 id="权限"><a href="#权限" class="headerlink" title="权限"></a>权限</h1><h2 id="使用技巧"><a href="#使用技巧" class="headerlink" title="使用技巧"></a>使用技巧</h2><ol>
+<li><p>如何更新使用过滤条件中包括自身的表?<br>在MySQL中, 不允许更新的表不能出现在FROM从句中, 但是可以使用JOIN从句中.</p>
+<p>联合更新</p>
+</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> user1 a <span class="keyword">JOIN</span>(</span><br><span class="line">  <span class="keyword">SELECT</span> b.`user_name`</span><br><span class="line">  <span class="keyword">FROM</span> user1 a <span class="keyword">INNER</span> <span class="keyword">JOIN</span> user2 b</span><br><span class="line">  <span class="keyword">ON</span> a.`user_name`<span class="operator">=</span> b.`user_name`</span><br><span class="line">) b <span class="keyword">ON</span> a.`user_name`<span class="operator">=</span>b.`user_name`</span><br><span class="line"><span class="keyword">SET</span> a.`<span class="keyword">over</span>`<span class="operator">=</span>`齐天大圣`;</span><br></pre></td></tr></table></figure>
+<ol>
+<li>优化子查询</li>
+<li>优化聚合查询</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> a.user_name, b.timestr,b.kills  </span><br><span class="line"><span class="keyword">from</span> <span class="keyword">user</span> a  </span><br><span class="line"><span class="keyword">join</span> user_kills b</span><br><span class="line"><span class="keyword">on</span> a.id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">where</span> b.kills<span class="operator">=</span>(</span><br><span class="line">  <span class="keyword">select</span> <span class="built_in">max</span>(c.kills) <span class="keyword">from</span> user_kills c <span class="keyword">where</span> c.user_id<span class="operator">=</span>b.user_id</span><br><span class="line">);  </span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> a.user_name,b.timestr,b.kills</span><br><span class="line"><span class="keyword">FROM</span> user1 a</span><br><span class="line"><span class="keyword">JOIN</span> user_kills b <span class="keyword">ON</span> a.id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">JOIN</span> user_kills c <span class="keyword">ON</span> c.user_id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> a.user_name,b.timestr,c.kills</span><br><span class="line"><span class="keyword">HAVING</span> b.kills<span class="operator">=</span><span class="built_in">MAX</span>(c.kills);</span><br></pre></td></tr></table></figure>
+<ol>
+<li>如何实现分组选择</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> d.user_name, c.timestr , kills</span><br><span class="line"><span class="keyword">FROM</span> (</span><br><span class="line">  <span class="keyword">SELECT</span> user_id,timestr,kills,</span><br><span class="line">  (<span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> user_kills b <span class="keyword">WHERE</span></span><br><span class="line">    b.user_id<span class="operator">=</span>a.user_id <span class="keyword">AND</span> a.kills<span class="operator">&lt;=</span>b.kills) <span class="keyword">AS</span> cnt</span><br><span class="line">    <span class="keyword">FROM</span> user_kills a</span><br><span class="line">    <span class="keyword">GROUP</span> <span class="keyword">BY</span> user_id,timestr,kills</span><br><span class="line">) c <span class="keyword">JOIN</span> user1 d <span class="keyword">ON</span> c.user_id<span class="operator">=</span>d.id</span><br><span class="line"><span class="keyword">WHERE</span> cnt<span class="operator">&lt;=</span><span class="number">2</span></span><br></pre></td></tr></table></figure>
+<ol>
+<li><p>删除重复记录</p>
+</li>
+<li><p>行列转换</p>
+</li>
+</ol>
+<p>MySQL</p>
+<h1 id="SQL语句类型"><a href="#SQL语句类型" class="headerlink" title="SQL语句类型:"></a>SQL语句类型:</h1><ol>
+<li>DDL 数据定义语言</li>
+<li>TPL 事务处理语言</li>
+<li>DCL 数据控制语言</li>
+<li>DML 数据操作语言</li>
+</ol>
+<h1 id="事务-1"><a href="#事务-1" class="headerlink" title="事务"></a>事务</h1><h1 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h1><h1 id="JOIN"><a href="#JOIN" class="headerlink" title="JOIN"></a>JOIN</h1><p>只写JOIN, 默认是inner join</p>
+<ol>
+<li>更新使用过滤条件中包括自身的表?<br>不能更新from从句的表</li>
+</ol>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> user1 <span class="keyword">set</span> <span class="keyword">over</span><span class="operator">=</span><span class="string">&#x27;齐天大圣&#x27;</span> <span class="keyword">where</span> user1.user_name <span class="keyword">in</span> (</span><br><span class="line">        <span class="keyword">select</span> b.user_name <span class="keyword">from</span> user1 a <span class="keyword">join</span> user2 b <span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line">        );</span><br></pre></td></tr></table></figure>
+<p>会报错!</p>
+<p>使用JOIN可以解决此问题</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> user1 a <span class="keyword">join</span>(</span><br><span class="line">        <span class="keyword">select</span> b.user_name</span><br><span class="line">        <span class="keyword">from</span> user1 a</span><br><span class="line">        <span class="keyword">join</span> user2 b</span><br><span class="line">        <span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line">        ) b</span><br><span class="line"><span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line"><span class="keyword">set</span> a.over<span class="operator">=</span><span class="string">&#x27;齐天大圣&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>表结构：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[Exam](</span><br><span class="line">    [S_date] [datetime] <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Order_Id] [<span class="type">varchar</span>](<span class="number">50</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Product_Id] [<span class="type">varchar</span>](<span class="number">50</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Amt] [<span class="type">numeric</span>](<span class="number">18</span>, <span class="number">0</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span></span><br><span class="line">) <span class="keyword">ON</span> [<span class="keyword">PRIMARY</span>]</span><br></pre></td></tr></table></figure>
+<p>题目一: 写一条Sql语句查询前出100到199的记录<br>题目二: 写一条Sql语句删除重复[除时间外的所有字段字段相同]的记录,保留重复记录中时间最大的记录<br>题目三: 一条Sql语句查出年份,1月,2月,3月….12月的订单总数列表<br>题目四: 一条sql语句查询出年份,本月销量,上月销量,环比%,去年同期销量,同比%列表</p>
+<p>1:</p>
+<pre><code>select * from Exam limit 100,100</code></pre>
+<p>2 :</p>
+<p>3 :</p>
+<p>   select year(s_date) as ‘年’ ,month(s_date) as ‘月’, count(Amt) as ‘订单数’ from Exam group by year(s_date),Month(s_date);</p>
+<h2 id="导入-导出"><a href="#导入-导出" class="headerlink" title="导入/导出"></a>导入/导出</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">#导出整个库的表结构如下：</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename <span class="operator">&gt;</span> createtab.sql，</span><br><span class="line"></span><br><span class="line">#如果只想导出 表 test1，test2，test3 的 表结构 和 数据呢？</span><br><span class="line">#该如何导出？</span><br><span class="line"></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename test1 test2 test3 <span class="operator">&gt;</span> createtab.sql</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 上面的是导出指定表结构，下面这个可以导出指定表结构和数据</span></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="comment">--tables databasename &gt; createtab.sql</span></span><br><span class="line"></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename test1 test2 test3 <span class="operator">&gt;</span> createtab.sql</span><br></pre></td></tr></table></figure>
+<h1 id="exist-与-in的区别"><a href="#exist-与-in的区别" class="headerlink" title="exist 与 in的区别"></a>exist 与 in的区别</h1><h1 id="union与union-all"><a href="#union与union-all" class="headerlink" title="union与union all"></a>union与union all</h1><h1 id="in的长度"><a href="#in的长度" class="headerlink" title="in的长度"></a>in的长度</h1><h1 id="in-与exist是否使用索引"><a href="#in-与exist是否使用索引" class="headerlink" title="in 与exist是否使用索引"></a>in 与exist是否使用索引</h1><h1 id="select-distinct-只能单个字段"><a href="#select-distinct-只能单个字段" class="headerlink" title="select  distinct  只能单个字段"></a>select  distinct  只能单个字段</h1>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/Redis/the-little-Redis-book/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/Redis/the-little-Redis-book/" class="post-title-link" itemprop="url">The Little Redis Book</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-20 08:44:00" itemprop="dateCreated datePublished" datetime="2016-12-20T08:44:00+08:00">2016-12-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/NOSQL/" itemprop="url" rel="index"><span itemprop="name">NOSQL</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><img src="/images/NOSQL/Redis/title.png"></p>
+<h2 id="关于此书"><a href="#关于此书" class="headerlink" title="关于此书"></a>关于此书</h2><h3 id="最新版本"><a href="#最新版本" class="headerlink" title="最新版本"></a>最新版本</h3><p>此书的最新有效资源在：<br><a target="_blank" rel="noopener" href="http://github.com/karlseguin/the-little-redis-book">http://github.com/karlseguin/the-little-redis-book</a></p>
+<p>中文版是英文版的一个分支，最新的中文版本在：<br><a target="_blank" rel="noopener" href="https://github.com/JasonLai256/the-little-redis-book">https://github.com/JasonLai256/the-little-redis-book</a></p>
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>最近几年来，关于持久化和数据查询的相关技术，其需求已经增长到了让人惊讶的程度。可以断言，关系型数据库再也不是放之四海皆准。换一句话说，围绕数据的解决方案不可能再只有唯一一种。</p>
+<p>对于我来说，在众多新出现的解决方案和工具里，最让人兴奋的，无疑是Redis。为什么？首先是因为其让人不可思议的容易学习，只需要简短的几个小时学习时间，就能对Redis有个大概的认识。还有，Redis在处理一组特定的问题集的同时能保持相当的通用性。更准确地说就是，Redis不会尝试去解决关于数据的所有事情。在你足够了解Redis后，事情就会变得越来越清晰，什么是可行的，什么是不应该由Redis来处理的。作为一名开发人员，如此的经验当是相当的美妙。</p>
+<p>当你能仅使用Redis去构建一个完整系统时，我想大多数人将会发现，Redis能使得他们的许多数据方案变得更为通用，不论是一个传统的关系型数据库，一个面向文档的系统，或是其它更多的东西。这是一种用来实现某些特定特性的解决方法。就类似于一个索引引擎，你不会在 Lucene 上构建整个程序，但当你需要足够好的搜索，为什么不使用它呢？这对你和你的用户都有好处。当然，关于Redis和索引引擎之间相似性的讨论到此为止。</p>
+<p>本书的目的是向读者传授掌握Redis所需要的基本知识。我们将会注重于学习Redis的5种数据结构，并研究各种数据建模方法。我们还会接触到一些主要的管理细节和调试技巧。</p>
+<h2 id="入门"><a href="#入门" class="headerlink" title="入门"></a>入门</h2><p>每个人的学习方式都不一样，有的人喜欢亲自实践学习，有的喜欢观看教学视频，还有的喜欢通过阅读来学习。对于Redis，没有什么比亲自实践学习来得效果更好的了。Redis的安装非常简单。而且通过随之安装的一个简单的命令解析程序，就能处理我们想做的一切事情。让我们先花几分钟的时间把Redis安装到我们的机器上。</p>
+<h3 id="Windows平台"><a href="#Windows平台" class="headerlink" title="Windows平台"></a>Windows平台</h3><p>Redis并没有官方支持Windows平台，但还是可供选择。你不会想在这里配置实际的生产环境，不过在我过往的开发经历里并没有感到有什么限制。</p>
+<p>首先进入<a target="_blank" rel="noopener" href="https://github.com/dmajkic/redis/downloads">https://github.com/dmajkic/redis/downloads</a>，然后下载最新的版本（应该会在列表的最上方）。</p>
+<p>获取zip文件，然后根据你的系统架构，打开<code>64bit</code>或<code>32bit</code>文件夹。</p>
+<h3 id="nix和MacOSX平台"><a href="#nix和MacOSX平台" class="headerlink" title="*nix和MacOSX平台"></a><code>*nix和MacOSX平台</code></h3><p>对于*nix和MacOSX平台的用户，从源文件来安装是你的最佳选择。通过最新的版本号来选择，有效地址于<a target="_blank" rel="noopener" href="http://redis.io/download">http://redis.io/download</a>。在编写此书的时候，最新的版本是2.4.6，我们可以运行下面的命令来安装该版本：</p>
+<pre><code>wget http://redis.googlecode.com/files/redis-2.4.6.tar.gz
+tar xzf redis-2.4.6.tar.gz
+cd redis-2.4.6
+make</code></pre>
+<p>（当然，Redis同样可以通过套件管理程序来安装。例如，使用Homebrew的MaxOSX用户可以只键入<code>brew install redis</code>即可。）</p>
+<p>如果你是通过源文件来安装，二进制可执行文件会被放置在<code>src</code>目录里。通过运行<code>cd src</code>可跳转到<code>src</code>目录。</p>
+<h3 id="运行和连接Redis"><a href="#运行和连接Redis" class="headerlink" title="运行和连接Redis"></a>运行和连接Redis</h3><p>如果一切都工作正常，那Redis的二进制文件应该已经可以曼妙地跳跃于你的指尖之下。Redis只有少量的可执行文件，我们将着重于Redis的服务器和命令行界面（一个类DOS的客户端）。首先，让我们来运行服务器。在Windows平台，双击<code>redis-server</code>，在*nix/MacOSX平台则运行<code>./redis-server</code>.</p>
+<p>如果你仔细看了启动信息，你会看到一个警告，指没能找到<code>redis.conf</code>文件。Redis将会采用内置的默认设置，这对于我们将要做的已经足够了。</p>
+<p>然后，通过双击<code>redis-cli</code>（Windows平台）或者运行<code>./redis-cli</code>（<code>*nix/MacOSX</code>平台），启动Redis的控制台。控制台将会通过默认的端口（6379）来连接本地运行的服务器。</p>
+<p>可以在命令行界面键入<code>info</code>命令来查看一切是不是都运行正常。你会很乐意看到这么一大组关键字-值（key-value）对的显示，这为我们查看服务器的状态提供了大量有效信息。</p>
+<p>如果在上面的启动步骤里遇到什么问题，我建议你到<a target="_blank" rel="noopener" href="https://groups.google.com/forum/#!forum/redis-db">Redis的官方支持组</a>里获取帮助。</p>
+<h2 id="驱动Redis"><a href="#驱动Redis" class="headerlink" title="驱动Redis"></a>驱动Redis</h2><p>很快你就会发现，Redis的API就如一组定义明确的函数那般容易理解。Redis具有让人难以置信的简单性，其操作过程也同样如此。这意味着，无论你是使用命令行程序，或是使用你喜欢的语言来驱动，整体的感觉都不会相差多少。因此，相对于命令行程序，如果你更愿意通过一种编程语言去驱动Redis，你不会感觉到有任何适应的问题。如果真想如此，可以到Redis的<a target="_blank" rel="noopener" href="http://redis.io/clients">客户端推荐页面</a>下载适合的Redis载体。</p>
+<h2 id="第1章-基础知识"><a href="#第1章-基础知识" class="headerlink" title="第1章 - 基础知识"></a>第1章 - 基础知识</h2><p>是什么使Redis显得这么特别？Redis具体能解决什么类型的问题？要实际应用Redis，开发者必须储备什么知识？在我们能回答这么一些问题之前，我们需要明白Redis到底是什么。</p>
+<p>Redis通常被人们认为是一种持久化的存储器关键字-值型存储（in-memory persistent key-value store）。我认为这种对Redis的描述并不太准确。Redis的确是将所有的数据存放于存储器（更多是是按位存储），而且也确实通过将数据写入磁盘来实现持久化，但是<strong>Redis的实际意义比单纯的关键字-值型存储要来得深远</strong>。纠正脑海里的这种误解观点非常关键，否则你对于Redis之道以及其应用的洞察力就会变得越发狭义。</p>
+<p>事实是，Redis引入了5种不同的数据结构，只有一个是典型的关键字-值型结构。理解Redis的关键就在于搞清楚这5种数据结构，其工作的原理都是如何，有什么关联方法以及你能怎样应用这些数据结构去构建模型。首先，让我们来弄明白这些数据结构的实际意义。</p>
+<p>应用上面提及的数据结构概念到我们熟悉的关系型数据库里，我们可以认为其引入了一个单独的数据结构——表格。表格既复杂又灵活，基于表格的存储和管理，没有多少东西是你不能进行建模的。然而，这种通用性并不是没有缺点。具体来说就是，事情并不是总能达到假设中的简单或者快速。相对于这种普遍适用（one-size-fits-all）的结构体系，我们可以使用更为专门化的结构体系。当然，因此可能有些事情我们会完成不了(至少，达不到很好的程度）。但话说回来，这样做就能确定我们可以获得想象中的简单性和速度吗？</p>
+<p>针对特定类型的问题使用特定的数据结构？我们不就是这样进行编程的吗？你不会使用一个散列表去存储每份数据，也不会使用一个标量变量去存储。对我来说，这正是Redis的做法。如果你需要处理标量、列表、散列或者集合，为什么不直接就用标量、列表、散列和集合去存储他们？为什么不是直接调用<code>exists(key)</code>去检测一个已存在的值，而是要调用其他比O(1)（常量时间查找，不会因为待处理元素的增长而变慢）慢的操作？</p>
+<h3 id="数据库（Databases）"><a href="#数据库（Databases）" class="headerlink" title="数据库（Databases）"></a>数据库（Databases）</h3><p>与你熟悉的关系型数据库一致，Redis有着相同的数据库基本概念，即一个数据库包含一组数据。典型的数据库应用案例是，将一个程序的所有数据组织起来，使之与另一个程序的数据保持独立。</p>
+<p>在Redis里，数据库简单的使用一个数字编号来进行辨认，默认数据库的数字编号是<code>0</code>。如果你想切换到一个不同的数据库，你可以使用<code>select</code>命令来实现。在命令行界面里键入<code>select 1</code>，Redis应该会回复一条<code>OK</code>的信息，然后命令行界面里的提示符会变成类似<code>redis 127.0.0.1:6379[1]&gt;</code>这样。如果你想切换回默认数据库，只要在命令行界面键入<code>select 0</code>即可。</p>
+<h3 id="命令、关键字和值（Commands-Keys-and-Values）"><a href="#命令、关键字和值（Commands-Keys-and-Values）" class="headerlink" title="命令、关键字和值（Commands, Keys and Values）"></a>命令、关键字和值（Commands, Keys and Values）</h3><p>Redis不仅仅是一种简单的关键字-值型存储，从其核心概念来看，Redis的5种数据结构中的每一个都至少有一个关键字和一个值。在转入其它关于Redis的有用信息之前，我们必须理解关键字和值的概念。</p>
+<p>关键字（Keys）是用来标识数据块。我们将会经常跟关键字打交道，不过在现在，明白关键字就是类似于<code>users:leto</code>这样的表述就足够了。一般都能很好地理解到，这样关键字包含的信息是一个名为<code>leto</code>的用户。这个关键字里的冒号没有任何特殊含义，对于Redis而言，使用分隔符来组织关键字是很常见的方法。</p>
+<p>值（Values）是关联于关键字的实际值，可以是任何东西。有时候你会存储字符串，有时候是整数，还有时候你会存储序列化对象（使用JSON、XML或其他格式）。在大多数情况下，Redis会把值看做是一个字节序列，而不会关注它们实质上是什么。要注意，不同的Redis载体处理序列化会有所不同（一些会让你自己决定）。因此，在这本书里，我们将仅讨论字符串、整数和JSON。</p>
+<p>现在让我们活动一下手指吧。在命令行界面键入下面的命令：</p>
+<pre><code>set users:leto &quot;&#123;name: leto, planet: dune, likes: [spice]&#125;&quot;</code></pre>
+<p>这就是Redis命令的基本构成。首先我们要有一个确定的命令，在上面的语句里就是<code>set</code>。然后就是相应的参数，<code>set</code>命令接受两个参数，包括要设置的关键字，以及相应要设置的值。很多的情况是，命令接受一个关键字（当这种情况出现，其经常是第一个参数）。你能想到如何去获取这个值吗？我想你会说（当然一时拿不准也没什么）：</p>
+<pre><code>get users:leto</code></pre>
+<p>关键字和值的是Redis的基本概念，而<code>get</code>和<code>set</code>命令是对此最简单的使用。你可以创建更多的用户，去尝试不同类型的关键字以及不同的值，看看一些不同的组合。</p>
+<h3 id="查询（Querying）"><a href="#查询（Querying）" class="headerlink" title="查询（Querying）"></a>查询（Querying）</h3><p>随着学习的持续深入，两件事情将变得清晰起来。对于Redis而言, <code>key</code>就是一切，而值是没有任何意义。更通俗来看就是，Redis不允许你通过值来进行查询。回到上面的例子，我们就不能查询生活在<code>dune</code>行星上的用户。</p>
+<p>对许多人来说，这会引起一些担忧。在我们生活的世界里，数据查询是如此的灵活和强大，而Redis的方式看起来是这么的原始和不高效。不要让这些扰乱你太久。要记住，Redis不是一种普遍使用（one-size-fits-all）的解决方案，确实存在这么一些事情是不应该由Redis来解决的（因为其查询的限制）。事实上，在考虑了这些情况后，你会找到新的方法去构建你的数据。</p>
+<p>很快，我们就能看到更多实际的用例。很重要的一点是，我们要明白关于Redis的这些基本事实。这能帮助我们弄清楚: 为什么<code>value</code>可以是任何东西，因为Redis从来不需要去读取或理解它们。而且，这也可以帮助我们理清思路，然后去思考如何在这个新世界里建立模型。</p>
+<h3 id="存储器和持久化（Memory-and-Persistence）"><a href="#存储器和持久化（Memory-and-Persistence）" class="headerlink" title="存储器和持久化（Memory and Persistence）"></a>存储器和持久化（Memory and Persistence）</h3><p>我们之前提及过，Redis是一种持久化的存储器内存储（in-memory persistent store）。对于持久化，默认情况下，Redis会根据已变更的关键字数量来进行判断，然后在磁盘里创建数据库的快照（snapshot）。你可以对此进行设置，如果X个关键字已变更，那么每隔Y秒存储数据库一次。默认情况下，如果1000个或更多的关键字已变更，Redis会每隔60秒存储数据库；而如果9个或更少的关键字已变更，Redis会每隔15分钟存储数据库。</p>
+<p>除了创建磁盘快照外，Redis可以在附加模式下运行。任何时候，如果有一个关键字变更，一个单一附加（append-only）的文件会在磁盘里进行更新。在一些情况里，虽然硬件或软件可能发生错误，但用那60秒有效数据存储去换取更好性能是可以接受的。而在另一些情况里，这种损失就难以让人接受，Redis为你提供了选择。在第5章里，我们将会看到第三种选择，其将持久化任务减荷到一个从属数据库里。</p>
+<p>至于存储器，Redis会将所有数据都保留在存储器中。显而易见，运行Redis具有不低的成本：因为RAM仍然是最昂贵的服务器硬件部件。</p>
+<p>我很清楚有一些开发者对即使是一点点的数据空间都是那么的敏感。一本《威廉·莎士比亚全集》需要近5.5MB的存储空间。对于缩放的需求，其它的解决方案趋向于IO-bound或者CPU-bound。这些限制（RAM或者IO）将会需要你去理解更多机器实际依赖的数据类型，以及应该如何去进行存储和查询。除非你是存储大容量的多媒体文件到Redis中，否则存储器内存储应该不会是一个问题。如果这对于一个程序是个问题，你就很可能不会用IO-bound的解决方案。</p>
+<p>Redis有虚拟存储器的支持。然而，这个功能已经被认为是失败的了（通过Redis的开发者），而且它的使用已经被废弃了。</p>
+<p>（从另一个角度来看，一本5.5MB的《威廉·莎士比亚全集》可以通过压缩减小到近2MB。当然，Redis不会自动对值进行压缩，但是因为其将所有值都看作是字节，没有什么限制让你不能对数据进行压缩/解压，通过牺牲处理时间来换取存储空间。）</p>
+<h3 id="整体来看（Putting-It-Together）"><a href="#整体来看（Putting-It-Together）" class="headerlink" title="整体来看（Putting It Together）"></a>整体来看（Putting It Together）</h3><p>我们已经接触了好几个高层次的主题。在继续深入Redis之前，我想做的最后一件事情是将这些主题整合起来。这些主题包括，查询的限制，数据结构以及Redis在存储器内存储数据的方法。</p>
+<p>当你将这3个主题整合起来，你最终会得出一个绝妙的结论：速度。一些人可能会想，当然Redis会很快速，要知道所有的东西都在存储器里。但这仅仅是其中的一部分，让Redis闪耀的真正原因是其不同于其它解决方案的特殊数据结构。</p>
+<p>能有多快速？这依赖于很多东西，包括你正在使用着哪个命令，数据的类型等等。但Redis的性能测试是趋向于数万或数十万次操作<strong>每秒</strong>。你可以通过运行<code>redis-benchmark</code>（就在<code>redis-server</code>和<code>redis-cli</code>的同一个文件夹里）来进行测试。</p>
+<p>我曾经试过将一组使用传统模型的代码转向使用Redis。在传统模型里，运行一个我写的载入测试，需要超过5分钟的时间来完成。而在Redis里，只需要150毫秒就完成了。你不会总能得到这么好的收获，但希望这能让你对我们所谈的东西有更清晰的理解。</p>
+<p>理解Redis的这个特性很重要，因为这将影响到你如何去与Redis进行交互。拥有SQL背景的程序员通常会致力于让数据库的数据往返次数减至最小。这对于任何系统都是个好建议，包括Redis。然而，考虑到我们是在处理比较简单的数据结构，有时候我们还是需要与Redis服务器频繁交互，以达到我们的目的。刚开始的时候，可能会对这种数据访问模式感到不太自然。实际上，相对于我们通过Redis获得的高性能而言，这仅仅是微不足道的损失。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>虽然我们只接触和摆弄了Redis的冰山一角，但我们讨论的主题已然覆盖了很大范围内的东西。如果觉得有些事情还是不太清楚（例如查询），不用为此而担心，在下一章我们将会继续深入探讨，希望你的问题都能得到解答。</p>
+<p>这一章的要点包括：</p>
+<ul>
+<li><p>关键字（Keys）是用于标识一段数据的一个字符串</p>
+</li>
+<li><p>值（Values）是一段任意的字节序列，Redis不会关注它们实质上是什么</p>
+</li>
+<li><p>Redis展示了（也实现了）5种专门的数据结构</p>
+</li>
+<li><p>上面的几点使得Redis快速而且容易使用，但要知道Redis并不适用于所有的应用场景</p>
+</li>
+</ul>
+<h2 id="第2章-数据结构"><a href="#第2章-数据结构" class="headerlink" title="第2章 - 数据结构"></a>第2章 - 数据结构</h2><p>现在开始将探究Redis的5种数据结构，我们会解释每种数据结构都是什么，包含了什么有效的方法（Method），以及你能用这些数据结构处理哪些类型的特性和数据。</p>
+<p>目前为止，我们所知道的Redis构成仅包括命令、关键字和值，还没有接触到关于数据结构的具体概念。当我们使用<code>set</code>命令时，Redis是怎么知道我们是在使用哪个数据结构？其解决方法是，每个命令都相对应于一种特定的数据结构。例如，当你使用<code>set</code>命令，你就是将值存储到一个字符串数据结构里。而当你使用<code>hset</code>命令，你就是将值存储到一个散列数据结构里。考虑到Redis的关键字集很小，这样的机制具有相当的可管理性。</p>
+<p><strong><a target="_blank" rel="noopener" href="http://redis.io/commands">Redis的网站</a>里有着非常优秀的参考文档，没有任何理由去重造轮子。但为了搞清楚这些数据结构的作用，我们将会覆盖那些必须知道的重要命令。</strong></p>
+<p>没有什么事情比高兴的玩和试验有趣的东西来得更重要的了。在任何时候，你都能通过键入<code>flushdb</code>命令将你数据库里的所有值清除掉，因此，不要再那么害羞了，去尝试做些疯狂的事情吧！</p>
+<h3 id="字符串（Strings"><a href="#字符串（Strings" class="headerlink" title="字符串（Strings)"></a>字符串（Strings)</h3><p>在Redis里，字符串是最基本的数据结构。当你在思索着关键字-值对时，你就是在思索着字符串数据结构。不要被名字给搞混了，如之前说过的，你的值可以是任何东西。我更喜欢将他们称作“标量”（Scalars），但也许只有我才这样想。</p>
+<p>我们已经看到了一个常见的字符串使用案例，即通过关键字存储对象的实例。有时候，你会频繁地用到这类操作：</p>
+<pre><code>set users:leto &quot;&#123;name: leto, planet: dune, likes: [spice]&#125;&quot;</code></pre>
+<p>除了这些外，Redis还有一些常用的操作。例如，<code>strlen &lt;key&gt;</code>能用来获取一个关键字对应值的长度；<code>getrange &lt;key&gt; &lt;start&gt; &lt;end&gt;</code>将返回指定范围内的关键字对应值；<code>append &lt;key&gt; &lt;value&gt;</code>会将value附加到已存在的关键字对应值中（如果该关键字并不存在，则会创建一个新的关键字-值对）。不要犹豫，去试试看这些命令吧。下面是我得到的：</p>
+<pre><code>&gt; strlen users:leto
+(integer) 42
+
+&gt; getrange users:leto 27 40
+&quot;likes: [spice]&quot;
+
+&gt; append users:leto &quot; OVER 9000!!&quot;
+(integer) 54</code></pre>
+<p>现在你可能会想，这很好，但似乎没有什么意义。你不能有效地提取出一段范围内的JSON文件，或者为其附加一些值。你是对的，这里的经验是，一些命令，尤其是关于字符串数据结构的，只有在给定了明确的数据类型后，才会有实际意义。</p>
+<p>之前我们知道了，Redis不会去关注你的值是什么东西。通常情况下，这没有错。然而，一些字符串命令是专门为一些类型或值的结构而设计的。作为一个有些含糊的用例，我们可以看到，对于一些自定义的空间效率很高的（space-efficient）串行化对象，<code>append</code>和<code>getrange</code>命令将会很有用。对于一个更为具体的用例，我们可以再看一下<code>incr</code>、<code>incrby</code>、<code>decr</code>和<code>decrby</code>命令。这些命令会增长或者缩减一个字符串数据结构的值：</p>
+<pre><code>&gt; incr stats:page:about
+(integer) 1
+&gt; incr stats:page:about
+(integer) 2
+
+&gt; incrby ratings:video:12333 5
+(integer) 5
+&gt; incrby ratings:video:12333 3
+(integer) 8</code></pre>
+<p>由此你可以想象到，Redis的字符串数据结构能很好地用于分析用途。你还可以去尝试增长<code>users:leto</code>（一个不是整数的值），然后看看会发生什么（应该会得到一个错误）。</p>
+<p>更为进阶的用例是<code>setbit</code>和<code>getbit</code>命令。“今天我们有多少个独立用户访问”是个在Web应用里常见的问题，有一篇<a target="_blank" rel="noopener" href="http://blog.getspool.com/2011/11/29/fast-easy-realtime-metrics-using-redis-bitmaps/">精彩的博文</a>，在里面可以看到Spool是如何使用这两个命令有效地解决此问题。对于1.28亿个用户，一部笔记本电脑在不到50毫秒的时间里就给出了答复，而且只用了16MB的存储空间。</p>
+<p>最重要的事情不是在于你是否明白位图（Bitmaps)的工作原理，或者Spool是如何去使用这些命令，而是应该要清楚Redis的字符串数据结构比你当初所想的要有用许多。然而，最常见的应用案例还是上面我们给出的：存储对象（简单或复杂）和计数。同时，由于通过关键字来获取一个值是如此之快，字符串数据结构很常被用来缓存数据。</p>
+<h3 id="散列（Hashes）"><a href="#散列（Hashes）" class="headerlink" title="散列（Hashes）"></a>散列（Hashes）</h3><p>我们已经知道把Redis称为一种关键字-值型存储是不太准确的，散列数据结构是一个很好的例证。你会看到，在很多方面里，散列数据结构很像字符串数据结构。两者显著的区别在于，散列数据结构提供了一个额外的间接层：一个域（Field）。因此，散列数据结构中的<code>set</code>和<code>get</code>是：</p>
+<pre><code>hset users:goku powerlevel 9000
+hget users:goku powerlevel</code></pre>
+<p>相关的操作还包括在同一时间设置多个域、同一时间获取多个域、获取所有的域和值、列出所有的域或者删除指定的一个域：</p>
+<pre><code>hmset users:goku race saiyan age 737
+hmget users:goku race powerlevel
+hgetall users:goku
+hkeys users:goku
+hdel users:goku age</code></pre>
+<p>如你所见，散列数据结构比普通的字符串数据结构具有更多的可操作性。我们可以使用一个散列数据结构去获得更精确的描述，是存储一个用户，而不是一个序列化对象。从而得到的好处是能够提取、更新和删除具体的数据片段，而不必去获取或写入整个值。</p>
+<p>对于散列数据结构，可以从一个经过明确定义的对象的角度来考虑，例如一个用户，关键之处在于要理解他们是如何工作的。从性能上的原因来看，这是正确的，更具粒度化的控制可能会相当有用。在下一章我们将会看到，如何用散列数据结构去组织你的数据，使查询变得更为实效。在我看来，这是散列真正耀眼的地方。</p>
+<h3 id="列表（Lists）"><a href="#列表（Lists）" class="headerlink" title="列表（Lists）"></a>列表（Lists）</h3><p>对于一个给定的关键字，列表数据结构让你可以存储和处理一组值。你可以添加一个值到列表里、获取列表的第一个值或最后一个值以及用给定的索引来处理值。列表数据结构维护了值的顺序，提供了基于索引的高效操作。为了跟踪在网站里注册的最新用户，我们可以维护一个<code>newusers</code>的列表：</p>
+<pre><code>lpush newusers goku
+ltrim newusers 0 50</code></pre>
+<p><strong>（译注：<code>ltrim</code>命令的具体构成是<code>LTRIM Key start stop</code>。要理解<code>ltrim</code>命令，首先要明白Key所存储的值是一个列表，理论上列表可以存放任意个值。对于指定的列表，根据所提供的两个范围参数start和stop，<code>ltrim</code>命令会将指定范围外的值都删除掉，只留下范围内的值。）</strong></p>
+<p>首先，我们将一个新用户推入到列表的前端，然后对列表进行调整，使得该列表只包含50个最近被推入的用户。这是一种常见的模式。<code>ltrim</code>是一个具有O(N)时间复杂度的操作，N是被删除的值的数量。从上面的例子来看，我们总是在插入了一个用户后再进行列表调整，实际上，其将具有O(1)的时间复杂度（因为N将永远等于1）的常数性能。</p>
+<p>这是我们第一次看到一个关键字的对应值索引另一个值。如果我们想要获取最近的10个用户的详细资料，我们可以运行下面的组合操作：</p>
+<pre><code>keys = redis.lrange(&#39;newusers&#39;, 0, 10)
+redis.mget(*keys.map &#123;|u| &quot;users:#&#123;u&#125;&quot;&#125;)</code></pre>
+<p>我们之前谈论过关于多次往返数据的模式，上面的两行Ruby代码为我们进行了很好的演示。</p>
+<p>当然，对于存储和索引关键字的功能，并不是只有列表数据结构这种方式。值可以是任意的东西，你可以使用列表数据结构去存储日志，也可以用来跟踪用户浏览网站时的路径。如果你过往曾构建过游戏，你可能会使用列表数据结构去跟踪用户的排队活动。</p>
+<h3 id="集合（Sets）"><a href="#集合（Sets）" class="headerlink" title="集合（Sets）"></a>集合（Sets）</h3><p>集合数据结构常常被用来存储只能唯一存在的值，并提供了许多的基于集合的操作，例如并集。集合数据结构没有对值进行排序，但是其提供了高效的基于值的操作。使用集合数据结构的典型用例是朋友名单的实现：</p>
+<pre><code>sadd friends:leto ghanima paul chani jessica
+sadd friends:duncan paul jessica alia</code></pre>
+<p>不管一个用户有多少个朋友，我们都能高效地（O(1)时间复杂度）识别出用户X是不是用户Y的朋友：</p>
+<pre><code>sismember friends:leto jessica
+sismember friends:leto vladimir</code></pre>
+<p>而且，我们可以查看两个或更多的人是不是有共同的朋友：</p>
+<pre><code>sinter friends:leto friends:duncan</code></pre>
+<p>甚至可以在一个新的关键字里存储结果：</p>
+<pre><code>sinterstore friends:leto_duncan friends:leto friends:duncan</code></pre>
+<p>有时候需要对值的属性进行标记和跟踪处理，但不能通过简单的复制操作完成，集合数据结构是解决此类问题的最好方法之一。当然，对于那些需要运用集合操作的地方（例如交集和并集），集合数据结构就是最好的选择。</p>
+<h3 id="分类集合（Sorted-Sets）"><a href="#分类集合（Sorted-Sets）" class="headerlink" title="分类集合（Sorted Sets）"></a>分类集合（Sorted Sets）</h3><p>最后也是最强大的数据结构是分类集合数据结构。如果说散列数据结构类似于字符串数据结构，主要区分是域（field）的概念；那么分类集合数据结构就类似于集合数据结构，主要区分是标记（score）的概念。标记提供了排序（sorting）和秩划分（ranking）的功能。如果我们想要一个秩分类的朋友名单，可以这样做：</p>
+<pre><code>zadd friends:duncan 70 ghanima 95 paul 95 chani 75 jessica 1 vladimir</code></pre>
+<p>对于<code>duncan</code>的朋友，要怎样计算出标记（score）为90或更高的人数？</p>
+<pre><code>zcount friends:duncan 90 100</code></pre>
+<p>如何获取<code>chani</code>在名单里的秩（rank）？</p>
+<pre><code>zrevrank friends:duncan chani</code></pre>
+<p><strong>（译注：<code>zrank</code>命令的具体构成是<code>ZRANK Key menber</code>，要知道Key存储的Sorted Set默认是根据Score对各个menber进行升序的排列，该命令就是用来获取menber在该排列里的次序，这就是所谓的秩。）</strong></p>
+<p>我们使用了<code>zrevrank</code>命令而不是<code>zrank</code>命令，这是因为Redis的默认排序是从低到高，但是在这个例子里我们的秩划分是从高到低。对于分类集合数据结构，最常见的应用案例是用来实现排行榜系统。事实上，对于一些基于整数排序，且能以标记（score）来进行有效操作的东西，使用分类集合数据结构来处理应该都是不错的选择。</p>
+<h3 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h3><p>对于Redis的5种数据结构，我们进行了高层次的概述。一件有趣的事情是，相对于最初构建时的想法，你经常能用Redis创造出一些更具实效的事情。对于字符串数据结构和分类集合数据结构的使用，很有可能存在一些构建方法是还没有人想到的。当你理解了那些常用的应用案例后，你将发现Redis对于许多类型的问题，都是很理想的选择。还有，不要因为Redis展示了5种数据结构和相应的各种方法，就认为你必须要把所有的东西都用上。只使用一些命令去构建一个特性是很常见的。</p>
+<h2 id="第3章-使用数据结构"><a href="#第3章-使用数据结构" class="headerlink" title="第3章 - 使用数据结构"></a>第3章 - 使用数据结构</h2><p>在上一章里，我们谈论了Redis的5种数据结构，对于一些可能的用途也给出了用例。现在是时候来看看一些更高级，但依然很常见的主题和设计模式。</p>
+<h3 id="大O表示法（Big-O-Notation）"><a href="#大O表示法（Big-O-Notation）" class="headerlink" title="大O表示法（Big O Notation）"></a>大O表示法（Big O Notation）</h3><p>在本书中，我们之前就已经看到过大O表示法，包括O(1)和O(N)的表示。大O表示法的惯常用途是，描述一些用于处理一定数量元素的行为的综合表现。在Redis里，对于一个要处理一定数量元素的命令，大O表示法让我们能了解该命令的大概运行速度。</p>
+<p>在Redis的文档里，每一个命令的时间复杂度都用大O表示法进行了描述，还能知道各命令的具体性能会受什么因素影响。让我们来看看一些用例。</p>
+<p>常数时间复杂度O(1)被认为是最快速的，无论我们是在处理5个元素还是5百万个元素，最终都能得到相同的性能。对于<code>sismember</code>命令，其作用是告诉我们一个值是否属于一个集合，时间复杂度为O(1)。<code>sismember</code>命令很强大，很大部分的原因是其高效的性能特征。许多Redis命令都具有O(1)的时间复杂度。</p>
+<p>对数时间复杂度O(log(N))被认为是第二快速的，其通过使需扫描的区间不断皱缩来快速完成处理。使用这种“分而治之”的方式，大量的元素能在几个迭代过程里被快速分解完整。<code>zadd</code>命令的时间复杂度就是O(log(N))，其中N是在分类集合中的元素数量。</p>
+<p>再下来就是线性时间复杂度O(N)，在一个表格的非索引列里进行查找就需要O(N)次操作。<code>ltrim</code>命令具有O(N)的时间复杂度，但是，在<code>ltrim</code>命令里，N不是列表所拥有的元素数量，而是被删除的元素数量。从一个具有百万元素的列表里用<code>ltrim</code>命令删除1个元素，要比从一个具有一千个元素的列表里用<code>ltrim</code>命令删除10个元素来的快速（实际上，两者很可能会是一样快，因为两个时间都非常的小）。</p>
+<p>根据给定的最小和最大的值的标记，<code>zremrangebyscore</code>命令会在一个分类集合里进行删除元素操作，其时间复杂度是O(log(N)+M)。这看起来似乎有点儿杂乱，通过阅读文档可以知道，这里的N指的是在分类集合里的总元素数量，而M则是被删除的元素数量。可以看出，对于性能而言，被删除的元素数量很可能会比分类集合里的总元素数量更为重要。</p>
+<p><strong>（译注：<code>zremrangebyscore</code>命令的具体构成是<code>ZREMRANGEBYSCORE Key max mix</code>。）</strong></p>
+<p>对于<code>sort</code>命令，其时间复杂度为O(N+M*log(M))，我们将会在下一章谈论更多的相关细节。从<code>sort</code>命令的性能特征来看，可以说这是Redis里最复杂的一个命令。</p>
+<p>还存在其他的时间复杂度描述，包括O(N^2)和O(C^N)。随着N的增大，其性能将急速下降。在Redis里，没有任何一个命令具有这些类型的时间复杂度。</p>
+<p>值得指出的一点是，在Redis里，当我们发现一些操作具有O(N)的时间复杂度时，我们可能可以找到更为好的方法去处理。</p>
+<p><strong>（译注：对于Big O Notation，相信大家都非常的熟悉，虽然原文仅仅是对该表示法进行简单的介绍，但限于个人的算法知识和文笔水平实在有限，此小节的翻译让我头痛颇久，最终成果也确实难以让人满意，望见谅。）</strong></p>
+<h3 id="仿多关键字查询（Pseudo-Multi-Key-Queries）"><a href="#仿多关键字查询（Pseudo-Multi-Key-Queries）" class="headerlink" title="仿多关键字查询（Pseudo Multi Key Queries）"></a>仿多关键字查询（Pseudo Multi Key Queries）</h3><p>时常，你会想通过不同的关键字去查询相同的值。例如，你会想通过电子邮件（当用户开始登录时）去获取用户的具体信息，或者通过用户id（在用户登录后）去获取。有一种很不实效的解决方法，其将用户对象分别放置到两个字符串值里去：</p>
+<pre><code>set users:leto@dune.gov &quot;&#123;id: 9001, email: &#39;leto@dune.gov&#39;, ...&#125;&quot;
+set users:9001 &quot;&#123;id: 9001, email: &#39;leto@dune.gov&#39;, ...&#125;&quot;</code></pre>
+<p>这种方法很糟糕，如此不但会产生两倍数量的内存，而且这将会成为数据管理的恶梦。</p>
+<p>如果Redis允许你将一个关键字链接到另一个的话，可能情况会好很多，可惜Redis并没有提供这样的功能（而且很可能永远都不会提供）。Redis发展到现在，其开发的首要目的是要保持代码和API的整洁简单，关键字链接功能的内部实现并不符合这个前提（对于关键字，我们还有很多相关方法没有谈论到）。其实，Redis已经提供了解决的方法：散列。</p>
+<p>使用散列数据结构，我们可以摆脱重复的缠绕：</p>
+<pre><code>set users:9001 &quot;&#123;id: 9001, email: leto@dune.gov, ...&#125;&quot;
+hset users:lookup:email leto@dune.gov 9001</code></pre>
+<p>我们所做的是，使用域来作为一个二级索引，然后去引用单个用户对象。要通过id来获取用户信息，我们可以使用一个普通的<code>get</code>命令：</p>
+<pre><code>get users:9001</code></pre>
+<p>而如果想通过电子邮箱来获取用户信息，我们可以使用<code>hget</code>命令再配合使用<code>get</code>命令（Ruby代码）：</p>
+<pre><code>id = redis.hget(&#39;users:lookup:email&#39;, &#39;leto@dune.gov&#39;)
+user = redis.get(&quot;users:#&#123;id&#125;&quot;)</code></pre>
+<p>你很可能将会经常使用这类用法。在我看来，这就是散列真正耀眼的地方。在你了解这类用法之前，这可能不是一个明显的用例。</p>
+<h3 id="引用和索引（References-and-Indexes）"><a href="#引用和索引（References-and-Indexes）" class="headerlink" title="引用和索引（References and Indexes）"></a>引用和索引（References and Indexes）</h3><blockquote>
+<p> Redis必须手动的管理索引和引用</p>
+</blockquote>
+<p>我们已经看过几个关于值引用的用例，包括介绍列表数据结构时的用例，以及在上面使用散列数据结构来使查询更灵活一些。进行归纳后会发现，对于那些值与值间的索引和引用，我们都必须手动的去管理。诚实来讲，这确实会让人有点沮丧，尤其是当你想到那些引用相关的操作，如管理、更新和删除等，都必须手动的进行时。在Redis里，这个问题还没有很好的解决方法。</p>
+<p>我们已经看到，集合数据结构常常被用来实现这类索引：</p>
+<pre><code>sadd friends:leto ghanima paul chani jessica</code></pre>
+<p>这个集合里的每一个成员都是一个Redis字符串数据结构的引用，而每一个引用的值则包含着用户对象的具体信息。那么如果<code>chani</code>改变了她的名字，或者删除了她的帐号，应该如何处理？从整个朋友圈的关系结构来看可能会更好理解，我们知道，<code>chani</code>也有她的朋友：</p>
+<pre><code>sadd friends_of:chani leto paul</code></pre>
+<p>如果你有什么待处理情况像上面那样，那在维护成本之外，还会有对于额外索引值的处理和存储空间的成本。这可能会令你感到有点退缩。在下一小节里，我们将会谈论减少使用额外数据交互的性能成本的一些方法（在第1章我们粗略地讨论了下）。</p>
+<blockquote>
+<p>在上一节实现引用的技巧中，当一个集合的每个成员都对应一个引用时，如果这个成员的名称发生变化时，需要手动的更新索引对应的值，这需要额外的工作</p>
+</blockquote>
+<blockquote>
+<p>即使是在传统的关系型数据库中，也需要维护索引，不过这些工作是由数据库自身维护的</p>
+</blockquote>
+<p>如果你确实在担忧着这些情况，其实，关系型数据库也有同样的开销。索引需要一定的存储空间，必须通过扫描或查找，然后才能找到相应的记录。其开销也是存在的，当然他们对此做了很多的优化工作，使之变得更为有效。</p>
+<p>再次说明，需要在Redis里手动地管理引用确实是颇为棘手。但是，对于你关心的那些问题，包括性能或存储空间等，应该在经过测试后，才会有真正的理解。我想你会发现这不会是一个大问题。</p>
+<h3 id="数据交互和流水线（Round-Trips-and-Pipelining）"><a href="#数据交互和流水线（Round-Trips-and-Pipelining）" class="headerlink" title="数据交互和流水线（Round Trips and Pipelining）"></a>数据交互和流水线（Round Trips and Pipelining）</h3><p>我们已经提到过，与服务器频繁交互是Redis的一种常见模式。这类情况可能很常出现，为了使我们能获益更多，值得仔细去看看我们能利用哪些特性。</p>
+<p>许多命令能接受一个或更多的参数，也有一种关联命令（sister-command）可以接受多个参数。例如早前我们看到过<code>mget</code>命令，接受多个关键字，然后返回值：</p>
+<pre><code>keys = redis.lrange(&#39;newusers&#39;, 0, 10)
+redis.mget(*keys.map &#123;|u| &quot;users:#&#123;u&#125;&quot;&#125;)</code></pre>
+<p>或者是<code>sadd</code>命令，能添加一个或多个成员到集合里：</p>
+<pre><code>sadd friends:vladimir piter
+sadd friends:paul jessica leto &quot;leto II&quot; chani</code></pre>
+<p>Redis还支持流水线功能。通常情况下，当一个客户端发送请求到Redis后，在发送下一个请求之前必须等待Redis的答复。使用流水线功能，你可以发送多个请求，而不需要等待Redis响应。这不但减少了网络开销，还能获得性能上的显著提高。</p>
+<p>值得一提的是，Redis会使用存储器去排列命令，因此批量执行命令是一个好主意。至于具体要多大的批量，将取决于你要使用什么命令（更明确来说，该参数有多大）。另一方面来看，如果你要执行的命令需要差不多50个字符的关键字，你大概可以对此进行数千或数万的批量操作。</p>
+<p>对于不同的Redis载体，在流水线里运行命令的方式会有所差异。在Ruby里，你传递一个代码块到<code>pipelined</code>方法：</p>
+<pre><code>redis.pipelined do
+  9001.times do
+    redis.incr(&#39;powerlevel&#39;)
+  end
+end</code></pre>
+<p>正如你可能猜想到的，流水线功能可以实际地加速一连串命令的处理。</p>
+<h3 id="事务（Transactions）"><a href="#事务（Transactions）" class="headerlink" title="事务（Transactions）"></a>事务（Transactions）</h3><p>每一个Redis命令都具有原子性，包括那些一次处理多项事情的命令。此外，对于使用多个命令，Redis支持事务功能。</p>
+<p>你可能不知道，但Redis实际上是单线程运行的，这就是为什么每一个Redis命令都能够保证具有原子性。当一个命令在执行时，没有其他命令会运行（我们会在往后的章节里简略谈论一下Scaling）。在你考虑到一些命令去做多项事情时，这会特别的有用。例如：</p>
+<p><code>incr</code>命令实际上就是一个<code>get</code>命令然后紧随一个<code>set</code>命令。</p>
+<p><code>getset</code>命令设置一个新的值然后返回原始值。</p>
+<p><code>setnx</code>命令首先测试关键字是否存在，只有当关键字不存在时才设置值</p>
+<p>虽然这些都很有用，但在实际开发时，往往会需要运行具有原子性的一组命令。若要这样做，首先要执行<code>multi</code>命令，紧随其后的是所有你想要执行的命令（作为事务的一部分），最后执行<code>exec</code>命令去实际执行命令，或者使用<code>discard</code>命令放弃执行命令。Redis的事务功能保证了什么？</p>
+<ul>
+<li><p>事务中的命令将会按顺序地被执行</p>
+</li>
+<li><p>事务中的命令将会如单个原子操作般被执行（没有其它的客户端命令会在中途被执行）</p>
+</li>
+<li><p>事务中的命令要么全部被执行，要么不会执行</p>
+</li>
+</ul>
+<p>你可以（也应该）在命令行界面对事务功能进行一下测试。还有一点要注意到，没有什么理由不能结合流水线功能和事务功能。</p>
+<pre><code>multi
+hincrby groups:1percent balance -9000000000
+hincrby groups:99percent balance 9000000000
+exec</code></pre>
+<p>最后，Redis能让你指定一个关键字（或多个关键字），当关键字有改变时，可以查看或者有条件地应用一个事务。这是用于当你需要获取值，且待运行的命令基于那些值时，所有都在一个事务里。对于上面展示的代码，我们不能去实现自己的<code>incr</code>命令，因为一旦<code>exec</code>命令被调用，他们会全部被执行在一块。我们不能这么做：</p>
+<pre><code>redis.multi()
+current = redis.get(&#39;powerlevel&#39;)
+redis.set(&#39;powerlevel&#39;, current + 1)
+redis.exec()</code></pre>
+<p><strong>（译注：虽然Redis是单线程运行的，但是我们可以同时运行多个Redis客户端进程，常见的并发问题还是会出现。像上面的代码，在<code>get</code>运行之后，<code>set</code>运行之前，<code>powerlevel</code>的值可能会被另一个Redis客户端给改变，从而造成错误。）</strong></p>
+<p>这些不是Redis的事务功能的工作。但是，如果我们增加一个<code>watch</code>到<code>powerlevel</code>，我们可以这样做：</p>
+<pre><code>redis.watch(&#39;powerlevel&#39;)
+current = redis.get(&#39;powerlevel&#39;)
+redis.multi()
+redis.set(&#39;powerlevel&#39;, current + 1)
+redis.exec()</code></pre>
+<p>在我们调用<code>watch</code>后，如果另一个客户端改变了<code>powerlevel</code>的值，我们的事务将会运行失败。如果没有客户端改变<code>powerlevel</code>的值，那么事务会继续工作。我们可以在一个循环里运行这些代码，直到其能正常工作。</p>
+<h3 id="关键字反模式（Keys-Anti-Pattern）"><a href="#关键字反模式（Keys-Anti-Pattern）" class="headerlink" title="关键字反模式（Keys Anti-Pattern）"></a>关键字反模式（Keys Anti-Pattern）</h3><p>在下一章中，我们将会谈论那些没有确切关联到数据结构的命令，其中的一些是管理或调试工具。然而有一个命令我想特别地在这里进行谈论：<code>keys</code>命令。这个命令需要一个模式，然后查找所有匹配的关键字。这个命令看起来很适合一些任务，但这不应该用在实际的产品代码里。为什么？因为这个命令通过线性扫描所有的关键字来进行匹配。或者，简单地说，这个命令太慢了。</p>
+<p>人们会如此去使用这个命令？一般会用来构建一个本地的Bug追踪服务。每一个帐号都有一个<code>id</code>，你可能会通过一个看起来像<code>bug:account_id:bug_id</code>的关键字，把每一个Bug存储到一个字符串数据结构值中去。如果你在任何时候需要查询一个帐号的Bug（显示它们，或者当用户删除了帐号时删除掉这些Bugs），你可能会尝试去使用<code>keys</code>命令：</p>
+<pre><code>keys bug:1233:*</code></pre>
+<p>更好的解决方法应该使用一个散列数据结构，就像我们可以使用散列数据结构来提供一种方法去展示二级索引，因此我们可以使用域来组织数据：</p>
+<pre><code>hset bugs:1233 1 &quot;&#123;id:1, account: 1233, subject: &#39;...&#39;&#125;&quot;
+hset bugs:1233 2 &quot;&#123;id:2, account: 1233, subject: &#39;...&#39;&#125;&quot;</code></pre>
+<p>从一个帐号里获取所有的Bug标识，可以简单地调用<code>hkeys bugs:1233</code>。去删除一个指定的Bug，可以调用<code>hdel bugs:1233 2</code>。如果要删除了一个帐号，可以通过<code>del bugs:1233</code>把关键字删除掉。</p>
+<h3 id="小结-2"><a href="#小结-2" class="headerlink" title="小结"></a>小结</h3><p>结合这一章以及前一章，希望能让你得到一些洞察力，了解如何使用Redis去支持（Power）实际项目。还有其他的模式可以让你去构建各种类型的东西，但真正的关键是要理解基本的数据结构。你将能领悟到，这些数据结构是如何能够实现你最初视角之外的东西。</p>
+<h2 id="第4章-超越数据结构"><a href="#第4章-超越数据结构" class="headerlink" title="第4章 超越数据结构"></a>第4章 超越数据结构</h2><p>5种数据结构组成了Redis的基础，其他没有关联特定数据结构的命令也有很多。我们已经看过一些这样的命令：<code>info</code>, <code>select</code>, <code>flushdb</code>, <code>multi</code>, <code>exec</code>, <code>discard</code>, <code>watch</code>和<code>keys </code>。这一章将看看其他的一些重要命令。</p>
+<h3 id="使用期限（Expiration）"><a href="#使用期限（Expiration）" class="headerlink" title="使用期限（Expiration）"></a>使用期限（Expiration）</h3><p>Redis允许你标记一个关键字的使用期限。你可以给予一个Unix时间戳形式（自1970年1月1日起）的绝对时间，或者一个基于秒的存活时间。这是一个基于关键字的命令，因此其不在乎关键字表示的是哪种类型的数据结构。</p>
+<pre><code>expire pages:about 30
+expireat pages:about 1356933600</code></pre>
+<p>第一个命令将会在30秒后删除掉关键字（包括其关联的值）。第二个命令则会在2012年12月31日上午12点删除掉关键字。</p>
+<p>这让Redis能成为一个理想的缓冲引擎。通过<code>ttl</code>命令，你可以知道一个关键字还能够存活多久。而通过<code>persist</code>命令，你可以把一个关键字的使用期限删除掉。</p>
+<pre><code>ttl pages:about
+persist pages:about</code></pre>
+<p>最后，有个特殊的字符串命令，<code>setex</code>命令让你可以在一个单独的原子命令里设置一个字符串值，同时里指定一个生存期（这比任何事情都要方便）。</p>
+<pre><code>setex pages:about 30 &#39;&lt;h1&gt;about us&lt;/h1&gt;....&#39;</code></pre>
+<h3 id="发布和订阅（Publication-and-Subscriptions）"><a href="#发布和订阅（Publication-and-Subscriptions）" class="headerlink" title="发布和订阅（Publication and Subscriptions）"></a>发布和订阅（Publication and Subscriptions）</h3><p>Redis的列表数据结构有<code>blpop</code>和<code>brpop</code>命令，能从列表里返回且删除第一个（或最后一个）元素，或者被堵塞，直到有一个元素可供操作。这可以用来实现一个简单的队列。</p>
+<p><strong>（译注：对于<code>blpop</code>和<code>brpop</code>命令，如果列表里没有关键字可供操作，连接将被堵塞，直到有另外的Redis客户端使用<code>lpush</code>或<code>rpush</code>命令推入关键字为止。）</strong></p>
+<p>此外，Redis对于消息发布和频道订阅有着一流的支持。你可以打开第二个<code>redis-cli</code>窗口，去尝试一下这些功能。在第一个窗口里订阅一个频道（我们会称它为<code>warnings</code>）：</p>
+<pre><code>subscribe warnings</code></pre>
+<p>其将会答复你订阅的信息。现在，在另一个窗口，发布一条消息到<code>warnings</code>频道：</p>
+<pre><code>publish warnings &quot;it&#39;s over 9000!&quot;</code></pre>
+<p>如果你回到第一个窗口，你应该已经接收到<code>warnings</code>频道发来的消息。</p>
+<p>你可以订阅多个频道（<code>subscribe channel1 channel2 ...</code>），订阅一组基于模式的频道（<code>psubscribe warnings:*</code>），以及使用<code>unsubscribe</code>和<code>punsubscribe</code>命令停止监听一个或多个频道，或一个频道模式。</p>
+<p>最后，可以注意到<code>publish</code>命令的返回值是1，这指出了接收到消息的客户端数量。</p>
+<h3 id="监控和延迟日志（Monitor-and-Slow-Log）"><a href="#监控和延迟日志（Monitor-and-Slow-Log）" class="headerlink" title="监控和延迟日志（Monitor and Slow Log）"></a>监控和延迟日志（Monitor and Slow Log）</h3><p><code>monitor</code>命令可以让你查看Redis正在做什么。这是一个优秀的调试工具，能让你了解你的程序如何与Redis进行交互。在两个<code>redis-cli</code>窗口中选一个（如果其中一个还处于订阅状态，你可以使用<code>unsubscribe</code>命令退订，或者直接关掉窗口再重新打开一个新窗口）键入<code>monitor</code>命令。在另一个窗口，执行任何其他类型的命令（例如<code>get</code>或<code>set</code>命令）。在第一个窗口里，你应该可以看到这些命令，包括他们的参数。</p>
+<p>在实际生产环境里，你应该谨慎运行<code>monitor</code>命令，这真的仅仅就是一个很有用的调试和开发工具。除此之外，没有更多要说的了。</p>
+<p>随同<code>monitor</code>命令一起，Redis拥有一个<code>slowlog</code>命令，这是一个优秀的性能剖析工具。其会记录执行时间超过一定数量<strong>微秒</strong>的命令。在下一章节，我们会简略地涉及如何配置Redis，现在你可以按下面的输入配置Redis去记录所有的命令：</p>
+<pre><code>config set slowlog-log-slower-than 0</code></pre>
+<p>然后，执行一些命令。最后，你可以检索到所有日志，或者检索最近的那些日志：</p>
+<pre><code>slowlog get
+slowlog get 10</code></pre>
+<p>通过键入<code>slowlog len</code>，你可以获取延迟日志里的日志数量。</p>
+<p>对于每个被你键入的命令，你应该查看4个参数：</p>
+<ul>
+<li><p>一个自动递增的id</p>
+</li>
+<li><p>一个Unix时间戳，表示命令开始运行的时间</p>
+</li>
+<li><p>一个微妙级的时间，显示命令运行的总时间</p>
+</li>
+<li><p>该命令以及所带参数</p>
+</li>
+</ul>
+<p>延迟日志保存在存储器中，因此在生产环境中运行（即使有一个低阀值）也应该不是一个问题。默认情况下，它将会追踪最近的1024个日志。</p>
+<h3 id="排序（Sort）"><a href="#排序（Sort）" class="headerlink" title="排序（Sort）"></a>排序（Sort）</h3><p><code>sort</code>命令是Redis最强大的命令之一。它让你可以在一个列表、集合或者分类集合里对值进行排序（分类集合是通过标记来进行排序，而不是集合里的成员）。下面是一个<code>sort</code>命令的简单用例：</p>
+<pre><code>rpush users:leto:guesses 5 9 10 2 4 10 19 2
+sort users:leto:guesses</code></pre>
+<p>这将返回进行升序排序后的值。这里有一个更高级的例子：</p>
+<pre><code>sadd friends:ghanima leto paul chani jessica alia duncan
+sort friends:ghanima limit 0 3 desc alpha</code></pre>
+<p>上面的命令向我们展示了，如何对已排序的记录进行分页（通过<code>limit</code>），如何返回降序排序的结果（通过<code>desc</code>），以及如何用字典序排序代替数值序排序（通过<code>alpha</code>）。</p>
+<p><code>sort</code>命令的真正力量是其基于引用对象来进行排序的能力。早先的时候，我们说明了列表、集合和分类集合很常被用于引用其他的Redis对象，<code>sort</code>命令能够解引用这些关系，而且通过潜在值来进行排序。例如，假设我们有一个Bug追踪器能让用户看到各类已存在问题。我们可能使用一个集合数据结构去追踪正在被监视的问题：</p>
+<pre><code>sadd watch:leto 12339 1382 338 9338</code></pre>
+<p>你可能会有强烈的感觉，想要通过id来排序这些问题（默认的排序就是这样的），但是，我们更可能是通过问题的严重性来对这些问题进行排序。为此，我们要告诉Redis将使用什么模式来进行排序。首先，为了可以看到一个有意义的结果，让我们添加多一点数据：</p>
+<pre><code>set severity:12339 3
+set severity:1382 2
+set severity:338 5
+set severity:9338 4</code></pre>
+<p>要通过问题的严重性来降序排序这些Bug，你可以这样做：</p>
+<pre><code>sort watch:leto by severity:* desc</code></pre>
+<p>Redis将会用存储在列表（集合或分类集合）中的值去替代模式中的<code>*</code>（通过<code>by</code>）。这会创建出关键字名字，Redis将通过查询其实际值来排序。</p>
+<p>在Redis里，虽然你可以有成千上万个关键字，类似上面展示的关系还是会引起一些混乱。幸好，<code>sort</code>命令也可以工作在散列数据结构及其相关域里。相对于拥有大量的高层次关键字，你可以利用散列：</p>
+<pre><code>hset bug:12339 severity 3
+hset bug:12339 priority 1
+hset bug:12339 details &quot;&#123;id: 12339, ....&#125;&quot;
+
+hset bug:1382 severity 2
+hset bug:1382 priority 2
+hset bug:1382 details &quot;&#123;id: 1382, ....&#125;&quot;
+
+hset bug:338 severity 5
+hset bug:338 priority 3
+hset bug:338 details &quot;&#123;id: 338, ....&#125;&quot;
+
+hset bug:9338 severity 4
+hset bug:9338 priority 2
+hset bug:9338 details &quot;&#123;id: 9338, ....&#125;&quot;</code></pre>
+<p>所有的事情不仅变得更为容易管理，而且我们能通过<code>severity</code>或<code>priority</code>来进行排序，还可以告诉<code>sort</code>命令具体要检索出哪一个域的数据：</p>
+<pre><code>sort watch:leto by bug:*-&gt;priority get bug:*-&gt;details</code></pre>
+<p>相同的值替代出现了，但Redis还能识别<code>-&gt;</code>符号，用它来查看散列中指定的域。里面还包括了<code>get</code>参数，这里也会进行值替代和域查看，从而检索出Bug的细节（details域的数据）。</p>
+<p>对于太大的集合，<code>sort</code>命令的执行可能会变得很慢。好消息是，<code>sort</code>命令的输出可以被存储起来：</p>
+<pre><code>sort watch:leto by bug:*-&gt;priority get bug:*-&gt;details store watch_by_priority:leto</code></pre>
+<p>使用我们已经看过的<code>expiration</code>命令，再结合<code>sort</code>命令的<code>store</code>能力，这是一个美妙的组合。</p>
+<h3 id="小结-3"><a href="#小结-3" class="headerlink" title="小结"></a>小结</h3><p>这一章主要关注那些非特定数据结构关联的命令。和其他事情一样，它们的使用依情况而定。构建一个程序或特性时，可能不会用到使用期限、发布和订阅或者排序等功能。但知道这些功能的存在是很好的。而且，我们也只接触到了一些命令。还有更多的命令，当你消化理解完这本书后，非常值得去浏览一下<a target="_blank" rel="noopener" href="http://redis.io/commands">完整的命令列表</a>。</p>
+<h2 id="第5章-管理"><a href="#第5章-管理" class="headerlink" title="第5章 - 管理"></a>第5章 - 管理</h2><p>在最后一章里，我们将集中谈论Redis运行中的一些管理方面内容。这是一个不完整的Redis管理指南，我们将会回答一些基本的问题，初接触Redis的新用户可能会很感兴趣。</p>
+<h3 id="配置（Configuration）"><a href="#配置（Configuration）" class="headerlink" title="配置（Configuration）"></a>配置（Configuration）</h3><p>当你第一次运行Redis的服务器，它会向你显示一个警告，指<code>redis.conf</code>文件没有被找到。这个文件可以被用来配置Redis的各个方面。一个充分定义（well-documented）的<code>redis.conf</code>文件对各个版本的Redis都有效。范例文件包含了默认的配置选项，因此，对于想要了解设置在干什么，或默认设置是什么，都会很有用。你可以在<a target="_blank" rel="noopener" href="https://github.com/antirez/redis/raw/2.4.6/redis.conf">https://github.com/antirez/redis/raw/2.4.6/redis.conf</a>找到这个文件。</p>
+<p><strong>这个配置文件针对的是Redis 2.4.6，你应该用你的版本号替代上面URL里的”2.4.6”。运行<code>info</code>命令，其显示的第一个值就是Redis的版本号。</strong></p>
+<p>因为这个文件已经是充分定义（well-documented），我们就不去再进行设置了。</p>
+<p>除了通过<code>redis.conf</code>文件来配置Redis，<code>config set</code>命令可以用来对个别值进行设置。实际上，在将<code>slowlog-log-slower-than</code>设置为0时，我们就已经使用过这个命令了。</p>
+<p>还有一个<code>config get</code>命令能显示一个设置值。这个命令支持模式匹配，因此如果我们想要显示关联于日志（logging）的所有设置，我们可以这样做：</p>
+<pre><code>config get *log*</code></pre>
+<h3 id="验证（Authentication）"><a href="#验证（Authentication）" class="headerlink" title="验证（Authentication）"></a>验证（Authentication）</h3><p>通过设置<code>requirepass</code>（使用<code>config set</code>命令或<code>redis.conf</code>文件），可以让Redis需要一个密码验证。当<code>requirepass</code>被设置了一个值（就是待用的密码），客户端将需要执行一个<code>auth password</code>命令。</p>
+<p>一旦一个客户端通过了验证，就可以在任意数据库里执行任何一条命令，包括<code>flushall</code>命令，这将会清除掉每一个数据库里的所有关键字。通过配置，你可以重命名一些重要命令为混乱的字符串，从而获得一些安全性。</p>
+<pre><code>rename-command CONFIG 5ec4db169f9d4dddacbfb0c26ea7e5ef
+rename-command FLUSHALL 1041285018a942a4922cbf76623b741e</code></pre>
+<p>或者，你可以将新名字设置为一个空字符串，从而禁用掉一个命令。</p>
+<h3 id="大小限制（Size-Limitations）"><a href="#大小限制（Size-Limitations）" class="headerlink" title="大小限制（Size Limitations）"></a>大小限制（Size Limitations）</h3><p>当你开始使用Redis，你可能会想知道，我能使用多少个关键字？还可能想知道，一个散列数据结构能有多少个域（尤其是当你用它来组织数据时），或者是，一个列表数据结构或集合数据结构能有多少个元素？对于每一个实例，实际限制都能达到亿万级别（hundreds of millions）。</p>
+<h3 id="复制（Replication）"><a href="#复制（Replication）" class="headerlink" title="复制（Replication）"></a>复制（Replication）</h3><p>Redis支持复制功能，这意味着当你向一个Redis实例（Master）进行写入时，一个或多个其他实例（Slaves）能通过Master实例来保持更新。可以在配置文件里设置<code>slaveof</code>，或使用<code>slaveof</code>命令来配置一个Slave实例。对于那些没有进行这些设置的Redis实例，就可能一个Master实例。</p>
+<p>为了更好保护你的数据，复制功能拷贝数据到不同的服务器。复制功能还能用于改善性能，因为读取请求可以被发送到Slave实例。他们可能会返回一些稍微滞后的数据，但对于大多数程序来说，这是一个值得做的折衷。</p>
+<p>遗憾的是，Redis的复制功能还没有提供自动故障恢复。如果Master实例崩溃了，一个Slave实例需要手动的进行升级。如果你想使用Redis去达到某种高可用性，对于使用心跳监控（heartbeat monitoring）和脚本自动开关（scripts to automate the switch）的传统高可用性工具来说，现在还是一个棘手的难题。</p>
+<h3 id="备份文件（Backups）"><a href="#备份文件（Backups）" class="headerlink" title="备份文件（Backups）"></a>备份文件（Backups）</h3><p>备份Redis非常简单，你可以将Redis的快照（snapshot）拷贝到任何地方，包括S3、FTP等。默认情况下，Redis会把快照存储为一个名为<code>dump.rdb</code>的文件。在任何时候，你都可以对这个文件执行<code>scp</code>、<code>ftp</code>或<code>cp</code>等常用命令。</p>
+<p>有一种常见情况，在Master实例上会停用快照以及单一附加文件（aof），然后让一个Slave实例去处理备份事宜。这可以帮助减少Master实例的载荷。在不损害整体系统响应性的情况下，你还可以在Slave实例上设置更多主动存储的参数。</p>
+<h3 id="缩放和Redis集群（Scaling-and-Redis-Cluster）"><a href="#缩放和Redis集群（Scaling-and-Redis-Cluster）" class="headerlink" title="缩放和Redis集群（Scaling and Redis Cluster）"></a>缩放和Redis集群（Scaling and Redis Cluster）</h3><p>复制功能（Replication）是一个成长中的网站可以利用的第一个工具。有一些命令会比另外一些来的昂贵（例如<code>sort</code>命令），将这些运行载荷转移到一个Slave实例里，可以保持整体系统对于查询的快速响应。</p>
+<p>此外，通过分发你的关键字到多个Redis实例里，可以达到真正的缩放Redis（记住，Redis是单线程的，这些可以运行在同一个逻辑框里）。随着时间的推移，你将需要特别注意这些事情（尽管许多的Redis载体都提供了consistent-hashing算法）。对于数据水平分布（horizontal distribution）的考虑不在这本书所讨论的范围内。这些东西你也很可能不需要去担心，但是，无论你使用哪一种解决方案，有一些事情你还是必须意识到。</p>
+<p>好消息是，这些工作都可在Redis集群下进行。不仅提供水平缩放（包括均衡），为了高可用性，还提供了自动故障恢复。</p>
+<p>高可用性和缩放是可以达到的，只要你愿意为此付出时间和精力，Redis集群也使事情变得简单多了。</p>
+<h3 id="小结-4"><a href="#小结-4" class="headerlink" title="小结"></a>小结</h3><p>在过去的一段时间里，已经有许多的计划和网站使用了Redis，毫无疑问，Redis已经可以应用于实际生产中了。然而，一些工具还是不够成熟，尤其是一些安全性和可用性相关的工具。对于Redis集群，我们希望很快就能看到其实现，这应该能为一些现有的管理挑战提供处理帮忙。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>在许多方面，Redis体现了一种简易的数据处理方式，其剥离掉了大部分的复杂性和抽象，并可有效的在不同系统里运行。不少情况下，选择Redis不是最佳的选择。在另一些情况里，Redis就像是为你的数据提供了特别定制的解决方案。</p>
+<p>最终，回到我最开始所说的：Redis很容易学习。现在有许多的新技术，很难弄清楚哪些才真正值得我们花时间去学习。如果你从实际好处来考虑，Redis提供了他的简单性。我坚信，对于你和你的团队，学习Redis是最好的技术投资之一。</p>
+<hr>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/HttpClient/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +792,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:40" itemprop="dateModified" datetime="2021-04-11T16:41:40+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -288,7 +866,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -353,119 +931,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/sql-lock/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/sql-lock/" class="post-title-link" itemprop="url">数据库锁的基本原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-12-01 00:00:00" itemprop="dateCreated datePublished" datetime="2016-12-01T00:00:00+08:00">2016-12-01</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="数据库锁的基本原理"><a href="#数据库锁的基本原理" class="headerlink" title="数据库锁的基本原理"></a>数据库锁的基本原理</h1><h2 id="为什么要锁"><a href="#为什么要锁" class="headerlink" title="为什么要锁"></a>为什么要锁</h2><p>数据库通常有大量的用户在同时操作，所以并发的情况下需要控制对临界资源的操作，数据库通过锁来控制对临界资源的访问，从而保证数据的一致性。例如对于同一个账户，操作之前账户余额为1000，同时开始2个事务，一个事务取款100，一个事务往账户中汇入100，那么2个事务结束后，账户的余额必须还是1000，否则要么银行不干，要么个人不干。 </p>
-<h2 id="锁类型"><a href="#锁类型" class="headerlink" title="锁类型"></a>锁类型</h2><h3 id="共享锁-读锁"><a href="#共享锁-读锁" class="headerlink" title="共享锁(读锁)"></a>共享锁(读锁)</h3><p>读锁是共享的，互相不阻塞，也就是可以多个客户同时读取同一资源，而不互相干扰。</p>
-<p>加锁条件：当执行select时，数据库为这个事务分配一把共享锁，来锁定被查询的数据。 </p>
-<p>解锁条件：默认情况下，数据被读取之后，数据库立即解锁。例如select * from table中，先锁定第一行，读取后，立即解锁第一行，然后再锁定第二行，这样大大降低锁争用程度。在repeatable read和serializable 这两种事务隔离级别下，共享锁是在事务结束时释放的，serializable对表加锁。 </p>
-<h3 id="排它锁-独占锁-写锁"><a href="#排它锁-独占锁-写锁" class="headerlink" title="排它锁(独占锁)(写锁)"></a>排它锁(独占锁)(写锁)</h3><p>写锁是排他的，一个写锁会阻塞其他的读锁和写锁，只有这样才能保证同一时刻，只有一个用户能够写入，并阻止其他用户读取正在写入的同一资源。如果要锁定的数据资源，已经放置了其他的锁，则不能再放置排它锁。<br>加锁条件：当执行insert update 和delete语句时，数据库会对操纵的资源使用排它锁。<br>解锁条件：事务结束时解锁。 </p>
-<h2 id="锁原理"><a href="#锁原理" class="headerlink" title="锁原理"></a>锁原理</h2><p>锁的基本原理如下：</p>
-<p>1.当第一个事务访问数据库资源时，如果执行select语句，则必须先获得共享锁，如果执行insert update和delete时，必须获得排它锁<br>2.当第二个事务也要访问相同的资源时，如果执行select语句，也必须先获得共享锁，如果执行insert update或者delete，也必须获得共享锁。根据已经放置在资源上的锁类型，来决定第二个事务是应该等待第一个事务释放锁，还是立即获得锁。 </p>
-<table>
-<thead>
-<tr>
-<th>资源上的锁</th>
-<th>第二个事务进行读</th>
-<th>第二个事务进行写</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>无</td>
-<td>立即获得共享锁</td>
-<td>立即获得排他锁</td>
-</tr>
-<tr>
-<td>共享锁</td>
-<td>立即获得共享锁</td>
-<td>等待第一个事务释放锁</td>
-</tr>
-<tr>
-<td>排他锁</td>
-<td>等待第一个事务释放锁</td>
-<td>等待第一个事务释放锁</td>
-</tr>
-</tbody></table>
-<h2 id="锁粒度"><a href="#锁粒度" class="headerlink" title="锁粒度"></a>锁粒度</h2><p>常见的锁有表锁、 行锁、 页锁、外键锁等。 </p>
-<p>锁有一定的消耗，主要有：获得锁，检查锁是否已经解除，释放锁等，这些操作都会增加系统的开销。<br>表锁开销比较小，但是并发性能也较差，行锁并发性能高，但是需要更多锁，数据库系统一般都支持锁的自动升级，例如一个事务中的锁过多的时候，可能会将行锁升级到表锁。</p>
-<p>mysql的各个存储引擎根据不同的应用场景采用不同的锁机制，MyISAM存储引擎采用表锁，InnoDB使用行锁。如果执行alert table之类的操作，服务器也会采用表锁，而忽略存储引擎的锁机制。<br>页锁，某些数据库支持页锁，页锁粒度介于行锁和表锁之间，用于锁定存放数据的页，1页通常含有n个数据行。 </p>
-<p>外键锁：外键会产生高级别的锁，后面介绍死锁的时候会提到。 </p>
-<h2 id="乐观锁和悲观锁"><a href="#乐观锁和悲观锁" class="headerlink" title="乐观锁和悲观锁"></a>乐观锁和悲观锁</h2><p>悲观锁：假设如果不加锁就一定会出现问题。<br>乐观锁：先假定不会出现并发问题，出现问题后再采取相应的措施。<br>悲观锁通过<code>select * from tbl for update</code>实现。<br>乐观锁可以在表中加一个version字段，每次更新的时候都+1，这样如果出现并发，第二次更新的时候version的值已经不再匹配，可以在这时采取相应的措施。</p>
-<h2 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h2><h3 id="死锁是如何产生的"><a href="#死锁是如何产生的" class="headerlink" title="死锁是如何产生的"></a>死锁是如何产生的</h3><p>同java的死锁一样，都是互相等待对方释放锁，造成了相互阻塞，造成的死锁。<br>请看下面的表格： </p>
-<p><img src="/images/database/lock/concept-02.gif"></p>
-<h3 id="如何避免死锁"><a href="#如何避免死锁" class="headerlink" title="如何避免死锁"></a>如何避免死锁</h3><p>1.修改操作表的顺序<br>从上面的示例中可以看出，如果调整一下操作表的顺序就可以避免死锁。<br>2.外键<br>如果向子表写记录，那么外键约束会检查父表的记录，并锁住父表的记录，来保证这条记录不会在这个事务完成之时就被删除了。<br>产生高级别的锁，会阻止其他事务操作或者其他DML操作，如果是因为外键产生的死锁，可以去掉外键约束，由应用来保证数据的完整性，通常生产环境都不建议加外键约束。<br>3.短事务<br>缩短事务的执行时间，可以减少锁的持有时间，可以降低死锁的风险。 </p>
-<h2 id="锁可能出现的问题"><a href="#锁可能出现的问题" class="headerlink" title="锁可能出现的问题"></a>锁可能出现的问题</h2><p>上锁是有开销的，即使不是给数据行而是给数据页上锁，也是有一定的时间的，如果第一个事务update一张大表，这时候第二个事务update这张大表比较靠后的位置的数据，这时候就可能会出现，第一个事务还没来得及给相应的数据上锁，第二个事务已经上了锁，所以出现第一个事务要等待第二个事务提交后释放锁，才能继续执行的情况。 </p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/best_practices/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -497,7 +962,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -613,6 +1078,119 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/sql-lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/sql-lock/" class="post-title-link" itemprop="url">数据库锁的基本原理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-01 00:00:00" itemprop="dateCreated datePublished" datetime="2016-12-01T00:00:00+08:00">2016-12-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="数据库锁的基本原理"><a href="#数据库锁的基本原理" class="headerlink" title="数据库锁的基本原理"></a>数据库锁的基本原理</h1><h2 id="为什么要锁"><a href="#为什么要锁" class="headerlink" title="为什么要锁"></a>为什么要锁</h2><p>数据库通常有大量的用户在同时操作，所以并发的情况下需要控制对临界资源的操作，数据库通过锁来控制对临界资源的访问，从而保证数据的一致性。例如对于同一个账户，操作之前账户余额为1000，同时开始2个事务，一个事务取款100，一个事务往账户中汇入100，那么2个事务结束后，账户的余额必须还是1000，否则要么银行不干，要么个人不干。 </p>
+<h2 id="锁类型"><a href="#锁类型" class="headerlink" title="锁类型"></a>锁类型</h2><h3 id="共享锁-读锁"><a href="#共享锁-读锁" class="headerlink" title="共享锁(读锁)"></a>共享锁(读锁)</h3><p>读锁是共享的，互相不阻塞，也就是可以多个客户同时读取同一资源，而不互相干扰。</p>
+<p>加锁条件：当执行select时，数据库为这个事务分配一把共享锁，来锁定被查询的数据。 </p>
+<p>解锁条件：默认情况下，数据被读取之后，数据库立即解锁。例如select * from table中，先锁定第一行，读取后，立即解锁第一行，然后再锁定第二行，这样大大降低锁争用程度。在repeatable read和serializable 这两种事务隔离级别下，共享锁是在事务结束时释放的，serializable对表加锁。 </p>
+<h3 id="排它锁-独占锁-写锁"><a href="#排它锁-独占锁-写锁" class="headerlink" title="排它锁(独占锁)(写锁)"></a>排它锁(独占锁)(写锁)</h3><p>写锁是排他的，一个写锁会阻塞其他的读锁和写锁，只有这样才能保证同一时刻，只有一个用户能够写入，并阻止其他用户读取正在写入的同一资源。如果要锁定的数据资源，已经放置了其他的锁，则不能再放置排它锁。<br>加锁条件：当执行insert update 和delete语句时，数据库会对操纵的资源使用排它锁。<br>解锁条件：事务结束时解锁。 </p>
+<h2 id="锁原理"><a href="#锁原理" class="headerlink" title="锁原理"></a>锁原理</h2><p>锁的基本原理如下：</p>
+<p>1.当第一个事务访问数据库资源时，如果执行select语句，则必须先获得共享锁，如果执行insert update和delete时，必须获得排它锁<br>2.当第二个事务也要访问相同的资源时，如果执行select语句，也必须先获得共享锁，如果执行insert update或者delete，也必须获得共享锁。根据已经放置在资源上的锁类型，来决定第二个事务是应该等待第一个事务释放锁，还是立即获得锁。 </p>
+<table>
+<thead>
+<tr>
+<th>资源上的锁</th>
+<th>第二个事务进行读</th>
+<th>第二个事务进行写</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>无</td>
+<td>立即获得共享锁</td>
+<td>立即获得排他锁</td>
+</tr>
+<tr>
+<td>共享锁</td>
+<td>立即获得共享锁</td>
+<td>等待第一个事务释放锁</td>
+</tr>
+<tr>
+<td>排他锁</td>
+<td>等待第一个事务释放锁</td>
+<td>等待第一个事务释放锁</td>
+</tr>
+</tbody></table>
+<h2 id="锁粒度"><a href="#锁粒度" class="headerlink" title="锁粒度"></a>锁粒度</h2><p>常见的锁有表锁、 行锁、 页锁、外键锁等。 </p>
+<p>锁有一定的消耗，主要有：获得锁，检查锁是否已经解除，释放锁等，这些操作都会增加系统的开销。<br>表锁开销比较小，但是并发性能也较差，行锁并发性能高，但是需要更多锁，数据库系统一般都支持锁的自动升级，例如一个事务中的锁过多的时候，可能会将行锁升级到表锁。</p>
+<p>mysql的各个存储引擎根据不同的应用场景采用不同的锁机制，MyISAM存储引擎采用表锁，InnoDB使用行锁。如果执行alert table之类的操作，服务器也会采用表锁，而忽略存储引擎的锁机制。<br>页锁，某些数据库支持页锁，页锁粒度介于行锁和表锁之间，用于锁定存放数据的页，1页通常含有n个数据行。 </p>
+<p>外键锁：外键会产生高级别的锁，后面介绍死锁的时候会提到。 </p>
+<h2 id="乐观锁和悲观锁"><a href="#乐观锁和悲观锁" class="headerlink" title="乐观锁和悲观锁"></a>乐观锁和悲观锁</h2><p>悲观锁：假设如果不加锁就一定会出现问题。<br>乐观锁：先假定不会出现并发问题，出现问题后再采取相应的措施。<br>悲观锁通过<code>select * from tbl for update</code>实现。<br>乐观锁可以在表中加一个version字段，每次更新的时候都+1，这样如果出现并发，第二次更新的时候version的值已经不再匹配，可以在这时采取相应的措施。</p>
+<h2 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h2><h3 id="死锁是如何产生的"><a href="#死锁是如何产生的" class="headerlink" title="死锁是如何产生的"></a>死锁是如何产生的</h3><p>同java的死锁一样，都是互相等待对方释放锁，造成了相互阻塞，造成的死锁。<br>请看下面的表格： </p>
+<p><img src="/images/database/lock/concept-02.gif"></p>
+<h3 id="如何避免死锁"><a href="#如何避免死锁" class="headerlink" title="如何避免死锁"></a>如何避免死锁</h3><p>1.修改操作表的顺序<br>从上面的示例中可以看出，如果调整一下操作表的顺序就可以避免死锁。<br>2.外键<br>如果向子表写记录，那么外键约束会检查父表的记录，并锁住父表的记录，来保证这条记录不会在这个事务完成之时就被删除了。<br>产生高级别的锁，会阻止其他事务操作或者其他DML操作，如果是因为外键产生的死锁，可以去掉外键约束，由应用来保证数据的完整性，通常生产环境都不建议加外键约束。<br>3.短事务<br>缩短事务的执行时间，可以减少锁的持有时间，可以降低死锁的风险。 </p>
+<h2 id="锁可能出现的问题"><a href="#锁可能出现的问题" class="headerlink" title="锁可能出现的问题"></a>锁可能出现的问题</h2><p>上锁是有开销的，即使不是给数据行而是给数据页上锁，也是有一定的时间的，如果第一个事务update一张大表，这时候第二个事务update这张大表比较靠后的位置的数据，这时候就可能会出现，第一个事务还没来得及给相应的数据上锁，第二个事务已经上了锁，所以出现第一个事务要等待第二个事务提交后释放锁，才能继续执行的情况。 </p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/database/mongodb/the-little-mongodb-book/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -644,7 +1222,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -678,7 +1256,7 @@
 <h2 id="鸣谢"><a href="#鸣谢" class="headerlink" title="鸣谢"></a>鸣谢</h2><p>特别感谢 <a target="_blank" rel="noopener" href="http://twitter.com/perryneal">Perry Neal</a>, 赐予我你的视野，精神，和热情。你赐予了我无尽的力量。感恩。</p>
 <h2 id="最新版本"><a href="#最新版本" class="headerlink" title="最新版本"></a>最新版本</h2><p>最新的版本由 Asya Kamsky 更新到了 MongoDB 2.6 。本书最新代码可以在这里获得:</p>
 <p><a target="_blank" rel="noopener" href="http://github.com/karlseguin/the-little-mongodb-book">http://github.com/karlseguin/the-little-mongodb-book</a>.</p>
-<h3 id="中文版本"><a href="#中文版本" class="headerlink" title="中文版本"></a>中文版本</h3><p>Karl 在 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book">the-little-mongodb-book</a> 的 Github 链接中给出了 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang">justinyhuang</a> 的 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang/the-little-mongodb-book-cn">the-little-mongodb-book-cn</a> 链接。但貌似 justinyhuang 并没有同步更新到 MongoDB 2.6 。内容上也和原文稍微有点出入，并且由于本人水平有限，无法提交自信正确的内容。因此重开一项目。如果你被搜索引擎引导到本工程，在此向你致歉，并希望有能力者且有时间者一同完善和同步本工程。你可以通过我的 邮箱 <a href="mailto:&#x67;&#x65;&#109;&#x69;&#110;&#105;&#x79;&#x65;&#108;&#x6c;&#x6f;&#119;&#64;&#103;&#109;&#x61;&#x69;&#108;&#46;&#99;&#x6f;&#x6d;">&#x67;&#x65;&#109;&#x69;&#110;&#105;&#x79;&#x65;&#108;&#x6c;&#x6f;&#119;&#64;&#103;&#109;&#x61;&#x69;&#108;&#46;&#99;&#x6f;&#x6d;</a> 来联系我，或者通过 <a target="_blank" rel="noopener" href="https://twitter.com/geminiyellow">@geminiyellow</a> 在 Twitter 上关注我。</p>
+<h3 id="中文版本"><a href="#中文版本" class="headerlink" title="中文版本"></a>中文版本</h3><p>Karl 在 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book">the-little-mongodb-book</a> 的 Github 链接中给出了 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang">justinyhuang</a> 的 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang/the-little-mongodb-book-cn">the-little-mongodb-book-cn</a> 链接。但貌似 justinyhuang 并没有同步更新到 MongoDB 2.6 。内容上也和原文稍微有点出入，并且由于本人水平有限，无法提交自信正确的内容。因此重开一项目。如果你被搜索引擎引导到本工程，在此向你致歉，并希望有能力者且有时间者一同完善和同步本工程。你可以通过我的 邮箱 <a href="mailto:&#x67;&#101;&#x6d;&#x69;&#110;&#x69;&#121;&#x65;&#x6c;&#108;&#111;&#119;&#64;&#x67;&#x6d;&#97;&#105;&#108;&#46;&#99;&#x6f;&#x6d;">&#x67;&#101;&#x6d;&#x69;&#110;&#x69;&#121;&#x65;&#x6c;&#108;&#111;&#119;&#64;&#x67;&#x6d;&#97;&#105;&#108;&#46;&#99;&#x6f;&#x6d;</a> 来联系我，或者通过 <a target="_blank" rel="noopener" href="https://twitter.com/geminiyellow">@geminiyellow</a> 在 Twitter 上关注我。</p>
 <p>最新中文版本基于 <a target="_blank" rel="noopener" href="https://github.com/asya999">asya999</a> 在 May 29, 2014 提交的 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book/pull/38">#38</a> SHA 是：6d4dce8ead6a767e1e8de1b59f714510d36d366f</p>
 <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
 <p>这章那么短不是我的错，MongoDB 就真的很易学。</p>
@@ -1145,7 +1723,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1308,7 +1886,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1626,7 +2204,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:41" itemprop="dateModified" datetime="2021-04-11T16:41:41+08:00">2021-04-11</time>
+                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1682,283 +2260,6 @@ db.setProfilingLevel(1, 1000);</code></pre>
 <p>[参考文献]：</p>
 <ol>
 <li><a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_8250c39a0101k74c.html">SQL中—-SELECT语句中内连接,左连接,右连接,自连接和全连接 </a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/Quartz/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/Quartz/" class="post-title-link" itemprop="url">Quartz应用与原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-08-29 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-29T14:58:00+08:00">2016-08-29</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:40" itemprop="dateModified" datetime="2021-04-11T16:41:40+08:00">2021-04-11</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>使用</p>
-<p>配置</p>
-<p>集群</p>
-<p>原理</p>
-<p>Quartz是一个大名鼎鼎的Java版开源定时调度器，功能强悍，使用方便。</p>
-<h1 id="核心概念"><a href="#核心概念" class="headerlink" title="核心概念"></a>核心概念</h1><p>Quartz的原理不是很复杂，只要搞明白几个概念，然后知道如何去启动和关闭一个调度程序即可。</p>
-<ol>
-<li><p>Job</p>
-<p>表示一个工作，要执行的具体内容。此接口中只有一个方法<br>void execute(JobExecutionContext context)</p>
-</li>
-<li><p>JobDetail</p>
-<p>JobDetail表示一个具体的可执行的调度程序，Job是这个可执行程调度程序所要执行的内容，另外JobDetail还包含了这个任务调度的方案和策略。</p>
-</li>
-<li><p>Trigger代表一个调度参数的配置，什么时候去调。</p>
-</li>
-<li><p>Scheduler代表一个调度容器，一个调度容器中可以注册多个JobDetail和Trigger。当Trigger与JobDetail组合，就可以被Scheduler容器调度了。</p>
-</li>
-</ol>
-<h1 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SimpleQuartzJob</span> <span class="keyword">implements</span> <span class="title">Job</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SimpleQuartzJob</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(JobExecutionContext context)</span> <span class="keyword">throws</span> JobExecutionException </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;In SimpleQuartzJob - executing its JOB at &quot;</span></span><br><span class="line">                + <span class="keyword">new</span> Date() + <span class="string">&quot; by &quot;</span> + context.getTrigger().getDescription());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="普通"><a href="#普通" class="headerlink" title="普通"></a>普通</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.quartz.*;</span><br><span class="line"><span class="keyword">import</span> org.quartz.impl.StdSchedulerFactory;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Date;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* quartz定时器测试</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyJob</span> <span class="keyword">implements</span> <span class="title">Job</span> </span>&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(JobExecutionContext jobExecutionContext)</span> <span class="keyword">throws</span> JobExecutionException </span>&#123;</span><br><span class="line">                System.out.println(<span class="keyword">new</span> Date() + <span class="string">&quot;: doing something...&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>调用的代码</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//1、创建JobDetial对象</span></span><br><span class="line">JobDetail jobDetail = <span class="keyword">new</span> JobDetail();</span><br><span class="line"><span class="comment">//设置工作项</span></span><br><span class="line">jobDetail.setJobClass(MyJob.class);</span><br><span class="line">jobDetail.setName(<span class="string">&quot;MyJob_1&quot;</span>);</span><br><span class="line">jobDetail.setGroup(<span class="string">&quot;JobGroup_1&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">//2、创建Trigger对象</span></span><br><span class="line">SimpleTrigger strigger = <span class="keyword">new</span> SimpleTrigger();</span><br><span class="line">strigger.setName(<span class="string">&quot;Trigger_1&quot;</span>);</span><br><span class="line">strigger.setGroup(<span class="string">&quot;Trigger_Group_1&quot;</span>);</span><br><span class="line">strigger.setStartTime(<span class="keyword">new</span> Date());</span><br><span class="line"><span class="comment">//设置重复停止时间，并销毁该Trigger对象</span></span><br><span class="line">java.util.Calendar c = java.util.Calendar.getInstance();</span><br><span class="line">c.setTimeInMillis(System.currentTimeMillis() + <span class="number">1000</span> * <span class="number">1L</span>);</span><br><span class="line">strigger.setEndTime(c.getTime());</span><br><span class="line">strigger.setFireInstanceId(<span class="string">&quot;Trigger_1_id_001&quot;</span>);</span><br><span class="line"><span class="comment">//设置重复间隔时间</span></span><br><span class="line">strigger.setRepeatInterval(<span class="number">1000</span> * <span class="number">1L</span>);</span><br><span class="line"><span class="comment">//设置重复执行次数</span></span><br><span class="line">strigger.setRepeatCount(<span class="number">3</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">//3、创建Scheduler对象，并配置JobDetail和Trigger对象</span></span><br><span class="line">SchedulerFactory sf = <span class="keyword">new</span> StdSchedulerFactory();</span><br><span class="line">Scheduler scheduler = <span class="keyword">null</span>;</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">        scheduler = sf.getScheduler();</span><br><span class="line">        scheduler.scheduleJob(jobDetail, strigger);</span><br><span class="line">        <span class="comment">//4、并执行启动、关闭等操作</span></span><br><span class="line">        scheduler.start();</span><br><span class="line"></span><br><span class="line">&#125; <span class="keyword">catch</span> (SchedulerException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// try &#123;</span></span><br><span class="line"><span class="comment">//   //关闭调度器</span></span><br><span class="line"><span class="comment">//   scheduler.shutdown(true);</span></span><br><span class="line"><span class="comment">// &#125; catch (SchedulerException e) &#123;</span></span><br><span class="line"><span class="comment">//    e.printStackTrace();</span></span><br><span class="line"><span class="comment">// &#125;</span></span><br></pre></td></tr></table></figure>
-<p>另外一种创建的方法</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">  <span class="comment">// 创建调度器</span></span><br><span class="line">  Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();</span><br><span class="line">  <span class="comment">// Create a JobDetail for the Job</span></span><br><span class="line">  JobDetail jobDetail = newJob(SimpleQuartzJob.class).withIdentity(<span class="string">&quot;myJob&quot;</span>, <span class="string">&quot;group1&quot;</span>).build();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Date runTime = evenMinuteDate(new Date());</span></span><br><span class="line"></span><br><span class="line">  Trigger trigger = newTrigger().withIdentity(<span class="string">&quot;myTrigger&quot;</span>, <span class="string">&quot;group1&quot;</span>).startNow()</span><br><span class="line">    .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(<span class="number">5</span>).withRepeatCount(<span class="number">10</span>)).build();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Trigger trigger = newTrigger().withIdentity(&quot;myTrigger&quot;,&quot;group1&quot;).startAt(RunTime).build();</span></span><br><span class="line"></span><br><span class="line">  scheduler.scheduleJob(jobDetail, trigger);</span><br><span class="line"></span><br><span class="line">  scheduler.start();</span><br><span class="line"></span><br><span class="line">  <span class="comment">//            Thread.sleep(60000);</span></span><br><span class="line">  System.out.println(<span class="string">&quot;goto shutdown&quot;</span>);</span><br><span class="line">  scheduler.shutdown(<span class="keyword">true</span>);</span><br><span class="line">&#125; <span class="keyword">catch</span> (SchedulerException e) &#123;</span><br><span class="line">  e.printStackTrace();</span><br><span class="line">  <span class="comment">//        &#125; catch (InterruptedException e) &#123;</span></span><br><span class="line">  e.printStackTrace();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="Crontab"><a href="#Crontab" class="headerlink" title="Crontab"></a>Crontab</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建调度器</span></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">  Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();</span><br><span class="line">  JobDetail jobDetail = newJob(SimpleQuartzJob.class).withIdentity(<span class="string">&quot;myJob2&quot;</span>, <span class="string">&quot;group1&quot;</span>).build();</span><br><span class="line"></span><br><span class="line">  Trigger trigger = newTrigger().withIdentity(<span class="string">&quot;myTrigger3&quot;</span>, <span class="string">&quot;group1&quot;</span>).withSchedule(CronScheduleBuilder.cronSchedule(<span class="string">&quot;0/1 * * * * ?&quot;</span>)).build();</span><br><span class="line"></span><br><span class="line">  scheduler.scheduleJob(jobDetail, trigger);</span><br><span class="line">  <span class="keyword">if</span> (scheduler.isStarted()) &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;has started!&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  scheduler.start();</span><br><span class="line">  Thread.sleep(<span class="number">60000</span>);</span><br><span class="line">  scheduler.shutdown();</span><br><span class="line"></span><br><span class="line">&#125; <span class="keyword">catch</span> (SchedulerException e) &#123;</span><br><span class="line">  e.printStackTrace();</span><br><span class="line">&#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">  e.printStackTrace();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-
-<h2 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h2><h2 id="与Spring结合"><a href="#与Spring结合" class="headerlink" title="与Spring结合"></a>与Spring结合</h2><h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><p> </p>
-<p>通过研读Quartz的源代码，和本实例，终于悟出了Quartz的工作原理。</p>
-<p> 1. scheduler是一个计划调度器容器（总部），容器里面可以盛放众多的JobDetail和trigger，当容器启动后，里面的每个JobDetail都会根据trigger按部就班自动去执行。 <br> 2. JobDetail是一个可执行的工作，它本身可能是有状态的。 <br> 3. Trigger代表一个调度参数的配置，什么时候去调。 <br> 4. 当JobDetail和Trigger在scheduler容器上注册后，形成了装配好的作业（JobDetail和Trigger所组成的一对儿），就可以伴随容器启动而调度执行了。 <br> 5. scheduler是个容器，容器中有一个线程池，用来并行调度执行每个作业，这样可以提高容器效率。<br> 6. 将上述的结构用一个图来表示，如下：</p>
-<p><img src="/images/java/quartz-central.png"></p>
-<hr>
-<p>[参考文献]:</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="http://lavasoft.blog.51cto.com/62575/181907/">深入解读Quartz的原理</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/io/object-serialization/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/io/object-serialization/" class="post-title-link" itemprop="url">Java对象序列化</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-08-27 11:28:00" itemprop="dateCreated datePublished" datetime="2016-08-27T11:28:00+08:00">2016-08-27</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-11 16:41:40" itemprop="dateModified" datetime="2021-04-11T16:41:40+08:00">2021-04-11</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p><a href="/Java/advanced-engineer-outline/">&lt;&lt; Java高级软件工程师知识结构</a></p>
-<ol>
-<li>掌握InputStream、OutputStream、Reader、Writer的继承体系.</li>
-<li>掌握字节流(FileInputStream、DataInputStream、BufferedInputStream、FileOutputSteam、DataOutputStream、BufferedOutputStream)和 字符流(BufferedReader、InputStreamReader、FileReader、BufferedWriter、OutputStreamWriter、PrintWriter、FileWriter), 并熟练运用.</li>
-<li>掌握NIO实现原理及使用方法.</li>
-</ol>
-<p>Java IO包括:</p>
-<ul>
-<li><a href="/Java/io/IO-Model/">IO Model</a></li>
-<li><a href="/Java/io/BIO/">Java BIO</a></li>
-<li><a href="/Java/io/NIO/">Java NIO</a></li>
-<li><a href="/Java/io/AIO/">Java AIO</a></li>
-<li><a href="/Java/io/java-zip/">Java压缩</a></li>
-<li><a href="/Java/io/object-serialization/">Java对象序列化</a></li>
-<li><a href="/Java/io/java-XML-JSON/">Java XML与JSON</a></li>
-</ul>
-<h1 id="序列化"><a href="#序列化" class="headerlink" title="序列化"></a>序列化</h1><p>所谓序列化是将内存中Java对象转化为二进制字节数据, 反序列化就是从二进制字节数据转换为内存中的对象.  </p>
-<ul>
-<li>对象保存到文件: Java序列化将对象转换为二进制字节数据, 可以用于将内存中的对象保存到文件中.</li>
-<li>复制对象：由于Java中的对象变量仅仅是栈中的一个指针, 而对象保存在堆内存中. 当<code>clone</code>复制对象时, 只是将对象中的对象变量复制, 而没有复制对象本身. 这被称为**<code>浅复制</code>**；相比之下, 使用序列化的方法, 可以将对象的值转换为二进制字节数组, 再<code>反序列化</code>便可以复制对象的所有内容, 这就是<code>深复制</code>.</li>
-<li>自定义序列化</li>
-</ul>
-<h2 id="实现的样例"><a href="#实现的样例" class="headerlink" title="实现的样例"></a>实现的样例</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Person</span> <span class="keyword">implements</span> <span class="title">Serializable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> serialVersionUID = <span class="number">123l</span>;</span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> age;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> birthday;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Person&#123;&quot;</span> +</span><br><span class="line">                <span class="string">&quot;name=&#x27;&quot;</span> + name + <span class="string">&#x27;\&#x27;&#x27;</span> +</span><br><span class="line">                <span class="string">&quot;, age=&quot;</span> + age +</span><br><span class="line">                <span class="string">&quot;, birthday=&quot;</span> + birthday +</span><br><span class="line">                <span class="string">&#x27;&#125;&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Person</span><span class="params">(String name, <span class="keyword">int</span> age, <span class="keyword">long</span> birthday)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.name = name;</span><br><span class="line">        <span class="keyword">this</span>.age = age;</span><br><span class="line">        <span class="keyword">this</span>.birthday = birthday;</span><br><span class="line">    &#125;</span><br><span class="line">   ....<span class="comment">// getter setter</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="实现要点"><a href="#实现要点" class="headerlink" title="实现要点"></a>实现要点</h2><h3 id="Serializable接口"><a href="#Serializable接口" class="headerlink" title="Serializable接口"></a>Serializable接口</h3><p>Java是通过实现Serializable接口, 实现的序列化, Serializable接口里面没有任何的方法, 只是个标示接口.</p>
-<h3 id="SerialVersionUID"><a href="#SerialVersionUID" class="headerlink" title="SerialVersionUID"></a>SerialVersionUID</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> serialVersionUID = ...;</span><br></pre></td></tr></table></figure>
-<p><code>serialVersionUID</code>变量用于标记该类的版本UID.</p>
-<p>Java使用一种<code>hash</code>值来快速的区分序列化流中的对象与要转换为的对象是否相同. 该 <code>hash</code>值 是根据给定源文件中几乎所有东西 — 方法名称、字段名称、字段类型、访问修改方法等 — 计算出来的, 序列化将该 hash 值与序列化流中的 hash 值相比较. 这个<code>hash</code>值就是<code>serialVersionUID</code>，<code>serialVersionUID</code>变量可以手动指定, 如果不指定, Java将使用 JDK<code>serialver</code> 命令计算出.</p>
-<h3 id="ObjectOutputStream"><a href="#ObjectOutputStream" class="headerlink" title="ObjectOutputStream"></a>ObjectOutputStream</h3><p>实际的序列化和反序列化工作是通过ObjectOuputStream和ObjectInputStream来完成的。ObjectOutputStream的writeObject方法可以把一个Java对象写入到流中，ObjectInputStream的readObject方法可以从流中读取一个Java对象。在写入和读取的时候，虽然用的参数或返回值是单个对象，但实际上操纵的是一个对象图，包括该对象所引用的其它对象，以及这些对象所引用的另外的对象。Java会自动帮你遍历对象图并逐个序列化。除了对象之外，Java中的基本类型和数组也是可以通过 ObjectOutputStream和ObjectInputStream来序列化的。<br>下面的深复制是将内存中的二进制数组作为媒介来复制对象的. <a href="/Java/io/BIO/">关于ObjectOutputStream详情请看</a></p>
-<h1 id="深复制与浅复制"><a href="#深复制与浅复制" class="headerlink" title="深复制与浅复制"></a>深复制与浅复制</h1><p>基础变量和对象的引用变量都是保存在JVM栈内存(<code>stack</code>)之中的, 而对象保存在JVM堆(Heap)内存中.<a href="/Java/JVM/">^JVM结构</a></p>
-<p>实现<code>Clonable</code>接口, 并调用对象上的<code>clone</code>方法, 只会将JVM栈内存(stack)复制到新对象之中. 对象的引用变量所引用的对象实体不能使用.  这就是<code>浅复制</code>.</p>
-<p>为了可以复制对象的所有的内容, 可以采用将目标序列化到内存中, 转换为二进制数据, 然后再反序列化回对象. 这就是”<code>深复制</code>“.</p>
-<p>上代码:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ShallowCopy</span> <span class="keyword">implements</span> <span class="title">Cloneable</span>, <span class="title">Serializable</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 浅复制</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> ShallowCopy <span class="title">clone</span><span class="params">()</span> <span class="keyword">throws</span> CloneNotSupportedException </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (ShallowCopy) <span class="keyword">super</span>.clone();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 深复制</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ShallowCopy <span class="title">deepClone</span><span class="params">()</span> <span class="keyword">throws</span> IOException, ClassNotFoundException </span>&#123;</span><br><span class="line">        ByteArrayOutputStream baos = <span class="keyword">new</span> ByteArrayOutputStream();</span><br><span class="line">        ObjectOutputStream oos = <span class="keyword">new</span> ObjectOutputStream(baos);</span><br><span class="line">        oos.writeObject(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line">        ByteArrayInputStream bis = <span class="keyword">new</span> ByteArrayInputStream(baos.toByteArray());</span><br><span class="line">        ObjectInputStream ois = <span class="keyword">new</span> ObjectInputStream(bis);</span><br><span class="line">        ShallowCopy shallowCopy = (ShallowCopy) ois.readObject();</span><br><span class="line">        <span class="keyword">return</span> shallowCopy;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<h1 id="序列化多个目标"><a href="#序列化多个目标" class="headerlink" title="序列化多个目标"></a>序列化多个目标</h1><p>如上文所述, 序列化是将对象转换为字节数组, 需要<code>ObjectOutputStream</code>和<code>ObjectInputStream</code>实现. 因此, 可以向<code>ObjectOutputStream</code>输出多个对象, 也可以从<code>ObjectInputStream</code>中输入多个对象.</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">writeObjects</span><span class="params">(List os, String fileName)</span> </span>&#123;</span><br><span class="line">    FileOutputStream outputStream = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        outputStream = <span class="keyword">new</span> FileOutputStream(fileName);</span><br><span class="line">        ObjectOutputStream stream = <span class="keyword">new</span> ObjectOutputStream(outputStream);</span><br><span class="line">        <span class="keyword">for</span> (Object o : os) &#123;</span><br><span class="line">            stream.writeObject(o);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (outputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                outputStream.close();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">List&lt;T&gt; <span class="title">readObjects</span><span class="params">(String fileName, Class&lt;T&gt; clasz)</span> </span>&#123;</span><br><span class="line">    FileInputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">    T result = <span class="keyword">null</span>;</span><br><span class="line">    List&lt;T&gt; list = <span class="keyword">new</span> ArrayList&lt;T&gt;();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        inputStream = <span class="keyword">new</span> FileInputStream(fileName);</span><br><span class="line">        ObjectInputStream in = <span class="keyword">new</span> ObjectInputStream(inputStream);</span><br><span class="line">        Object object = <span class="keyword">null</span>;</span><br><span class="line">        <span class="keyword">while</span> ((object = in.readObject()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">            result = (T) object;</span><br><span class="line">            list.add(result);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (inputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                inputStream.close();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> list;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<h1 id="序列化允许重构"><a href="#序列化允许重构" class="headerlink" title="序列化允许重构"></a>序列化允许重构</h1><p>序列化在保存对象的同时, 也就保存了数据. 序列化也成为保存数据的方式之一. 与数据库、XML或JSON等方式不同, 序列化依赖于对象体. 当变更数据项时, 需要修改类. 序列化是允许重构的.</p>
-<p>序列化允许一定数量的类变种, 甚至重构之后也是如此, ObjectInputStream 仍可以很好地将其读出来.<br>Java Object Serialization 规范可以自动管理的关键任务是：</p>
-<ul>
-<li>将新字段添加到类中</li>
-<li>将字段从 static 改为非 static</li>
-<li>将字段从 transient 改为非 transient</li>
-</ul>
-<p>取决于所需的向后兼容程度, 转换字段形式（从非 static 转换为 static 或从非 transient 转换为 transient）或者删除字段需要额外的消息传递.</p>
-<p>假设要在上面的<code>Person</code>类增加<code>gender</code></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Person</span> <span class="keyword">implements</span> <span class="title">Serializable</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">long</span> serialVersionUID = <span class="number">123l</span>;</span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> age;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">long</span> birthday;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> gender;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;PersonV1&#123;&quot;</span> +</span><br><span class="line">                <span class="string">&quot;name=&#x27;&quot;</span> + name + <span class="string">&#x27;\&#x27;&#x27;</span> +</span><br><span class="line">                <span class="string">&quot;, age=&quot;</span> + age +</span><br><span class="line">                <span class="string">&quot;, birthday=&quot;</span> + birthday +</span><br><span class="line">                <span class="string">&quot;, gender=&quot;</span> + gender +</span><br><span class="line">                <span class="string">&#x27;&#125;&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Person</span><span class="params">(String name, <span class="keyword">int</span> age, <span class="keyword">long</span> birthday, <span class="keyword">int</span> gender)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.name = name;</span><br><span class="line">        <span class="keyword">this</span>.age = age;</span><br><span class="line">        <span class="keyword">this</span>.birthday = birthday;</span><br><span class="line">        <span class="keyword">this</span>.gender = gender;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">// setter getter .....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>重构, 需要满足两个条件：</p>
-<ul>
-<li>serialVersionUID必须相同</li>
-<li>类名必须与原类相同</li>
-</ul>
-<p>为了使 Java 运行时相信两种类型实际上是一样的, 第二版和随后版本的 <code>Person</code> 必须与第一版有相同的序列化版本 hash（存储为 private static final <code>serialVersionUID</code> 字段）. 因此, 我们需要 <code>serialVersionUID</code> 字段, 它是通过对原始（或 V1）版本的 <code>Person</code> 类运行 JDK<code>serialver</code> 命令计算出的.</p>
-<p>一旦有了 <code>Person</code> 的 <code>serialVersionUID</code>, 不仅可以从原始对象 <code>Person</code> 的序列化数据创建 <code>PersonV2</code> 对象（当出现新字段时, 新字段被设为缺省值, 最常见的是“null”）, 还可以反过来做：即从 <code>PersonV2</code> 的数据通过反序列化得到 <code>Person</code>, 这毫不奇怪.</p>
-<h1 id="安全性"><a href="#安全性" class="headerlink" title="安全性"></a>安全性</h1><p>Java对象序列化之后的内容格式是公开的。所以可以很容易的从中提取出各种信息。从实现的角度来说，可以从不同的层次来加强序列化的安全性。<br>对序列化之后的流进行加密。这可以通过CipherOutputStream来实现。实现自己的writeObject和readObject方法，在调用defaultWriteObject之前，先对要序列化的域的值进行加密处理。使用一个SignedObject或SealedObject来封装当前对象，用SignedObject或SealedObject进行序列化。在从流中进行反序列化的时候，可以通过ObjectInputStream的registerValidation方法添加ObjectInputValidation接口的实现，用来验证反序列化之后得到的对象是否合法。</p>
-<h2 id="自定义序列化，提高安全性"><a href="#自定义序列化，提高安全性" class="headerlink" title="自定义序列化，提高安全性"></a>自定义序列化，提高安全性</h2><p>为了避免保存的数据被恶意利用, 可以通过模糊化需要保密的字段. 此处, hook<code>Person</code>类中的<code>age</code>字段, 在上面的<code>Person</code>类中添加两个方法:</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* 自定义将对象写入输出流的方法&lt;br/&gt;</span></span><br><span class="line"><span class="comment">* 此处, 判断性别为女, 将年龄左移2个单位</span></span><br><span class="line"><span class="comment">* &lt;code&gt;stream.defaultWriteObject();&lt;/code&gt;接下来将所有的对象写入.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">writeObject</span><span class="params">(java.io.ObjectOutputStream stream)</span> <span class="keyword">throws</span> java.io.IOException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (gender == <span class="number">1</span>) &#123;</span><br><span class="line">    age = age &lt;&lt; <span class="number">2</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  stream.defaultWriteObject();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* 自定义从输入流读入对象的方法:</span></span><br><span class="line"><span class="comment">* 与写对应, 在读入对象后, 女士的年龄右移2个单位</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">readObject</span><span class="params">(java.io.ObjectInputStream stream)</span></span></span><br><span class="line"><span class="function">  <span class="keyword">throws</span> java.io.IOException, ClassNotFoundException </span>&#123;</span><br><span class="line">  stream.defaultReadObject();</span><br><span class="line">  <span class="keyword">if</span> (gender == <span class="number">1</span>) &#123;  </span><br><span class="line">    age = age &gt;&gt; <span class="number">2</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>当调用<code>ObjectInputStream</code>读入对象时, 首先判断是否Entity实现了<code>readObject</code>方法, 如果实现了将调用该方法.</p>
-<h1 id="签名与密封"><a href="#签名与密封" class="headerlink" title="签名与密封"></a>签名与密封</h1><p>//TODO</p>
-<p>如果需要对整个对象进行加密和签名, 最简单的是将它放在一个 javax.crypto.SealedObject 和/或 java.security.SignedObject 包装器中. 两者都是可序列化的, 所以将对象包装在 SealedObject 中可以围绕原对象创建一种 “包装盒”. 必须有对称密钥才能解密, 而且密钥必须单独管理. 同样, 也可以将 SignedObject 用于数据验证, 并且对称密钥也必须单独管理.<br>结合使用这两种对象, 便可以轻松地对序列化数据进行密封和签名, 而不必强调关于数字签名验证或加密的细节. 很简洁, 是吧？</p>
-<h1 id="将代理放在流中"><a href="#将代理放在流中" class="headerlink" title="将代理放在流中"></a>将代理放在流中</h1><p>很多情况下, 类中包含一个核心数据元素, 通过它可以派生或找到类中的其他字段. 在此情况下, 没有必要序列化整个对象. 可以将字段标记为<em>transient</em>, 但是每当有方法访问一个字段时, 类仍然必须显式地产生代码来检查它是否被初始化.</p>
-<p>如果首要问题是序列化, 那么最好指定一个 flyweight 或代理放在流中. 为原始 <code>Person</code> 提供一个 <code>writeReplace</code> 方法, 可以序列化不同类型的对象来代替它. 类似地, 如果反序列化期间发现一个 <code>readResolve</code> 方法, 那么将调用该方法, 将替代对象提供给调用者.</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PersonProxy</span> <span class="keyword">implements</span> <span class="title">java</span>.<span class="title">io</span>.<span class="title">Serializable</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">PersonProxy</span><span class="params">(Person orig)</span></span>&#123;</span><br><span class="line">        data = orig.getFirstName() + <span class="string">&quot;,&quot;</span> + orig.getLastName() + <span class="string">&quot;,&quot;</span> + orig.getAge();</span><br><span class="line">        <span class="keyword">if</span> (orig.getSpouse() != <span class="keyword">null</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            Person spouse = orig.getSpouse();</span><br><span class="line">            data = data + <span class="string">&quot;,&quot;</span> + spouse.getFirstName() + <span class="string">&quot;,&quot;</span> + spouse.getLastName() + <span class="string">&quot;,&quot;</span>  </span><br><span class="line">              + spouse.getAge();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> String data;</span><br><span class="line">    <span class="function"><span class="keyword">private</span> Object <span class="title">readResolve</span><span class="params">()</span> <span class="keyword">throws</span> java.io.ObjectStreamException</span>&#123;</span><br><span class="line">        String[] pieces = data.split(<span class="string">&quot;,&quot;</span>);</span><br><span class="line">        Person result = <span class="keyword">new</span> Person(pieces[<span class="number">0</span>], pieces[<span class="number">1</span>], Integer.parseInt(pieces[<span class="number">2</span>]));</span><br><span class="line">        <span class="keyword">if</span> (pieces.length &gt; <span class="number">3</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            result.setSpouse(<span class="keyword">new</span> Person(pieces[<span class="number">3</span>], pieces[<span class="number">4</span>], Integer.parseInt</span><br><span class="line">              (pieces[<span class="number">5</span>])));</span><br><span class="line">            result.getSpouse().setSpouse(result);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Person</span> <span class="keyword">implements</span> <span class="title">java</span>.<span class="title">io</span>.<span class="title">Serializable</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Person</span><span class="params">(String fn, String ln, <span class="keyword">int</span> a)</span></span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.firstName = fn; <span class="keyword">this</span>.lastName = ln; <span class="keyword">this</span>.age = a;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getFirstName</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> firstName; &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">getLastName</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> lastName; &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getAge</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> age; &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> Person <span class="title">getSpouse</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> spouse; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> Object <span class="title">writeReplace</span><span class="params">()</span></span></span><br><span class="line"><span class="function">        <span class="keyword">throws</span> java.io.ObjectStreamException</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> PersonProxy(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setFirstName</span><span class="params">(String value)</span> </span>&#123; firstName = value; &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setLastName</span><span class="params">(String value)</span> </span>&#123; lastName = value; &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setAge</span><span class="params">(<span class="keyword">int</span> value)</span> </span>&#123; age = value; &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setSpouse</span><span class="params">(Person value)</span> </span>&#123; spouse = value; &#125;   </span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;[Person: firstName=&quot;</span> + firstName +</span><br><span class="line">            <span class="string">&quot; lastName=&quot;</span> + lastName +</span><br><span class="line">            <span class="string">&quot; age=&quot;</span> + age +</span><br><span class="line">            <span class="string">&quot; spouse=&quot;</span> + spouse.getFirstName() +</span><br><span class="line">            <span class="string">&quot;]&quot;</span>;</span><br><span class="line">    &#125;    </span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String firstName;</span><br><span class="line">    <span class="keyword">private</span> String lastName;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> age;</span><br><span class="line">    <span class="keyword">private</span> Person spouse;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<p>注意, <code>PersonProxy</code> 必须跟踪 <code>Person</code> 的所有数据. 这通常意味着代理需要是 <code>Person</code> 的一个内部类, 以便能访问 private 字段. 有时候, 代理还需要追踪其他对象引用并手动序列化它们, 例如 <code>Person</code> 的 spouse.</p>
-<p>这种技巧是少数几种不需要读/写平衡的技巧之一. 例如, 一个类被重构成另一种类型后的版本可以提供一个 <code>readResolve</code> 方法, 以便静默地将被序列化的对象转换成新类型. 类似地, 它可以采用 <code>writeReplace</code> 方法将旧类序列化成新版本.</p>
-<h1 id="信任但要验证"><a href="#信任但要验证" class="headerlink" title="信任但要验证"></a>信任但要验证</h1><p>认为序列化流中的数据总是与最初写到流中的数据一致, 这没有问题. 但是, 正如一位美国前总统所说的, “信任, 但要验证”.</p>
-<p>对于序列化的对象, 这意味着验证字段, 以确保在反序列化之后它们仍具有正确的值, “以防万一”. 为此, 可以实现 <code>ObjectInputValidation</code>接口, 并覆盖 <code>validateObject()</code> 方法. 如果调用该方法时发现某处有错误, 则抛出一个 <code>InvalidObjectException</code>.</p>
-<h1 id="声明某个字段不序列化"><a href="#声明某个字段不序列化" class="headerlink" title="声明某个字段不序列化"></a>声明某个字段不序列化</h1><p>在默认的序列化实现中，Java对象中的非静态和非瞬时域都会被包括进来，而与域的可见性声明没有关系。这可能会导致某些不应该出现的域被包含在序列化之后的字节数组中，比如密码等隐私信息。由于Java对象序列化之后的格式是固定的，其它人可以很容易的从中分析出其中的各种信息。对于这种情况，一种解决办法是把域声明为瞬时的，即使用transient关键词。另外一种做法是添加一个serialPersistentFields?</p>
-<p>域来声明序列化时要包含的域。从这里可以看到在Java序列化机制中的这种仅在书面层次上定义的契约。声明序列化的域必须使用固定的名称和类型。在后面还可以看到其它类似这样的契约。虽然Serializable只是一个标记接口，但它其实是包含有不少隐含的要求。下面的代码给出了<br> serialPersistentFields的声明示例，即只有firstName这个域是要被序列化的。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> ObjectStreamField[] serialPersistentFields = &#123;</span><br><span class="line">    <span class="keyword">new</span> ObjectStreamField(<span class="string">&quot;firstName&quot;</span>, String.class)</span><br><span class="line">&#125;;  </span><br></pre></td></tr></table></figure>
-<h1 id="定制化序列化Externalizable"><a href="#定制化序列化Externalizable" class="headerlink" title="定制化序列化Externalizable"></a>定制化序列化Externalizable</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 序列化和反序列化的操作</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ExternalizableDemo</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception</span>&#123;</span><br><span class="line">        ser(); <span class="comment">// 序列化</span></span><br><span class="line">        dser(); <span class="comment">// 反序列话</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">ser</span><span class="params">()</span> <span class="keyword">throws</span> Exception</span>&#123;</span><br><span class="line">        File file = <span class="keyword">new</span> File(<span class="string">&quot;d:&quot;</span> + File.separator + <span class="string">&quot;hello.txt&quot;</span>);</span><br><span class="line">        ObjectOutputStream out = <span class="keyword">new</span> ObjectOutputStream(<span class="keyword">new</span> FileOutputStream(</span><br><span class="line">                file));</span><br><span class="line">        out.writeObject(<span class="keyword">new</span> Person(<span class="string">&quot;rollen&quot;</span>, <span class="number">20</span>));</span><br><span class="line">        out.close();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">dser</span><span class="params">()</span> <span class="keyword">throws</span> Exception</span>&#123;</span><br><span class="line">        File file = <span class="keyword">new</span> File(<span class="string">&quot;d:&quot;</span> + File.separator + <span class="string">&quot;hello.txt&quot;</span>);</span><br><span class="line">        ObjectInputStream input = <span class="keyword">new</span> ObjectInputStream(<span class="keyword">new</span> FileInputStream(</span><br><span class="line">                file));</span><br><span class="line">        Object obj = input.readObject();</span><br><span class="line">        input.close();</span><br><span class="line">        System.out.println(obj);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Person</span> <span class="keyword">implements</span> <span class="title">Externalizable</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Person</span><span class="params">()</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Person</span><span class="params">(String name, <span class="keyword">int</span> age)</span></span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.name = name;</span><br><span class="line">        <span class="keyword">this</span>.age = age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">toString</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;姓名：&quot;</span> + name + <span class="string">&quot;  年龄：&quot;</span> + age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 复写这个方法, 根据需要可以保存的属性或者具体内容, 在序列化的时候使用</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">writeExternal</span><span class="params">(ObjectOutput out)</span> <span class="keyword">throws</span> IOException</span>&#123;</span><br><span class="line">        out.writeObject(<span class="keyword">this</span>.name);</span><br><span class="line">        out.writeInt(age);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 复写这个方法, 根据需要读取内容 反序列话的时候需要</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">readExternal</span><span class="params">(ObjectInput in)</span> <span class="keyword">throws</span> IOException,</span></span><br><span class="line"><span class="function">            ClassNotFoundException</span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.name = (String) in.readObject();</span><br><span class="line">        <span class="keyword">this</span>.age = in.readInt();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> String name;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> age;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<h1 id="疑问"><a href="#疑问" class="headerlink" title="疑问:"></a>疑问:</h1><ol>
-<li>转换成的二进制数据是什么样子？</li>
-<li>Enum类型的变量是否能正确的序列化和反序列化？</li>
-</ol>
-<h1 id="其他序列化框架"><a href="#其他序列化框架" class="headerlink" title="其他序列化框架"></a>其他序列化框架</h1><h2 id="kryo"><a href="#kryo" class="headerlink" title="kryo"></a>kryo</h2><hr>
-<p>[参考文献]:</p>
-<ol>
-<li>Think in Java</li>
-<li><a target="_blank" rel="noopener" href="http://www.ibm.com/developerworks/cn/java/j-5things1/">关于 Java 对象序列化您不知道的 5 件事</a></li>
-<li><a target="_blank" rel="noopener" href="http://www.infoq.com/cn/articles/cf-java-object-serialization-rmi/">Java深度历险（十）——Java对象序列化与RMI</a></li>
 </ol>
 
       
@@ -2044,20 +2345,20 @@ db.setProfilingLevel(1, 1000);</code></pre>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">235</span>
+          <span class="site-state-item-count">236</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">125</span>
+        <span class="site-state-item-count">126</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
