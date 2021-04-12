@@ -183,7 +183,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/solr/SolrCloud/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/superset/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/solr/SolrCloud/" class="post-title-link" itemprop="url">SolrCloud</a>
+            <a href="/bigdata/superset/" class="post-title-link" itemprop="url">SuperSet</a>
         </h2>
 
         <div class="post-meta">
@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:33:24" itemprop="dateModified" datetime="2021-04-12T17:33:24+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:35:01" itemprop="dateModified" datetime="2021-04-12T17:35:01+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -237,48 +237,209 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="SolrCloud"><a href="#SolrCloud" class="headerlink" title="SolrCloud"></a>SolrCloud</h1><p><img src="_v_images/20200812120555513_1829511358.png"></p>
-<p>物理结构：</p>
-<p>三个Solr实例（ 每个实例包括两个Core），组成一个SolrCloud。</p>
-<p>逻辑结构：</p>
-<p>索引集合包括两个Shard（shard1和shard2），shard1和shard2分别由三个Core组成，其中一个Leader两个Replication，Leader是由zookeeper选举产生，zookeeper控制每个shard上三个Core的索引数据一致，解决高可用问题。用户发起索引请求分别从shard1和shard2上获取，解决高并发问题。</p>
-<p>core：</p>
-<p>每个Core是Solr中一个独立运行单位，提供 索引和搜索服务。一个shard需要由一个Core或多个Core组成。由于collection由多个shard组成所以collection一般由多个core组成。</p>
-<p>Master&amp;Slave：</p>
-<p>Master是master-slave构中的主结点（通常说主服务器），Slave是master-slave结构中的从结点（通常说从服务器或备服务器）。同一个Shard下master和slave存储的数据是一致的，这是为了达到高可用目的</p>
-<h3 id="Logical-Concepts"><a href="#Logical-Concepts" class="headerlink" title="Logical Concepts"></a><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html#logical-concepts">Logical Concepts</a></h3><ul>
-<li><p>A Cluster can host multiple Collections of Solr Documents. 一个集群可持有多个solr文档集合</p>
-</li>
-<li><p>A collection can be partitioned into multiple Shards, which contain a subset of the Documents in the Collection. 一个集合可以分区为多个shards(切片), 一个shard包含文档集合的子集</p>
-</li>
-<li><p>The number of Shards that a Collection has determines: 集合中shard的个数取决于:</p>
-<ul>
-<li><p>The theoretical limit to the number of Documents that Collection can reasonably contain.  集合可以合理包含的文档数量的理论限制。</p>
-</li>
-<li><p>The amount of parallelization that is possible for an individual search request. 单个搜索请求可能的并行度。</p>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="Physical-Concepts"><a href="#Physical-Concepts" class="headerlink" title="Physical Concepts"></a><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html#physical-concepts">Physical Concepts</a></h3><ul>
-<li><p>A Cluster is made up of one or more Solr Nodes, which are running instances of the Solr server process. 集群由一个或多个Solr节点组成，这些节点运行着Solr服务器进程的实例。</p>
-</li>
-<li><p>Each Node can host multiple Cores. 每个节点可以持有多个核</p>
-</li>
-<li><p>Each Core in a Cluster is a physical Replica for a logical Shard. 一个集群的每个核是一个shard的物理副本</p>
-</li>
-<li><p>Every Replica uses the same configuration specified for the Collection that it is a part of. 每个副本使用为其所属的集合指定的相同配置。</p>
-</li>
-<li><p>The number of Replicas that each Shard has determines: 每个shard的副本数取决于:</p>
-<ul>
-<li><p>The level of redundancy built into the Collection and how fault tolerant the Cluster can be in the event that some Nodes become unavailable. 集合内建的冗余级别，以及在某些节点不可用时集群的容错能力。</p>
-</li>
-<li><p>The theoretical limit in the number concurrent search requests that can be processed under heavy load. 在高负载下可处理的并发搜索请求数量的理论限制。</p>
-</li>
-</ul>
-</li>
-</ul>
-<p><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html">官方文档-How SolrCloud Works</a></p>
+          <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">docker serach superset</span><br><span class="line">docker pull amancevice/superset</span><br><span class="line">docker images</span><br><span class="line">mkdir ~/apps/data/superset/</span><br><span class="line">docker run -d -p 8088:8088 -v  ~/apps/data/superset/:/home/superset amancevice/superset</span><br><span class="line">docker ps</span><br><span class="line"></span><br><span class="line">CONTAINER ID   IMAGE                 COMMAND                  CREATED          STATUS                            PORTS                    NAMES</span><br><span class="line">71a1400d1e98   amancevice/superset   &quot;gunicorn superset.a…&quot;   10 seconds ago   Up 9 seconds (health: starting)   0.0.0.0:8088-&gt;8088/tcp   quizzical_wright</span><br><span class="line">docker exec -it 71a1400d1e98 superset-init</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/PhantomJS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/PhantomJS/" class="post-title-link" itemprop="url">PhamtomJs</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:35:01" itemprop="dateModified" datetime="2021-04-12T17:35:01+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>PhamtomJs 是服务端的无界面的Chrome浏览器，提供JS API和shell命令行，方便操作</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="http://phantomjs.org/quick-start.html">官方的文档</a></p>
+</blockquote>
+<h1 id="Java-操作"><a href="#Java-操作" class="headerlink" title="Java 操作"></a>Java 操作</h1><h2 id="阻塞式"><a href="#阻塞式" class="headerlink" title="阻塞式"></a>阻塞式</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">openWithPhanatomjs</span><span class="params">(String viewUrl)</span> </span>&#123;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs start&quot;</span> + viewUrl);</span><br><span class="line">      InputStreamReader inReader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">      BufferedReader reader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream errorStream = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">          String path = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              path = Thread.currentThread().getContextClassLoader().getResource(<span class="string">&quot;/&quot;</span>).toURI().getPath();</span><br><span class="line">          &#125; <span class="keyword">catch</span> (URISyntaxException e) &#123;</span><br><span class="line">              e.printStackTrace();</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">final</span> String s = path + File.separator + <span class="string">&quot;otwp.js&quot;</span>;</span><br><span class="line"><span class="comment">//            logger.info(s);</span></span><br><span class="line">          Process process = Runtime.getRuntime().exec(phanatomjsHome + <span class="string">&quot; &quot;</span> + s + <span class="string">&quot; &quot;</span> + viewUrl);</span><br><span class="line">          inputStream = process.getInputStream();</span><br><span class="line">          inReader = <span class="keyword">new</span> InputStreamReader(inputStream, <span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">          reader = <span class="keyword">new</span> BufferedReader(inReader);</span><br><span class="line">          String line = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">while</span> ((line = reader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">          errorStream = process.getErrorStream();</span><br><span class="line">          <span class="keyword">final</span> BufferedReader bufferedReader = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> InputStreamReader(errorStream));</span><br><span class="line">          <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">      &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              <span class="keyword">if</span> (inReader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inReader.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (inputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inputStream.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (reader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  reader.close();</span><br><span class="line">              &#125;</span><br><span class="line">          &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">              logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs end&quot;</span> + viewUrl);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="样例"><a href="#样例" class="headerlink" title="样例"></a>样例</h1><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// run this js with command:</span></span><br><span class="line"><span class="comment">// phantomjs openTableauWithPhantomjs.js &lt;Tableau view url&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">&quot;start open with Phantomjs&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> system = <span class="built_in">require</span>(<span class="string">&#x27;system&#x27;</span>);</span><br><span class="line"><span class="keyword">if</span> (system.args.length === <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Please input view url&#x27;</span>);</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">    phantom.exit();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> viewUrl = system.args[<span class="number">1</span>];</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Open url: &#x27;</span> + viewUrl);</span><br><span class="line">    <span class="keyword">var</span> page = <span class="built_in">require</span>(<span class="string">&#x27;webpage&#x27;</span>).create();</span><br><span class="line">    <span class="keyword">var</span> t = <span class="built_in">Date</span>.now();</span><br><span class="line"></span><br><span class="line">    page.onConsoleMessage = <span class="function"><span class="keyword">function</span> (<span class="params">msg</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(msg);</span><br><span class="line">    &#125;;</span><br><span class="line">    page.onLoadFinished = <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;加载完毕, 状态: &#x27;</span> + status);</span><br><span class="line"></span><br><span class="line">    &#125;;</span><br><span class="line">    page.settings.resourceTimeout=<span class="number">100000</span>;</span><br><span class="line"></span><br><span class="line">    page.open(viewUrl, <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> title = page.evaluate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">document</span>.title;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="built_in">console</span>.log(status + <span class="string">&#x27;\ttitle:&#x27;</span> + title);</span><br><span class="line">        <span class="keyword">if</span> (status !== <span class="string">&#x27;success&#x27;</span>) &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;Fail to load the address!&#x27;</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            t = <span class="built_in">Date</span>.now() - t;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;open success: elase time : &#x27;</span> + t);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">        phantom.exit();</span><br><span class="line"></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<hr>
+<p>[参考文献]</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.qcloud.com/community/article/743451001489391682">PhantomJS 基础及示例</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/cluster_deploy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/cluster_deploy/" class="post-title-link" itemprop="url">mac搭建hadoop、hive、spark、flink环境</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:35:01" itemprop="dateModified" datetime="2021-04-12T17:35:01+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="mysql"><a href="#mysql" class="headerlink" title="mysql"></a>mysql</h1><p>启动mysql</p>
+<p>brew services start mysql</p>
+<p>abc.ABC.123</p>
+<h1 id="集群搭建"><a href="#集群搭建" class="headerlink" title="集群搭建"></a>集群搭建</h1><ol>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/33117305">mac osx 搭建hadoop开发环境</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/u010638969/article/details/51283216">spark on yarn</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/65825211">hive环境搭建</a></li>
+</ol>
+<p>按照上面文章的方式搭建，启动hdfs、yarn</p>
+<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/33968422/bin-bash-bin-java-no-such-file-or-directory"><strong>必须使用这个命令</strong></a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动yarn</span></span></span><br><span class="line">hadoop/sbin/./yarn-daemon.sh start resourcemanager</span><br><span class="line">hadoop/sbin./yarn-daemon.sh start nodemanager</span><br><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动hdfs</span></span></span><br><span class="line">hadoop/sbin/start-hdfs.sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><a target="_blank" rel="noopener" href="http://localhost:50070/">hdfs-web</a><br><a target="_blank" rel="noopener" href="http://localhost:8088/">yarn-web</a></p>
+<h2 id="hive"><a href="#hive" class="headerlink" title="hive"></a>hive</h2><p>create user ‘hadoop’@’%’ identified by ‘hadoop%HADOOP%123’;</p>
+<p>grant all privileges on <em>.</em> to ‘hadoop’@’%’ with grant option;</p>
+<p>flush privileges;</p>
+<h2 id="flink-on-yarn"><a href="#flink-on-yarn" class="headerlink" title="flink on yarn"></a>flink on yarn</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/xu470438000/article/details/79576989">flink on yarn部署</a></p>
+<p>在flink lib下增加flink-hadoop兼容包<a target="_blank" rel="noopener" href="https://repo.maven.apache.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.7.5-7.0/flink-shaded-hadoop-2-uber-2.7.5-7.0.jar">Pre-bundled Hadoop 2.7.5</a></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动</span></span><br><span class="line">bin/start-cluster.sh</span><br></pre></td></tr></table></figure>
+
+<h2 id="搭建AthenaX"><a href="#搭建AthenaX" class="headerlink" title="搭建AthenaX"></a>搭建AthenaX</h2><p><a target="_blank" rel="noopener" href="https://athenax.readthedocs.io/en/latest/getting_started/">Building AthenaX and Flink</a></p>
+<h2 id="mac-install-kafka"><a href="#mac-install-kafka" class="headerlink" title="mac install kafka"></a>mac install kafka</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">brew install zookeeper</span><br><span class="line">brew install kafka</span><br></pre></td></tr></table></figure>
+<p>修改 /usr/local/etc/kafka/server.properties, 找到 listeners=PLAINTEXT://:9092 那一行，把注释取消掉。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ brew services start zookeeper</span><br><span class="line">$ brew services start kafka</span><br></pre></td></tr></table></figure>
+<p>创建topic</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;usr&#x2F;local&#x2F;bin&#x2F;kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic order-streaming-test</span><br></pre></td></tr></table></figure>
+<h3 id="清理topic"><a href="#清理topic" class="headerlink" title="清理topic"></a>清理topic</h3><p>cd /usr/local/var/lib/kafka-logs</p>
+<p><a target="_blank" rel="noopener" href="https://colobu.com/2019/09/27/install-Kafka-on-Mac/">install kafka on mac</a></p>
 
       
     </div>
@@ -329,7 +490,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:33:24" itemprop="dateModified" datetime="2021-04-12T17:33:24+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:35:01" itemprop="dateModified" datetime="2021-04-12T17:35:01+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -403,7 +564,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:33:24" itemprop="dateModified" datetime="2021-04-12T17:33:24+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:35:01" itemprop="dateModified" datetime="2021-04-12T17:35:01+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -466,107 +627,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/PhantomJS/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/PhantomJS/" class="post-title-link" itemprop="url">PhamtomJs</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:33:24" itemprop="dateModified" datetime="2021-04-12T17:33:24+08:00">2021-04-12</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>PhamtomJs 是服务端的无界面的Chrome浏览器，提供JS API和shell命令行，方便操作</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="http://phantomjs.org/quick-start.html">官方的文档</a></p>
-</blockquote>
-<h1 id="Java-操作"><a href="#Java-操作" class="headerlink" title="Java 操作"></a>Java 操作</h1><h2 id="阻塞式"><a href="#阻塞式" class="headerlink" title="阻塞式"></a>阻塞式</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">openWithPhanatomjs</span><span class="params">(String viewUrl)</span> </span>&#123;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs start&quot;</span> + viewUrl);</span><br><span class="line">      InputStreamReader inReader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">      BufferedReader reader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream errorStream = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">          String path = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              path = Thread.currentThread().getContextClassLoader().getResource(<span class="string">&quot;/&quot;</span>).toURI().getPath();</span><br><span class="line">          &#125; <span class="keyword">catch</span> (URISyntaxException e) &#123;</span><br><span class="line">              e.printStackTrace();</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">final</span> String s = path + File.separator + <span class="string">&quot;otwp.js&quot;</span>;</span><br><span class="line"><span class="comment">//            logger.info(s);</span></span><br><span class="line">          Process process = Runtime.getRuntime().exec(phanatomjsHome + <span class="string">&quot; &quot;</span> + s + <span class="string">&quot; &quot;</span> + viewUrl);</span><br><span class="line">          inputStream = process.getInputStream();</span><br><span class="line">          inReader = <span class="keyword">new</span> InputStreamReader(inputStream, <span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">          reader = <span class="keyword">new</span> BufferedReader(inReader);</span><br><span class="line">          String line = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">while</span> ((line = reader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">          errorStream = process.getErrorStream();</span><br><span class="line">          <span class="keyword">final</span> BufferedReader bufferedReader = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> InputStreamReader(errorStream));</span><br><span class="line">          <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">      &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              <span class="keyword">if</span> (inReader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inReader.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (inputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inputStream.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (reader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  reader.close();</span><br><span class="line">              &#125;</span><br><span class="line">          &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">              logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs end&quot;</span> + viewUrl);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<h1 id="样例"><a href="#样例" class="headerlink" title="样例"></a>样例</h1><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// run this js with command:</span></span><br><span class="line"><span class="comment">// phantomjs openTableauWithPhantomjs.js &lt;Tableau view url&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">&quot;start open with Phantomjs&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> system = <span class="built_in">require</span>(<span class="string">&#x27;system&#x27;</span>);</span><br><span class="line"><span class="keyword">if</span> (system.args.length === <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Please input view url&#x27;</span>);</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">    phantom.exit();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> viewUrl = system.args[<span class="number">1</span>];</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Open url: &#x27;</span> + viewUrl);</span><br><span class="line">    <span class="keyword">var</span> page = <span class="built_in">require</span>(<span class="string">&#x27;webpage&#x27;</span>).create();</span><br><span class="line">    <span class="keyword">var</span> t = <span class="built_in">Date</span>.now();</span><br><span class="line"></span><br><span class="line">    page.onConsoleMessage = <span class="function"><span class="keyword">function</span> (<span class="params">msg</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(msg);</span><br><span class="line">    &#125;;</span><br><span class="line">    page.onLoadFinished = <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;加载完毕, 状态: &#x27;</span> + status);</span><br><span class="line"></span><br><span class="line">    &#125;;</span><br><span class="line">    page.settings.resourceTimeout=<span class="number">100000</span>;</span><br><span class="line"></span><br><span class="line">    page.open(viewUrl, <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> title = page.evaluate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">document</span>.title;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="built_in">console</span>.log(status + <span class="string">&#x27;\ttitle:&#x27;</span> + title);</span><br><span class="line">        <span class="keyword">if</span> (status !== <span class="string">&#x27;success&#x27;</span>) &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;Fail to load the address!&#x27;</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            t = <span class="built_in">Date</span>.now() - t;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;open success: elase time : &#x27;</span> + t);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">        phantom.exit();</span><br><span class="line"></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<hr>
-<p>[参考文献]</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://www.qcloud.com/community/article/743451001489391682">PhantomJS 基础及示例</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/RPC/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -598,7 +658,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:33:24" itemprop="dateModified" datetime="2021-04-12T17:33:24+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:35:01" itemprop="dateModified" datetime="2021-04-12T17:35:01+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -693,7 +753,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/cluster_deploy/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/online-bug/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -707,7 +767,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/cluster_deploy/" class="post-title-link" itemprop="url">mac搭建hadoop、hive、spark、flink环境</a>
+            <a href="/bigdata/HBase/online-bug/" class="post-title-link" itemprop="url">HBase线上异常分析</a>
         </h2>
 
         <div class="post-meta">
@@ -724,108 +784,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:33:24" itemprop="dateModified" datetime="2021-04-12T17:33:24+08:00">2021-04-12</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="mysql"><a href="#mysql" class="headerlink" title="mysql"></a>mysql</h1><p>启动mysql</p>
-<p>brew services start mysql</p>
-<p>abc.ABC.123</p>
-<h1 id="集群搭建"><a href="#集群搭建" class="headerlink" title="集群搭建"></a>集群搭建</h1><ol>
-<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/33117305">mac osx 搭建hadoop开发环境</a></li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/u010638969/article/details/51283216">spark on yarn</a></li>
-<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/65825211">hive环境搭建</a></li>
-</ol>
-<p>按照上面文章的方式搭建，启动hdfs、yarn</p>
-<p><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/33968422/bin-bash-bin-java-no-such-file-or-directory"><strong>必须使用这个命令</strong></a></p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动yarn</span></span></span><br><span class="line">hadoop/sbin/./yarn-daemon.sh start resourcemanager</span><br><span class="line">hadoop/sbin./yarn-daemon.sh start nodemanager</span><br><span class="line"><span class="meta">#</span><span class="bash"><span class="comment"># 启动hdfs</span></span></span><br><span class="line">hadoop/sbin/start-hdfs.sh</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p><a target="_blank" rel="noopener" href="http://localhost:50070/">hdfs-web</a><br><a target="_blank" rel="noopener" href="http://localhost:8088/">yarn-web</a></p>
-<h2 id="hive"><a href="#hive" class="headerlink" title="hive"></a>hive</h2><p>create user ‘hadoop’@’%’ identified by ‘hadoop%HADOOP%123’;</p>
-<p>grant all privileges on <em>.</em> to ‘hadoop’@’%’ with grant option;</p>
-<p>flush privileges;</p>
-<h2 id="flink-on-yarn"><a href="#flink-on-yarn" class="headerlink" title="flink on yarn"></a>flink on yarn</h2><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/xu470438000/article/details/79576989">flink on yarn部署</a></p>
-<p>在flink lib下增加flink-hadoop兼容包<a target="_blank" rel="noopener" href="https://repo.maven.apache.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/2.7.5-7.0/flink-shaded-hadoop-2-uber-2.7.5-7.0.jar">Pre-bundled Hadoop 2.7.5</a></p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动</span></span><br><span class="line">bin/start-cluster.sh</span><br></pre></td></tr></table></figure>
-
-<h2 id="搭建AthenaX"><a href="#搭建AthenaX" class="headerlink" title="搭建AthenaX"></a>搭建AthenaX</h2><p><a target="_blank" rel="noopener" href="https://athenax.readthedocs.io/en/latest/getting_started/">Building AthenaX and Flink</a></p>
-<h2 id="mac-install-kafka"><a href="#mac-install-kafka" class="headerlink" title="mac install kafka"></a>mac install kafka</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">brew install zookeeper</span><br><span class="line">brew install kafka</span><br></pre></td></tr></table></figure>
-<p>修改 /usr/local/etc/kafka/server.properties, 找到 listeners=PLAINTEXT://:9092 那一行，把注释取消掉。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ brew services start zookeeper</span><br><span class="line">$ brew services start kafka</span><br></pre></td></tr></table></figure>
-<p>创建topic</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;usr&#x2F;local&#x2F;bin&#x2F;kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic order-streaming-test</span><br></pre></td></tr></table></figure>
-<h3 id="清理topic"><a href="#清理topic" class="headerlink" title="清理topic"></a>清理topic</h3><p>cd /usr/local/var/lib/kafka-logs</p>
-<p><a target="_blank" rel="noopener" href="https://colobu.com/2019/09/27/install-Kafka-on-Mac/">install kafka on mac</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/superset/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/superset/" class="post-title-link" itemprop="url">SuperSet</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:33:24" itemprop="dateModified" datetime="2021-04-12T17:33:24+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:35:01" itemprop="dateModified" datetime="2021-04-12T17:35:01+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -848,98 +807,17 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">docker serach superset</span><br><span class="line">docker pull amancevice/superset</span><br><span class="line">docker images</span><br><span class="line">mkdir ~/apps/data/superset/</span><br><span class="line">docker run -d -p 8088:8088 -v  ~/apps/data/superset/:/home/superset amancevice/superset</span><br><span class="line">docker ps</span><br><span class="line"></span><br><span class="line">CONTAINER ID   IMAGE                 COMMAND                  CREATED          STATUS                            PORTS                    NAMES</span><br><span class="line">71a1400d1e98   amancevice/superset   &quot;gunicorn superset.a…&quot;   10 seconds ago   Up 9 seconds (health: starting)   0.0.0.0:8088-&gt;8088/tcp   quizzical_wright</span><br><span class="line">docker exec -it 71a1400d1e98 superset-init</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+          <h1 id="online-bug"><a href="#online-bug" class="headerlink" title="online-bug"></a>online-bug</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">075</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 33697ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">175</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 114225ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">267</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_2] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 121313ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">375</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 259454ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">467</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_2] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 191262ms</span><br></pre></td></tr></table></figure>
 
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/base/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/base/" class="post-title-link" itemprop="url">MySQL</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-12-27 11:00:00" itemprop="dateCreated datePublished" datetime="2016-12-27T11:00:00+08:00">2016-12-27</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <ol>
-<li>语法<ul>
-<li><a href="/database/MySQL/syntax_1">基础语法1</a></li>
-<li><a href="/database/MySQL/syntax_2_in_or">in与or</a></li>
-<li><a href="/database/MySQL/syntax_3_multitable_join">多表join</a></li>
-<li><a href="/database/MySQL/syntax_4_advanced">高级语法</a></li>
-<li><a href="/database/MySQL/syntax_5_sample">使用样例</a></li>
-</ul>
-</li>
-<li>最佳实践<ul>
-<li><a href="/database/MySQL/best_practices">最佳实践</a></li>
-</ul>
-</li>
-<li>架构<ul>
-<li><a href="/database/MySQL/struct_1">架构</a></li>
-</ul>
-</li>
-</ol>
+<p>关于MemStore的刷新方式：<br>1、MemStore达到上限hbase.hregion.memstore.flush.size 默认是128M的时候，会触发MemStore的刷新。这个参数表示单个MemStore的大小的阈值。这个时候是不阻塞写操作的。</p>
+<p>2、当一个Region的MemStore总量达到hbase.hregion.memstore.block.multiplier * hbase.hregion.memstore.flush.size（默认2*128M=256M）时，会阻塞这个region的写操作，并强制刷写到HFile。触发这个刷新只会发生在MemStore即将写满128M时put了一个巨大的记录的情况，这时会阻塞写操作，强制刷新成功才能继续写入。</p>
+<p>3、一个RegionServer会有很多个Region，很多的MemStore，所以可能单个Region并没有超过阈值，但是整个RegionServer的内存已经占用非常多了，这时候还有另外两个参数控制内存的刷写：hbase.regionserver.global.memstore.upperLimit 默认0.4，当RegionServer上全部的MemStore占用超过heap(heap的大小在hbase-env.sh中设置HBASE_HEAPSIZE，默认1G，我们设置的4G)的40%时，强制阻塞所有的写操作，将所有的MemStore刷写到HFile；hbase.regionserver.global.memstore.lowerLimit 默认0.35，表示所有的MemStore占用超过heap的35%时，会选择一些占用内存比较大的MemStore阻塞写操作并进行flush，这是为了降低阻塞全部写操作flush带来的问题。</p>
+<p>4、当HLog达到最大值（hbase.regionserver.maxlogs * hbase.regionserver.hlog.blocksize 默认32*64M = 2G）时，也会触发MemStore的刷新，强制将更新固化到HFile中，避免在RegionServer crash时恢复时间过长。</p>
+<p>5、定期会进行MemStore的刷新，hbase.regionserver.optionalcacheflushinterval 默认3600000，一小时，确保MemStore的数据不会长时间没有固化到HFile中。为避免所有的MemStore在同一时间都进行flush导致的问题，定期的flush操作有20000左右的随机延时。</p>
+<p>6、手工可以进行flush操作，在hbase shell调用flush，可以针对某个表或者某个region进行flush：<br>hbase(main):010:0&gt; help ‘flush’<br>Flush all regions in passed table or pass a region row to flush an individual region.  For example:</p>
+<p>  hbase&gt; flush ‘TABLENAME’<br>  hbase&gt; flush ‘REGIONNAME’</p>
+<p>7、手工flush：<br>在API中只看到有setMemStoreFlushSize 指定memstore flush到HDFS上的文件大小，默认是64M，不确定是否可以直接触发flush MemStore。</p>
+<p><a target="_blank" rel="noopener" href="https://lihuimintu.github.io/2019/06/27/HBase-IO-Case/">HBase Region 过多导致集群问题事件</a></p>
 
       
     </div>
@@ -990,7 +868,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1155,7 +1033,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1513,6 +1391,97 @@
 <p>[参考文献]:</p>
 <ol>
 <li><a target="_blank" rel="noopener" href="http://www.cnblogs.com/zeroone/archive/2010/05/05/1727659.html">MySQL日期时间函数大全</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/base/" class="post-title-link" itemprop="url">MySQL</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-27 11:00:00" itemprop="dateCreated datePublished" datetime="2016-12-27T11:00:00+08:00">2016-12-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ol>
+<li>语法<ul>
+<li><a href="/database/MySQL/syntax_1">基础语法1</a></li>
+<li><a href="/database/MySQL/syntax_2_in_or">in与or</a></li>
+<li><a href="/database/MySQL/syntax_3_multitable_join">多表join</a></li>
+<li><a href="/database/MySQL/syntax_4_advanced">高级语法</a></li>
+<li><a href="/database/MySQL/syntax_5_sample">使用样例</a></li>
+</ul>
+</li>
+<li>最佳实践<ul>
+<li><a href="/database/MySQL/best_practices">最佳实践</a></li>
+</ul>
+</li>
+<li>架构<ul>
+<li><a href="/database/MySQL/struct_1">架构</a></li>
+</ul>
+</li>
 </ol>
 
       
