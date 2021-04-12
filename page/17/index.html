@@ -183,171 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_4_advanced/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/syntax_4_advanced/" class="post-title-link" itemprop="url">MySQL高级语法</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-12-27 11:00:00" itemprop="dateCreated datePublished" datetime="2016-12-27T11:00:00+08:00">2016-12-27</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="replace-into"><a href="#replace-into" class="headerlink" title="replace into"></a>replace into</h1><p><code>replace into t(id, update_time) values(1, now());</code><br>或<br><code>replace into t(id, update_time) select 1, now();</code></p>
-<p><code>replace into</code> 跟 <code>insert</code> 功能类似，不同点在于：<br><code>replace into</code> 首先尝试插入数据到表中，</p>
-<ol>
-<li>如果发现表中已经有此行数据（根据主键或者唯一索引判断）则先删除此行数据，然后插入新的数据。</li>
-<li>否则，直接插入新数据。</li>
-</ol>
-<p>要注意的是：插入数据的表必须有主键或者是唯一索引！否则的话，<code>replace into</code> 会直接插入数据，这将导致表中出现重复的数据。<br>MySQL replace into 有三种形式：</p>
-<ol>
-<li><code>replace into tbl_name(col_name, ...) values(...)</code></li>
-<li><code>replace into tbl_name(col_name, ...) select ...</code></li>
-<li><code>replace into tbl_name set col_name=value, ...</code></li>
-</ol>
-<p>前两种形式用的多些。其中 “into” 关键字可以省略，不过最好加上 “into”，这样意思更加直观。另外，对于那些没有给予值的列，MySQL 将自动为这些列赋上默认值。</p>
-<h1 id="MySQL高级"><a href="#MySQL高级" class="headerlink" title="MySQL高级"></a>MySQL高级</h1><h1 id="理解SQL语句"><a href="#理解SQL语句" class="headerlink" title="理解SQL语句"></a>理解SQL语句</h1><h1 id="创建外键的SQL语句"><a href="#创建外键的SQL语句" class="headerlink" title="创建外键的SQL语句"></a>创建外键的SQL语句</h1><h2 id="创建数据表"><a href="#创建数据表" class="headerlink" title="创建数据表"></a>创建数据表</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> a(</span><br><span class="line">  id <span class="type">INT</span> <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span>,</span><br><span class="line">  b_id <span class="type">INT</span>,</span><br><span class="line">  <span class="keyword">CONSTRAINT</span> b_fk <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> (b_id) <span class="keyword">REFERENCES</span> b(id)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-<h2 id="修改数据表"><a href="#修改数据表" class="headerlink" title="修改数据表"></a>修改数据表</h2><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">[<span class="keyword">CONSTRAINT</span> symbol] <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> [id] (index_col_name, ...)  </span><br><span class="line">    <span class="keyword">REFERENCES</span> tbl_name (index_col_name, ...)  </span><br><span class="line">    [ON DELETE &#123;RESTRICT | CASCADE | SET NULL | NO ACTION&#125;]  </span><br><span class="line">    [ON UPDATE &#123;RESTRICT | CASCADE | SET NULL | NO ACTION&#125;]  </span><br></pre></td></tr></table></figure>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a</span><br><span class="line"><span class="keyword">ADD</span> <span class="keyword">CONSTRAINT</span> b_fk <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_id <span class="keyword">REFERENCES</span> b(id);</span><br></pre></td></tr></table></figure>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a</span><br><span class="line"><span class="keyword">ADD</span> <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_fk(b_id)  <span class="keyword">REFERENCES</span> b(id);</span><br></pre></td></tr></table></figure>
-<h2 id="删除外键"><a href="#删除外键" class="headerlink" title="删除外键"></a>删除外键</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ALTERT <span class="keyword">TABLE</span> a <span class="keyword">DROP</span> <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> b_fk;</span><br></pre></td></tr></table></figure>
-<p>MySQL <code>KEY...REFERENCES</code>修饰符添加一个<code>ON DELETE</code> 或<code>ON UPDATE</code>子句简化任务，它告诉了数据库在这种情况如何处理孤立任务</p>
-<table>
-<thead>
-<tr>
-<th>关键字</th>
-<th>含义</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>CASCADE</td>
-<td>删除包含与已删除键值有参照关系的所有记录</td>
-</tr>
-<tr>
-<td>SET NULL</td>
-<td>修改包含与已删除键值有参照关系的所有记录，使用NULL值替换（只能用于已标记为NOT NULL的字段）</td>
-</tr>
-<tr>
-<td>RESTRICT</td>
-<td>拒绝删除要求，直到使用删除键值的辅助表被手工删除，并且没有参照时(这是默认设置，也是最安全的设置)</td>
-</tr>
-<tr>
-<td>NO ACTION</td>
-<td>啥也不做</td>
-</tr>
-</tbody></table>
-<p>请注意，通过ON UPDATE 和 ON DELETE规则，设置MySQL能够实现自动操作时，如果键的关系没有设置好，可能会导致严重的数据破坏，<br>例如：如果一系列的表通过外键关系和ON DELETE CASCADE 规则连接时，任意一个主表的变化都会导致甚至只和原始删除有一些将要联系的记录在没有警告的情况被删除，所以，我们在操作之前还要检查这些规则的，操作之后还要再次检查.</p>
-<h1 id="事务"><a href="#事务" class="headerlink" title="事务"></a>事务</h1><p>事务回滚</p>
-<h1 id="视图"><a href="#视图" class="headerlink" title="视图"></a>视图</h1><h1 id="触发器"><a href="#触发器" class="headerlink" title="触发器"></a>触发器</h1><h1 id="序列号"><a href="#序列号" class="headerlink" title="序列号"></a>序列号</h1><h1 id="权限"><a href="#权限" class="headerlink" title="权限"></a>权限</h1><h2 id="使用技巧"><a href="#使用技巧" class="headerlink" title="使用技巧"></a>使用技巧</h2><ol>
-<li><p>如何更新使用过滤条件中包括自身的表?<br>在MySQL中, 不允许更新的表不能出现在FROM从句中, 但是可以使用JOIN从句中.</p>
-<p>联合更新</p>
-</li>
-</ol>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> user1 a <span class="keyword">JOIN</span>(</span><br><span class="line">  <span class="keyword">SELECT</span> b.`user_name`</span><br><span class="line">  <span class="keyword">FROM</span> user1 a <span class="keyword">INNER</span> <span class="keyword">JOIN</span> user2 b</span><br><span class="line">  <span class="keyword">ON</span> a.`user_name`<span class="operator">=</span> b.`user_name`</span><br><span class="line">) b <span class="keyword">ON</span> a.`user_name`<span class="operator">=</span>b.`user_name`</span><br><span class="line"><span class="keyword">SET</span> a.`<span class="keyword">over</span>`<span class="operator">=</span>`齐天大圣`;</span><br></pre></td></tr></table></figure>
-<ol>
-<li>优化子查询</li>
-<li>优化聚合查询</li>
-</ol>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> a.user_name, b.timestr,b.kills  </span><br><span class="line"><span class="keyword">from</span> <span class="keyword">user</span> a  </span><br><span class="line"><span class="keyword">join</span> user_kills b</span><br><span class="line"><span class="keyword">on</span> a.id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">where</span> b.kills<span class="operator">=</span>(</span><br><span class="line">  <span class="keyword">select</span> <span class="built_in">max</span>(c.kills) <span class="keyword">from</span> user_kills c <span class="keyword">where</span> c.user_id<span class="operator">=</span>b.user_id</span><br><span class="line">);  </span><br></pre></td></tr></table></figure>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> a.user_name,b.timestr,b.kills</span><br><span class="line"><span class="keyword">FROM</span> user1 a</span><br><span class="line"><span class="keyword">JOIN</span> user_kills b <span class="keyword">ON</span> a.id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">JOIN</span> user_kills c <span class="keyword">ON</span> c.user_id<span class="operator">=</span>b.user_id</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> a.user_name,b.timestr,c.kills</span><br><span class="line"><span class="keyword">HAVING</span> b.kills<span class="operator">=</span><span class="built_in">MAX</span>(c.kills);</span><br></pre></td></tr></table></figure>
-<ol>
-<li>如何实现分组选择</li>
-</ol>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> d.user_name, c.timestr , kills</span><br><span class="line"><span class="keyword">FROM</span> (</span><br><span class="line">  <span class="keyword">SELECT</span> user_id,timestr,kills,</span><br><span class="line">  (<span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">FROM</span> user_kills b <span class="keyword">WHERE</span></span><br><span class="line">    b.user_id<span class="operator">=</span>a.user_id <span class="keyword">AND</span> a.kills<span class="operator">&lt;=</span>b.kills) <span class="keyword">AS</span> cnt</span><br><span class="line">    <span class="keyword">FROM</span> user_kills a</span><br><span class="line">    <span class="keyword">GROUP</span> <span class="keyword">BY</span> user_id,timestr,kills</span><br><span class="line">) c <span class="keyword">JOIN</span> user1 d <span class="keyword">ON</span> c.user_id<span class="operator">=</span>d.id</span><br><span class="line"><span class="keyword">WHERE</span> cnt<span class="operator">&lt;=</span><span class="number">2</span></span><br></pre></td></tr></table></figure>
-<ol>
-<li><p>删除重复记录</p>
-</li>
-<li><p>行列转换</p>
-</li>
-</ol>
-<p>MySQL</p>
-<h1 id="SQL语句类型"><a href="#SQL语句类型" class="headerlink" title="SQL语句类型:"></a>SQL语句类型:</h1><ol>
-<li>DDL 数据定义语言</li>
-<li>TPL 事务处理语言</li>
-<li>DCL 数据控制语言</li>
-<li>DML 数据操作语言</li>
-</ol>
-<h1 id="事务-1"><a href="#事务-1" class="headerlink" title="事务"></a>事务</h1><h1 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h1><h1 id="JOIN"><a href="#JOIN" class="headerlink" title="JOIN"></a>JOIN</h1><p>只写JOIN, 默认是inner join</p>
-<ol>
-<li>更新使用过滤条件中包括自身的表?<br>不能更新from从句的表</li>
-</ol>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> user1 <span class="keyword">set</span> <span class="keyword">over</span><span class="operator">=</span><span class="string">&#x27;齐天大圣&#x27;</span> <span class="keyword">where</span> user1.user_name <span class="keyword">in</span> (</span><br><span class="line">        <span class="keyword">select</span> b.user_name <span class="keyword">from</span> user1 a <span class="keyword">join</span> user2 b <span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line">        );</span><br></pre></td></tr></table></figure>
-<p>会报错!</p>
-<p>使用JOIN可以解决此问题</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">update</span> user1 a <span class="keyword">join</span>(</span><br><span class="line">        <span class="keyword">select</span> b.user_name</span><br><span class="line">        <span class="keyword">from</span> user1 a</span><br><span class="line">        <span class="keyword">join</span> user2 b</span><br><span class="line">        <span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line">        ) b</span><br><span class="line"><span class="keyword">on</span> a.user_name<span class="operator">=</span>b.user_name</span><br><span class="line"><span class="keyword">set</span> a.over<span class="operator">=</span><span class="string">&#x27;齐天大圣&#x27;</span>;</span><br></pre></td></tr></table></figure>
-
-<p>表结构：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [dbo].[Exam](</span><br><span class="line">    [S_date] [datetime] <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Order_Id] [<span class="type">varchar</span>](<span class="number">50</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Product_Id] [<span class="type">varchar</span>](<span class="number">50</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">    [Amt] [<span class="type">numeric</span>](<span class="number">18</span>, <span class="number">0</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span></span><br><span class="line">) <span class="keyword">ON</span> [<span class="keyword">PRIMARY</span>]</span><br></pre></td></tr></table></figure>
-<p>题目一: 写一条Sql语句查询前出100到199的记录<br>题目二: 写一条Sql语句删除重复[除时间外的所有字段字段相同]的记录,保留重复记录中时间最大的记录<br>题目三: 一条Sql语句查出年份,1月,2月,3月….12月的订单总数列表<br>题目四: 一条sql语句查询出年份,本月销量,上月销量,环比%,去年同期销量,同比%列表</p>
-<p>1:</p>
-<pre><code>select * from Exam limit 100,100</code></pre>
-<p>2 :</p>
-<p>3 :</p>
-<p>   select year(s_date) as ‘年’ ,month(s_date) as ‘月’, count(Amt) as ‘订单数’ from Exam group by year(s_date),Month(s_date);</p>
-<h2 id="导入-导出"><a href="#导入-导出" class="headerlink" title="导入/导出"></a>导入/导出</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">#导出整个库的表结构如下：</span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename <span class="operator">&gt;</span> createtab.sql，</span><br><span class="line"></span><br><span class="line">#如果只想导出 表 test1，test2，test3 的 表结构 和 数据呢？</span><br><span class="line">#该如何导出？</span><br><span class="line"></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename test1 test2 test3 <span class="operator">&gt;</span> createtab.sql</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 上面的是导出指定表结构，下面这个可以导出指定表结构和数据</span></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="comment">--tables databasename &gt; createtab.sql</span></span><br><span class="line"></span><br><span class="line">mysqldump <span class="operator">-</span>uroot <span class="operator">-</span>p <span class="operator">-</span>d databasename test1 test2 test3 <span class="operator">&gt;</span> createtab.sql</span><br></pre></td></tr></table></figure>
-<h1 id="exist-与-in的区别"><a href="#exist-与-in的区别" class="headerlink" title="exist 与 in的区别"></a>exist 与 in的区别</h1><h1 id="union与union-all"><a href="#union与union-all" class="headerlink" title="union与union all"></a>union与union all</h1><h1 id="in的长度"><a href="#in的长度" class="headerlink" title="in的长度"></a>in的长度</h1><h1 id="in-与exist是否使用索引"><a href="#in-与exist是否使用索引" class="headerlink" title="in 与exist是否使用索引"></a>in 与exist是否使用索引</h1><h1 id="select-distinct-只能单个字段"><a href="#select-distinct-只能单个字段" class="headerlink" title="select  distinct  只能单个字段"></a>select  distinct  只能单个字段</h1>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/database/Redis/the-little-Redis-book/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -379,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -792,7 +627,7 @@ rename-command FLUSHALL 1041285018a942a4922cbf76623b741e</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -866,7 +701,7 @@ rename-command FLUSHALL 1041285018a942a4922cbf76623b741e</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -962,7 +797,7 @@ rename-command FLUSHALL 1041285018a942a4922cbf76623b741e</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1109,7 +944,7 @@ rename-command FLUSHALL 1041285018a942a4922cbf76623b741e</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1222,7 +1057,7 @@ rename-command FLUSHALL 1041285018a942a4922cbf76623b741e</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1256,7 +1091,7 @@ rename-command FLUSHALL 1041285018a942a4922cbf76623b741e</code></pre>
 <h2 id="鸣谢"><a href="#鸣谢" class="headerlink" title="鸣谢"></a>鸣谢</h2><p>特别感谢 <a target="_blank" rel="noopener" href="http://twitter.com/perryneal">Perry Neal</a>, 赐予我你的视野，精神，和热情。你赐予了我无尽的力量。感恩。</p>
 <h2 id="最新版本"><a href="#最新版本" class="headerlink" title="最新版本"></a>最新版本</h2><p>最新的版本由 Asya Kamsky 更新到了 MongoDB 2.6 。本书最新代码可以在这里获得:</p>
 <p><a target="_blank" rel="noopener" href="http://github.com/karlseguin/the-little-mongodb-book">http://github.com/karlseguin/the-little-mongodb-book</a>.</p>
-<h3 id="中文版本"><a href="#中文版本" class="headerlink" title="中文版本"></a>中文版本</h3><p>Karl 在 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book">the-little-mongodb-book</a> 的 Github 链接中给出了 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang">justinyhuang</a> 的 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang/the-little-mongodb-book-cn">the-little-mongodb-book-cn</a> 链接。但貌似 justinyhuang 并没有同步更新到 MongoDB 2.6 。内容上也和原文稍微有点出入，并且由于本人水平有限，无法提交自信正确的内容。因此重开一项目。如果你被搜索引擎引导到本工程，在此向你致歉，并希望有能力者且有时间者一同完善和同步本工程。你可以通过我的 邮箱 <a href="mailto:&#x67;&#101;&#x6d;&#x69;&#110;&#x69;&#121;&#x65;&#x6c;&#108;&#111;&#119;&#64;&#x67;&#x6d;&#97;&#105;&#108;&#46;&#99;&#x6f;&#x6d;">&#x67;&#101;&#x6d;&#x69;&#110;&#x69;&#121;&#x65;&#x6c;&#108;&#111;&#119;&#64;&#x67;&#x6d;&#97;&#105;&#108;&#46;&#99;&#x6f;&#x6d;</a> 来联系我，或者通过 <a target="_blank" rel="noopener" href="https://twitter.com/geminiyellow">@geminiyellow</a> 在 Twitter 上关注我。</p>
+<h3 id="中文版本"><a href="#中文版本" class="headerlink" title="中文版本"></a>中文版本</h3><p>Karl 在 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book">the-little-mongodb-book</a> 的 Github 链接中给出了 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang">justinyhuang</a> 的 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang/the-little-mongodb-book-cn">the-little-mongodb-book-cn</a> 链接。但貌似 justinyhuang 并没有同步更新到 MongoDB 2.6 。内容上也和原文稍微有点出入，并且由于本人水平有限，无法提交自信正确的内容。因此重开一项目。如果你被搜索引擎引导到本工程，在此向你致歉，并希望有能力者且有时间者一同完善和同步本工程。你可以通过我的 邮箱 <a href="mailto:&#103;&#x65;&#x6d;&#105;&#x6e;&#105;&#x79;&#101;&#x6c;&#108;&#111;&#119;&#64;&#103;&#x6d;&#97;&#x69;&#x6c;&#x2e;&#x63;&#111;&#x6d;">&#103;&#x65;&#x6d;&#105;&#x6e;&#105;&#x79;&#101;&#x6c;&#108;&#111;&#119;&#64;&#103;&#x6d;&#97;&#x69;&#x6c;&#x2e;&#x63;&#111;&#x6d;</a> 来联系我，或者通过 <a target="_blank" rel="noopener" href="https://twitter.com/geminiyellow">@geminiyellow</a> 在 Twitter 上关注我。</p>
 <p>最新中文版本基于 <a target="_blank" rel="noopener" href="https://github.com/asya999">asya999</a> 在 May 29, 2014 提交的 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book/pull/38">#38</a> SHA 是：6d4dce8ead6a767e1e8de1b59f714510d36d366f</p>
 <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
 <p>这章那么短不是我的错，MongoDB 就真的很易学。</p>
@@ -1723,7 +1558,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1886,7 +1721,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -2204,7 +2039,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:31" itemprop="dateModified" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -2260,6 +2095,121 @@ db.setProfilingLevel(1, 1000);</code></pre>
 <p>[参考文献]：</p>
 <ol>
 <li><a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_8250c39a0101k74c.html">SQL中—-SELECT语句中内连接,左连接,右连接,自连接和全连接 </a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/Quartz/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/Quartz/" class="post-title-link" itemprop="url">Quartz应用与原理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-08-29 14:58:00" itemprop="dateCreated datePublished" datetime="2016-08-29T14:58:00+08:00">2016-08-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>使用</p>
+<p>配置</p>
+<p>集群</p>
+<p>原理</p>
+<p>Quartz是一个大名鼎鼎的Java版开源定时调度器，功能强悍，使用方便。</p>
+<h1 id="核心概念"><a href="#核心概念" class="headerlink" title="核心概念"></a>核心概念</h1><p>Quartz的原理不是很复杂，只要搞明白几个概念，然后知道如何去启动和关闭一个调度程序即可。</p>
+<ol>
+<li><p>Job</p>
+<p>表示一个工作，要执行的具体内容。此接口中只有一个方法<br>void execute(JobExecutionContext context)</p>
+</li>
+<li><p>JobDetail</p>
+<p>JobDetail表示一个具体的可执行的调度程序，Job是这个可执行程调度程序所要执行的内容，另外JobDetail还包含了这个任务调度的方案和策略。</p>
+</li>
+<li><p>Trigger代表一个调度参数的配置，什么时候去调。</p>
+</li>
+<li><p>Scheduler代表一个调度容器，一个调度容器中可以注册多个JobDetail和Trigger。当Trigger与JobDetail组合，就可以被Scheduler容器调度了。</p>
+</li>
+</ol>
+<h1 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SimpleQuartzJob</span> <span class="keyword">implements</span> <span class="title">Job</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SimpleQuartzJob</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(JobExecutionContext context)</span> <span class="keyword">throws</span> JobExecutionException </span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;In SimpleQuartzJob - executing its JOB at &quot;</span></span><br><span class="line">                + <span class="keyword">new</span> Date() + <span class="string">&quot; by &quot;</span> + context.getTrigger().getDescription());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="普通"><a href="#普通" class="headerlink" title="普通"></a>普通</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.quartz.*;</span><br><span class="line"><span class="keyword">import</span> org.quartz.impl.StdSchedulerFactory;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.util.Date;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* quartz定时器测试</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyJob</span> <span class="keyword">implements</span> <span class="title">Job</span> </span>&#123;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(JobExecutionContext jobExecutionContext)</span> <span class="keyword">throws</span> JobExecutionException </span>&#123;</span><br><span class="line">                System.out.println(<span class="keyword">new</span> Date() + <span class="string">&quot;: doing something...&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>调用的代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//1、创建JobDetial对象</span></span><br><span class="line">JobDetail jobDetail = <span class="keyword">new</span> JobDetail();</span><br><span class="line"><span class="comment">//设置工作项</span></span><br><span class="line">jobDetail.setJobClass(MyJob.class);</span><br><span class="line">jobDetail.setName(<span class="string">&quot;MyJob_1&quot;</span>);</span><br><span class="line">jobDetail.setGroup(<span class="string">&quot;JobGroup_1&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">//2、创建Trigger对象</span></span><br><span class="line">SimpleTrigger strigger = <span class="keyword">new</span> SimpleTrigger();</span><br><span class="line">strigger.setName(<span class="string">&quot;Trigger_1&quot;</span>);</span><br><span class="line">strigger.setGroup(<span class="string">&quot;Trigger_Group_1&quot;</span>);</span><br><span class="line">strigger.setStartTime(<span class="keyword">new</span> Date());</span><br><span class="line"><span class="comment">//设置重复停止时间，并销毁该Trigger对象</span></span><br><span class="line">java.util.Calendar c = java.util.Calendar.getInstance();</span><br><span class="line">c.setTimeInMillis(System.currentTimeMillis() + <span class="number">1000</span> * <span class="number">1L</span>);</span><br><span class="line">strigger.setEndTime(c.getTime());</span><br><span class="line">strigger.setFireInstanceId(<span class="string">&quot;Trigger_1_id_001&quot;</span>);</span><br><span class="line"><span class="comment">//设置重复间隔时间</span></span><br><span class="line">strigger.setRepeatInterval(<span class="number">1000</span> * <span class="number">1L</span>);</span><br><span class="line"><span class="comment">//设置重复执行次数</span></span><br><span class="line">strigger.setRepeatCount(<span class="number">3</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">//3、创建Scheduler对象，并配置JobDetail和Trigger对象</span></span><br><span class="line">SchedulerFactory sf = <span class="keyword">new</span> StdSchedulerFactory();</span><br><span class="line">Scheduler scheduler = <span class="keyword">null</span>;</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">        scheduler = sf.getScheduler();</span><br><span class="line">        scheduler.scheduleJob(jobDetail, strigger);</span><br><span class="line">        <span class="comment">//4、并执行启动、关闭等操作</span></span><br><span class="line">        scheduler.start();</span><br><span class="line"></span><br><span class="line">&#125; <span class="keyword">catch</span> (SchedulerException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// try &#123;</span></span><br><span class="line"><span class="comment">//   //关闭调度器</span></span><br><span class="line"><span class="comment">//   scheduler.shutdown(true);</span></span><br><span class="line"><span class="comment">// &#125; catch (SchedulerException e) &#123;</span></span><br><span class="line"><span class="comment">//    e.printStackTrace();</span></span><br><span class="line"><span class="comment">// &#125;</span></span><br></pre></td></tr></table></figure>
+<p>另外一种创建的方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">  <span class="comment">// 创建调度器</span></span><br><span class="line">  Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();</span><br><span class="line">  <span class="comment">// Create a JobDetail for the Job</span></span><br><span class="line">  JobDetail jobDetail = newJob(SimpleQuartzJob.class).withIdentity(<span class="string">&quot;myJob&quot;</span>, <span class="string">&quot;group1&quot;</span>).build();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Date runTime = evenMinuteDate(new Date());</span></span><br><span class="line"></span><br><span class="line">  Trigger trigger = newTrigger().withIdentity(<span class="string">&quot;myTrigger&quot;</span>, <span class="string">&quot;group1&quot;</span>).startNow()</span><br><span class="line">    .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(<span class="number">5</span>).withRepeatCount(<span class="number">10</span>)).build();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Trigger trigger = newTrigger().withIdentity(&quot;myTrigger&quot;,&quot;group1&quot;).startAt(RunTime).build();</span></span><br><span class="line"></span><br><span class="line">  scheduler.scheduleJob(jobDetail, trigger);</span><br><span class="line"></span><br><span class="line">  scheduler.start();</span><br><span class="line"></span><br><span class="line">  <span class="comment">//            Thread.sleep(60000);</span></span><br><span class="line">  System.out.println(<span class="string">&quot;goto shutdown&quot;</span>);</span><br><span class="line">  scheduler.shutdown(<span class="keyword">true</span>);</span><br><span class="line">&#125; <span class="keyword">catch</span> (SchedulerException e) &#123;</span><br><span class="line">  e.printStackTrace();</span><br><span class="line">  <span class="comment">//        &#125; catch (InterruptedException e) &#123;</span></span><br><span class="line">  e.printStackTrace();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="Crontab"><a href="#Crontab" class="headerlink" title="Crontab"></a>Crontab</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建调度器</span></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">  Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();</span><br><span class="line">  JobDetail jobDetail = newJob(SimpleQuartzJob.class).withIdentity(<span class="string">&quot;myJob2&quot;</span>, <span class="string">&quot;group1&quot;</span>).build();</span><br><span class="line"></span><br><span class="line">  Trigger trigger = newTrigger().withIdentity(<span class="string">&quot;myTrigger3&quot;</span>, <span class="string">&quot;group1&quot;</span>).withSchedule(CronScheduleBuilder.cronSchedule(<span class="string">&quot;0/1 * * * * ?&quot;</span>)).build();</span><br><span class="line"></span><br><span class="line">  scheduler.scheduleJob(jobDetail, trigger);</span><br><span class="line">  <span class="keyword">if</span> (scheduler.isStarted()) &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;has started!&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  scheduler.start();</span><br><span class="line">  Thread.sleep(<span class="number">60000</span>);</span><br><span class="line">  scheduler.shutdown();</span><br><span class="line"></span><br><span class="line">&#125; <span class="keyword">catch</span> (SchedulerException e) &#123;</span><br><span class="line">  e.printStackTrace();</span><br><span class="line">&#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">  e.printStackTrace();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+<h2 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h2><h2 id="与Spring结合"><a href="#与Spring结合" class="headerlink" title="与Spring结合"></a>与Spring结合</h2><h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><p> </p>
+<p>通过研读Quartz的源代码，和本实例，终于悟出了Quartz的工作原理。</p>
+<p> 1. scheduler是一个计划调度器容器（总部），容器里面可以盛放众多的JobDetail和trigger，当容器启动后，里面的每个JobDetail都会根据trigger按部就班自动去执行。 <br> 2. JobDetail是一个可执行的工作，它本身可能是有状态的。 <br> 3. Trigger代表一个调度参数的配置，什么时候去调。 <br> 4. 当JobDetail和Trigger在scheduler容器上注册后，形成了装配好的作业（JobDetail和Trigger所组成的一对儿），就可以伴随容器启动而调度执行了。 <br> 5. scheduler是个容器，容器中有一个线程池，用来并行调度执行每个作业，这样可以提高容器效率。<br> 6. 将上述的结构用一个图来表示，如下：</p>
+<p><img src="/images/java/quartz-central.png"></p>
+<hr>
+<p>[参考文献]:</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://lavasoft.blog.51cto.com/62575/181907/">深入解读Quartz的原理</a></li>
 </ol>
 
       
@@ -2345,7 +2295,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">236</span>
+          <span class="site-state-item-count">235</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

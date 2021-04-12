@@ -183,290 +183,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/%E6%85%A2%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/MySQL/%E6%85%A2%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" class="post-title-link" itemprop="url">Untitled</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-12 17:31:31" itemprop="dateCreated datePublished" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="慢查询优化"><a href="#慢查询优化" class="headerlink" title="慢查询优化"></a>慢查询优化</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqldumpslow -s t -t 10  ~/Downloads/慢日志/mysql-slow.log</span><br></pre></td></tr></table></figure>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">Count: <span class="number">2</span>  <span class="type">Time</span><span class="operator">=</span><span class="number">1238.48</span>s (<span class="number">2476</span>s)  Lock<span class="operator">=</span><span class="number">0.00</span>s (<span class="number">0</span>s)  <span class="keyword">Rows</span><span class="operator">=</span><span class="number">90750.0</span> (<span class="number">181500</span>), cdw[cdw]<span class="variable">@2hosts</span></span><br><span class="line">  <span class="keyword">select</span> t3.PRODUCT_CHANNEL_CODE,t3.MAIN_PROJECT_NAME ,</span><br><span class="line">  t3.MAIN_PROJECT_CODE ,t3.SUB_PROJECT_NAME,t3.SUB_PROJECT_CODE,</span><br><span class="line">  t3.CHANNEL_TYPE,t3.CHANNEL_NAME,t3.CHANNEL_ID,t3.CHANNEL_SUB_CODE,</span><br><span class="line">  t3.CHANNEL_SUB_TYPE,</span><br><span class="line">  t4.FRIST_CHANNEL,</span><br><span class="line">  t4.SECOND_CHANNEL,</span><br><span class="line">  t4.thrid_channel</span><br><span class="line">  <span class="keyword">from</span> (<span class="keyword">SELECT</span> t1.PRODUCT_CHANNEL_CODE,t1.MAIN_PROJECT_NAME ,</span><br><span class="line">  t1.MAIN_PROJECT_CODE ,t1.SUB_PROJECT_NAME,t1.SUB_PROJECT_CODE,</span><br><span class="line">  t1.CHANNEL_TYPE,t1.CHANNEL_NAME,t1.CHANNEL_ID,t2.CHANNEL_SUB_CODE,</span><br><span class="line">  t2.CHANNEL_SUB_TYPE <span class="keyword">FROM</span> qd_dz_db.qd_prochannel t1 <span class="keyword">left</span> <span class="keyword">join</span> qd_channel t2</span><br><span class="line">  <span class="keyword">on</span> t1.CHANNEL_ID<span class="operator">=</span>t2.CHANNEL_ID ) t3 <span class="keyword">join</span></span><br><span class="line">  (</span><br><span class="line">  <span class="keyword">SELECT</span></span><br><span class="line">  a.PRODUCT_CHANNEL_CODE,</span><br><span class="line">  b.FRIST_CHANNEL,</span><br><span class="line">  b.SECOND_CHANNEL,</span><br><span class="line">  b.THIRD_CHANNEL <span class="keyword">AS</span> thrid_channel</span><br><span class="line">  <span class="keyword">FROM</span></span><br><span class="line">  qd_dz_db.qd_prochannel a</span><br><span class="line">  <span class="keyword">JOIN</span></span><br><span class="line">  qd_dz_db.qd_channel b <span class="keyword">ON</span> a.CHANNEL_ID <span class="operator">=</span> b.CHANNEL_ID</span><br><span class="line">  )t4 <span class="keyword">on</span> t3.PRODUCT_CHANNEL_CODE<span class="operator">=</span>t4.PRODUCT_CHANNEL_CODE</span><br></pre></td></tr></table></figure>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">explain</span><br><span class="line"><span class="keyword">select</span></span><br><span class="line">    t3.PRODUCT_CHANNEL_CODE,</span><br><span class="line">    t3.MAIN_PROJECT_NAME ,</span><br><span class="line">    t3.MAIN_PROJECT_CODE ,</span><br><span class="line">    t3.SUB_PROJECT_NAME,</span><br><span class="line">    t3.SUB_PROJECT_CODE,</span><br><span class="line">    t3.CHANNEL_TYPE,</span><br><span class="line">    t3.CHANNEL_NAME,</span><br><span class="line">    t3.CHANNEL_ID,</span><br><span class="line">    t3.CHANNEL_SUB_CODE,</span><br><span class="line">    t3.CHANNEL_SUB_TYPE,</span><br><span class="line">    t4.FRIST_CHANNEL,</span><br><span class="line">    t4.SECOND_CHANNEL,</span><br><span class="line">    t4.thrid_channel</span><br><span class="line">  <span class="keyword">from</span> (</span><br><span class="line">      <span class="keyword">SELECT</span></span><br><span class="line">          t1.PRODUCT_CHANNEL_CODE,</span><br><span class="line">          t1.MAIN_PROJECT_NAME ,</span><br><span class="line">          t1.MAIN_PROJECT_CODE ,</span><br><span class="line">          t1.SUB_PROJECT_NAME,</span><br><span class="line">          t1.SUB_PROJECT_CODE,</span><br><span class="line">          t1.CHANNEL_TYPE,</span><br><span class="line">          t1.CHANNEL_NAME,</span><br><span class="line">          t1.CHANNEL_ID,</span><br><span class="line">          t2.CHANNEL_SUB_CODE,</span><br><span class="line">          t2.CHANNEL_SUB_TYPE</span><br><span class="line">      <span class="keyword">FROM</span></span><br><span class="line">          qd_dz_db.qd_prochannel t1</span><br><span class="line">      <span class="keyword">left</span> <span class="keyword">join</span></span><br><span class="line">          qd_channel t2</span><br><span class="line">      <span class="keyword">on</span> t1.CHANNEL_ID<span class="operator">=</span>t2.CHANNEL_ID</span><br><span class="line">  ) t3</span><br><span class="line">  <span class="keyword">join</span></span><br><span class="line">  (</span><br><span class="line">      <span class="keyword">SELECT</span></span><br><span class="line">          a.PRODUCT_CHANNEL_CODE,</span><br><span class="line">          b.FRIST_CHANNEL,</span><br><span class="line">          b.SECOND_CHANNEL,</span><br><span class="line">          b.THIRD_CHANNEL <span class="keyword">AS</span> thrid_channel</span><br><span class="line">      <span class="keyword">FROM</span></span><br><span class="line">          qd_dz_db.qd_prochannel a</span><br><span class="line">      <span class="keyword">JOIN</span></span><br><span class="line">          qd_dz_db.qd_channel b</span><br><span class="line">      <span class="keyword">ON</span> a.CHANNEL_ID <span class="operator">=</span> b.CHANNEL_ID</span><br><span class="line">  )t4</span><br><span class="line">  <span class="keyword">on</span> t3.PRODUCT_CHANNEL_CODE<span class="operator">=</span>t4.PRODUCT_CHANNEL_CODE</span><br></pre></td></tr></table></figure>
-<table>
-<thead>
-<tr>
-<th>id</th>
-<th>select_type</th>
-<th>table</th>
-<th>partitions</th>
-<th>type</th>
-<th>possible_keys</th>
-<th>key</th>
-<th>key_len</th>
-<th>ref</th>
-<th>rows</th>
-<th>filtered</th>
-<th>Extra</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1</td>
-<td>SIMPLE</td>
-<td>b</td>
-<td>null</td>
-<td>ALL</td>
-<td>PRIMARY,index_qd_channel</td>
-<td>null</td>
-<td>null</td>
-<td>null</td>
-<td>212</td>
-<td>100.0</td>
-<td>null</td>
-</tr>
-<tr>
-<td>1</td>
-<td>SIMPLE</td>
-<td>a</td>
-<td>null</td>
-<td>ref</td>
-<td>index_qd_prochannel</td>
-<td>index_qd_prochannel</td>
-<td>4</td>
-<td>qd_dz_db.b.CHANNEL_ID</td>
-<td>43</td>
-<td>100.0</td>
-<td>null</td>
-</tr>
-<tr>
-<td>1</td>
-<td>SIMPLE</td>
-<td>t1</td>
-<td>null</td>
-<td>ALL</td>
-<td>null</td>
-<td>null</td>
-<td>null</td>
-<td>null</td>
-<td>56367</td>
-<td>10.0</td>
-<td>Using where; Using join buffer (Block Nested Loop)</td>
-</tr>
-<tr>
-<td>1</td>
-<td>SIMPLE</td>
-<td>t2</td>
-<td>null</td>
-<td>eq_ref</td>
-<td>PRIMARY,index_qd_channel</td>
-<td>PRIMARY</td>
-<td>4</td>
-<td>qd_dz_db.t1.CHANNEL_ID</td>
-<td>1</td>
-<td>100.0</td>
-<td>null</td>
-</tr>
-</tbody></table>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> qd_prochannel</span><br></pre></td></tr></table></figure>
-<table>
-<thead>
-<tr>
-<th>Table</th>
-<th>Non_unique</th>
-<th>Key_name</th>
-<th>Seq_in_index</th>
-<th>Column_name</th>
-<th>Collation</th>
-<th>Cardinality</th>
-<th>Sub_part</th>
-<th>Packed</th>
-<th>Null</th>
-<th>Index_type</th>
-<th>CommentIndex_comment</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>qd_prochannel</td>
-<td>0</td>
-<td>PRIMARY</td>
-<td>1</td>
-<td>PR_CHANNEL_ID</td>
-<td>A</td>
-<td>56367</td>
-<td>null</td>
-<td>null</td>
-<td></td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_prochannel</td>
-<td>1</td>
-<td>index_qd_prochannel</td>
-<td>1</td>
-<td>CHANNEL_ID</td>
-<td>A</td>
-<td>1311</td>
-<td>null</td>
-<td>null</td>
-<td></td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_prochannel</td>
-<td>1</td>
-<td>index_qd_prochannel</td>
-<td>2</td>
-<td>MAIN_PROJECT_CODE</td>
-<td>A</td>
-<td>3316</td>
-<td>null</td>
-<td>null</td>
-<td>YES</td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_prochannel</td>
-<td>1</td>
-<td>index_qd_prochannel</td>
-<td>3</td>
-<td>CREATE_TIME</td>
-<td>A</td>
-<td>14092</td>
-<td>null</td>
-<td>null</td>
-<td>YES</td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_prochannel</td>
-<td>1</td>
-<td>index_qd_prochannel_MAIN_PROJECT_CODE</td>
-<td>1</td>
-<td>MAIN_PROJECT_CODE</td>
-<td>A</td>
-<td>613</td>
-<td>null</td>
-<td>null</td>
-<td>YES</td>
-<td>BTREE</td>
-<td></td>
-</tr>
-</tbody></table>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> qd_channel</span><br></pre></td></tr></table></figure>
-<table>
-<thead>
-<tr>
-<th>Table</th>
-<th>Non_unique</th>
-<th>Key_name</th>
-<th>Seq_in_index</th>
-<th>Column_name</th>
-<th>Collation</th>
-<th>Cardinality</th>
-<th>Sub_part</th>
-<th>Packed</th>
-<th>Null</th>
-<th>Index_type</th>
-<th>Comment Index_comment</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>qd_channel</td>
-<td>0</td>
-<td>PRIMARY</td>
-<td>1</td>
-<td>CHANNEL_ID</td>
-<td>A</td>
-<td>212</td>
-<td>null</td>
-<td>null</td>
-<td></td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_channel</td>
-<td>1</td>
-<td>index_qd_channel</td>
-<td>1</td>
-<td>CHANNEL_ID</td>
-<td>A</td>
-<td>212</td>
-<td>null</td>
-<td>null</td>
-<td></td>
-<td>BTREE</td>
-<td></td>
-</tr>
-<tr>
-<td>qd_channel</td>
-<td>1</td>
-<td>index_qd_channel</td>
-<td>2</td>
-<td>CHANNEL_CODE</td>
-<td>A</td>
-<td>212</td>
-<td>null</td>
-<td>null</td>
-<td>YES</td>
-<td>BTREE</td>
-<td></td>
-</tr>
-</tbody></table>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/Maven/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -491,7 +207,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-12 17:31:31" itemprop="dateCreated datePublished" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              <time title="Created: 2021-04-12 17:33:23" itemprop="dateCreated datePublished" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
             </span>
 
           
@@ -549,7 +265,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-12 17:31:31" itemprop="dateCreated datePublished" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              <time title="Created: 2021-04-12 17:33:23" itemprop="dateCreated datePublished" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
             </span>
 
           
@@ -608,7 +324,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-12 17:31:31" itemprop="dateCreated datePublished" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              <time title="Created: 2021-04-12 17:33:23" itemprop="dateCreated datePublished" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
             </span>
 
           
@@ -681,7 +397,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-12 17:31:31" itemprop="dateCreated datePublished" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              <time title="Created: 2021-04-12 17:33:23" itemprop="dateCreated datePublished" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
             </span>
 
           
@@ -795,7 +511,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-12 17:31:31" itemprop="dateCreated datePublished" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              <time title="Created: 2021-04-12 17:33:23" itemprop="dateCreated datePublished" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
             </span>
 
           
@@ -909,7 +625,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-12 17:31:31" itemprop="dateCreated datePublished" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              <time title="Created: 2021-04-12 17:33:23" itemprop="dateCreated datePublished" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
             </span>
 
           
@@ -968,7 +684,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-12 17:31:31" itemprop="dateCreated datePublished" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              <time title="Created: 2021-04-12 17:33:23" itemprop="dateCreated datePublished" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
             </span>
 
           
@@ -1031,7 +747,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-12 17:31:31" itemprop="dateCreated datePublished" datetime="2021-04-12T17:31:31+08:00">2021-04-12</time>
+              <time title="Created: 2021-04-12 17:33:23" itemprop="dateCreated datePublished" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
             </span>
 
           
@@ -1205,7 +921,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:31:32" itemprop="dateModified" datetime="2021-04-12T17:31:32+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-12 17:33:23" itemprop="dateModified" datetime="2021-04-12T17:33:23+08:00">2021-04-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1334,6 +1050,104 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/hive/hive-sample/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/hive/hive-sample/" class="post-title-link" itemprop="url">Hive SQL优化样例</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-03-12 00:00:00" itemprop="dateCreated datePublished" datetime="2021-03-12T00:00:00+08:00">2021-03-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-12 17:33:24" itemprop="dateModified" datetime="2021-04-12T17:33:24+08:00">2021-04-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/BigData/" itemprop="url" rel="index"><span itemprop="name">BigData</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="comment">/*+ MAPJOIN(hj3,hj1,hj0)*/</span> <span class="number">20210324</span> <span class="keyword">as</span> fdate, TO_CHAR(SYSTIMESTAMP(), <span class="string">&#x27;yyyymmddhh24miss&#x27;</span>) <span class="keyword">as</span> fetl_time,hj2.fuin <span class="keyword">as</span> fuin,<span class="built_in">COUNT</span>(<span class="keyword">DISTINCT</span>(SUBSTR(<span class="built_in">CAST</span>(if (((hj2.fevent_time <span class="keyword">between</span> <span class="number">20210318000000</span> <span class="keyword">and</span> <span class="number">20210324235959</span>) <span class="keyword">and</span> (hj2.fscn <span class="keyword">in</span> (<span class="string">&#x27;1&#x27;</span>))) , hj2.fevent_time, <span class="keyword">null</span>) <span class="keyword">AS</span> STRING),<span class="number">1</span>,<span class="number">8</span>))) <span class="keyword">as</span> flabel_25942,   <span class="built_in">COUNT</span>(<span class="keyword">DISTINCT</span>(SUBSTR(<span class="built_in">CAST</span>(if (((hj2.fevent_time <span class="keyword">between</span> <span class="number">20210318000000</span> <span class="keyword">and</span> <span class="number">20210324235959</span>)  <span class="keyword">and</span> (hj2.fscn <span class="keyword">in</span> (<span class="string">&#x27;1&#x27;</span>))) , hj2.fevent_time, <span class="keyword">null</span>) <span class="keyword">AS</span> STRING),<span class="number">1</span>,<span class="number">8</span>))) <span class="keyword">as</span> flabel_25970, <span class="built_in">COUNT</span>(<span class="keyword">DISTINCT</span>(SUBSTR(<span class="built_in">CAST</span>(if (((hj2.furl_orig <span class="operator">=</span> <span class="string">&#x27;/mb/v5/fund/list/steady.shtml&#x27;</span>)  <span class="keyword">or</span> (hj2.furl_orig <span class="operator">=</span> <span class="string">&#x27;/mb/v4/fundlist/fund_all.shtml&#x27;</span>)    <span class="keyword">or</span> (hj2.furl_orig <span class="operator">=</span> <span class="string">&#x27;/mb/v4/fundlist/fund_all_v5.shtml&#x27;</span>))  <span class="keyword">and</span> ((hj2.fevent_time <span class="keyword">between</span> <span class="number">20210318000000</span> <span class="keyword">and</span> <span class="number">20210324235959</span>)) , hj2.fevent_time, <span class="keyword">null</span>) <span class="keyword">AS</span> STRING),<span class="number">1</span>,<span class="number">8</span>))) <span class="keyword">as</span> flabel_25972</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> dml_base::dml_evt_lct_cft_label_factory_mta_access_dd hj2</span><br><span class="line"></span><br><span class="line"><span class="keyword">left</span> <span class="keyword">join</span> dim_base::dim_lct_hq_beacon_report_manage hj1 <span class="keyword">on</span> if(hj2.furl_orig <span class="keyword">is</span> <span class="keyword">null</span></span><br><span class="line">                                                              <span class="keyword">or</span> <span class="built_in">trim</span>(hj2.furl_orig) <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>, concat(<span class="string">&#x27;null_&#x27;</span>, <span class="built_in">floor</span>(rand() <span class="operator">*</span> <span class="number">10000</span>)), hj2.furl_orig) <span class="operator">=</span> hj1.fevent_code</span><br><span class="line"></span><br><span class="line"><span class="keyword">left</span> <span class="keyword">join</span> dim_base::dim_lct_hq_virtual_event_info hj3 <span class="keyword">on</span> if(hj2.furl_orig <span class="keyword">is</span> <span class="keyword">null</span></span><br><span class="line">                                                      <span class="keyword">or</span> <span class="built_in">trim</span>(hj2.furl_orig) <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>, concat(<span class="string">&#x27;null_&#x27;</span>, <span class="built_in">floor</span>(rand() <span class="operator">*</span> <span class="number">10000</span>)), hj2.furl_orig) <span class="operator">=</span> hj3.fevent_code</span><br><span class="line"><span class="keyword">left</span> <span class="keyword">join</span> dim_base::dim_prd_lct_cft_fund_type_conf hj0 <span class="keyword">on</span> if(hj2.fspid_fundcode <span class="keyword">is</span> <span class="keyword">null</span></span><br><span class="line">                                                             <span class="keyword">or</span> <span class="built_in">trim</span>(hj2.fspid_fundcode) <span class="operator">=</span> <span class="string">&#x27;&#x27;</span>, concat(<span class="string">&#x27;null_&#x27;</span>, <span class="built_in">floor</span>(rand() <span class="operator">*</span> <span class="number">10000</span>)), hj2.fspid_fundcode) <span class="operator">=</span> hj0.fspid_fundcode</span><br><span class="line"></span><br><span class="line"><span class="keyword">where</span> hj2.fuin <span class="keyword">is</span> <span class="keyword">not</span> <span class="keyword">null</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">and</span> <span class="built_in">trim</span>(hj2.fuin) <span class="operator">&lt;&gt;</span> <span class="string">&#x27;&#x27;</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">and</span> hj2.fdate <span class="operator">&gt;=</span> <span class="number">20210318</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">and</span> hj2.fdate <span class="operator">&lt;=</span> <span class="number">20210324</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">group</span> <span class="keyword">by</span> hj2.fuin</span><br></pre></td></tr></table></figure>
+
+
+
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br></pre></td><td class="code"><pre><span class="line">ABSTRACT SYNTAX TREE:</span><br><span class="line">  (TOK_QUERY (TOK_FROM (TOK_LEFTOUTERJOIN (TOK_LEFTOUTERJOIN (TOK_LEFTOUTERJOIN (TOK_TABREF (TOK_TAB dml_evt_lct_cft_label_factory_mta_access_dd dml_base) hj2) (TOK_TABREF (TOK_TAB dim_lct_hq_beacon_report_manage dim_base) hj1) (= (<span class="function">TOK_FUNCTION <span class="title">if</span> <span class="params">(or (TOK_FUNCTION TOK_ISNULL (. (TOK_TABLE_OR_COL hj2)</span> furl_orig)) <span class="params">(= (TOK_FUNCTION trim (. (TOK_TABLE_OR_COL hj2)</span> furl_orig)) &#x27;&#x27;)) <span class="params">(TOK_FUNCTION concat <span class="string">&#x27;null_&#x27;</span> (TOK_FUNCTION floor (* (TOK_FUNCTION rand)</span> 10000))) <span class="params">(. (TOK_TABLE_OR_COL hj2)</span> furl_orig)) <span class="params">(. (TOK_TABLE_OR_COL hj1)</span> fevent_code))) <span class="params">(TOK_TABREF (TOK_TAB dim_lct_hq_virtual_event_info dim_base)</span> hj3) <span class="params">(= (TOK_FUNCTION <span class="keyword">if</span> (or (TOK_FUNCTION TOK_ISNULL (. (TOK_TABLE_OR_COL hj2)</span> furl_orig)) <span class="params">(= (TOK_FUNCTION trim (. (TOK_TABLE_OR_COL hj2)</span> furl_orig)) &#x27;&#x27;)) <span class="params">(TOK_FUNCTION concat <span class="string">&#x27;null_&#x27;</span> (TOK_FUNCTION floor (* (TOK_FUNCTION rand)</span> 10000))) <span class="params">(. (TOK_TABLE_OR_COL hj2)</span> furl_orig)) <span class="params">(. (TOK_TABLE_OR_COL hj3)</span> fevent_code))) <span class="params">(TOK_TABREF (TOK_TAB dim_prd_lct_cft_fund_type_conf dim_base)</span> hj0) <span class="params">(= (TOK_FUNCTION <span class="keyword">if</span> (or (TOK_FUNCTION TOK_ISNULL (. (TOK_TABLE_OR_COL hj2)</span> fspid_fundcode)) <span class="params">(= (TOK_FUNCTION trim (. (TOK_TABLE_OR_COL hj2)</span> fspid_fundcode)) &#x27;&#x27;)) <span class="params">(TOK_FUNCTION concat <span class="string">&#x27;null_&#x27;</span> (TOK_FUNCTION floor (* (TOK_FUNCTION rand)</span> 10000))) <span class="params">(. (TOK_TABLE_OR_COL hj2)</span> fspid_fundcode)) <span class="params">(. (TOK_TABLE_OR_COL hj0)</span> fspid_fundcode)))) <span class="params">(TOK_INSERT (TOK_DESTINATION (TOK_DIR TOK_TMP_FILE)</span>) <span class="params">(TOK_SELECT (TOK_HINTLIST (TOK_HINT TOK_MAPJOIN (TOK_HINTARGLIST (TOK_TABLE_OR_COL hj3)</span> <span class="params">(TOK_TABLE_OR_COL hj1)</span> <span class="params">(TOK_TABLE_OR_COL hj0)</span>))) <span class="params">(TOK_SELEXPR <span class="number">20210324</span> fdate)</span> <span class="params">(TOK_SELEXPR (TOK_FUNCTION TO_CHAR (TOK_FUNCTION SYSTIMESTAMP)</span> &#x27;yyyymmddhh24miss&#x27;) fetl_time) <span class="params">(TOK_SELEXPR (. (TOK_TABLE_OR_COL hj2)</span> fuin) fuin) <span class="params">(TOK_SELEXPR (TOK_FUNCTIONDI COUNT (TOK_FUNCTION SUBSTR (TOK_FUNCTION TOK_STRING (TOK_FUNCTION <span class="keyword">if</span> (and (and (&gt;= (. (TOK_TABLE_OR_COL hj2)</span> fevent_time) 20210318000000) <span class="params">(&lt;= (. (TOK_TABLE_OR_COL hj2)</span> fevent_time) 20210324235959)) <span class="params">(in (. (TOK_TABLE_OR_COL hj2)</span> fscn) &#x27;1&#x27;)) <span class="params">(. (TOK_TABLE_OR_COL hj2)</span> fevent_time) TOK_NULL)) 1 8)) flabel_25942) <span class="params">(TOK_SELEXPR (TOK_FUNCTIONDI COUNT (TOK_FUNCTION SUBSTR (TOK_FUNCTION TOK_STRING (TOK_FUNCTION <span class="keyword">if</span> (and (and (&gt;= (. (TOK_TABLE_OR_COL hj2)</span> fevent_time) 20210318000000) <span class="params">(&lt;= (. (TOK_TABLE_OR_COL hj2)</span> fevent_time) 20210324235959)) <span class="params">(in (. (TOK_TABLE_OR_COL hj2)</span> fscn) &#x27;1&#x27;)) <span class="params">(. (TOK_TABLE_OR_COL hj2)</span> fevent_time) TOK_NULL)) 1 8)) flabel_25970) <span class="params">(TOK_SELEXPR (TOK_FUNCTIONDI COUNT (TOK_FUNCTION SUBSTR (TOK_FUNCTION TOK_STRING (TOK_FUNCTION <span class="keyword">if</span> (and (or (or (= (. (TOK_TABLE_OR_COL hj2)</span> furl_orig) &#x27;/mb/v5/fund/list/steady.shtml&#x27;) <span class="params">(= (. (TOK_TABLE_OR_COL hj2)</span> furl_orig) &#x27;/mb/v4/fundlist/fund_all.shtml&#x27;)) <span class="params">(= (. (TOK_TABLE_OR_COL hj2)</span> furl_orig) &#x27;/mb/v4/fundlist/fund_all_v5.shtml&#x27;)) <span class="params">(and (&gt;= (. (TOK_TABLE_OR_COL hj2)</span> fevent_time) 20210318000000) <span class="params">(&lt;= (. (TOK_TABLE_OR_COL hj2)</span> fevent_time) 20210324235959))) <span class="params">(. (TOK_TABLE_OR_COL hj2)</span> fevent_time) TOK_NULL)) 1 8)) flabel_25972)) <span class="params">(TOK_WHERE (and (and (and (TOK_FUNCTION TOK_ISNOTNULL (. (TOK_TABLE_OR_COL hj2)</span> fuin)) <span class="params">(&lt;&gt; (TOK_FUNCTION trim (. (TOK_TABLE_OR_COL hj2)</span> fuin)) &#x27;&#x27;)) <span class="params">(&gt;= (. (TOK_TABLE_OR_COL hj2)</span> fdate) 20210318)) <span class="params">(&lt;= (. (TOK_TABLE_OR_COL hj2)</span> fdate) 20210324))) <span class="params">(TOK_GROUPBY (. (TOK_TABLE_OR_COL hj2)</span> fuin))))</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">STAGE DEPENDENCIES:</span></span><br><span class="line"><span class="function">  Stage-1</span></span><br><span class="line"><span class="function">    type:root stage</span>;</span><br><span class="line">  Stage-<span class="number">2</span></span><br><span class="line">    type:;depends on:Stage-<span class="number">1</span>;</span><br><span class="line">  Stage-<span class="number">3</span></span><br><span class="line">    type:;depends on:Stage-<span class="number">2</span>;</span><br><span class="line">  Stage-<span class="number">0</span></span><br><span class="line">    type:root stage;</span><br><span class="line"></span><br><span class="line">STAGE PLANS:</span><br><span class="line">  Stage: Stage-<span class="number">1</span></span><br><span class="line">    Map Reduce</span><br><span class="line">      Alias -&gt; Map Operator Tree:</span><br><span class="line">        dml_base/dml_evt_lct_cft_label_factory_mta_access_dd#hj2 </span><br><span class="line">          Operator:          TableScan</span><br><span class="line">            alias: dml_base/dml_evt_lct_cft_label_factory_mta_access_dd#hj2</span><br><span class="line">            Operator:            Filter Operator</span><br><span class="line">              predicate:</span><br><span class="line">                  expr: (((<span class="function">fuin is not <span class="keyword">null</span> <span class="title">and</span> <span class="params">(trim(fuin)</span> &lt;&gt; &#x27;&#x27;)) <span class="title">and</span> <span class="params">(fdate &gt;= <span class="number">20210318</span>)</span>) <span class="title">and</span> <span class="params">(fdate &lt;= <span class="number">20210324</span>)</span>)</span></span><br><span class="line"><span class="function">                  type: <span class="keyword">boolean</span></span></span><br><span class="line"><span class="function">              Operator:              Common Join Operator</span></span><br><span class="line"><span class="function">                condition map:</span></span><br><span class="line"><span class="function">                     Left Outer Join0 to 1</span></span><br><span class="line"><span class="function">                     Left Outer Join0 to 2</span></span><br><span class="line"><span class="function">                condition expressions:</span></span><br><span class="line"><span class="function">                  0 </span>&#123;fdate&#125; &#123;fuin&#125; &#123;furl_orig&#125; &#123;fevent_time&#125; &#123;fspid_fundcode&#125; &#123;fscn&#125;</span><br><span class="line">                  <span class="number">1</span> </span><br><span class="line">                  <span class="number">2</span> </span><br><span class="line">                handleSkewJoin: <span class="keyword">false</span></span><br><span class="line">                keys:</span><br><span class="line">                  0 [class com.tencent.tdw_udf_cloud.hive.udf.generic.GenericUDFIf(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPOr(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPNull(Column[furl_orig](), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPEqual(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Column[furl_orig](), Const string ()(), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Const string null_, class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge((), Const int 10000()()(), Column[furl_orig]()]</span><br><span class="line">                  <span class="number">1</span> [Column[fevent_code]]</span><br><span class="line">                  <span class="number">2</span> [Column[fevent_code]]</span><br><span class="line">                outputColumnNames: _col0, _col42, _col85, _col88, _col103, _col104</span><br><span class="line">                Position of Big Table: <span class="number">0</span></span><br><span class="line">                Operator:                File Output Operator</span><br><span class="line">                  compressed: <span class="keyword">false</span></span><br><span class="line">                  GlobalTableId: <span class="number">0</span></span><br><span class="line">                  table:</span><br><span class="line">                    table descs</span><br><span class="line">                      input format: org.apache.hadoop.mapred.SequenceFileInputFormat</span><br><span class="line">                      output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat</span><br><span class="line">      Local Work:</span><br><span class="line">        Map Reduce Local Work</span><br><span class="line">          Alias -&gt; Map Local Tables:</span><br><span class="line">            dim_base/dim_lct_hq_beacon_report_manage#hj1 </span><br><span class="line">              Fetch Operator</span><br><span class="line">                limit: -<span class="number">1</span></span><br><span class="line">            dim_base/dim_lct_hq_virtual_event_info#hj3 </span><br><span class="line">              Fetch Operator</span><br><span class="line">                limit: -<span class="number">1</span></span><br><span class="line">          Alias -&gt; Map Local Operator Tree:</span><br><span class="line">            dim_base/dim_lct_hq_beacon_report_manage#hj1 </span><br><span class="line">              Operator:              TableScan</span><br><span class="line">                alias: dim_base/dim_lct_hq_beacon_report_manage#hj1</span><br><span class="line">                Operator:                Common Join Operator</span><br><span class="line">                  condition map:</span><br><span class="line">                       Left Outer Join0 to <span class="number">1</span></span><br><span class="line">                       Left Outer Join0 to <span class="number">2</span></span><br><span class="line">                  condition expressions:</span><br><span class="line">                    <span class="number">0</span> &#123;fdate&#125; &#123;fuin&#125; &#123;furl_orig&#125; &#123;fevent_time&#125; &#123;fspid_fundcode&#125; &#123;fscn&#125;</span><br><span class="line">                    <span class="number">1</span> </span><br><span class="line">                    <span class="number">2</span> </span><br><span class="line">                  handleSkewJoin: <span class="keyword">false</span></span><br><span class="line">                  keys:</span><br><span class="line">                    0 [class com.tencent.tdw_udf_cloud.hive.udf.generic.GenericUDFIf(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPOr(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPNull(Column[furl_orig](), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPEqual(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Column[furl_orig](), Const string ()(), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Const string null_, class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge((), Const int 10000()()(), Column[furl_orig]()]</span><br><span class="line">                    <span class="number">1</span> [Column[fevent_code]]</span><br><span class="line">                    <span class="number">2</span> [Column[fevent_code]]</span><br><span class="line">                  outputColumnNames: _col0, _col42, _col85, _col88, _col103, _col104</span><br><span class="line">                  Position of Big Table: <span class="number">0</span></span><br><span class="line">                  Operator:                  File Output Operator</span><br><span class="line">                    compressed: <span class="keyword">false</span></span><br><span class="line">                    GlobalTableId: <span class="number">0</span></span><br><span class="line">                    table:</span><br><span class="line">                      table descs</span><br><span class="line">                        input format: org.apache.hadoop.mapred.SequenceFileInputFormat</span><br><span class="line">                        output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat</span><br><span class="line">            dim_base/dim_lct_hq_virtual_event_info#hj3 </span><br><span class="line">              Operator:              TableScan</span><br><span class="line">                alias: dim_base/dim_lct_hq_virtual_event_info#hj3</span><br><span class="line">                Operator:                Common Join Operator</span><br><span class="line">                  condition map:</span><br><span class="line">                       Left Outer Join0 to <span class="number">1</span></span><br><span class="line">                       Left Outer Join0 to <span class="number">2</span></span><br><span class="line">                  condition expressions:</span><br><span class="line">                    <span class="number">0</span> &#123;fdate&#125; &#123;fuin&#125; &#123;furl_orig&#125; &#123;fevent_time&#125; &#123;fspid_fundcode&#125; &#123;fscn&#125;</span><br><span class="line">                    <span class="number">1</span> </span><br><span class="line">                    <span class="number">2</span> </span><br><span class="line">                  handleSkewJoin: <span class="keyword">false</span></span><br><span class="line">                  keys:</span><br><span class="line">                    0 [class com.tencent.tdw_udf_cloud.hive.udf.generic.GenericUDFIf(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPOr(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPNull(Column[furl_orig](), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPEqual(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Column[furl_orig](), Const string ()(), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Const string null_, class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge((), Const int 10000()()(), Column[furl_orig]()]</span><br><span class="line">                    <span class="number">1</span> [Column[fevent_code]]</span><br><span class="line">                    <span class="number">2</span> [Column[fevent_code]]</span><br><span class="line">                  outputColumnNames: _col0, _col42, _col85, _col88, _col103, _col104</span><br><span class="line">                  Position of Big Table: <span class="number">0</span></span><br><span class="line">                  Operator:                  File Output Operator</span><br><span class="line">                    compressed: <span class="keyword">false</span></span><br><span class="line">                    GlobalTableId: <span class="number">0</span></span><br><span class="line">                    table:</span><br><span class="line">                      table descs</span><br><span class="line">                        input format: org.apache.hadoop.mapred.SequenceFileInputFormat</span><br><span class="line">                        output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat</span><br><span class="line">      Path -&gt; Alias:</span><br><span class="line">        hdfs:<span class="comment">//&lt;hive_hdfs_base_path&gt;/warehouse/dml_base.db/dml_evt_lct_cft_label_factory_mta_access_dd/par_20210318 [dml_base/dml_evt_lct_cft_label_factory_mta_access_dd#hj2]</span></span><br><span class="line">        hdfs:<span class="comment">//&lt;hive_hdfs_base_path&gt;/warehouse/dml_base.db/dml_evt_lct_cft_label_factory_mta_access_dd/par_20210319 [dml_base/dml_evt_lct_cft_label_factory_mta_access_dd#hj2]</span></span><br><span class="line">        hdfs:<span class="comment">//&lt;hive_hdfs_base_path&gt;/warehouse/dml_base.db/dml_evt_lct_cft_label_factory_mta_access_dd/par_20210320 [dml_base/dml_evt_lct_cft_label_factory_mta_access_dd#hj2]</span></span><br><span class="line">        hdfs:<span class="comment">//&lt;hive_hdfs_base_path&gt;/warehouse/dml_base.db/dml_evt_lct_cft_label_factory_mta_access_dd/par_20210321 [dml_base/dml_evt_lct_cft_label_factory_mta_access_dd#hj2]</span></span><br><span class="line">        hdfs:<span class="comment">//&lt;hive_hdfs_base_path&gt;/warehouse/dml_base.db/dml_evt_lct_cft_label_factory_mta_access_dd/par_20210322 [dml_base/dml_evt_lct_cft_label_factory_mta_access_dd#hj2]</span></span><br><span class="line">        hdfs:<span class="comment">//&lt;hive_hdfs_base_path&gt;/warehouse/dml_base.db/dml_evt_lct_cft_label_factory_mta_access_dd/par_20210323 [dml_base/dml_evt_lct_cft_label_factory_mta_access_dd#hj2]</span></span><br><span class="line">        hdfs:<span class="comment">//&lt;hive_hdfs_base_path&gt;/warehouse/dml_base.db/dml_evt_lct_cft_label_factory_mta_access_dd/par_20210324 [dml_base/dml_evt_lct_cft_label_factory_mta_access_dd#hj2]</span></span><br><span class="line"></span><br><span class="line">  Stage: Stage-<span class="number">2</span></span><br><span class="line">    Map Reduce</span><br><span class="line">      Alias -&gt; Map Operator Tree:</span><br><span class="line">        hdfs:<span class="comment">//&lt;tmp_hive_hdfs_base_path&gt;/20210325/&lt;hdfs_user&gt;_tdwadmin_20210325195415346_29895878_7_699597773/10002 </span></span><br><span class="line">          Operator:          Select Operator</span><br><span class="line">            expressions:</span><br><span class="line">                  expr: _col0</span><br><span class="line">                  type: bigint</span><br><span class="line">                  expr: _col42</span><br><span class="line">                  type: string</span><br><span class="line">                  expr: _col85</span><br><span class="line">                  type: string</span><br><span class="line">                  expr: _col88</span><br><span class="line">                  type: bigint</span><br><span class="line">                  expr: _col103</span><br><span class="line">                  type: string</span><br><span class="line">                  expr: _col104</span><br><span class="line">                  type: string</span><br><span class="line">            outputColumnNames: _col0, _col42, _col85, _col88, _col103, _col104</span><br><span class="line">            Operator:            Common Join Operator</span><br><span class="line">              condition map:</span><br><span class="line">                   Left Outer Join0 to <span class="number">1</span></span><br><span class="line">              condition expressions:</span><br><span class="line">                <span class="number">0</span> &#123;_col0&#125; &#123;_col42&#125; &#123;_col85&#125; &#123;_col88&#125; &#123;_col104&#125;</span><br><span class="line">                <span class="number">1</span> </span><br><span class="line">              handleSkewJoin: <span class="keyword">false</span></span><br><span class="line">              keys:</span><br><span class="line">                0 [class com.tencent.tdw_udf_cloud.hive.udf.generic.GenericUDFIf(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPOr(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPNull(Column[_col103](), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPEqual(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Column[_col103](), Const string ()(), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Const string null_, class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge((), Const int 10000()()(), Column[_col103]()]</span><br><span class="line">                <span class="number">1</span> [Column[fspid_fundcode]]</span><br><span class="line">              outputColumnNames: _col0, _col42, _col85, _col88, _col104</span><br><span class="line">              Position of Big Table: <span class="number">0</span></span><br><span class="line">              Operator:              File Output Operator</span><br><span class="line">                compressed: <span class="keyword">false</span></span><br><span class="line">                GlobalTableId: <span class="number">0</span></span><br><span class="line">                table:</span><br><span class="line">                  table descs</span><br><span class="line">                    input format: org.apache.hadoop.mapred.SequenceFileInputFormat</span><br><span class="line">                    output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat</span><br><span class="line">      Local Work:</span><br><span class="line">        Map Reduce Local Work</span><br><span class="line">          Alias -&gt; Map Local Tables:</span><br><span class="line">            dim_base/dim_prd_lct_cft_fund_type_conf#hj0 </span><br><span class="line">              Fetch Operator</span><br><span class="line">                limit: -<span class="number">1</span></span><br><span class="line">          Alias -&gt; Map Local Operator Tree:</span><br><span class="line">            dim_base/dim_prd_lct_cft_fund_type_conf#hj0 </span><br><span class="line">              Operator:              TableScan</span><br><span class="line">                alias: dim_base/dim_prd_lct_cft_fund_type_conf#hj0</span><br><span class="line">                Operator:                Common Join Operator</span><br><span class="line">                  condition map:</span><br><span class="line">                       Left Outer Join0 to <span class="number">1</span></span><br><span class="line">                  condition expressions:</span><br><span class="line">                    <span class="number">0</span> &#123;_col0&#125; &#123;_col42&#125; &#123;_col85&#125; &#123;_col88&#125; &#123;_col104&#125;</span><br><span class="line">                    <span class="number">1</span> </span><br><span class="line">                  handleSkewJoin: <span class="keyword">false</span></span><br><span class="line">                  keys:</span><br><span class="line">                    0 [class com.tencent.tdw_udf_cloud.hive.udf.generic.GenericUDFIf(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPOr(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPNull(Column[_col103](), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPEqual(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Column[_col103](), Const string ()(), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Const string null_, class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge((), Const int 10000()()(), Column[_col103]()]</span><br><span class="line">                    <span class="number">1</span> [Column[fspid_fundcode]]</span><br><span class="line">                  outputColumnNames: _col0, _col42, _col85, _col88, _col104</span><br><span class="line">                  Position of Big Table: <span class="number">0</span></span><br><span class="line">                  Operator:                  File Output Operator</span><br><span class="line">                    compressed: <span class="keyword">false</span></span><br><span class="line">                    GlobalTableId: <span class="number">0</span></span><br><span class="line">                    table:</span><br><span class="line">                      table descs</span><br><span class="line">                        input format: org.apache.hadoop.mapred.SequenceFileInputFormat</span><br><span class="line">                        output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat</span><br><span class="line">      Path -&gt; Alias:</span><br><span class="line">        hdfs:<span class="comment">//&lt;tmp_hive_hdfs_base_path&gt;/20210325/&lt;hdfs_user&gt;_tdwadmin_20210325195415346_29895878_7_699597773/10002 [hdfs://&lt;tmp_hive_hdfs_base_path&gt;/20210325/&lt;hdfs_user&gt;_tdwadmin_20210325195415346_29895878_7_699597773/10002]</span></span><br><span class="line"></span><br><span class="line">  Stage: Stage-<span class="number">3</span></span><br><span class="line">    Map Reduce</span><br><span class="line">      Alias -&gt; Map Operator Tree:</span><br><span class="line">        hdfs:<span class="comment">//&lt;tmp_hive_hdfs_base_path&gt;/20210325/&lt;hdfs_user&gt;_tdwadmin_20210325195415346_29895878_7_699597773/10002 </span></span><br><span class="line">          Operator:          Select Operator</span><br><span class="line">            expressions:</span><br><span class="line">                  expr: _col0</span><br><span class="line">                  type: bigint</span><br><span class="line">                  expr: _col42</span><br><span class="line">                  type: string</span><br><span class="line">                  expr: _col85</span><br><span class="line">                  type: string</span><br><span class="line">                  expr: _col88</span><br><span class="line">                  type: bigint</span><br><span class="line">                  expr: _col103</span><br><span class="line">                  type: string</span><br><span class="line">                  expr: _col104</span><br><span class="line">                  type: string</span><br><span class="line">            outputColumnNames: _col0, _col42, _col85, _col88, _col103, _col104</span><br><span class="line">            Operator:            Common Join Operator</span><br><span class="line">              condition map:</span><br><span class="line">                   Left Outer Join0 to <span class="number">1</span></span><br><span class="line">              condition expressions:</span><br><span class="line">                <span class="number">0</span> &#123;_col0&#125; &#123;_col42&#125; &#123;_col85&#125; &#123;_col88&#125; &#123;_col104&#125;</span><br><span class="line">                <span class="number">1</span> </span><br><span class="line">              handleSkewJoin: <span class="keyword">false</span></span><br><span class="line">              keys:</span><br><span class="line">                0 [class com.tencent.tdw_udf_cloud.hive.udf.generic.GenericUDFIf(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPOr(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPNull(Column[_col103](), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFOPEqual(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Column[_col103](), Const string ()(), class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(Const string null_, class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge(class org.apache.hadoop.hive.ql.udf.generic.GenericUDFBridge((), Const int 10000()()(), Column[_col103]()]</span><br><span class="line">                <span class="number">1</span> [Column[fspid_fundcode]]</span><br><span class="line">              outputColumnNames: _col0, _col42, _col85, _col88, _col104</span><br><span class="line">              Position of Big Table: <span class="number">0</span></span><br><span class="line">              Operator:              File Output Operator</span><br><span class="line">                compressed: <span class="keyword">false</span></span><br><span class="line">                GlobalTableId: <span class="number">0</span></span><br><span class="line">                table:</span><br><span class="line">                  table descs</span><br><span class="line">                    input format: org.apache.hadoop.mapred.SequenceFileInputFormat</span><br><span class="line">                    output format: org.apache.hadoop.hive.ql.io.HiveSequenceFileOutputFormat</span><br><span class="line">      Path -&gt; Alias:</span><br><span class="line">        hdfs:<span class="comment">//&lt;tmp_hive_hdfs_base_path&gt;/20210325/&lt;hdfs_user&gt;_tdwadmin_20210325195415346_29895878_7_699597773/10002 [hdfs://&lt;tmp_hive_hdfs_base_path&gt;/20210325/&lt;hdfs_user&gt;_tdwadmin_20210325195415346_29895878_7_699597773/10002]</span></span><br><span class="line">      Reduce Operator Tree:</span><br><span class="line">        Operator:        Group By Operator</span><br><span class="line">          aggregations:</span><br><span class="line">                expr: count(DISTINCT KEY._col1:<span class="number">1.</span>_col0)</span><br><span class="line">                expr: count(DISTINCT KEY._col1:<span class="number">2.</span>_col0)</span><br><span class="line">          keys:</span><br><span class="line">                expr: KEY._col0</span><br><span class="line">                type: string</span><br><span class="line">          mode: mergepartial</span><br><span class="line">          outputColumnNames: _col0, _col1, _col2</span><br><span class="line">          UseNewGroupBy: <span class="keyword">true</span></span><br><span class="line">          Operator:          Select Operator</span><br><span class="line">            expressions:</span><br><span class="line">                  expr: <span class="number">20210324</span></span><br><span class="line">                  type: <span class="keyword">int</span></span><br><span class="line">                  expr: (systimestamp to_char <span class="string">&#x27;yyyymmddhh24miss&#x27;</span>)</span><br><span class="line">                  type: string</span><br><span class="line">                  expr: _col0</span><br><span class="line">                  type: string</span><br><span class="line">                  expr: _col1</span><br><span class="line">                  type: bigint</span><br><span class="line">                  expr: _col1</span><br><span class="line">                  type: bigint</span><br><span class="line">                  expr: _col2</span><br><span class="line">                  type: bigint</span><br><span class="line">            outputColumnNames: _col0, _col1, _col2, _col3, _col4, _col5</span><br><span class="line">            Operator:            File Output Operator</span><br><span class="line">              compressed: <span class="keyword">false</span></span><br><span class="line">              GlobalTableId: <span class="number">0</span></span><br><span class="line">              table:</span><br><span class="line">                table descs</span><br><span class="line">                  input format: org.apache.hadoop.mapred.TextInputFormat</span><br><span class="line">                  output format: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat</span><br><span class="line"></span><br><span class="line">  Stage: Stage-<span class="number">0</span></span><br><span class="line">    Fetch Operator</span><br><span class="line">      limit: <span class="number">100000000</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+<p>error</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">submitSql has error: </span><br><span class="line">org.apache.spark.sql.AnalysisException: nondeterministic expressions are only allowed in</span><br><span class="line">Project, Filter, Aggregate or Window, found:</span><br><span class="line"> ((IF(((hj2.`furl_orig` IS NULL) OR (com.tencent.tdw_udf_cloud.hive.udf.UDFTrim(hj2.`furl_orig`) = <span class="string">&#x27;&#x27;</span>)), com.tencent.tdw_udf_cloud.hive.udf.UDFConcat(<span class="string">&#x27;null_&#x27;</span>, com.tencent.tdw_udf_cloud.hive.udf.UDFFloor((org.apache.hadoop.hive.ql.udf.UDFRand() * CAST(<span class="number">10000</span> AS DOUBLE)))), hj2.`furl_orig`)) = hj1.`fevent_code`)</span><br><span class="line">in operator Join LeftOuter, (if ((isnull(furl_orig#92) || (HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFTrim(furl_orig#92) = ))) HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFConcat(null_,HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFFloor((HiveSimpleUDF#org.apache.hadoop.hive.ql.udf.UDFRand() * cast(10000 as double)))) else furl_orig#92 = fevent_code#132)</span><br><span class="line">               ;;</span><br><span class="line">Aggregate [fuin#49], [20210324 AS fdate#0, HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFToChar(HiveSimpleUDF#org.apache.hadoop.hive.ql.udf.UDFSysTimestamp(),yyyymmddhh24miss) AS fetl_time#1, fuin#49 AS fuin#2, count(distinct HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFSubstr(cast(if ((((fevent_time#95L &gt;= 20210318000000) &amp;&amp; (fevent_time#95L &lt;= 20210324235959)) &amp;&amp; fscn#111 IN (1))) fevent_time#95L else cast(null as bigint) as string),1,8)) AS flabel_25942#3L, count(distinct HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFSubstr(cast(if ((((fevent_time#95L &gt;= 20210318000000) &amp;&amp; (fevent_time#95L &lt;= 20210324235959)) &amp;&amp; fscn#111 IN (1))) fevent_time#95L else cast(null as bigint) as string),1,8)) AS flabel_25970#4L, count(distinct HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFSubstr(cast(if (((((furl_orig#92 = /mb/v5/fund/list/steady.shtml) || (furl_orig#92 = /mb/v4/fundlist/fund_all.shtml)) || (furl_orig#92 = /mb/v4/fundlist/fund_all_v5.shtml)) &amp;&amp; ((fevent_time#95L &gt;= 20210318000000) &amp;&amp; (fevent_time#95L &lt;= 20210324235959)))) fevent_time#95L else cast(null as bigint) as string),1,8)) AS flabel_25972#5L]</span><br><span class="line">+- Filter ((isnotnull(fuin#49) &amp;&amp; NOT (HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFTrim(fuin#49) = )) &amp;&amp; ((fdate#7L &gt;= cast(20210318 as bigint)) &amp;&amp; (fdate#7L &lt;= cast(20210324 as bigint))))</span><br><span class="line">   +- Join LeftOuter, (if ((isnull(fspid_fundcode#110) || (HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFTrim(fspid_fundcode#110) = ))) HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFConcat(null_,HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFFloor((HiveSimpleUDF#org.apache.hadoop.hive.ql.udf.UDFRand() * cast(10000 as double)))) else fspid_fundcode#110 = fspid_fundcode#209)</span><br><span class="line">      :- Join LeftOuter, (if ((isnull(furl_orig#92) || (HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFTrim(furl_orig#92) = ))) HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFConcat(null_,HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFFloor((HiveSimpleUDF#org.apache.hadoop.hive.ql.udf.UDFRand() * cast(10000 as double)))) else furl_orig#92 = fevent_code#201)</span><br><span class="line">      :  :- Join LeftOuter, (if ((isnull(furl_orig#92) || (HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFTrim(furl_orig#92) = ))) HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFConcat(null_,HiveSimpleUDF#com.tencent.tdw_udf_cloud.hive.udf.UDFFloor((HiveSimpleUDF#org.apache.hadoop.hive.ql.udf.UDFRand() * cast(10000 as double)))) else furl_orig#92 = fevent_code#132)</span><br><span class="line">      :  :  :- SubqueryAlias hj2</span><br><span class="line">      :  :  :  +- MetastoreRelation dml_base, dml_evt_lct_cft_label_factory_mta_access_dd</span><br><span class="line">      :  :  +- BroadcastHint</span><br><span class="line">      :  :     +- SubqueryAlias hj1</span><br><span class="line">      :  :        +- MetastoreRelation dim_base, dim_lct_hq_beacon_report_manage</span><br><span class="line">      :  +- BroadcastHint</span><br><span class="line">      :     +- SubqueryAlias hj3</span><br><span class="line">      :        +- MetastoreRelation dim_base, dim_lct_hq_virtual_event_info</span><br><span class="line">      +- BroadcastHint</span><br><span class="line">         +- SubqueryAlias hj0</span><br><span class="line">            +- MetastoreRelation dim_base, dim_prd_lct_cft_fund_type_conf</span><br></pre></td></tr></table></figure>
+
+
+
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java.lang.RuntimeException: Map local work failed at org.apache.hadoop.hive.ql.exec.ExecMapper.processOldMapLocalWork(ExecMapper.java:<span class="number">317</span>) at org.apache.hadoop.hive.ql.exec.ExecMapper.map(ExecMapper.java:<span class="number">151</span>) at org.apache.hadoop.mapred.MapRunner.run(MapRunner.java:<span class="number">54</span>) at org.apache.hadoop.mapred.MapTask.runOldMapper(MapTask.java:<span class="number">453</span>) at org.apache.hadoop.mapred.MapTask.run(MapTask.java:<span class="number">343</span>) at org.apache.hadoop.mapred.YarnChild$<span class="number">2.</span>run(YarnChild.java:<span class="number">175</span>) at java.security.AccessController.doPrivileged(Native Method) at javax.security.auth.Subject.doAs(Subject.java:<span class="number">422</span>) at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:<span class="number">2286</span>) at org.apache.hadoop.mapred.YarnChild.main(YarnChild.java:<span class="number">169</span>) Caused by: org.apache.hadoop.hive.ql.metadata.HiveException: java.io.IOException: 没有那个文件或目录 at org.apache.hadoop.hive.ql.exec.persistence.HashMapWrapper.getPersistentHash(HashMapWrapper.java:<span class="number">189</span>) at org.apache.hadoop.hive.ql.exec.persistence.HashMapWrapper.put(HashMapWrapper.java:<span class="number">155</span>) at org.apache.hadoop.hive.ql.exec.MapJoinOperator.process(MapJoinOperator.java:<span class="number">474</span>) at org.apache.hadoop.hive.ql.exec.Operator.forward(Operator.java:<span class="number">471</span>) at org.apache.hadoop.hive.ql.exec.TableScanOperator.process(TableScanOperator.java:<span class="number">37</span>) at org.apache.hadoop.hive.ql.exec.ExecMapper.processOldMapLocalWork(ExecMapper.java:<span class="number">302</span>) ... <span class="number">9</span> more Caused by: java.io.IOException: 没有那个文件或目录 at java.io.UnixFileSystem.createFileExclusively(Native Method) at java.io.File.createTempFile(File.java:<span class="number">2024</span>) at org.apache.hadoop.hive.ql.exec.persistence.HashMapWrapper.getPersistentHash(HashMapWrapper.java:<span class="number">176</span>) ... <span class="number">14</span> more	N/A</span><br></pre></td></tr></table></figure>
+
+
+<p>定位出错误原因是：强制指定了mapjoin，内存溢出了</p>
+<p>Hive的自动join策略选择：</p>
+<p>由于开启了hive.auto.convert.join，但是实际小表大小是hive.mapjoin.smalltable.filesize（默认25M，小表不会超过25M）。由于使用的是orc压缩，解压缩后可能大小到了250M，存放到内存大小可能就会超过1G。mapjoin的时候，hive orcfile 放到内存中会放大40倍<br> 可以看到JVM Max Heap Size大小为：1013645312 （大约1G）</p>
+<h2 id="一句话总结"><a href="#一句话总结" class="headerlink" title="一句话总结"></a>一句话总结</h2><p>由于使用了hive.auto.convert.join,对小表进行广播，但是原表是orc的，存放到内存可能膨胀到大于localtask的堆内存大小，导致sql执行失败。</p>
+<h2 id="解决措施"><a href="#解决措施" class="headerlink" title="解决措施"></a>解决措施</h2><h6 id="方案一"><a href="#方案一" class="headerlink" title="方案一"></a>方案一</h6><p>调大localtask的内存，set hive.mapred.local.mem=XX ，默认1G，调大到4G</p>
+<h6 id="方案二"><a href="#方案二" class="headerlink" title="方案二"></a>方案二</h6><p>直接关表autojoin，将hive.auto.convert.join设置成false</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
@@ -1403,7 +1217,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">236</span>
+          <span class="site-state-item-count">235</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
