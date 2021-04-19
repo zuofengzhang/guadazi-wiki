@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="在Flink SQL中， 元数据的管理分为三层: catalog-&gt; database-&gt; table，我们知道Flink SQL是依托calcite框架来进行SQL执行树生产，校验，优化等等， 所以本文讲介绍FlinkSQL是如何来结合Calcite来进行元数据管理的. calcite开放的接口1234567public interface Schema &amp;#123;    Tabl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Guadazi">
+<meta property="og:url" content="http://example.com/bigdata/Flink/Flink-SQL-Catalog/index.html">
+<meta property="og:site_name" content="Guadazi">
+<meta property="og:description" content="在Flink SQL中， 元数据的管理分为三层: catalog-&gt; database-&gt; table，我们知道Flink SQL是依托calcite框架来进行SQL执行树生产，校验，优化等等， 所以本文讲介绍FlinkSQL是如何来结合Calcite来进行元数据管理的. calcite开放的接口1234567public interface Schema &amp;#123;    Tabl">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-04-19T07:02:11.537Z">
+<meta property="article:modified_time" content="2021-04-19T07:02:11.543Z">
+<meta property="article:author" content="aaronzhang">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/bigdata/Flink/Flink-SQL-Catalog/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title> | Guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL-Catalog/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-19 15:02:11" itemprop="dateCreated datePublished" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在Flink SQL中， 元数据的管理分为三层: catalog-&gt; database-&gt; table，<br>我们知道Flink SQL是依托<strong>calcite</strong>框架来进行SQL执行树生产，校验，优化等等， 所以本文讲介绍FlinkSQL是如何来结合<strong>Calcite</strong>来进行元数据管理的.</p>
+<h2 id="calcite开放的接口"><a href="#calcite开放的接口" class="headerlink" title="calcite开放的接口"></a><strong>calcite</strong>开放的接口</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Schema</span> </span>&#123;</span><br><span class="line">    <span class="function">Table <span class="title">getTable</span><span class="params">(String name)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="function">Schema <span class="title">getSubSchema</span><span class="params">(String name)</span></span>;</span><br><span class="line"></span><br><span class="line">    ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如接口所示， <strong>Schema</strong>接口，可以通过table名来获得一张表， 可以通过<strong>schema</strong>名来获得一个子<strong>schema</strong>.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Table</span> </span>&#123;</span><br><span class="line">    <span class="function">RelDataType <span class="title">getRowType</span><span class="params">(RelDataTypeFactory typeFactory)</span></span>;</span><br><span class="line">    ....</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看Table的接口， 主要就是返回table的RelDataType.</p>
+<h2 id="Flink的相关实现"><a href="#Flink的相关实现" class="headerlink" title="Flink的相关实现"></a>Flink的相关实现</h2><p>接下来，我们来看下Flink是如何实现这些接口的:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CatalogManagerCalciteSchema</span> <span class="keyword">extends</span> <span class="title">FlinkSchema</span> </span>&#123;</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> Schema <span class="title">getSubSchema</span><span class="params">(String schemaName)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">if</span> (catalogManager.schemaExists(name)) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">new</span> CatalogCalciteSchema(name, catalogManager, isStreamingMode);</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CatalogCalciteSchema</span> <span class="keyword">extends</span> <span class="title">FlinkSchema</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Schema <span class="title">getSubSchema</span><span class="params">(String schemaName)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (catalogManager.schemaExists(catalogName, schemaName)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">new</span> DatabasecalciteSchema(schemaName, catalogNmae, catalogManager, isStreamingMode);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DatabaseCalciteSchema</span> <span class="keyword">extends</span> <span class="title">FlinkSchema</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String databaseName;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> String catalogName;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> CatalogManager catalogManager;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Table <span class="title">getTable</span><span class="params">(String tableName)</span> </span>&#123;</span><br><span class="line">		ObjectIdentifier identifier = ObjectIdentifier.of(catalogName, databaseName, tableName);</span><br><span class="line">		<span class="keyword">return</span> catalogManager.getTable(identifier)</span><br><span class="line">			.map(result -&gt; &#123;</span><br><span class="line">				CatalogBaseTable table = result.getTable();</span><br><span class="line">				FlinkStatistic statistic = getStatistic(result.isTemporary(), table, identifier);</span><br><span class="line">				<span class="keyword">return</span> <span class="keyword">new</span> CatalogSchemaTable(identifier,</span><br><span class="line">					table,</span><br><span class="line">					statistic,</span><br><span class="line">					catalogManager.getCatalog(catalogName)</span><br><span class="line">						.flatMap(Catalog::getTableFactory)</span><br><span class="line">						.orElse(<span class="keyword">null</span>),</span><br><span class="line">					isStreamingMode,</span><br><span class="line">					result.isTemporary());</span><br><span class="line">			&#125;)</span><br><span class="line">			.orElse(<span class="keyword">null</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Schema <span class="title">getSubSchema</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>很容易发现，CatalogSchema返回DatabaseSchema， DatabaseSchema返回Table,<br>这样就容易理解，Flink的三层结构是怎样的了. 同时， 具体的元数据实际上都是在catalogManager中。</p>
+<p>DatabaseSchema中返回的Table类型为CatalogSchemaTable，我们来看下具体的结结构是怎样的，<br>上文中也提到了，Table接口主为getRowType函数， 用于返回某个table的type信息。<br>TableSchema是Flink内部用于保存各个字段的类型信息的类， 通过相关的转化函数，转换为<strong>calcite</strong>的type类型.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CatalogSchemaTable</span> <span class="keyword">extends</span> <span class="title">AbstractTable</span> <span class="keyword">implements</span> <span class="title">TemporalTable</span> </span>&#123;</span><br><span class="line">    </span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> ObjectIdentifier tableIdentifier;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> CatalogBaseTable catalogBaseTable;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> FlinkStatistic statistic;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">boolean</span> isStreamingMode;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">boolean</span> isTemporary;</span><br><span class="line">    ...</span><br><span class="line">	<span class="function"><span class="keyword">private</span> <span class="keyword">static</span> RelDataType <span class="title">getRowType</span><span class="params">(RelDataTypeFactory typeFactory,</span></span></span><br><span class="line"><span class="function"><span class="params">			CatalogBaseTable catalogBaseTable,</span></span></span><br><span class="line"><span class="function"><span class="params">			<span class="keyword">boolean</span> isStreamingMode)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">final</span> FlinkTypeFactory flinkTypeFactory = (FlinkTypeFactory) typeFactory;</span><br><span class="line">		TableSchema tableSchema = catalogBaseTable.getSchema();</span><br><span class="line">		<span class="keyword">final</span> DataType[] fieldDataTypes = tableSchema.getFieldDataTypes();</span><br><span class="line">		<span class="keyword">if</span> (!isStreamingMode</span><br><span class="line">			&amp;&amp; catalogBaseTable <span class="keyword">instanceof</span> ConnectorCatalogTable</span><br><span class="line">			&amp;&amp; ((ConnectorCatalogTable) catalogBaseTable).getTableSource().isPresent()) &#123;</span><br><span class="line">			<span class="comment">// If the table source is bounded, materialize the time attributes to normal TIMESTAMP type.</span></span><br><span class="line">			<span class="comment">// Now for ConnectorCatalogTable, there is no way to</span></span><br><span class="line">			<span class="comment">// deduce if it is bounded in the table environment, so the data types in TableSchema</span></span><br><span class="line">			<span class="comment">// always patched with TimeAttribute.</span></span><br><span class="line">			<span class="comment">// See ConnectorCatalogTable#calculateSourceSchema</span></span><br><span class="line">			<span class="comment">// for details.</span></span><br><span class="line"></span><br><span class="line">			<span class="comment">// Remove the patched time attributes type to let the TableSourceTable handle it.</span></span><br><span class="line">			<span class="comment">// We should remove this logic if the isBatch flag in ConnectorCatalogTable is fixed.</span></span><br><span class="line">			<span class="comment">// <span class="doctag">TODO:</span> Fix FLINK-14844.</span></span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; fieldDataTypes.length; i++) &#123;</span><br><span class="line">				LogicalType lt = fieldDataTypes[i].getLogicalType();</span><br><span class="line">				<span class="keyword">if</span> (lt <span class="keyword">instanceof</span> TimestampType</span><br><span class="line">					&amp;&amp; (((TimestampType) lt).getKind() == TimestampKind.PROCTIME</span><br><span class="line">					|| ((TimestampType) lt).getKind() == TimestampKind.ROWTIME)) &#123;</span><br><span class="line">					<span class="keyword">int</span> precision = ((TimestampType) lt).getPrecision();</span><br><span class="line">					fieldDataTypes[i] = DataTypes.TIMESTAMP(precision);</span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> TableSourceUtil.getSourceRowType(flinkTypeFactory,</span><br><span class="line">			tableSchema,</span><br><span class="line">			scala.Option.empty(),</span><br><span class="line">			isStreamingMode);</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>CatalogBaseTable接口定义如下， Flink的Table的参数(<strong>schema</strong>参数,connector参数)都可以最终表示为一个map.</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">CatalogBaseTable</span> </span>&#123;</span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Get the properties of the table.</span></span><br><span class="line"><span class="comment">	 *</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> property map of the table/view</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function">Map&lt;String, String&gt; <span class="title">getProperties</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Get the schema of the table.</span></span><br><span class="line"><span class="comment">	 *</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> schema of the table/view.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function">TableSchema <span class="title">getSchema</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Get comment of the table or view.</span></span><br><span class="line"><span class="comment">	 *</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> comment of the table/view.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function">String <span class="title">getComment</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Get a deep copy of the CatalogBaseTable instance.</span></span><br><span class="line"><span class="comment">	 *</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> a copy of the CatalogBaseTable instance</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function">CatalogBaseTable <span class="title">copy</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Get a brief description of the table or view.</span></span><br><span class="line"><span class="comment">	 *</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> an optional short description of the table/view</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function">Optional&lt;String&gt; <span class="title">getDescription</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Get a detailed description of the table or view.</span></span><br><span class="line"><span class="comment">	 *</span></span><br><span class="line"><span class="comment">	 * <span class="doctag">@return</span> an optional long description of the table/view</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function">Optional&lt;String&gt; <span class="title">getDetailedDescription</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="FlinkSchema的使用"><a href="#FlinkSchema的使用" class="headerlink" title="FlinkSchema的使用"></a>FlinkSchema的使用</h2><p>上面都是的相关接口都是Flink用于适配<strong>calcite</strong>框架元数据的相关实现。<br>那么这些类具体是在哪里调用的？ 已经什么时候会被调用到？<br><strong>calcite</strong>中的<strong>schema</strong>，主要是在validate过程中， 获得对应table的字段信息， 对应的function的返回值信息，<br>确保SQL的字段名， 字段类型是正确的.<br>类的依赖关系为:<br>validator —&gt; schemaReader —&gt; <strong>schema</strong></p>
+<p>FlinkPlannerImpl.scala中</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> def <span class="title">createSqlValidator</span><span class="params">(catalogReader: CatalogReader)</span> </span>= &#123;</span><br><span class="line">  val validator = <span class="keyword">new</span> FlinkCalciteSqlValidator(</span><br><span class="line">    operatorTable,</span><br><span class="line">    catalogReader,</span><br><span class="line">    typeFactory)</span><br><span class="line">  validator.setIdentifierExpansion(<span class="keyword">true</span>)</span><br><span class="line">  <span class="comment">// Disable implicit type coercion for now.</span></span><br><span class="line">  validator.setEnableTypeCoercion(<span class="keyword">false</span>)</span><br><span class="line">  validator</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>PlanningConfigurationBuilder.java</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> CatalogReader <span class="title">createCatalogReader</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">		<span class="keyword">boolean</span> lenientCaseSensitivity,</span></span></span><br><span class="line"><span class="function"><span class="params">		String currentCatalog,</span></span></span><br><span class="line"><span class="function"><span class="params">		String currentDatabase)</span> </span>&#123;</span><br><span class="line">	SqlParser.Config sqlParserConfig = getSqlParserConfig();</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">boolean</span> caseSensitive;</span><br><span class="line">	<span class="keyword">if</span> (lenientCaseSensitivity) &#123;</span><br><span class="line">		caseSensitive = <span class="keyword">false</span>;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		caseSensitive = sqlParserConfig.caseSensitive();</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	SqlParser.Config parserConfig = SqlParser.configBuilder(sqlParserConfig)</span><br><span class="line">		.setCaseSensitive(caseSensitive)</span><br><span class="line">		.build();</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="keyword">new</span> CatalogReader(</span><br><span class="line">		rootSchema,</span><br><span class="line">		asList(</span><br><span class="line">			asList(currentCatalog, currentDatabase),</span><br><span class="line">			singletonList(currentCatalog)</span><br><span class="line">		),</span><br><span class="line">		typeFactory,</span><br><span class="line">		CalciteConfig.connectionConfig(parserConfig));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>综上所诉， 我们就知道了Flink是如何来利用<strong>calcite</strong>的<strong>schema</strong>来管理Flink的table信息的.</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/Flink/Flink-checkpoint%E8%AF%8A%E6%96%AD/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/Flink/Flink-join/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#calcite%E5%BC%80%E6%94%BE%E7%9A%84%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.</span> <span class="nav-text">calcite开放的接口</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flink%E7%9A%84%E7%9B%B8%E5%85%B3%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.</span> <span class="nav-text">Flink的相关实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#FlinkSchema%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">FlinkSchema的使用</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">237</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">127</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

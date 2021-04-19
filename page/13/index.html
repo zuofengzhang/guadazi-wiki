@@ -183,6 +183,268 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/03_G1_GC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/metric/03_G1_GC/" class="post-title-link" itemprop="url">Java G1 GC</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2018-08-12T00:00:00+08:00">2018-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-03-G1-GC"><a href="#1-03-G1-GC" class="headerlink" title="1. 03_G1_GC"></a>1. 03_G1_GC</h1><h2 id="1-1-堆内存分配"><a href="#1-1-堆内存分配" class="headerlink" title="1.1. 堆内存分配"></a>1.1. 堆内存分配</h2><p>整个堆分为若干的region，region的大小可以通过参数设置；</p>
+<p>Region可以分为Eden、Survivor、Old、Humongous(专门存储大对象的Region：单个对象超过Region大小的50%，就是大对象；</p>
+<p>如果大对象超过一个Region，则会继续申请连续的空间，作为Humongous区)和Free(空闲Region: Region的内存被释放后的分区)；Free Region后续可以作为Eden、Survivor、Old或Humongous分区；</p>
+<p>堆分为新生代+老年代；</p>
+<h2 id="1-2-两个Set"><a href="#1-2-两个Set" class="headerlink" title="1.2. 两个Set"></a>1.2. 两个Set</h2><ol>
+<li><p>CSet: collection set, 待回收的Region集合</p>
+</li>
+<li><p>RSet: remembered set,引用当前Region集合的其他集合</p>
+<p>引用当前Region的其他Region集合，是points-in的，每个 Region 都有一个 RSet；在 <code>JDK10</code> 中，只有部分 Region 才存在 RSet。</p>
+<ul>
+<li><strong>young gc</strong>：指向「Eden」和「Survivor」Region 的 「Old」和「Humongous」Region 集合，避免全堆扫描</li>
+<li><strong>mixed gc</strong>：确定「Old」Region 之间的相关引用，确定 Region 的回收价值</li>
+</ul>
+</li>
+</ol>
+<h2 id="1-3-垃圾回收过程"><a href="#1-3-垃圾回收过程" class="headerlink" title="1.3. 垃圾回收过程"></a>1.3. 垃圾回收过程</h2><ol>
+<li>young gc：标记-复制<ol>
+<li>「新生代」的垃圾回收</li>
+<li>CSet 中，只包含 Eden、Survivor</li>
+</ol>
+</li>
+<li>mixed gc：标记-复制<ol>
+<li>「新生代」和「部分老年代」的垃圾回收</li>
+<li>CSet 中，包含 Eden、Survivor、部分 Old、Humongous</li>
+</ol>
+</li>
+<li>full gc：<ol>
+<li>G1 gc 失败，退化为 Serial 方式</li>
+<li>单线程全堆扫描，对整个 Heap 进行垃圾回收，涵盖所有的「新生代」和「老年代」</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>G1 垃圾收集器，GC 都是针对 CSet 进行的</p>
+</blockquote>
+<h3 id="1-3-1-Young-GC"><a href="#1-3-1-Young-GC" class="headerlink" title="1.3.1. Young GC"></a>1.3.1. Young GC</h3><p>Young GC，关键细节：</p>
+<ul>
+<li>针对「<strong>年轻代</strong>」的 Eden、Survivor 分区，进行 GC</li>
+<li><strong>存活的对象</strong>，放置在 「新的 Survivor 分区」或「Old 分区」</li>
+<li><strong>触发的时机</strong>：Eden 分区空间不足，无法为普通对象分配存储空间（非大对象）</li>
+</ul>
+<p><strong>Young GC 的执行过程</strong>：就是「标记-复制」算法</p>
+<ol>
+<li><strong>根扫描</strong></li>
+<li><strong>确定</strong>「老年代」对「新生代」的<strong>引用</strong>，避免全堆扫描：<ol>
+<li>根据 card table，扫描 dirty 部分，更新 RSet</li>
+<li>新生代中，根据 RSet，确定 Old 对 Eden 和 Survivor 对象的引用</li>
+</ol>
+</li>
+<li><strong>标记复制</strong>：将存活对象，放入到 Survivor 区 或者 Old 区<ol>
+<li>新的 Survivor 区：是 Free Region 升级来的</li>
+<li>被释放的 Eden 和 Survivor 区：会标记为 Free Region 空白的可用分区</li>
+</ol>
+</li>
+</ol>
+<p>Tips：</p>
+<ul>
+<li>G1 在 Young GC 过程中，是串行？并行？并发？是否会暂停工作线程？<ul>
+<li>Re：可以多线程，就看怎么设置了，会暂停工作线程，不是并发的。</li>
+</ul>
+</li>
+</ul>
+<h3 id="1-3-2-Mixed-GC"><a href="#1-3-2-Mixed-GC" class="headerlink" title="1.3.2. Mixed GC"></a>1.3.2. Mixed GC</h3><p>Mixed GC，关键细节：</p>
+<ul>
+<li>针对「<strong>年轻代</strong>」和「<strong>部分老年代</strong>」的 GC，具体 Eden、Survivor、Old、Humongous Region</li>
+<li><strong>存活的对象</strong>，放置在「新的 Survivor 分区」或「Old 分区」</li>
+<li><strong>触发的时机</strong>：「并发标记周期」中，完成了最后的「<strong>筛选回收</strong>」阶段后，标记出了 X 的 Old Region 分区</li>
+</ul>
+<p>Mixed GC 的执行过程：就是「标记-复制」算法</p>
+<ol>
+<li><strong>并发标记周期</strong>：针对 <code>Old 分区</code>，进行标记<ol>
+<li><strong>初始标记</strong>：依赖 Young GC</li>
+<li><strong>扫描根分区</strong>：如果有 Young GC，则，Young GC block 阻塞等待</li>
+<li><strong>并发标记</strong>：<ol>
+<li>可以并发进行 Young GC</li>
+<li>结束后，并不会进入 Young GC 阶段</li>
+</ol>
+</li>
+<li><strong>重新标记</strong>：不能进行 Young GC</li>
+<li><strong>筛选回收</strong>：结束后，进入 mixed 阶段</li>
+</ol>
+</li>
+<li><strong>Mixed GC</strong>，<strong>本质</strong>就是对 <strong>CSet</strong> 中 Region 的回收<ol>
+<li><strong>CSet</strong>：在 mixed 模式下，其中涵盖了 Eden、Survivor、Old、Humongous Region</li>
+<li><strong>筛选回收阶段</strong>：针对 Old 分区<ol>
+<li><strong>完全可回收的 Region</strong>：不存在存活的对象，直接回收 Region，标记为 Free Region 可用分区</li>
+<li>存在<strong>部分存活的对象的 Region</strong>：标记分数后，追加在 C-Set 中</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p>实际上，可以认为是 2 条线：</p>
+<ul>
+<li><strong>Young GC</strong>：<ul>
+<li>基于 C-Set，进行 Region 回收，本质上，只针对「年轻代」进行回收；</li>
+<li>如果 C-Set 中，涵盖了标记为 X 的 Old Region，则，称为 Mixed GC，此时，既针对「年轻代」，也针对「部分老年代」Region 进行回收</li>
+</ul>
+</li>
+<li><strong>并发标记周期</strong>：标记出 Old Region，哪些需要回收，标记为 X<ul>
+<li>完成「并发标记阶段」后，Young GC，自动升级为 mixed 模式，即，Mixed GC</li>
+<li>Mixed GC：基于 C-Set，进行 Region 回收，只不过，此时，C-Set 中，涵盖了一部分 Old Region</li>
+</ul>
+</li>
+</ul>
+<p><img src="_v_images/20200716205954650_1089567156.png"></p>
+<p>1 个插图：并发标记周期的说明</p>
+<ul>
+<li><strong>并发标记周期</strong>：<ul>
+<li>触发时机：「老年代」分区的占比，达到阈值</li>
+<li>整个周期说明</li>
+</ul>
+</li>
+<li><strong>Mixed GC</strong>：模式生效点、失效点<ul>
+<li><strong>生效点</strong>：存在 X 状态的 Old Region，即，标记并发周期的「筛选回收」阶段结束后，再次触发的 GC，就是 Mixed GC</li>
+<li><strong>失效点</strong>：完成所有的 X 状态 Old Region 的清理后，会进入 Young GC 状态</li>
+</ul>
+</li>
+<li><strong>补充说明</strong>：<ul>
+<li>部分 X 状态的 Old Region：每次 Mixed GC，只有部分 X 状态的 Old Region 会被放入 C-Set</li>
+<li>完整 C-Set 都被回收：C-Set 中所有 Region，每次 GC 都会被回收</li>
+</ul>
+</li>
+</ul>
+<p><strong>特别说明</strong>：</p>
+<blockquote>
+<p>G1的收集都是STW的；</p>
+<p>但「年轻代」和「老年代」的 GC <strong>界限模糊</strong>，采用了混合(<code>mixed</code>)收集的方式。</p>
+<p><strong>Young GC</strong>，可能快速切换为 Mixed GC，只要 X 标记的 Old Region 存在和消失，就会自动升级 or 降级；</p>
+<p>这样，即使堆内存很大时，也可以限制<strong>收集 Region 的范围</strong>，从而<strong>降低停顿</strong>，达到设置的「暂停时间的目标」。</p>
+</blockquote>
+<h3 id="1-3-3-其他"><a href="#1-3-3-其他" class="headerlink" title="1.3.3. 其他"></a>1.3.3. 其他</h3><h4 id="1-3-3-1-启发式算法"><a href="#1-3-3-1-启发式算法" class="headerlink" title="1.3.3.1. 启发式算法"></a>1.3.3.1. 启发式算法</h4><p><strong>启发式算法</strong>：根据执行状态，动态调整</p>
+<ol>
+<li>设置了「暂停时间的目标」（默认 200ms），G1 会自动调整「年轻代」的空间大小</li>
+<li>如果显式设置「年轻代」的大小，则，用户设置的「暂停时间的目标」会自动失效</li>
+</ol>
+<h4 id="1-3-3-2-SATB，增量式的标记算法"><a href="#1-3-3-2-SATB，增量式的标记算法" class="headerlink" title="1.3.3.2. SATB，增量式的标记算法"></a>1.3.3.2. SATB，增量式的标记算法</h4><p>G1 垃圾收集器，采用了 <strong>SATB</strong>（Snapshot At The Beginning），初始快照，增量式的标记算法，具体：</p>
+<ol>
+<li><strong>标记开始时</strong>：Region 创建一个 Snapshot</li>
+<li><strong>存量标记</strong>：只针对 Snapshot 中存活的对象，进行标记</li>
+<li><strong>增量标记</strong>：Snapshot 之后，新生成的对象，都被标记为「存活对象」，此次不回收，下次标记再说</li>
+</ol>
+<h4 id="1-3-3-3-G1：适用场景"><a href="#1-3-3-3-G1：适用场景" class="headerlink" title="1.3.3.3. G1：适用场景"></a>1.3.3.3. G1：适用场景</h4><p>就目前而言、CMS还是默认首选的GC策略、可能在以下场景下G1更适合：</p>
+<ol>
+<li><strong>多核+大内存</strong>：服务端多核CPU、JVM内存占用较大的应用（至少大于4G）</li>
+<li><strong>业务多碎片</strong>：应用在运行过程中会产生大量内存碎片、需要经常压缩空间</li>
+<li><strong>防止高并发雪崩</strong>：想要更可控、可预期的GC停顿周期；防止高并发下应用雪崩现象</li>
+</ol>
+<h3 id="1-3-4-小结"><a href="#1-3-4-小结" class="headerlink" title="1.3.4. 小结"></a>1.3.4. 小结</h3><p>G1 垃圾收集器，围绕其 Young GC 和 Mixed GC，从整体宏观的角度上，跟之前所有的「串行」「并行」「并发」的垃圾收集器，存在本质的差异：</p>
+<ol>
+<li>之前的垃圾收集器，要实现 <strong>2 个基本步骤</strong>：<ol>
+<li><strong>步骤1</strong>：找到需要回收的对象</li>
+<li><strong>步骤2</strong>：回收</li>
+<li><strong>Note</strong>：上面两个步骤「步骤2」依赖「步骤1」，并且串行进行</li>
+</ol>
+</li>
+<li>G1 垃圾收集器，在「<strong>老年代</strong>」，把 2 个步骤「同时进行」：<ol>
+<li><strong>找到需要回收的对象</strong>：<ol>
+<li>在找到需要回收的 Old Region 过程中，仍然可以同时「回收对象」，即 GC</li>
+<li>找到需要回收的 Old Region 过程，称为「<strong>并发标记周期</strong>」</li>
+</ol>
+</li>
+<li><strong>回收对象</strong>：<ol>
+<li>在「找需要回收的对象」<strong>过程中</strong>，可以持续并发的进行 GC，称为 <code>Young GC</code>，只会收「新生代」</li>
+<li>「找需要回收的对象」<strong>过程结束后</strong>，再进行的 GC，称为 <code>Mixed GC</code>，会同时回收「新生代」和「部分老年代」</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p>参考示意图：</p>
+<p><img src="_v_images/20200716205954411_225227554.png"></p>
+<p><img src="_v_images/20200716125557055_1896049925.png"></p>
+<p>G1 回收过程如下。</p>
+<ol>
+<li>G1 的年轻代回收，采用复制算法，并行进行收集，收集过程会 STW。</li>
+<li>G1 的老年代回收时也同时会对年轻代进行回收。主要分为四个阶段：<ol>
+<li>依然是初始标记阶段完成对根对象的标记，这个过程是STW的；</li>
+<li>并发标记阶段，这个阶段是和用户线程并行执行的；</li>
+<li>最终标记阶段，完成三色标记周期；</li>
+<li>复制/清除阶段，这个阶段会优先对可回收空间较大的 Region 进行回收，即 garbage first，这也是 G1 名称的由来。</li>
+</ol>
+</li>
+</ol>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/zy1994hyq/article/details/102495471">GC算法之G1算法</a></li>
+<li><a target="_blank" rel="noopener" href="https://ningg.top/jvm-series-jvm-practice-jvm-gc-g1/">JVM 实践：G1 垃圾收集器</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/FlinkOutputTimely/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +476,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:35:01" itemprop="dateModified" datetime="2021-04-12T17:35:01+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -288,7 +550,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -313,6 +575,99 @@
       
           <h1 id="Timer"><a href="#Timer" class="headerlink" title="Timer"></a>Timer</h1><p>TimerService</p>
 <h2 id="SystemProcessingTimeService"><a href="#SystemProcessingTimeService" class="headerlink" title="SystemProcessingTimeService"></a>SystemProcessingTimeService</h2><p>org.apache.flink.streaming.runtime.tasks.SystemProcessingTimeService</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-job-submit/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-job-submit/" class="post-title-link" itemprop="url">flink任务提交</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2018-08-12T00:00:00+08:00">2018-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-任务提交"><a href="#Flink-任务提交" class="headerlink" title="Flink-任务提交"></a>Flink-任务提交</h1><h2 id="flink-on-zeppelin"><a href="#flink-on-zeppelin" class="headerlink" title="flink on zeppelin"></a>flink on zeppelin</h2><p><code>org.apache.zeppelin.flink.FlinkScalaInterpreter</code></p>
+<h2 id="flink-on-yarn"><a href="#flink-on-yarn" class="headerlink" title="flink on yarn"></a>flink on yarn</h2><p>命令行提交方式</p>
+<p><img src="_v_images/20200713162403351_1965495978.png"></p>
+<h3 id="yarn-per-job"><a href="#yarn-per-job" class="headerlink" title="yarn per-job"></a>yarn per-job</h3><h4 id="单任务Attach模式"><a href="#单任务Attach模式" class="headerlink" title="单任务Attach模式"></a>单任务Attach模式</h4><p>默认是 Attach 模式，即客户端会一直等待直到程序结束才会退出。</p>
+<p>通过 -m yarn-cluster 指定 Yarn 模式</p>
+<p>Yarn 上显示名字为 Flink session cluster，这个 Batch 的 Wordcount 任务运行完会 FINISHED。</p>
+<h4 id="单任务Detached模式"><a href="#单任务Detached模式" class="headerlink" title="单任务Detached模式"></a>单任务Detached模式</h4><p>由于是 Detached 模式，客户端提交完任务就退出了</p>
+<p>Yarn 上显示为 Flink per-job cluster</p>
+<h3 id="yarn-session"><a href="#yarn-session" class="headerlink" title="yarn session"></a>yarn session</h3><p>也有attach和detached模式的区分</p>
+<p>Flink run 方式提交（推荐模式）</p>
+<p>yarn session需要先启动一个集群，然后在提交作业。<br>对于Flink run直接提交作业就相对比较简单，不需要额外的去启动一个集群，直接提交作业，即可完成Flink作业。<br>命令： bin/flink run -m yarn-cluster examples/batch/WordCount.jar，注意使用参数-m yarn-cluster提交到yarn集群。</p>
+<h3 id="application-mode"><a href="#application-mode" class="headerlink" title="application mode"></a>application mode</h3><p>应用程序的main方法在jobManager上运行，创建仅仅在特定应用程序的作业之间共享的会话集群，在应用程序完成时终止。</p>
+<h2 id="提交任务到yarn并监控任务运行情况"><a href="#提交任务到yarn并监控任务运行情况" class="headerlink" title="提交任务到yarn并监控任务运行情况"></a>提交任务到yarn并监控任务运行情况</h2><p>./flink run -m yarn-cluster -p 4 -yjm 1024m -ytm 1096m -ynm 1  ../examples/batch/WordCount.jar</p>
+<p>./flink run-application -t yarn-application ../examples/batch/WordCount.jar</p>
+<p>指定application name为1</p>
+<p>然后通过yarn-rest-api拿取任务信息</p>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/asker009/p/11327533.html">flink on yarn模式下两种提交job方式</a></li>
+</ol>
 
       
     </div>
@@ -363,7 +718,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -442,7 +797,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:35:01" itemprop="dateModified" datetime="2021-04-12T17:35:01+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -536,7 +891,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -752,7 +1107,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -803,6 +1158,81 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/Java-%E5%BE%AE%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/metric/Java-%E5%BE%AE%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">Java微基准测试</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-12T00:00:00+08:00">2017-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Stalker</p>
+<p><a target="_blank" rel="noopener" href="http://openjdk.java.net/projects/code-tools/jmh/">JMH</a> 是 Java Microbenchmark Harness（微基准测试</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/13.BlockingQueue/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -834,7 +1264,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
+                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1023,411 +1453,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/lib/Jpa/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/lib/Jpa/" class="post-title-link" itemprop="url">Java JPA</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-12T00:00:00+08:00">2017-08-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Jpa"><a href="#Jpa" class="headerlink" title="Jpa"></a>Jpa</h1><h2 id="创建时间-更新时间"><a href="#创建时间-更新时间" class="headerlink" title="创建时间 更新时间"></a>创建时间 更新时间</h2><p>1.实体类加注解</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * 创建时间</span><br><span class="line"> *&#x2F;</span><br><span class="line">@CreatedDate</span><br><span class="line">@Column(name &#x3D; &quot;create_time&quot;)</span><br><span class="line">private Date createTime;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 修改时间</span><br><span class="line"> *&#x2F;</span><br><span class="line">@LastModifiedDate</span><br><span class="line">@Column(name &#x3D; &quot;modify_time&quot;)</span><br><span class="line">private Date modifyTime;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>2.实体类头加注解</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@EntityListeners(AuditingEntityListener.class)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>3.SpringBoot启动类加注解</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@EnableJpaAuditing</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>另外数据库添加相应控制也可以：<br>createTime ： CURRENT_TIMESTAMP<br>modifyTime ： CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/Java-%E5%BE%AE%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/metric/Java-%E5%BE%AE%E5%9F%BA%E5%87%86%E6%B5%8B%E8%AF%95/" class="post-title-link" itemprop="url">Java微基准测试</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-12T00:00:00+08:00">2017-08-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Stalker</p>
-<p><a target="_blank" rel="noopener" href="http://openjdk.java.net/projects/code-tools/jmh/">JMH</a> 是 Java Microbenchmark Harness（微基准测试</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/transaction/distributed-transaction/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/transaction/distributed-transaction/" class="post-title-link" itemprop="url">分布式事务</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-07-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-07-23T00:00:00+08:00">2017-07-23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-12 17:35:00" itemprop="dateModified" datetime="2021-04-12T17:35:00+08:00">2021-04-12</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="事务简介"><a href="#事务简介" class="headerlink" title="事务简介"></a>事务简介</h1><p>事务的核心是锁和并发, 采用同步控制的方式保证并发的情况下性能尽可能高, 且容易理解. 这种方式的优势是方便理解; 它的劣势是性能比较低.</p>
-<p>计算机可以简单的理解为一个标准的打字机, 尽管看起来计算机可以并行处理很多事情, 但实际上每个CPU单位时间内只能做一件事, 要么读取数据、要么计算数据、要么写入数据, 所有的任务都可以看成这三件事的集合. 计算机的这种特性引出了一个问题：当多个人去读、算、写操作时, 如果不加访问控制, 系统势必会产生冲突. 而事务相当于在读、算、写操作之外增加了同步的模块, 进而保证只有一个线程进入事务当中, 而其他线程不会进入.</p>
-<h2 id="单个事务单元"><a href="#单个事务单元" class="headerlink" title="单个事务单元"></a>单个事务单元</h2><p>事务的四大特性分别是：原子型、一致性、隔离性和持久性.<br><code>原子性</code>指的是事务中包含的所有操作要么全做, 要么全不做;<br><code>一致性</code>是指在事务开始以前, 数据库处于一致性的状态, 事务结束后, 数据库也必须处于一致性的状态;<br><code>隔离性</code>要求系统必须保证事务不受其他并发执行的事务的影响;<br><code>持久性</code>是指一个事务一旦成功完成, 它对数据库的改变必须是永久的, 即使是在系统遇到故障的情况下也不会丢失, 数据的重要性决定了事务的持久性的重要.</p>
-<p><img src="/images/distributed/distributedTransaction/01.png"></p>
-<p>事务单元是通过<code>Begin-Traction</code>, 然后<code>Commit</code>(<code>Begin-Traction</code>、<code>Commit</code>和<code>Rollback</code>之间所有针对数据的写入、读取的操作都应该添加同步访问), <code>Begin</code>和<code>Commit</code>之间就是一个同步的事务单元. 例如, Bob给Smith 100块钱就是一个事务单元, 这个过程中有很多步操作, 具体如上图所示; 但对业务来说, 仅是一个转账的操作.</p>
-<h2 id="事务之间的关系"><a href="#事务之间的关系" class="headerlink" title="事务之间的关系"></a>事务之间的关系</h2><p>事务单元之间的happens-before关系: 《事务管理》</p>
-<ul>
-<li>读写</li>
-<li>写读</li>
-<li>写写</li>
-<li>读读</li>
-</ul>
-<p><code>amdahl定律</code>: 最快并行, 最慢串行</p>
-<p>最快的速度并保证逻辑顺序</p>
-<p>目标–提高系统的易用性而不损失系统的性能</p>
-<p><strong>数据库使用多线程的原因</strong></p>
-<p>事务问题的来源</p>
-<p>慢速设备：硬盘和网路 I/O PS过低,吞吐量很高</p>
-<p>快速设备：内存</p>
-<p><strong>一组事务单元</strong></p>
-<p><img src="/images/distributed/distributedTransaction/02.png"></p>
-<p>当三个账户都在进行转账操作时, 每个操作都涉及Smith账户, 所有的事务都会排队, 各自形成一组事务单元.</p>
-<p>事务单元之间的<code>Happen-Before</code>关系中的四种可能性：<code>读写</code>、<code>写读</code>、<code>读读</code>、<code>写写</code>.<br>所有事务之间的关系都可以抽象成这四种之一, 来对应现在所有的业务逻辑处理. 在此基础之上, 需要用最快的速度处理多个事务单元之间的关系, 同时还能保障这四种操作的逻辑顺序.</p>
-<p><strong>单个事务单元的其他例子</strong></p>
-<p>除了转账操作是事务单元外, 诸如商品要建立一个基于<code>GMT_Modified</code>的索引、从数据库中读取一行记录、向数据库中写入一行记录, 同时更新这行记录的所有索引、删除整张表等都是一个事务单元.</p>
-<p>也是一个事务单元:</p>
-<ol>
-<li>添加索引</li>
-<li>从数据库读一条数据</li>
-<li>向数据库写一条记录, 并更新索引</li>
-<li>删除整张表</li>
-</ol>
-<h2 id="事务单元的实现方式"><a href="#事务单元的实现方式" class="headerlink" title="事务单元的实现方式"></a>事务单元的实现方式</h2><p><img src="/images/distributed/distributedTransaction/03.png"></p>
-<p>Two Phase Lock(2PL)是数据库中非常重要的一个概念.<br><strong>数据库操作<code>Insert</code>、<code>Update</code>、<code>Delete</code>都是先读再写的操作</strong>, 例如<code>Insert</code>操作是先读取数据, 读取之后判读数据是否存在, 如果不存在, 则写入该数据, 如果数据存在, 则返回错误.<br>假设在该场景下没有读操作, 只是单纯写入数据, 则数据本身并没有事务操作, <code>Delete</code>、<code>Update</code>操作与之类似.<br><strong>数据库利用这些操作的特性, 在每一次查询过程中, 只要查到数据, 就会在该数据上加锁.理论上, 所有被读取的数据都已加锁, 不会再被其他人读到, 也就是说对数据进行的中间操作状态对所有人都不可见, 当所有中间状态完成后, 提交操作时, 解开锁, 此时数据对所有系统可见</strong> , 例如在转账过程中, 所有人只能看到两种状态：开始时, A有钱, B没钱; 结束时, B有钱, A没钱, 而中间A减掉钱, B尚未加上钱的状态被锁隐藏掉了, 这个操作就是数据库中处理事务的最标准的方式. 如上图所示：事务中的Trx2(JoeLock)与其他事务不相关, 因此可以并行执行; Trx1需要Lock两个数据Boblock和Smithlock, 而Trx3同样需要Lock这两个数据, 因此Trx3必须等待, 且等待在Boblock上; Joe事务会先结束, Trx3会等到Trx1完成后才会开始.</p>
-<p>两阶段提交协议(基础是2pl): 事务单元内, 从读数据开始, 将所读的行锁住, 直到事务提交才释放.</p>
-<h2 id="处理事务的常见方法"><a href="#处理事务的常见方法" class="headerlink" title="处理事务的常见方法"></a>处理事务的常见方法</h2><p>处理事务的常见方法有<code>排队法</code>、<code>排他锁</code>、<code>读写锁</code>、<code>MVCC</code>等方式, 下面来一一解析.</p>
-<h3 id="排队法"><a href="#排队法" class="headerlink" title="排队法"></a>排队法</h3><p><img src="/images/distributed/distributedTransaction/04.png"></p>
-<p>事务处理中最重要也是最简单的方案是排队法, 单线程地处理一堆数据. 在Redis中, 如果数据全部在内存中, 则单线程处理所有<code>Put</code>、<code>Get</code>操作效率最高.<br>这是因为多线程本质是CPU模拟多个线程, 这种模拟是以上下文切换为代价, 而对于内存的数据库来说, 没有上下文切换时效率最高. 因此, 单个CPU绑定一块内存的数据, 针对这块数据做多次读写操作时都是在单个CPU上完成的, 单线程处理方式在内存的情况是效率是最优的.</p>
-<p>那么什么时候事务需要用到多线程呢？这个问题的本质取决于下层所使用的存储, 如果是内存操作, 则可以动态地申请和销毁内存块; 而磁盘的IOPS很低, 但吞吐量很高. 如果一个场景涉及多次读写操作, 单线程可以很高的效率对于内存进行读写操作; 但是, 由于磁盘的IOPS仅为内存的几千分之一, 如果依旧用操作内存的方式操作磁盘, 那系统的整体性能将会很低, 这意味着必须将大量的读写操作聚合成一个<code>Batch</code>后再提交时才能达到较好的性能. 而将大量请求攒到一起的方式一是<code>异步</code>, 也就是请求本身和线程不绑定, 线程可以不Block(本质来说还是一种多线程的方式), 处理完一个线程后再处理其他线程. 这种做法的核心是将大量不同的请求提交到一个Buffer中, 再由该Buffer统一读取或者写入磁盘, 从而提高效率. 在慢速设备中, 多线程或异步非常常见, 在设计系统时, 面对磁盘、网络、SSD等慢速设备必须考虑使用多线程.</p>
-<h3 id="排他锁"><a href="#排他锁" class="headerlink" title="排他锁"></a>排他锁</h3><p><img src="/images/distributed/distributedTransaction/05.png"></p>
-<p>有些场景不适合用单线程操作, 可以利用排他锁的方式来快速隔离并发读写事务. 数据库中有一些事务单元是共享的, 如图中的事务单元1是共享的, 事务单元2/3共享数据; 针对事务单元2/3共享数据的所有读写Block住, 事务单元1单独用一个锁来控制, 用这种方式完成系统的访问控制.</p>
-<h3 id="读写锁"><a href="#读写锁" class="headerlink" title="读写锁"></a>读写锁</h3><p><img src="/images/distributed/distributedTransaction/06.png"></p>
-<p>如果是一个只读的事务, 例如只对数据进行查询操作, 在该过程中数据一定不被修改, 因此多个查询操作可以并行执行, 因此一种针对读读场景的优化自然而然产生——读写锁. 读写锁的核心是在多次读的操作中, 同时允许多个读者来访问共享资源, 提高并发性.</p>
-<h3 id="MVCC"><a href="#MVCC" class="headerlink" title="MVCC"></a>MVCC</h3><p><img src="/images/distributed/distributedTransaction/07.png"></p>
-<p>在最初的数据库事务实现中是不存在MVCC的, 它是Oracle在八十年代新加的功能, 本质是<code>Copy On Write</code>, 也就是每次写都是以重新开始一个新的版本的方式写入数据,<br>因此, 数据库中也就包含了之前的所有版本. 在数据读的过程中, 先申请一个版本号, 如果该版本号小于正在写入的版本号, 则数据一定可以查询到, 无需等到新版本完全写完即可返回查询结果. 这种方式可以在读读不阻塞的前提下, 实现读写/写读不阻塞, 尽可能保证所有的读操作并行, 而写操作串行.</p>
-<h2 id="事务的调优原则"><a href="#事务的调优原则" class="headerlink" title="事务的调优原则"></a>事务的调优原则</h2><p>事务的调优的思路是在不影响业务应用的前提下：</p>
-<p>第一. 尽可能减少锁的覆盖范围, 例如 <code>Myisam表锁</code>到<code>Innodb行锁</code>就是一个减少锁覆盖范围的过程; 对于<code>原位锁</code>(<code>排他锁</code>、<code>读写锁</code>等)可变为<code>MVCC</code>多版本(本质仍然是减少锁的范围).<br>第二. 增加锁上可并行的线程数, 例如读锁和写锁的分离, 允许并行读取数据.<br>第三. 选择正确锁类型, 其中悲观锁适合并发争抢比较严重的场景; 乐观锁适合并发争抢不太严重的场景.</p>
-<ul>
-<li><p><code>悲观锁</code> 适合并发争抢比较严重的场景<br><code>Collections.sychronizedList(new ArrayList());</code></p>
-</li>
-<li><p><code>乐观锁</code> 适合并发争抢不太严重的场景, 如<code>自旋锁</code></p>
-</li>
-</ul>
-<h1 id="分布式事务"><a href="#分布式事务" class="headerlink" title="分布式事务"></a>分布式事务</h1><h2 id="目标"><a href="#目标" class="headerlink" title="目标"></a>目标</h2><ul>
-<li>完整的事务支持<ul>
-<li>像传统单机事务一样的操作方式</li>
-<li>可按需无限扩展</li>
-</ul>
-</li>
-</ul>
-<p>容易理解的模型往往性能不好, 性能好的模型往往不容易理解—-这就是生活</p>
-<h2 id="分布式事务带来的问题"><a href="#分布式事务带来的问题" class="headerlink" title="分布式事务带来的问题"></a>分布式事务带来的问题</h2><ul>
-<li>网络带来的问题</li>
-<li>基于锁的事务实现中遇到的问题<ul>
-<li>从2PL到2PC</li>
-<li>分布式事务的异常处理</li>
-<li>分布式日志记录</li>
-<li>分布式事务延迟变大的问题</li>
-</ul>
-</li>
-<li>结合MVCC的事务实现中遇到的问题<ul>
-<li>分布式顺序问题</li>
-</ul>
-</li>
-</ul>
-<p>并行与并发区别</p>
-<h1 id="分布式事务-1"><a href="#分布式事务-1" class="headerlink" title="分布式事务"></a>分布式事务</h1><p>分布式事务服务(Distributed Transaction Service，DTS)</p>
-<p>由于在分布式系统中经常发生丢包、网络故障，分区容忍性是必须要满足的，同时为了兼顾高可用性，绝大部分系统都将强一致性需求转化成最终一致性的需求，并通过幂等机制保证了数据的最终一致性。</p>
-<p><strong>理解2PC和3PC协议</strong></p>
-<p>为了解决分布式一致性问题，前人在性能和数据一致性的反反复复权衡过程中总结了许多典型的协议和算法。其中比较著名的有二阶提交协议(2 Phase Commitment Protocol)，三阶提交协议(3 Phase Commitment Protocol)。</p>
-<p><strong>2PC</strong></p>
-<p>分布式事务最常用的解决方案就是二阶段提交。在分布式系统中，每个节点虽然可以知晓自己的操作时成功或者失败，却无法知道其他节点的操作的成功或失败。当一个事务跨越多个节点时，为了保持事务的ACID特性，需要引入一个作为协调者的组件来统一掌控所有参与者节点的操作结果并最终指示这些节点是否要把操作结果进行真正的提交。</p>
-<p>因此，二阶段提交的算法思路可以概括为：参与者将操作成败通知协调者，再由协调者根据所有参与者的反馈情报决定各参与者是否要提交操作还是中止操作。</p>
-<p>所谓的两个阶段是指：第一阶段：准备阶段(投票阶段)和第二阶段：提交阶段(执行阶段)。</p>
-<p><strong>第一阶段：投票阶段</strong></p>
-<p>该阶段的主要目的在于打探数据库集群中的各个参与者是否能够正常的执行事务，具体步骤如下：</p>
-<ol>
-<li>协调者向所有的参与者发送事务执行请求，并等待参与者反馈事务执行结果。</li>
-<li>事务参与者收到请求之后，执行事务，但不提交，并记录事务日志。</li>
-<li>参与者将自己事务执行情况反馈给协调者，同时阻塞等待协调者的后续指令。</li>
-</ol>
-<p><strong>第二阶段：事务提交阶段</strong></p>
-<p>在第一阶段协调者的询盘之后，各个参与者会回复自己事务的执行情况，这时候存在三种可能：</p>
-<ol>
-<li>所有的参与者回复能够正常执行事务。</li>
-<li>一个或多个参与者回复事务执行失败。</li>
-<li>协调者等待超时。</li>
-</ol>
-<p>对于第一种情况，协调者将向所有的参与者发出提交事务的通知，具体步骤如下：</p>
-<ol>
-<li>协调者向各个参与者发送commit通知，请求提交事务。</li>
-<li>参与者收到事务提交通知之后，执行commit操作，然后释放占有的资源。</li>
-<li>参与者向协调者返回事务commit结果信息。</li>
-</ol>
-<p><img src="/images/distributed/distributedTransaction/08.jpg"></p>
-<p>对于第二、三种情况，协调者均认为参与者无法正常成功执行事务，为了整个集群数据的一致性，所以要向各个参与者发送事务回滚通知，具体步骤如下：</p>
-<ol>
-<li>协调者向各个参与者发送事务rollback通知，请求回滚事务。</li>
-<li>参与者收到事务回滚通知之后，执行rollback操作，然后释放占有的资源。</li>
-<li>参与者向协调者返回事务rollback结果信息。</li>
-</ol>
-<p><img src="/images/distributed/distributedTransaction/09.jpg"></p>
-<p>两阶段提交协议解决的是分布式数据库数据强一致性问题，其原理简单，易于实现，但是缺点也是显而易见的，主要缺点如下：</p>
-<ul>
-<li>单点问题：协调者在整个两阶段提交过程中扮演着举足轻重的作用，一旦协调者所在服务器宕机，那么就会影响整个数据库集群的正常运行，比如在第二阶段中，如果协调者因为故障不能正常发送事务提交或回滚通知，那么参与者们将一直处于阻塞状态，整个数据库集群将无法提供服务。</li>
-<li>同步阻塞：两阶段提交执行过程中，所有的参与者都需要听从协调者的统一调度，期间处于阻塞状态而不能从事其他操作，这样效率及其低下。</li>
-<li>数据不一致性：两阶段提交协议虽然为分布式数据强一致性所设计，但仍然存在数据不一致性的可能，比如在第二阶段中，假设协调者发出了事务commit的通知，但是因为网络问题该通知仅被一部分参与者所收到并执行了commit操作，其余的参与者则因为没有收到通知一直处于阻塞状态，这时候就产生了数据的不一致性。</li>
-</ul>
-<p><strong>3PC</strong></p>
-<p>针对两阶段提交存在的问题，三阶段提交协议通过引入一个“预询盘”阶段，以及超时策略来减少整个集群的阻塞时间，提升系统性能。三阶段提交的三个阶段分别为：can_commit，pre_commit，do_commit。</p>
-<p><strong>第一阶段：can_commit</strong></p>
-<p>该阶段协调者会去询问各个参与者是否能够正常执行事务，参与者根据自身情况回复一个预估值，相对于真正的执行事务，这个过程是轻量的，具体步骤如下：</p>
-<ol>
-<li>协调者向各个参与者发送事务询问通知，询问是否可以执行事务操作，并等待回复。</li>
-<li>各个参与者依据自身状况回复一个预估值，如果预估自己能够正常执行事务就返回确定信息，并进入预备状态，否则返回否定信息。</li>
-</ol>
-<p><strong>第二阶段：pre_commit</strong></p>
-<p>本阶段协调者会根据第一阶段的询盘结果采取相应操作，询盘结果主要有三种：</p>
-<ol>
-<li>所有的参与者都返回确定信息。</li>
-<li>一个或多个参与者返回否定信息。</li>
-<li>协调者等待超时。</li>
-</ol>
-<p>针对第一种情况，协调者会向所有参与者发送事务执行请求，具体步骤如下：</p>
-<ol>
-<li>协调者向所有的事务参与者发送事务执行通知。</li>
-<li>参与者收到通知后，执行事务，但不提交。</li>
-<li>参与者将事务执行情况返回给客户端。</li>
-</ol>
-<p>在上面的步骤中，如果参与者等待超时，则会中断事务。 针对第二、三种情况，协调者认为事务无法正常执行，于是向各个参与者发出abort通知，请求退出预备状态，具体步骤如下：</p>
-<ol>
-<li>协调者向所有事务参与者发送abort通知</li>
-<li>参与者收到通知后，中断事务</li>
-</ol>
-<p><img src="/images/distributed/distributedTransaction/10.jpg"></p>
-<p><strong>第三阶段：do_commit</strong></p>
-<p>如果第二阶段事务未中断，那么本阶段协调者将会依据事务执行返回的结果来决定提交或回滚事务，分为三种情况：</p>
-<ol>
-<li>所有的参与者都能正常执行事务。</li>
-<li>一个或多个参与者执行事务失败。</li>
-<li>协调者等待超时。</li>
-</ol>
-<p>针对第一种情况，协调者向各个参与者发起事务提交请求，具体步骤如下：</p>
-<ol>
-<li>协调者向所有参与者发送事务commit通知。</li>
-<li>所有参与者在收到通知之后执行commit操作，并释放占有的资源。</li>
-<li>参与者向协调者反馈事务提交结果。</li>
-</ol>
-<p><img src="/images/distributed/distributedTransaction/11.jpg"></p>
-<p>针对第二、三种情况，协调者认为事务无法正常执行，于是向各个参与者发送事务回滚请求，具体步骤如下：</p>
-<ol>
-<li>协调者向所有参与者发送事务rollback通知。</li>
-<li>所有参与者在收到通知之后执行rollback操作，并释放占有的资源。</li>
-<li>参与者向协调者反馈事务提交结果。</li>
-</ol>
-<p><img src="/images/distributed/distributedTransaction/12.jpg"></p>
-<p>在本阶段如果因为协调者或网络问题，导致参与者迟迟不能收到来自协调者的commit或rollback请求，那么参与者将不会如两阶段提交中那样陷入阻塞，而是等待超时后继续commit。相对于两阶段提交虽然降低了同步阻塞，但仍然无法避免数据的不一致性。</p>
-<p>高吞吐 高性能 和单机事务一样易用</p>
-<p>ACID</p>
-<p>spandex</p>
-<p>xa</p>
-<p>java 协调器</p>
-<p>分布式日志记录</p>
-<p>隔离级别 事务的传递性</p>
-<p>幂等</p>
-<hr>
-<p>【相关文献】</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1497,7 +1522,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">235</span>
+          <span class="site-state-item-count">237</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1510,7 +1535,7 @@
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">126</span>
+        <span class="site-state-item-count">127</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
