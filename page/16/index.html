@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -312,7 +312,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -365,269 +365,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/solr/SolrCloud/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/solr/SolrCloud/" class="post-title-link" itemprop="url">SolrCloud</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="SolrCloud"><a href="#SolrCloud" class="headerlink" title="SolrCloud"></a>SolrCloud</h1><p><img src="_v_images/20200812120555513_1829511358.png"></p>
-<p>物理结构：</p>
-<p>三个Solr实例（ 每个实例包括两个Core），组成一个SolrCloud。</p>
-<p>逻辑结构：</p>
-<p>索引集合包括两个Shard（shard1和shard2），shard1和shard2分别由三个Core组成，其中一个Leader两个Replication，Leader是由zookeeper选举产生，zookeeper控制每个shard上三个Core的索引数据一致，解决高可用问题。用户发起索引请求分别从shard1和shard2上获取，解决高并发问题。</p>
-<p>core：</p>
-<p>每个Core是Solr中一个独立运行单位，提供 索引和搜索服务。一个shard需要由一个Core或多个Core组成。由于collection由多个shard组成所以collection一般由多个core组成。</p>
-<p>Master&amp;Slave：</p>
-<p>Master是master-slave构中的主结点（通常说主服务器），Slave是master-slave结构中的从结点（通常说从服务器或备服务器）。同一个Shard下master和slave存储的数据是一致的，这是为了达到高可用目的</p>
-<h3 id="Logical-Concepts"><a href="#Logical-Concepts" class="headerlink" title="Logical Concepts"></a><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html#logical-concepts">Logical Concepts</a></h3><ul>
-<li><p>A Cluster can host multiple Collections of Solr Documents. 一个集群可持有多个solr文档集合</p>
-</li>
-<li><p>A collection can be partitioned into multiple Shards, which contain a subset of the Documents in the Collection. 一个集合可以分区为多个shards(切片), 一个shard包含文档集合的子集</p>
-</li>
-<li><p>The number of Shards that a Collection has determines: 集合中shard的个数取决于:</p>
-<ul>
-<li><p>The theoretical limit to the number of Documents that Collection can reasonably contain.  集合可以合理包含的文档数量的理论限制。</p>
-</li>
-<li><p>The amount of parallelization that is possible for an individual search request. 单个搜索请求可能的并行度。</p>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="Physical-Concepts"><a href="#Physical-Concepts" class="headerlink" title="Physical Concepts"></a><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html#physical-concepts">Physical Concepts</a></h3><ul>
-<li><p>A Cluster is made up of one or more Solr Nodes, which are running instances of the Solr server process. 集群由一个或多个Solr节点组成，这些节点运行着Solr服务器进程的实例。</p>
-</li>
-<li><p>Each Node can host multiple Cores. 每个节点可以持有多个核</p>
-</li>
-<li><p>Each Core in a Cluster is a physical Replica for a logical Shard. 一个集群的每个核是一个shard的物理副本</p>
-</li>
-<li><p>Every Replica uses the same configuration specified for the Collection that it is a part of. 每个副本使用为其所属的集合指定的相同配置。</p>
-</li>
-<li><p>The number of Replicas that each Shard has determines: 每个shard的副本数取决于:</p>
-<ul>
-<li><p>The level of redundancy built into the Collection and how fault tolerant the Cluster can be in the event that some Nodes become unavailable. 集合内建的冗余级别，以及在某些节点不可用时集群的容错能力。</p>
-</li>
-<li><p>The theoretical limit in the number concurrent search requests that can be processed under heavy load. 在高负载下可处理的并发搜索请求数量的理论限制。</p>
-</li>
-</ul>
-</li>
-</ul>
-<p><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html">官方文档-How SolrCloud Works</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/superset/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/superset/" class="post-title-link" itemprop="url">SuperSet</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">docker serach superset</span><br><span class="line">docker pull amancevice/superset</span><br><span class="line">docker images</span><br><span class="line">mkdir ~/apps/data/superset/</span><br><span class="line">docker run -d -p 8088:8088 -v  ~/apps/data/superset/:/home/superset amancevice/superset</span><br><span class="line">docker ps</span><br><span class="line"></span><br><span class="line">CONTAINER ID   IMAGE                 COMMAND                  CREATED          STATUS                            PORTS                    NAMES</span><br><span class="line">71a1400d1e98   amancevice/superset   &quot;gunicorn superset.a…&quot;   10 seconds ago   Up 9 seconds (health: starting)   0.0.0.0:8088-&gt;8088/tcp   quizzical_wright</span><br><span class="line">docker exec -it 71a1400d1e98 superset-init</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/HBase-client/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/HBase/HBase-client/" class="post-title-link" itemprop="url">HBase-client</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="HBase-client"><a href="#HBase-client" class="headerlink" title="HBase-client"></a>HBase-client</h1><h2 id="读取到旧region的原因"><a href="#读取到旧region的原因" class="headerlink" title="读取到旧region的原因"></a>读取到旧region的原因</h2><p> hbase查询，查询在两张表间切换，查询了三天另一张表，原表已经重建过了，查询切换回原表出现读取到旧region的问题</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/PhantomJS/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -659,7 +396,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -729,6 +466,80 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/HBase-client/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/HBase/HBase-client/" class="post-title-link" itemprop="url">HBase-client</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="HBase-client"><a href="#HBase-client" class="headerlink" title="HBase-client"></a>HBase-client</h1><h2 id="读取到旧region的原因"><a href="#读取到旧region的原因" class="headerlink" title="读取到旧region的原因"></a>读取到旧region的原因</h2><p> hbase查询，查询在两张表间切换，查询了三天另一张表，原表已经重建过了，查询切换回原表出现读取到旧region的问题</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -760,7 +571,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -854,7 +665,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -949,6 +760,80 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/superset/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/superset/" class="post-title-link" itemprop="url">SuperSet</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">docker serach superset</span><br><span class="line">docker pull amancevice/superset</span><br><span class="line">docker images</span><br><span class="line">mkdir ~/apps/data/superset/</span><br><span class="line">docker run -d -p 8088:8088 -v  ~/apps/data/superset/:/home/superset amancevice/superset</span><br><span class="line">docker ps</span><br><span class="line"></span><br><span class="line">CONTAINER ID   IMAGE                 COMMAND                  CREATED          STATUS                            PORTS                    NAMES</span><br><span class="line">71a1400d1e98   amancevice/superset   &quot;gunicorn superset.a…&quot;   10 seconds ago   Up 9 seconds (health: starting)   0.0.0.0:8088-&gt;8088/tcp   quizzical_wright</span><br><span class="line">docker exec -it 71a1400d1e98 superset-init</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/cluster_deploy/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -980,7 +865,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1050,7 +935,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_1/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/solr/SolrCloud/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1064,7 +949,122 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/database/MySQL/syntax_1/" class="post-title-link" itemprop="url">【基础】MySQL语法基础</a>
+            <a href="/bigdata/solr/SolrCloud/" class="post-title-link" itemprop="url">SolrCloud</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="SolrCloud"><a href="#SolrCloud" class="headerlink" title="SolrCloud"></a>SolrCloud</h1><p><img src="_v_images/20200812120555513_1829511358.png"></p>
+<p>物理结构：</p>
+<p>三个Solr实例（ 每个实例包括两个Core），组成一个SolrCloud。</p>
+<p>逻辑结构：</p>
+<p>索引集合包括两个Shard（shard1和shard2），shard1和shard2分别由三个Core组成，其中一个Leader两个Replication，Leader是由zookeeper选举产生，zookeeper控制每个shard上三个Core的索引数据一致，解决高可用问题。用户发起索引请求分别从shard1和shard2上获取，解决高并发问题。</p>
+<p>core：</p>
+<p>每个Core是Solr中一个独立运行单位，提供 索引和搜索服务。一个shard需要由一个Core或多个Core组成。由于collection由多个shard组成所以collection一般由多个core组成。</p>
+<p>Master&amp;Slave：</p>
+<p>Master是master-slave构中的主结点（通常说主服务器），Slave是master-slave结构中的从结点（通常说从服务器或备服务器）。同一个Shard下master和slave存储的数据是一致的，这是为了达到高可用目的</p>
+<h3 id="Logical-Concepts"><a href="#Logical-Concepts" class="headerlink" title="Logical Concepts"></a><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html#logical-concepts">Logical Concepts</a></h3><ul>
+<li><p>A Cluster can host multiple Collections of Solr Documents. 一个集群可持有多个solr文档集合</p>
+</li>
+<li><p>A collection can be partitioned into multiple Shards, which contain a subset of the Documents in the Collection. 一个集合可以分区为多个shards(切片), 一个shard包含文档集合的子集</p>
+</li>
+<li><p>The number of Shards that a Collection has determines: 集合中shard的个数取决于:</p>
+<ul>
+<li><p>The theoretical limit to the number of Documents that Collection can reasonably contain.  集合可以合理包含的文档数量的理论限制。</p>
+</li>
+<li><p>The amount of parallelization that is possible for an individual search request. 单个搜索请求可能的并行度。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="Physical-Concepts"><a href="#Physical-Concepts" class="headerlink" title="Physical Concepts"></a><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html#physical-concepts">Physical Concepts</a></h3><ul>
+<li><p>A Cluster is made up of one or more Solr Nodes, which are running instances of the Solr server process. 集群由一个或多个Solr节点组成，这些节点运行着Solr服务器进程的实例。</p>
+</li>
+<li><p>Each Node can host multiple Cores. 每个节点可以持有多个核</p>
+</li>
+<li><p>Each Core in a Cluster is a physical Replica for a logical Shard. 一个集群的每个核是一个shard的物理副本</p>
+</li>
+<li><p>Every Replica uses the same configuration specified for the Collection that it is a part of. 每个副本使用为其所属的集合指定的相同配置。</p>
+</li>
+<li><p>The number of Replicas that each Shard has determines: 每个shard的副本数取决于:</p>
+<ul>
+<li><p>The level of redundancy built into the Collection and how fault tolerant the Cluster can be in the event that some Nodes become unavailable. 集合内建的冗余级别，以及在某些节点不可用时集群的容错能力。</p>
+</li>
+<li><p>The theoretical limit in the number concurrent search requests that can be processed under heavy load. 在高负载下可处理的并发搜索请求数量的理论限制。</p>
+</li>
+</ul>
+</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="https://lucene.apache.org/solr/guide/7_1/how-solrcloud-works.html">官方文档-How SolrCloud Works</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/base/" class="post-title-link" itemprop="url">MySQL</a>
         </h2>
 
         <div class="post-meta">
@@ -1081,7 +1081,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-19 15:02:11" itemprop="dateModified" datetime="2021-04-19T15:02:11+08:00">2021-04-19</time>
+                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1104,341 +1104,23 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>本文主要介绍SQL语言以及部分MySQL的基础知识。</p>
-<h1 id="MySQL"><a href="#MySQL" class="headerlink" title="MySQL"></a>MySQL</h1><p>MySQL的默认的端口号是3306 超级用户是<code>root</code></p>
-<p>MySql引擎</p>
-<p><img src="/images/j2ee/MySQL/MySql-Engine.png"></p>
-<h1 id="MySQL提示符-命令与语法规范"><a href="#MySQL提示符-命令与语法规范" class="headerlink" title="MySQL提示符 命令与语法规范"></a>MySQL提示符 命令与语法规范</h1><p>MySQL的所有的指令都是以结束符结束的, 回车提交命令. 默认的提示符是<code>;</code>号.</p>
-<h2 id="修改提示符"><a href="#修改提示符" class="headerlink" title="修改提示符"></a>修改提示符</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">prompt localhost;</span><br><span class="line">将提示符修改为localhost</span><br></pre></td></tr></table></figure>
-<p>之后每一行的提示符由<code>mysql&gt;</code>变为<code>localhost&gt;</code>， 还可以使用通配符修改提示符。</p>
-<h2 id="常用指令"><a href="#常用指令" class="headerlink" title="常用指令"></a>常用指令</h2><p>通过<code>SELECT</code>执行内置函数</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> VERSION(); <span class="operator">/</span><span class="operator">/</span>显示当前服务器版本</span><br><span class="line"><span class="operator">+</span><span class="comment">------------+</span></span><br><span class="line"><span class="operator">|</span> VERSION()  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">5.5</span><span class="number">.19</span><span class="operator">-</span>log <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------+</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> NOW(); <span class="operator">/</span><span class="operator">/</span>显示当前日期时间</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+</span></span><br><span class="line"><span class="operator">|</span> NOW()               <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2016</span><span class="number">-04</span><span class="number">-12</span> <span class="number">08</span>:<span class="number">51</span>:<span class="number">44</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> <span class="keyword">USER</span>(); <span class="operator">/</span><span class="operator">/</span>显示当前用户</span><br><span class="line"><span class="operator">+</span><span class="comment">----------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">USER</span>()         <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------------+</span></span><br><span class="line"><span class="operator">|</span> root<span class="variable">@localhost</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------------+</span></span><br></pre></td></tr></table></figure>
-<h2 id="语法规范："><a href="#语法规范：" class="headerlink" title="语法规范："></a>语法规范：</h2><ul>
-<li>关键字和函数名称必须全部大写</li>
-<li>数据库名称 表名称 字段名称全部小写</li>
-<li>SQL语句必须以分号结尾</li>
-</ul>
-<p>命名规则：</p>
-<ul>
-<li>可读性原则：驼峰提高可读性</li>
-<li>表意性原则：对象的名字能反应对象的意义</li>
-<li>长名原则：少用缩写</li>
-</ul>
-<h1 id="操作数据库"><a href="#操作数据库" class="headerlink" title="操作数据库"></a>操作数据库</h1><p>创建数据库</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CREATE &#123;DATABASE|SCHEMA&#125;[IF NOT EXISTS] db_name</span><br><span class="line">[<span class="keyword">DEFAULT</span>] <span class="type">CHARACTER</span> <span class="keyword">SET</span> [<span class="operator">=</span>] charset_name</span><br><span class="line"><span class="comment">--- MySQL中SCHEMA与DATABASE名称相同</span></span><br></pre></td></tr></table></figure>
-<p>查看当前MySql服务器下的数据库</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SHOW &#123;DATABASES|SCHEMAS&#125;</span><br><span class="line">[<span class="keyword">LIKE</span> <span class="string">&#x27;pattern&#x27;</span><span class="operator">|</span><span class="keyword">WHERE</span> EXPR]</span><br></pre></td></tr></table></figure>
-<p>修改数据库</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ALTER &#123;DATABASE|SCHEMA&#125;[db_name]</span><br><span class="line">[<span class="keyword">DEFAULT</span>]<span class="type">CHARACTER</span> <span class="keyword">SET</span> [<span class="operator">=</span>] charset_name</span><br></pre></td></tr></table></figure>
-<p>删除数据库</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">DROP &#123;DATABASE|SCHEMA&#125;[IF NOT EXISTS] db_name</span><br></pre></td></tr></table></figure>
-<h1 id="数据类型"><a href="#数据类型" class="headerlink" title="数据类型"></a>数据类型</h1><p>MySQL中的数据类型主要有整形 浮点型 字符型和日期时间型.<br>字段的类型影响着存储容量和数据查询性能。当可以选择多种类型时，优先选择数字类型，<br>其次是日期和二进制类型，最后是字符类型。相同级别的类型优先选择省空间的类型。</p>
-<p><img src="/images/j2ee/MySQL/MySql-DataType.png"></p>
-<p>对于上述原则主要从下面两个方面考虑：</p>
-<ol>
-<li>在对数据进行比较时(查询条件、JOIN条件及排序)操作时，<br><strong>同样的数据，字符处理往往比数字处理慢</strong></li>
-<li>在数据库中，数据处理以页为单位，<strong>列的长度越小，利于性能提升</strong></li>
-</ol>
-<p>char与varchar选择:</p>
-<ol>
-<li>如果列中要存储的数据长度差不多是一致的，则应该考虑用char；否则应该用varchar。</li>
-<li>如果列中的最大数据长度小于50Byte，则一般也考虑用char.(当然，如果这个列很少用，<br>则基于节省空间和较少I/O的考虑，还是可以选择用varchar)</li>
-<li>一般不宜定义大于50Byte的char类型列。</li>
-</ol>
-<h2 id="整形"><a href="#整形" class="headerlink" title="整形"></a>整形</h2><p><img src="/images/j2ee/MySQL/MySql-DataType-Number.png"></p>
-<h2 id="浮点型"><a href="#浮点型" class="headerlink" title="浮点型"></a>浮点型</h2><p><img src="/images/j2ee/MySQL/MySql-DataType-Float.png"></p>
-<h2 id="日期时间型"><a href="#日期时间型" class="headerlink" title="日期时间型"></a>日期时间型</h2><p><img src="/images/j2ee/MySQL/MySql-DataType-DateTime.png"></p>
-<h2 id="字符型"><a href="#字符型" class="headerlink" title="字符型"></a>字符型</h2><p><img src="/images/j2ee/MySQL/MySql-DataType-String.png"></p>
-<h1 id="操作数据表"><a href="#操作数据表" class="headerlink" title="操作数据表"></a>操作数据表</h1><h2 id="打开数据库"><a href="#打开数据库" class="headerlink" title="打开数据库"></a>打开数据库</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">USE db_name; <span class="operator">/</span><span class="operator">/</span>打开数据库</span><br></pre></td></tr></table></figure>
-<h2 id="创建数据表"><a href="#创建数据表" class="headerlink" title="创建数据表"></a>创建数据表</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> [IF <span class="keyword">NOT</span> <span class="keyword">EXISTS</span>] table_name(</span><br><span class="line">  column_name data_type,</span><br><span class="line">  ....</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-<p>查看创建当前数据库的语句:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> provinces(</span><br><span class="line">    id <span class="type">SMALLINT</span> UNSIGNED <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span> AUTO_INCREMENT,</span><br><span class="line">    pname <span class="type">VARCHAR</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span></span><br><span class="line">  );</span><br><span class="line">显示创建数据库的语句</span><br><span class="line"><span class="keyword">SHOW</span> <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> provinces;</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="keyword">Table</span>     <span class="operator">|</span> <span class="keyword">Create</span> <span class="keyword">Table</span>                                                                                                                                                                <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> provinces <span class="operator">|</span> <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> `provinces` (</span><br><span class="line">  `id` <span class="type">smallint</span>(<span class="number">5</span>) unsigned <span class="keyword">NOT</span> <span class="keyword">NULL</span> AUTO_INCREMENT,</span><br><span class="line">  `pname` <span class="type">varchar</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span> (`id`)</span><br><span class="line">) ENGINE<span class="operator">=</span>InnoDB <span class="keyword">DEFAULT</span> CHARSET<span class="operator">=</span>latin1 <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
-<p>以表格的形式显示列和列的属性</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> columns <span class="keyword">from</span> provinces;</span><br><span class="line"><span class="operator">+</span><span class="comment">-------+----------------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> Field <span class="operator">|</span> Type                 <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Key <span class="operator">|</span> <span class="keyword">Default</span> <span class="operator">|</span> Extra          <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------+----------------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> id    <span class="operator">|</span> <span class="type">smallint</span>(<span class="number">5</span>) unsigned <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span> PRI <span class="operator">|</span> <span class="keyword">NULL</span>    <span class="operator">|</span> auto_increment <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> pname <span class="operator">|</span> <span class="type">varchar</span>(<span class="number">20</span>)          <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span>     <span class="operator">|</span> <span class="keyword">NULL</span>    <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------+----------------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.03</span> sec)</span><br><span class="line"><span class="keyword">desc</span> provinces;</span><br><span class="line"><span class="operator">+</span><span class="comment">-------+----------------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> Field <span class="operator">|</span> Type                 <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Key <span class="operator">|</span> <span class="keyword">Default</span> <span class="operator">|</span> Extra          <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------+----------------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> id    <span class="operator">|</span> <span class="type">smallint</span>(<span class="number">5</span>) unsigned <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span> PRI <span class="operator">|</span> <span class="keyword">NULL</span>    <span class="operator">|</span> auto_increment <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> pname <span class="operator">|</span> <span class="type">varchar</span>(<span class="number">20</span>)          <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span>     <span class="operator">|</span> <span class="keyword">NULL</span>    <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-------+----------------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
-
-
-<h2 id="查看数据库中的数据表列表"><a href="#查看数据库中的数据表列表" class="headerlink" title="查看数据库中的数据表列表"></a>查看数据库中的数据表列表</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SHOW</span> TABLES [<span class="keyword">FROM</span> db_name]</span><br><span class="line">[<span class="keyword">LIKE</span> <span class="string">&#x27;pattern&#x27;</span><span class="operator">|</span><span class="keyword">WHERE</span> expr]</span><br></pre></td></tr></table></figure>
-<h2 id="插入记录"><a href="#插入记录" class="headerlink" title="插入记录"></a>插入记录</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> [<span class="keyword">INTO</span>] table_name [(column_name,...)] <span class="keyword">VALUES</span>(var,...)</span><br></pre></td></tr></table></figure>
-<h2 id="记录查找"><a href="#记录查找" class="headerlink" title="记录查找"></a>记录查找</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> expr,... <span class="keyword">FROM</span> table_name</span><br></pre></td></tr></table></figure>
-<p>select 子句中可以包含子查询</p>
-<h2 id="约束"><a href="#约束" class="headerlink" title="约束"></a>约束</h2><ol>
-<li>约束保证数据的完整性和一致性</li>
-<li>约束分为表级约束和列级约束</li>
-<li>约束类型包括:<ul>
-<li>NOT NULL 非空元素</li>
-<li>PRIMARY KEY 主键约束</li>
-<li>UNIQUE KEY 唯一约束</li>
-<li>DEFAULT 默认约束</li>
-<li>FOREIGN KEY 外键约束.</li>
+          <ol>
+<li>语法<ul>
+<li><a href="/database/MySQL/syntax_1">基础语法1</a></li>
+<li><a href="/database/MySQL/syntax_2_in_or">in与or</a></li>
+<li><a href="/database/MySQL/syntax_3_multitable_join">多表join</a></li>
+<li><a href="/database/MySQL/syntax_4_advanced">高级语法</a></li>
+<li><a href="/database/MySQL/syntax_5_sample">使用样例</a></li>
 </ul>
 </li>
-</ol>
-<h3 id="自增长-AUTO-INCREMENT"><a href="#自增长-AUTO-INCREMENT" class="headerlink" title="自增长 AUTO_INCREMENT"></a>自增长 AUTO_INCREMENT</h3><ol>
-<li>自动编号，且该字段必须是主键：<br>AUTO_INCREMENT必须是主键，主键不一定AUTO_INCREMENT</li>
-<li>默认情况下，其实值是1，每次增量是1</li>
-</ol>
-<p>插入数据时可以使用<code>DEFAULT</code>或者<code>NULL</code>为自增长字段赋值，以生成自增长数据。</p>
-<p>例如在上面的<code>provinces</code>表中, 插入数据</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> provinces <span class="keyword">values</span>(<span class="keyword">null</span>,<span class="string">&#x27;&#x27;</span>);</span><br><span class="line">Query OK, <span class="number">1</span> <span class="type">row</span> affected (<span class="number">0.08</span> sec)</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> provinces <span class="keyword">values</span>(<span class="keyword">DEFAULT</span>,<span class="string">&#x27;&#x27;</span>);</span><br><span class="line">Query OK, <span class="number">1</span> <span class="type">row</span> affected (<span class="number">0.08</span> sec)</span><br><span class="line"> <span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> provinces;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+-------+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> pname <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-------+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">2</span> <span class="operator">|</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+-------+</span></span><br><span class="line"><span class="number">2</span> <span class="keyword">rows</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
-<h3 id="主键约束-PRIMARY-KEY"><a href="#主键约束-PRIMARY-KEY" class="headerlink" title="主键约束 PRIMARY KEY"></a>主键约束 PRIMARY KEY</h3><ol>
-<li>主键约束</li>
-<li>每张数据表只能存在一个主键</li>
-<li>主键保证记录的唯一性</li>
-<li>主键自动为<code>NOT NULL</code></li>
-</ol>
-<h3 id="唯一约束"><a href="#唯一约束" class="headerlink" title="唯一约束"></a>唯一约束</h3><ol>
-<li>保证记录的唯一性</li>
-<li>字段可以为空值(NULL) 且可以多个为空</li>
-<li>每张表可以有多个唯一约束</li>
-</ol>
-<h3 id="默认值约束-DEFAULT"><a href="#默认值约束-DEFAULT" class="headerlink" title="默认值约束 DEFAULT"></a>默认值约束 DEFAULT</h3><p>当插入记录时， 如果没有明确为字段赋值，则自动赋值为默认值。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> tb6(</span><br><span class="line">    id <span class="type">SMALLINT</span> UNSIGNED AUTO_INCREMENT <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span>,</span><br><span class="line">    username <span class="type">VARCHAR</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">UNIQUE</span> KEY,</span><br><span class="line">    sex ENUM(<span class="string">&#x27;1&#x27;</span>,<span class="string">&#x27;2&#x27;</span>,<span class="string">&#x27;3&#x27;</span>) <span class="keyword">DEFAULT</span> <span class="string">&#x27;3&#x27;</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-<p>查看表格结构</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SHOW</span> COLUMNS <span class="keyword">FROM</span> tb6;</span><br><span class="line"><span class="operator">+</span><span class="comment">----------+----------------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> Field    <span class="operator">|</span> Type                 <span class="operator">|</span> <span class="keyword">Null</span> <span class="operator">|</span> Key <span class="operator">|</span> <span class="keyword">Default</span> <span class="operator">|</span> Extra          <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+----------------------+------+-----+---------+----------------+</span></span><br><span class="line"><span class="operator">|</span> id       <span class="operator">|</span> <span class="type">smallint</span>(<span class="number">5</span>) unsigned <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span> PRI <span class="operator">|</span> <span class="keyword">NULL</span>    <span class="operator">|</span> auto_increment <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> username <span class="operator">|</span> <span class="type">varchar</span>(<span class="number">20</span>)          <span class="operator">|</span> <span class="keyword">NO</span>   <span class="operator">|</span> UNI <span class="operator">|</span> <span class="keyword">NULL</span>    <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">|</span> sex      <span class="operator">|</span> enum(<span class="string">&#x27;1&#x27;</span>,<span class="string">&#x27;2&#x27;</span>,<span class="string">&#x27;3&#x27;</span>)    <span class="operator">|</span> YES  <span class="operator">|</span>     <span class="operator">|</span> <span class="number">3</span>       <span class="operator">|</span>                <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----------+----------------------+------+-----+---------+----------------+</span></span><br></pre></td></tr></table></figure>
-<p>使用默认值插入记录</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="operator">/</span><span class="operator">/</span>使用<span class="keyword">DEFAULT</span>来生成AUTO_INCREMENT</span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> tb6 <span class="keyword">VALUES</span>(<span class="keyword">Default</span>,&quot;李四&quot;,<span class="keyword">DEFAULT</span>);</span><br><span class="line">Query OK, <span class="number">1</span> <span class="type">row</span> affected (<span class="number">0.08</span> sec)</span><br><span class="line"></span><br><span class="line"><span class="keyword">Select</span> <span class="operator">*</span>  <span class="keyword">from</span> tb6;</span><br><span class="line"><span class="operator">+</span><span class="comment">----+----------+------+</span></span><br><span class="line"><span class="operator">|</span> id <span class="operator">|</span> username <span class="operator">|</span> sex  <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----------+------+</span></span><br><span class="line"><span class="operator">|</span>  <span class="number">1</span> <span class="operator">|</span> 李四   <span class="operator">|</span> <span class="number">3</span>    <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">----+----------+------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
-<p>指定字段为枚举类型: 与Java中的枚举类型不同, sql中的枚举只是限制取值范围.</p>
-<h3 id="外键约束"><a href="#外键约束" class="headerlink" title="外键约束"></a>外键约束</h3><p>要求</p>
-<ol>
-<li>父表和字表必须使用相同的存储引擎, 而且禁止使用临时表</li>
-<li>数据表的引擎必须只能是InnoDB</li>
-<li>外键列和参照列必须具有相似的数据类型, 其中数字的长度或是否有符号位必须相同;<br> 而字符的长度则可以不同.</li>
-<li>外键列和参照列必须创建索引.如果外键列不存在索引, MySQL将自动创建索引.</li>
-</ol>
-<p>实例</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> provinces(</span><br><span class="line">    id <span class="type">SMALLINT</span> UNSIGNED <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span> AUTO_INCREMENT,</span><br><span class="line">    pname <span class="type">VARCHAR</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span></span><br><span class="line">  );</span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> users(</span><br><span class="line">   id <span class="type">SMALLINT</span> UNSIGNED <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span> AUTO_INCREMENT,</span><br><span class="line">   username <span class="type">VARCHAR</span>(<span class="number">10</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">   pid <span class="type">SMALLINT</span> UNSIGNED,</span><br><span class="line">   <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span>(pid) <span class="keyword">REFERENCES</span> provinces(id) );</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.08</span> sec)</span><br><span class="line"></span><br><span class="line"><span class="keyword">SHOW</span> INDEXES <span class="keyword">FROM</span> provinces\G</span><br><span class="line"><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span> <span class="number">1.</span> <span class="type">row</span> <span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span><span class="operator">*</span></span><br><span class="line">       <span class="keyword">Table</span>: provinces</span><br><span class="line">  Non_unique: <span class="number">0</span></span><br><span class="line">    Key_name: <span class="keyword">PRIMARY</span></span><br><span class="line">Seq_in_index: <span class="number">1</span></span><br><span class="line"> Column_name: id</span><br><span class="line">   <span class="keyword">Collation</span>: A</span><br><span class="line"> <span class="keyword">Cardinality</span>: <span class="number">0</span></span><br><span class="line">    Sub_part: <span class="keyword">NULL</span></span><br><span class="line">      Packed: <span class="keyword">NULL</span></span><br><span class="line">        <span class="keyword">Null</span>:</span><br><span class="line">  Index_type: BTREE</span><br><span class="line">     Comment:</span><br><span class="line">Index_comment:</span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
-<p>外键约束的操作操作</p>
-<ol>
-<li>CASCADE: 从父表删除或更新且自动删除或更新子表中匹配的行</li>
-<li>SET NULL: 从父表删除或更新行, 并设置子表中的外键列为NULL.  如果使用该选项, 必须保证子表列没有指定NOT NULL</li>
-<li>RESTRICT: 拒绝对父表的删除或更新操作</li>
-<li>NO ACTION: 标准SQL关键字, 在MySQL中与RESTRICT相同</li>
-</ol>
-<h3 id="表级约束与列级约束"><a href="#表级约束与列级约束" class="headerlink" title="表级约束与列级约束 ??"></a>表级约束与列级约束 ??</h3><p>对于一个数据列建立的约束, 称为列级约束.<br>对多个数据列建立的约束, 称为表级约束.<br>列级约束既可以在列定义时声明,也可以在列定义后声明.<br>表级约束只能在列级约束后声明.</p>
-<h2 id="修改数据表"><a href="#修改数据表" class="headerlink" title="修改数据表"></a>修改数据表</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name <span class="keyword">ADD</span> [<span class="keyword">COLUMN</span>] column_name</span><br><span class="line">  column_definition [<span class="keyword">FIRST</span><span class="operator">|</span>AFTER column_name]</span><br><span class="line">添加多列</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name <span class="keyword">ADD</span> [<span class="keyword">COLUMN</span>]</span><br><span class="line">  (column_name column_definition, ....)</span><br><span class="line">删除列</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name <span class="keyword">DROP</span> [<span class="keyword">COLUMN</span>] column_name</span><br><span class="line">添加主键约束</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name <span class="keyword">ADD</span> [<span class="keyword">CONSTRAINT</span> [symbol]]</span><br><span class="line">  <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span> [Index_type](index_column_name,...)</span><br><span class="line">添加唯一约束</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name <span class="keyword">ADD</span> [<span class="keyword">CONSTRAINT</span> [symbol]]</span><br><span class="line">  <span class="keyword">UNIQUE</span> [INDEX<span class="operator">|</span>KEY][index_name][index_type]</span><br><span class="line">  (index_column_name,...)</span><br><span class="line">添加<span class="operator">/</span>删除默认约束</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name <span class="keyword">ALTER</span> [<span class="keyword">COLUMN</span>] column_name</span><br><span class="line">&#123;SET DEFAULT litera&#125;</span><br><span class="line">如:</span><br><span class="line">  <span class="keyword">ALTER</span> <span class="keyword">TABLE</span> users2 <span class="keyword">ALTER</span> age <span class="keyword">DROP</span> <span class="keyword">DEFAULT</span>;</span><br><span class="line">删除主键约束</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name <span class="keyword">DROP</span> <span class="keyword">PRIMARY</span> <span class="keyword">Key</span></span><br><span class="line">删除唯一约束</span><br><span class="line">ALTER TABLE table_name DROP &#123;INDEX|KEY&#125; index_name</span><br><span class="line">删除外键约束</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name <span class="keyword">DROP</span> <span class="keyword">FOREIGN</span> <span class="keyword">KEY</span> fk_symbol</span><br><span class="line">修改列定义</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name MODIFY [<span class="keyword">COLUMN</span>] column_name</span><br><span class="line">  column_definition [<span class="keyword">FIRST</span><span class="operator">|</span>AFTER column_name]</span><br><span class="line">修改列名称</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name CHANGE [<span class="keyword">COLUMN</span>] old_column_name</span><br><span class="line">  new_column_name column_definition [<span class="keyword">FIRST</span><span class="operator">|</span>AFTER column_name]</span><br><span class="line">数据表更名</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> table_name RENAME [<span class="keyword">TO</span><span class="operator">|</span><span class="keyword">AS</span>] new_table_name</span><br><span class="line">或</span><br><span class="line">RENAME <span class="keyword">TABLE</span> table_name <span class="keyword">TO</span> new_table_name</span><br><span class="line">  [, table_name2 <span class="keyword">TO</span> new_table_name2] ...</span><br></pre></td></tr></table></figure>
-<h1 id="操作数据表中的记录"><a href="#操作数据表中的记录" class="headerlink" title="操作数据表中的记录"></a>操作数据表中的记录</h1><h2 id="插入记录-1"><a href="#插入记录-1" class="headerlink" title="插入记录"></a>插入记录</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">INSERT [INTO] table_name [(column_name,....)] &#123;VALUES|VALUE&#125;</span><br><span class="line">(&#123;expr|DEFAULT&#125;,...),(...),...</span><br><span class="line"></span><br><span class="line">INSERT [INTO] table_name SET column_name=&#123;expr|DEFAULT&#125;,...</span><br><span class="line">此方法可以使用子查询</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> [<span class="keyword">INTO</span>] table_name [(column_name,...)] <span class="keyword">SELECT</span> ...</span><br></pre></td></tr></table></figure>
-<h2 id="单表更新"><a href="#单表更新" class="headerlink" title="单表更新"></a>单表更新</h2><p>单表更新，可以根据字段的当前值，进行判断。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 将user_info表中，user_id&gt;1000的信息状态置反。</span></span><br><span class="line"><span class="keyword">UPDATE</span> user_info</span><br><span class="line"><span class="keyword">SET</span> `status`<span class="operator">=</span> (<span class="keyword">CASE</span> <span class="keyword">WHEN</span> <span class="string">&#x27;status&#x27;</span><span class="operator">=</span><span class="number">1</span> <span class="keyword">THEN</span> <span class="number">0</span> <span class="keyword">WHEN</span> `status`<span class="operator">=</span><span class="number">0</span> <span class="keyword">THEN</span> <span class="number">1</span> <span class="keyword">END</span>)</span><br><span class="line"><span class="keyword">WHERE</span> `user_id` <span class="operator">&gt;</span> <span class="number">1000</span> ;</span><br><span class="line"><span class="comment">-- 将user_info表中的real_name去掉空格</span></span><br><span class="line"><span class="keyword">UPDATE</span> user_info</span><br><span class="line"><span class="keyword">SET</span> real_name<span class="operator">=</span><span class="built_in">TRIM</span>(real_name);</span><br></pre></td></tr></table></figure>
-
-
-
-
-<h2 id="单表删除"><a href="#单表删除" class="headerlink" title="单表删除"></a>单表删除</h2><h2 id="查询表达式解析"><a href="#查询表达式解析" class="headerlink" title="查询表达式解析"></a>查询表达式解析</h2><h2 id="where语句进行条件查询"><a href="#where语句进行条件查询" class="headerlink" title="where语句进行条件查询"></a>where语句进行条件查询</h2><h2 id="group-by语句对查询结果分组"><a href="#group-by语句对查询结果分组" class="headerlink" title="group by语句对查询结果分组"></a>group by语句对查询结果分组</h2><h2 id="having语句设置分组条件"><a href="#having语句设置分组条件" class="headerlink" title="having语句设置分组条件"></a>having语句设置分组条件</h2><h2 id="order-by语句对查询结果排序"><a href="#order-by语句对查询结果排序" class="headerlink" title="order by语句对查询结果排序"></a>order by语句对查询结果排序</h2><h2 id="limit语句限制查询数量"><a href="#limit语句限制查询数量" class="headerlink" title="limit语句限制查询数量"></a>limit语句限制查询数量</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--语法：</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> LIMIT [<span class="keyword">offset</span>,] <span class="keyword">rows</span> <span class="operator">|</span> <span class="keyword">rows</span> <span class="keyword">OFFSET</span> <span class="keyword">offset</span></span><br><span class="line"><span class="comment">--举例：</span></span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">table</span> limit <span class="number">5</span>; <span class="comment">--返回前5行</span></span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">table</span> limit <span class="number">0</span>,<span class="number">5</span>; <span class="comment">--同上，返回前5行</span></span><br><span class="line"><span class="comment">---为了检索从某一个偏移量到记录集的结束所有的记录行，可以指定第二个参数为 -1：</span></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> <span class="keyword">table</span> LIMIT <span class="number">95</span>,<span class="number">-1</span>; <span class="comment">--- 检索记录行 96-last.</span></span><br><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> <span class="keyword">table</span> limit <span class="number">5</span>,<span class="number">10</span>; <span class="comment">--返回6-15行</span></span><br></pre></td></tr></table></figure>
-<p>当一个查询语句偏移量offset很大的时候，如<code>select * from table limit 10000,10 </code>,<br>最好不要直接使用limit，而是先获取到offset的id后，再直接使用limit size来获取数据。<br>效果会好很多。** 想办法减少offset **</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">From</span> customers <span class="keyword">Where</span> customer_id <span class="operator">&gt;=</span>(</span><br><span class="line">  <span class="comment">--- 查找第1000条记录对应的id, id是索引, 检索速度快</span></span><br><span class="line">  <span class="keyword">select</span> customer_id <span class="keyword">From</span> customers <span class="keyword">Order</span> <span class="keyword">By</span> customer_id limit <span class="number">10000</span>,<span class="number">1</span></span><br><span class="line">) limit <span class="number">10</span>;</span><br></pre></td></tr></table></figure>
-<p>** 通过将查询条件(即where子句)的字段加索引,可以大大提高查询速度. **</p>
-<h1 id="子查询与连接"><a href="#子查询与连接" class="headerlink" title="子查询与连接"></a>子查询与连接</h1><h2 id="内连接-join从句"><a href="#内连接-join从句" class="headerlink" title="内连接 join从句"></a>内连接 join从句</h2><p>SQL标准中有5种连接：</p>
-<ul>
-<li>内连接 inner</li>
-<li>全外连接 full outer</li>
-<li>左外连接 left outer</li>
-<li>右外连接 right outer</li>
-<li>交叉连接 cross</li>
+<li>最佳实践<ul>
+<li><a href="/database/MySQL/best_practices">最佳实践</a></li>
 </ul>
-<h3 id="内连接-inner-join"><a href="#内连接-inner-join" class="headerlink" title="内连接 inner join"></a>内连接 inner join</h3><p>取两个表的交集， 即公共部分</p>
-<p><img src="/images/j2ee/MySQL/inner-join.png"></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> a.`column1`, a.`column2`, b.`column3`</span><br><span class="line"><span class="keyword">FROM</span> `table_name1` <span class="keyword">AS</span> a</span><br><span class="line"><span class="keyword">INNER</span> <span class="keyword">JOIN</span> `table_name2` <span class="keyword">AS</span> b</span><br><span class="line"><span class="keyword">ON</span> a.`column4`<span class="operator">=</span>b.`column5`;</span><br></pre></td></tr></table></figure>
-<h3 id="左外连接-left-outer-join"><a href="#左外连接-left-outer-join" class="headerlink" title="左外连接 left outer join"></a>左外连接 left outer join</h3><p><img src="/images/j2ee/MySQL/left-outer-join.png"></p>
-<p>右图中的部分， 可以用于替换<code>NOT IN</code></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> a.`column1`, a.`column2`, b.`column3`</span><br><span class="line"><span class="keyword">FROM</span> `table_name1` <span class="keyword">AS</span> a</span><br><span class="line"><span class="keyword">LEFT</span> <span class="keyword">JOIN</span> `table_name2` <span class="keyword">AS</span> b</span><br><span class="line"><span class="keyword">ON</span> a.`column4`<span class="operator">=</span>b.`column5`</span><br><span class="line"><span class="keyword">WHERE</span> b.`column3` <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>;</span><br></pre></td></tr></table></figure>
-<h3 id="右外连接-right-outer-join"><a href="#右外连接-right-outer-join" class="headerlink" title="右外连接 right outer join"></a>右外连接 right outer join</h3><p><img src="/images/j2ee/MySQL/right-outer-join.png"></p>
-<p>右图中的部分， 可以用于替换<code>NOT IN</code></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> a.`column1`, a.`column2`, b.`column3`</span><br><span class="line"><span class="keyword">FROM</span> `table_name1` <span class="keyword">AS</span> a</span><br><span class="line"><span class="keyword">RIGHT</span> <span class="keyword">JOIN</span> `table_name2` <span class="keyword">AS</span> b</span><br><span class="line"><span class="keyword">ON</span> a.`column4`<span class="operator">=</span>b.`column5`</span><br><span class="line"><span class="keyword">WHERE</span> a.`column3` <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>;</span><br></pre></td></tr></table></figure>
-<h3 id="全外连接-FULL-OUTER-JOIN"><a href="#全外连接-FULL-OUTER-JOIN" class="headerlink" title="全外连接 FULL OUTER JOIN"></a>全外连接 FULL OUTER JOIN</h3><p><img src="/images/j2ee/MySQL/full-outer-join.png"></p>
-<p>MySQL 中默认是不包含全外连接查询的， 可以通过其他方式实现同样的效果。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> a.`column1`, a.`column2`, b.`column3`</span><br><span class="line"><span class="keyword">FROM</span> `table_name1` <span class="keyword">AS</span> a</span><br><span class="line"><span class="keyword">LEFT</span> <span class="keyword">JOIN</span> `table_name2` <span class="keyword">AS</span> b</span><br><span class="line"><span class="keyword">ON</span> a.`column4`<span class="operator">=</span>b.`column5`</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span></span><br><span class="line"><span class="keyword">SELECT</span> a.`column1`, a.`column2`, b.`column3`</span><br><span class="line"><span class="keyword">FROM</span> `table_name1` <span class="keyword">AS</span> a</span><br><span class="line"><span class="keyword">RIGHT</span> <span class="keyword">JOIN</span> `table_name2` <span class="keyword">AS</span> b</span><br><span class="line"><span class="keyword">ON</span> a.`column4`<span class="operator">=</span>b.`column5`</span><br></pre></td></tr></table></figure>
-<h3 id="交叉连接-CROSS-JOIN"><a href="#交叉连接-CROSS-JOIN" class="headerlink" title="交叉连接 CROSS JOIN"></a>交叉连接 CROSS JOIN</h3><p>笛卡尔积<br>A表中的每一条记录和B表中的每一条记录组合: 结果的长度为A的长度×B的长度.</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> a.`column1`, a.`column2`, b.`column3`</span><br><span class="line"><span class="keyword">FROM</span> `table_name1` <span class="keyword">AS</span> a</span><br><span class="line"><span class="keyword">CROSS</span> <span class="keyword">JOIN</span> `table_name2` <span class="keyword">AS</span> b</span><br></pre></td></tr></table></figure>
-
-
-<h1 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h1><p>函数主要分为字符函数 数值函数 日期时间函数 加密函数</p>
-<h2 id="字符函数"><a href="#字符函数" class="headerlink" title="字符函数"></a>字符函数</h2><p><img src="/images/j2ee/MySQL/MySQL-function-String01.png"><br><img src="/images/j2ee/MySQL/MySQL-function-String02.png"></p>
-<p>对特殊字符的Escape</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> test <span class="keyword">WHERE</span> first_name <span class="keyword">LIKE</span> <span class="string">&#x27;%1%%&#x27;</span> <span class="keyword">ESCAPE</span> <span class="string">&#x27;1&#x27;</span></span><br><span class="line">表示<span class="number">1</span>后面的<span class="operator">%</span>是真实的字符而不是转意字符</span><br></pre></td></tr></table></figure>
-<h3 id="substring"><a href="#substring" class="headerlink" title="substring"></a>substring</h3><p><code>SUBSTR (str, pos)</code></p>
-<p>由 <str> 中，选出所有从第 <pos> 位置开始的字元。请注意，这个语法不适用于 SQL Server 上。</p>
-<p><code>SUBSTR (str, pos, len)</code></p>
-<p>由 <str> 中的第 <pos> 位置开始，选出接下去的 <len> 个字元。</p>
-<h2 id="数值函数"><a href="#数值函数" class="headerlink" title="数值函数"></a>数值函数</h2><p><img src="/images/j2ee/MySQL/MySQL-function-Number01.png"></p>
-<h2 id="比较运算符和函数"><a href="#比较运算符和函数" class="headerlink" title="比较运算符和函数"></a>比较运算符和函数</h2><p><img src="/images/j2ee/MySQL/MySQL-function-Compare01.png"></p>
-<h2 id="日期时间函数"><a href="#日期时间函数" class="headerlink" title="日期时间函数"></a>日期时间函数</h2><p><img src="/images/j2ee/MySQL/MySQL-function-DateTime01.png"></p>
-<p><a target="_blank" rel="noopener" href="http://www.cnblogs.com/zeroone/archive/2010/05/05/1727659.html">详细请看</a></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> DATE_ADD(<span class="string">&#x27;2016-04-12&#x27;</span>, <span class="type">INTERVAL</span> <span class="number">1</span> <span class="keyword">YEAR</span>);</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> DATE_ADD(<span class="string">&#x27;2016-04-12&#x27;</span>, <span class="type">INTERVAL</span> <span class="number">1</span> <span class="keyword">YEAR</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2017</span><span class="number">-04</span><span class="number">-12</span>                              <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------------------------+</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> DATE_ADD(<span class="string">&#x27;2016-04-12&#x27;</span>, <span class="type">INTERVAL</span> <span class="number">3</span> WEEK);</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> DATE_ADD(<span class="string">&#x27;2016-04-12&#x27;</span>, <span class="type">INTERVAL</span> <span class="number">3</span> WEEK) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2016</span><span class="number">-05</span><span class="number">-03</span>                              <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------------------------------------+</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> DATE_FORMAT(<span class="string">&#x27;2016-3-2&#x27;</span>,<span class="string">&#x27;%m/%d/%Y&#x27;</span>);</span><br><span class="line"><span class="operator">+</span><span class="comment">------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> DATE_FORMAT(<span class="string">&#x27;2016-3-2&#x27;</span>,<span class="string">&#x27;%m/%d/%Y&#x27;</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">03</span><span class="operator">/</span><span class="number">02</span><span class="operator">/</span><span class="number">2016</span>                         <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------------------------+</span></span><br></pre></td></tr></table></figure>
-
-
-<h3 id="时间与时间戳的转换"><a href="#时间与时间戳的转换" class="headerlink" title="时间与时间戳的转换"></a>时间与时间戳的转换</h3><ol>
-<li><p>unix_timestamp</p>
-<p>将时间转化为时间戳。（date 类型数据转换成 timestamp 形式整数）</p>
-<p>没传时间参数则取当前时间的时间戳</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">MySQL<span class="operator">&gt;</span> <span class="keyword">select</span> unix_timestamp();</span><br><span class="line"></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+</span></span><br><span class="line"><span class="operator">|</span> unix_timestamp() <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+</span></span><br><span class="line"><span class="operator">|</span>       <span class="number">1361586358</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.01</span> sec)</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> unix_timestamp(<span class="string">&#x27;2013-01-01 10:10:10&#x27;</span>);</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> unix_timestamp(<span class="string">&#x27;2013-01-01 10:10:10&#x27;</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------------------+</span></span><br><span class="line"><span class="operator">|</span>                            <span class="number">1357006210</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure></li>
-<li><p>from_unixtime</p>
-<p>将timestamp 形式整数 转化为 date类型</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span>  <span class="keyword">select</span> from_unixtime(<span class="number">1355272360</span>);</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------+</span></span><br><span class="line"><span class="operator">|</span> from_unixtime(<span class="number">1355272360</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2012</span><span class="number">-12</span><span class="number">-12</span> <span class="number">08</span>:<span class="number">32</span>:<span class="number">40</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure>
-<p>当然也可以指定输出的时间格式：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span>  <span class="keyword">select</span> from_unixtime(<span class="number">1355272360</span>,<span class="string">&#x27;%Y%m%d&#x27;</span>);</span><br><span class="line"><span class="operator">+</span><span class="comment">------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> from_unixtime(<span class="number">1355272360</span>,<span class="string">&#x27;%Y%m%d&#x27;</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">20121212</span>                           <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">------------------------------------+</span></span><br></pre></td></tr></table></figure></li>
-<li><p>关于mysql 时间戳的限制</p>
-<p>  目前timestamp 所能表示的范围在 1970年  -  2038年之间 。</p>
-<p>  超过这个范围 得到的时间将会溢出 得到的时间是null.</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span>  <span class="keyword">select</span> from_unixtime(<span class="number">0</span>);</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+</span></span><br><span class="line"><span class="operator">|</span> from_unixtime(<span class="number">0</span>)    <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">1970</span><span class="number">-01</span><span class="number">-01</span> <span class="number">08</span>:<span class="number">00</span>:<span class="number">00</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------+</span></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">select</span> from_unixtime(<span class="number">2147483647</span>);</span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------+</span></span><br><span class="line"><span class="operator">|</span> from_unixtime(<span class="number">2147483647</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2038</span><span class="number">-01</span><span class="number">-19</span> <span class="number">11</span>:<span class="number">14</span>:<span class="number">07</span>       <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">---------------------------+</span></span><br><span class="line"><span class="number">1</span> <span class="type">row</span> <span class="keyword">in</span> <span class="keyword">set</span> (<span class="number">0.00</span> sec)</span><br></pre></td></tr></table></figure></li>
-<li><p>SQL中的timestamp与Java中的转换</p>
-<p>SQL中的时间戳是从1970年1月1日 8:00:00 开始的毫秒数</p>
-<table>
-<thead>
-<tr>
-<th>SQL中的时间戳</th>
-<th>1970-1-1 8:00:00 开始的毫秒数</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>java.util.Date()</td>
-<td>内置时间 getYear()是从1900年开始的</td>
-</tr>
-<tr>
-<td>java.util.Date().getTime()</td>
-<td>从1970-1-1 8:00:00 开始的微妙数</td>
-</tr>
-<tr>
-<td>java.sql.Timestamp()</td>
-<td>与java.util.Date()相同</td>
-</tr>
-<tr>
-<td>java.sql.Date</td>
-<td>只保存年月日，没有时分秒</td>
-</tr>
-<tr>
-<td></td>
-<td></td>
-</tr>
-</tbody></table>
 </li>
-</ol>
-   <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Timestamp是一个与 java.util.Date 类有关的瘦包装器 (thin wrapper)，它允许 JDBC API 将该类标识为 SQL TIMESTAMP 值。它添加保存 SQL TIMESTAMP 毫微秒值和提供支持时间戳值的 JDBC 转义语法的格式化和解析操作的能力。</span><br></pre></td></tr></table></figure>
-<p>   因此，在SQL中的时间戳与Java中传递进来的long型时间比较时，需要乘以1000.</p>
-<h2 id="信息函数"><a href="#信息函数" class="headerlink" title="信息函数"></a>信息函数</h2><p><img src="/images/j2ee/MySQL/MySQL-function-Information01.png"></p>
-<h2 id="聚合函数"><a href="#聚合函数" class="headerlink" title="聚合函数"></a>聚合函数</h2><p><img src="/images/j2ee/MySQL/MySQL-function-Aggregate01.png"></p>
-<h2 id="加密函数"><a href="#加密函数" class="headerlink" title="加密函数"></a>加密函数</h2><p><img src="/images/j2ee/MySQL/MySQL-function-Encryption01.png"></p>
-<p>password函数只适用于设置MySQL的密码</p>
-<h2 id="XML支持"><a href="#XML支持" class="headerlink" title="XML支持"></a>XML支持</h2><p><a target="_blank" rel="noopener" href="https://dev.mysql.com/doc/refman/5.5/en/xml-functions.html">xml支持</a> :xml的函数主要有两个 ExtractValue 和  UpdateXML</p>
-<h3 id="ExtractValue"><a href="#ExtractValue" class="headerlink" title="ExtractValue"></a>ExtractValue</h3><p>​```sql<br>mysql&gt; SELECT<br>    -&gt;   ExtractValue(‘<a>ccc<b>ddd</b></a>‘, ‘/a’) AS val1,<br>    -&gt;   ExtractValue(‘<a>ccc<b>ddd</b></a>‘, ‘/a/b’) AS val2,<br>    -&gt;   ExtractValue(‘<a>ccc<b>ddd</b></a>‘, ‘//b’) AS val3,<br>    -&gt;   ExtractValue(‘<a>ccc<b>ddd</b></a>‘, ‘/b’) AS val4,<br>    -&gt;   ExtractValue(‘<a>ccc<b>ddd</b><b>eee</b></a>‘, ‘//b’) AS val5;</p>
-<p>+——+——+——+——+———+<br>| val1 | val2 | val3 | val4 | val5    |<br>+——+——+——+——+———+<br>| ccc  | ddd  | ddd  |      | ddd eee |<br>+——+——+——+——+———+<br>   <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">### UpdateXML</span><br><span class="line"></span><br><span class="line">​&#96;&#96;&#96;sql</span><br><span class="line">mysql&gt; SELECT</span><br><span class="line">    -&gt;   UpdateXML(&#39;&lt;a&gt;&lt;b&gt;ccc&lt;&#x2F;b&gt;&lt;d&gt;&lt;&#x2F;d&gt;&lt;&#x2F;a&gt;&#39;, &#39;&#x2F;a&#39;, &#39;&lt;e&gt;fff&lt;&#x2F;e&gt;&#39;) AS val1,</span><br><span class="line">    -&gt;   UpdateXML(&#39;&lt;a&gt;&lt;b&gt;ccc&lt;&#x2F;b&gt;&lt;d&gt;&lt;&#x2F;d&gt;&lt;&#x2F;a&gt;&#39;, &#39;&#x2F;b&#39;, &#39;&lt;e&gt;fff&lt;&#x2F;e&gt;&#39;) AS val2,</span><br><span class="line">    -&gt;   UpdateXML(&#39;&lt;a&gt;&lt;b&gt;ccc&lt;&#x2F;b&gt;&lt;d&gt;&lt;&#x2F;d&gt;&lt;&#x2F;a&gt;&#39;, &#39;&#x2F;&#x2F;b&#39;, &#39;&lt;e&gt;fff&lt;&#x2F;e&gt;&#39;) AS val3,</span><br><span class="line">    -&gt;   UpdateXML(&#39;&lt;a&gt;&lt;b&gt;ccc&lt;&#x2F;b&gt;&lt;d&gt;&lt;&#x2F;d&gt;&lt;&#x2F;a&gt;&#39;, &#39;&#x2F;a&#x2F;d&#39;, &#39;&lt;e&gt;fff&lt;&#x2F;e&gt;&#39;) AS val4,</span><br><span class="line">    -&gt;   UpdateXML(&#39;&lt;a&gt;&lt;d&gt;&lt;&#x2F;d&gt;&lt;b&gt;ccc&lt;&#x2F;b&gt;&lt;d&gt;&lt;&#x2F;d&gt;&lt;&#x2F;a&gt;&#39;, &#39;&#x2F;a&#x2F;d&#39;, &#39;&lt;e&gt;fff&lt;&#x2F;e&gt;&#39;) AS val5</span><br><span class="line">    -&gt; \G</span><br><span class="line"></span><br><span class="line">*************************** 1. row ***************************</span><br><span class="line">val1: &lt;e&gt;fff&lt;&#x2F;e&gt;</span><br><span class="line">val2: &lt;a&gt;&lt;b&gt;ccc&lt;&#x2F;b&gt;&lt;d&gt;&lt;&#x2F;d&gt;&lt;&#x2F;a&gt;</span><br><span class="line">val3: &lt;a&gt;&lt;e&gt;fff&lt;&#x2F;e&gt;&lt;d&gt;&lt;&#x2F;d&gt;&lt;&#x2F;a&gt;</span><br><span class="line">val4: &lt;a&gt;&lt;b&gt;ccc&lt;&#x2F;b&gt;&lt;e&gt;fff&lt;&#x2F;e&gt;&lt;&#x2F;a&gt;</span><br><span class="line">val5: &lt;a&gt;&lt;d&gt;&lt;&#x2F;d&gt;&lt;b&gt;ccc&lt;&#x2F;b&gt;&lt;d&gt;&lt;&#x2F;d&gt;&lt;&#x2F;a&gt;</span><br></pre></td></tr></table></figure></p>
-<h1 id="自定义函数"><a href="#自定义函数" class="headerlink" title="自定义函数"></a>自定义函数</h1><p>自定义函数(user-defined function,UDF)是一种对MySQL扩展的途径,<br>其用法与内置函数相同. 自定义函数的两个必要条件:<br><code>参数</code>和<code>返回值</code>. 函数可以返回任意类型的值, 同样也可以接受这些类型的参数</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">FUNCTION</span> function_name</span><br><span class="line">RETURNS &#123;STRING|INTEGER|REAL|DECIMAL&#125;</span><br><span class="line">routine_body</span><br></pre></td></tr></table></figure>
-<p>函数体</p>
-<ol>
-<li>由合法SQL语句构成</li>
-<li>可以是简单的SELECT或INSERT语句</li>
-<li>如果是复合结构,必须使用<code>BEGIN</code>…<code>END</code>语句</li>
-<li>复合结构可以包括声明,循环,控制结构</li>
-</ol>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">FUNCTION</span> f1()</span><br><span class="line"><span class="keyword">RETURNS</span> <span class="type">VARCHAR</span>(<span class="number">30</span>)</span><br><span class="line"><span class="keyword">RETURN</span> DATE_FORMAT(NOW(),<span class="string">&#x27;%Y年%m月%d日 %H点%i分%s秒&#x27;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> f1();</span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------------------+</span></span><br><span class="line"><span class="operator">|</span> f1()                           <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------------------+</span></span><br><span class="line"><span class="operator">|</span> <span class="number">2016</span>年<span class="number">04</span>月<span class="number">12</span>日 <span class="number">10</span>点<span class="number">51</span>分<span class="number">24</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">--------------------------------+</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">FUNCTION</span> f2(num1 <span class="type">SMALLINT</span> UNSIGNED, num2 <span class="type">SMALLINT</span> UNSIGNED)</span><br><span class="line"><span class="keyword">RETURNS</span> <span class="type">FLOAT</span>(<span class="number">10</span>,<span class="number">2</span>) UNSIGNED</span><br><span class="line"><span class="keyword">RETURN</span> (num1<span class="operator">+</span>num2)<span class="operator">/</span><span class="number">2</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">SELECT</span> f2(<span class="number">35</span>,<span class="number">46</span>);</span><br><span class="line"><span class="operator">+</span><span class="comment">-----------+</span></span><br><span class="line"><span class="operator">|</span> f2(<span class="number">35</span>,<span class="number">46</span>) <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------+</span></span><br><span class="line"><span class="operator">|</span>     <span class="number">40.50</span> <span class="operator">|</span></span><br><span class="line"><span class="operator">+</span><span class="comment">-----------+</span></span><br><span class="line"></span><br><span class="line">DELIMITER <span class="operator">/</span><span class="operator">/</span></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">FUNCTION</span> adduser(username <span class="type">VARCHAR</span>(<span class="number">20</span>))</span><br><span class="line"><span class="keyword">RETURNS</span> <span class="type">INT</span> UNSIGNED</span><br><span class="line"><span class="keyword">BEGIN</span></span><br><span class="line"><span class="keyword">INSERT</span> test(username) <span class="keyword">VALUES</span>(username);</span><br><span class="line"><span class="keyword">RETURN</span> LAST_INSERT_ID();</span><br><span class="line"><span class="keyword">END</span></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span></span><br><span class="line">DELIMITER ;</span><br></pre></td></tr></table></figure>
-
-<h1 id="存储过程"><a href="#存储过程" class="headerlink" title="存储过程"></a>存储过程</h1><p>SQL命令的执行过程</p>
-<p><img src="/images/j2ee/MySQL/MySQL-execute.png"></p>
-<p>存储过程是SQL语句和控制语句的预编译集合, 以一个名称存储并作为一个单元处理. 其优点有:</p>
-<ol>
-<li>增强SQL语句的功能和灵活性</li>
-<li>实现较快的执行速度</li>
-<li>减少网络流量</li>
-</ol>
-<p>语法格式为:</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span></span><br><span class="line">[DEFINER=&#123;USER|CURRENT_USER&#125;]</span><br><span class="line"><span class="keyword">PROCEDURE</span> sp_name ([proc_parameter[,...]])</span><br><span class="line">[characteristic ...] routine_body</span><br><span class="line"></span><br><span class="line">proc_parameter:</span><br><span class="line">[<span class="keyword">IN</span><span class="operator">|</span><span class="keyword">OUT</span><span class="operator">|</span><span class="keyword">INOUT</span>]parameter_name type</span><br><span class="line"></span><br><span class="line">调用</span><br><span class="line"><span class="keyword">CALL</span> sp_name([<span class="keyword">parameter</span>[,...]])</span><br><span class="line"><span class="keyword">CALL</span> sp_name[()]</span><br></pre></td></tr></table></figure>
-<p>参数</p>
-<ul>
-<li>IN 表示该参数的值必须在调用存储过程时指定</li>
-<li>OUT 表示该参数的值可以被存储过程改变, 并且可以返回</li>
-<li>INOUT 表示该参数的调用时指定,并且可以被改变和返回</li>
+<li>架构<ul>
+<li><a href="/database/MySQL/struct_1">架构</a></li>
 </ul>
-<p>过程体</p>
-<ul>
-<li>过程体由合法的SQL语句构成</li>
-<li>过程体可以是任意SQL语句</li>
-<li>过程体如果为复合结构则使用BEGIN…END语句</li>
-<li>复合结构可以包含声明,循环,控制结果</li>
-</ul>
-<p>实例</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> delimiter <span class="operator">/</span><span class="operator">/</span></span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">CREATE</span> <span class="keyword">PROCEDURE</span> removeUserById(<span class="keyword">IN</span> ppid <span class="type">INT</span> UNSIGNED)</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">BEGIN</span></span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">DELETE</span> <span class="keyword">FROM</span> users <span class="keyword">WHERE</span> id<span class="operator">=</span>ppid;</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">END</span></span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="operator">/</span><span class="operator">/</span></span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">mysql<span class="operator">&gt;</span> DELIMITER ;</span><br></pre></td></tr></table></figure>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">delimiter <span class="operator">/</span><span class="operator">/</span></span><br><span class="line"><span class="keyword">create</span> <span class="keyword">procedure</span> removeUserAndReturnUserNums(<span class="keyword">in</span> pid <span class="type">int</span> unsigned,<span class="keyword">out</span> useNums <span class="type">int</span> unsigned)</span><br><span class="line">	<span class="keyword">begin</span></span><br><span class="line">	<span class="keyword">delete</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> id<span class="operator">=</span>pid;</span><br><span class="line">	<span class="keyword">select</span> <span class="built_in">count</span>(id) <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">into</span> useNums;</span><br><span class="line">	<span class="keyword">end</span></span><br><span class="line">	<span class="operator">/</span><span class="operator">/</span></span><br><span class="line">delimiter ;</span><br><span class="line"></span><br><span class="line">调用</span><br><span class="line"><span class="keyword">call</span> removeUserAndReturnUserNums(<span class="number">27</span>,<span class="variable">@nums</span>);</span><br><span class="line"><span class="keyword">select</span> <span class="variable">@nums</span>;</span><br><span class="line">通过<span class="keyword">declare</span>语句声明的变量是局部变量, 作用域只能在<span class="keyword">begin</span>和<span class="keyword">end</span>之间.</span><br><span class="line"><span class="keyword">select</span> <span class="variable">@nums</span>;</span><br><span class="line"><span class="keyword">set</span> <span class="variable">@num</span><span class="operator">=</span><span class="number">7</span>;</span><br><span class="line">这种声明方式声明的变量成为用户变量. 作用域是客户端,只在当前的客户端有效.</span><br></pre></td></tr></table></figure>
-<p>获取插入 删除 更新的记录总数.<br>select row_count();</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">delimiter <span class="operator">/</span><span class="operator">/</span></span><br><span class="line"><span class="keyword">create</span> <span class="keyword">procedure</span> removeUserAndReturnInfos(<span class="keyword">in</span> p_age <span class="type">smallint</span> unsigned,</span><br><span class="line">    <span class="keyword">out</span> deleteUsers <span class="type">smallint</span> unsigned, <span class="keyword">out</span> userCounts <span class="type">smallint</span> unsigned)</span><br><span class="line"><span class="keyword">begin</span></span><br><span class="line"><span class="keyword">delete</span> <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">where</span> age<span class="operator">=</span>p_age;</span><br><span class="line"><span class="keyword">select</span> row_count() <span class="keyword">into</span> deleteUsers;</span><br><span class="line"><span class="keyword">select</span> <span class="built_in">count</span>(id) <span class="keyword">from</span> <span class="keyword">user</span> <span class="keyword">into</span> userCounts;</span><br><span class="line"><span class="keyword">end</span></span><br><span class="line"><span class="operator">/</span><span class="operator">/</span></span><br><span class="line">delimiter ;</span><br><span class="line"></span><br><span class="line"><span class="keyword">call</span> removeUserAndReturnInfos(<span class="number">20</span>,<span class="variable">@rm</span>,<span class="variable">@rl</span>);</span><br><span class="line"><span class="keyword">select</span> <span class="variable">@rm</span>;</span><br><span class="line"><span class="keyword">select</span> <span class="variable">@rl</span>;</span><br></pre></td></tr></table></figure>
-<p>删除存储过程</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">DROP</span> <span class="keyword">PROCEDURE</span> [IF <span class="keyword">EXISTS</span>] sp_name</span><br></pre></td></tr></table></figure>
-<p>存储过程与自定义函数的区别</p>
-<ol>
-<li>存储过程实现的功能更复杂一些 而函数的针对性更强</li>
-<li>存储过程可以返回多个值;函数只能有一个返回值</li>
-<li>存储过程一般独立的执行;而函数可以作为其他SQL语句的组成部分来出现.</li>
-</ol>
-<p>创建存储过程或者自定义函数时需要通过<code>delimiter</code>语句修改定界符.</p>
-<h1 id="用户权限"><a href="#用户权限" class="headerlink" title="用户权限"></a>用户权限</h1><p>在 MySQL5.7 中 user 表的 password 已换成了authentication_string。<br>注意：在注意需要执行 FLUSH PRIVILEGES 语句。 这个命令执行后会重新载入授权表。<br>如果你不使用该命令，你就无法使用新创建的用户来连接mysql服务器，除非你重启mysql服务器。<br>你可以在创建用户时，为用户指定权限，在对应的权限列中，在插入语句中设置为 ‘Y’ 即可，用户权限列表如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Select_priv</span><br><span class="line">Insert_priv</span><br><span class="line">Update_priv</span><br><span class="line">Delete_priv</span><br><span class="line">Create_priv</span><br><span class="line">Drop_priv</span><br><span class="line">Reload_priv</span><br><span class="line">Shutdown_priv</span><br><span class="line">Process_priv</span><br><span class="line">File_priv</span><br><span class="line">Grant_priv</span><br><span class="line">References_priv</span><br><span class="line">Index_priv</span><br><span class="line">Alter_priv</span><br></pre></td></tr></table></figure>
-<p>  除非你使用 LIKE 来比较字符串，否则MySQL的WHERE子句的字符串比较是不区分大小写的。 你可以使用 BINARY 关键字来设定WHERE子句的字符串比较是区分大小写的。<br>如下实例</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">root@host#</span><span class="bash"> mysql -u root -p password;</span></span><br><span class="line">Enter password:*******</span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> use RUNOOB;</span></span><br><span class="line">Database changed</span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> SELECT * from runoob_tbl \</span></span><br><span class="line"><span class="bash">          WHERE BINARY runoob_author=<span class="string">&#x27;sanjay&#x27;</span>;</span></span><br><span class="line">Empty set (0.02 sec)</span><br></pre></td></tr></table></figure>
-<p>为了处理这种情况，MySQL提供了三大运算符:</p>
-<ul>
-<li>IS NULL: 当列的值是NULL,此运算符返回true。</li>
-<li>IS NOT NULL: 当列的值不为NULL, 运算符返回true。</li>
-<li>&lt;=&gt;: 比较操作符（不同于=运算符），当比较的的两个值为NULL时返回true。<br>关于 NULL 的条件比较运算是比较特殊的。你不能使用 = NULL 或 != NULL 在列中查找 NULL 值 。<br>在MySQL中，NULL值与任何其它值的比较（即使是NULL）永远返回false，即 NULL = NULL 返回false 。<br>MySQL中处理NULL使用IS NULL和IS NOT NULL运算符。</li>
-</ul>
-<h1 id="正则表达式"><a href="#正则表达式" class="headerlink" title="正则表达式"></a>正则表达式</h1><p><a target="_blank" rel="noopener" href="http://www.runoob.com/mysql/mysql-regexp.html">http://www.runoob.com/mysql/mysql-regexp.html</a></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> name <span class="keyword">FROM</span> person_tbl <span class="keyword">WHERE</span> name REGEXP <span class="string">&#x27;^st&#x27;</span>;</span><br></pre></td></tr></table></figure>
-<h1 id="索引"><a href="#索引" class="headerlink" title="索引"></a>索引</h1><p>索引分单列索引和组合索引。单列索引，即一个索引只包含单个列，一个表可以有多个单列索引，但这不是组合索引。组合索引，即一个索包含多个列。<br>创建索引时，你需要确保该索引是应用在 SQL 查询语句的条件(一般作为 WHERE 子句的条件)。<br>实际上，索引也是一张表，该表保存了主键与索引字段，并指向实体表的记录。<br>上面都在说使用索引的好处，但过多的使用索引将会造成滥用。因此索引也会有它的缺点：虽然索引大大提高了查询速度，同时却会降低更新表的速度，如对表进行INSERT、UPDATE和DELETE。因为更新表时，MySQL不仅要保存数据，还要保存一下索引文件。<br>建立索引会占用磁盘空间的索引文件。</p>
-<h2 id="创建索引"><a href="#创建索引" class="headerlink" title="创建索引"></a>创建索引</h2><p>有四种方式来添加数据表的索引：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> tbl_name <span class="keyword">ADD</span> <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span> (column_list):</span><br><span class="line"></span><br><span class="line">该语句添加一个主键，这意味着索引值必须是唯一的，且不能为<span class="keyword">NULL</span>。</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> tbl_name <span class="keyword">ADD</span> <span class="keyword">UNIQUE</span> index_name (column_list): 这条语句创建索引的值必须是唯一的（除了<span class="keyword">NULL</span>外，<span class="keyword">NULL</span>可能会出现多次）。</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> tbl_name <span class="keyword">ADD</span> INDEX index_name (column_list): 添加普通索引，索引值可出现多次。</span><br><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> tbl_name <span class="keyword">ADD</span> FULLTEXT index_name (column_list):该语句指定了索引为 FULLTEXT ，用于全文索引。</span><br></pre></td></tr></table></figure>
-<h2 id="创建临时表"><a href="#创建临时表" class="headerlink" title="创建临时表"></a>创建临时表</h2><p>如果你退出当前MySQL会话，再使用 SELECT命令来读取原先创建的临时表数据，那你会发现数据库中没有该表的存在，因为在你退出时该临时表已经被销毁了。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> TEMPORARY <span class="keyword">TABLE</span> SalesSummary (</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> product_name <span class="type">VARCHAR</span>(<span class="number">50</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span></span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> , total_sales <span class="type">DECIMAL</span>(<span class="number">12</span>,<span class="number">2</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="number">0.00</span></span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> , avg_unit_price <span class="type">DECIMAL</span>(<span class="number">7</span>,<span class="number">2</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="number">0.00</span></span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> , total_units_sold <span class="type">INT</span> UNSIGNED <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="number">0</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-<h1 id="复制表"><a href="#复制表" class="headerlink" title="复制表"></a>复制表</h1><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SHOW</span> <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> runoob_tbl \G;</span><br></pre></td></tr></table></figure>
-<p>修改数据表名，执行SQL语句</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> clone_tbl (runoob_id,</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>                        runoob_title,</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>                        runoob_author,</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>                        submission_date)</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> runoob_id,runoob_title,</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>        runoob_author,submission_date</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">FROM</span> runoob_tbl;</span><br></pre></td></tr></table></figure>
-<h1 id="元数据"><a href="#元数据" class="headerlink" title="元数据"></a>元数据</h1><p>查询结果信息  数据库和数据表的信息 服务器信息</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> VERSION( ) 服务器版本信息</span><br><span class="line"><span class="keyword">SELECT</span> DATABASE( )  当前数据库名 (或者返回空)</span><br><span class="line"><span class="keyword">SELECT</span> <span class="keyword">USER</span>( )  当前用户名</span><br><span class="line"><span class="keyword">SHOW</span> STATUS 服务器状态</span><br><span class="line"><span class="keyword">SHOW</span> VARIABLES  服务器配置变量</span><br><span class="line"><span class="keyword">show</span> processList; 连接MySQL的所有线程的信息</span><br><span class="line"><span class="keyword">SHOW</span>  <span class="keyword">OPEN</span> TABLES  <span class="keyword">WHERE</span> In_use<span class="operator">&gt;</span><span class="number">0</span> 所有打开的数据表</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h1 id="自增序列"><a href="#自增序列" class="headerlink" title="自增序列"></a>自增序列</h1><p>在MySQL的客户端中你可以使用 SQL中的LAST_INSERT_ID( ) 函数来获取最后的插入表中的自增列的值 Java如何获取</p>
-<h2 id="重置序列"><a href="#重置序列" class="headerlink" title="重置序列"></a>重置序列</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> ALTER TABLE insect DROP id;</span></span><br><span class="line"><span class="meta">mysql&gt;</span><span class="bash"> ALTER TABLE insect</span></span><br><span class="line">    -&gt; ADD id INT UNSIGNED NOT NULL AUTO_INCREMENT FIRST,</span><br><span class="line">    -&gt; ADD PRIMARY KEY (id);</span><br></pre></td></tr></table></figure>
-<h2 id="设置序列的开始值"><a href="#设置序列的开始值" class="headerlink" title="设置序列的开始值"></a>设置序列的开始值</h2><p>一般情况下序列的开始值为1，但如果你需要指定一个开始值100，那我们可以通过以下语句来实现：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> insect</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> (</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> id <span class="type">INT</span> UNSIGNED <span class="keyword">NOT</span> <span class="keyword">NULL</span> AUTO_INCREMENT <span class="operator">=</span> <span class="number">100</span>,</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span> (id),</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> name <span class="type">VARCHAR</span>(<span class="number">30</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>, # type <span class="keyword">of</span> insect</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="type">date</span> <span class="type">DATE</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span>, # <span class="type">date</span> collected</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> origin <span class="type">VARCHAR</span>(<span class="number">30</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> # <span class="keyword">where</span> collected</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-<p>或者你也可以在表创建成功后，通过以下语句来实现：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">ALTER</span> <span class="keyword">TABLE</span> t AUTO_INCREMENT <span class="operator">=</span> <span class="number">100</span>;</span><br></pre></td></tr></table></figure>
-
-
-<h1 id="防止数据重复"><a href="#防止数据重复" class="headerlink" title="防止数据重复"></a>防止数据重复</h1><p>设置字段为primary key或者unique索引</p>
-<h2 id="INSERT-IGNORE"><a href="#INSERT-IGNORE" class="headerlink" title="INSERT IGNORE"></a>INSERT IGNORE</h2><p>INTO当插入数据时，在设置了记录的唯一性后，如果插入重复数据，将不返回错误，只以警告形式返回。 而REPLACE INTO into如果存在primary 或 unique相同的记录，则先删除掉。再插入新记录。</p>
-<h2 id="添加一个UNIQUE索引，如下所示："><a href="#添加一个UNIQUE索引，如下所示：" class="headerlink" title="添加一个UNIQUE索引，如下所示："></a>添加一个UNIQUE索引，如下所示：</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> person_tbl</span><br><span class="line">(</span><br><span class="line">   first_name <span class="type">CHAR</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">   last_name <span class="type">CHAR</span>(<span class="number">20</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">   sex <span class="type">CHAR</span>(<span class="number">10</span>)</span><br><span class="line">   <span class="keyword">UNIQUE</span> (last_name, first_name)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-
-
-<h1 id="统计重复数据"><a href="#统计重复数据" class="headerlink" title="统计重复数据"></a>统计重复数据</h1><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="built_in">COUNT</span>(<span class="operator">*</span>) <span class="keyword">as</span> repetitions, last_name, first_name <span class="keyword">FROM</span> person_tbl <span class="keyword">GROUP</span> <span class="keyword">BY</span> last_name, first_name <span class="keyword">HAVING</span> repetitions <span class="operator">&gt;</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
-<h1 id="过滤重复数据"><a href="#过滤重复数据" class="headerlink" title="过滤重复数据"></a>过滤重复数据</h1><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SELECT</span> <span class="keyword">DISTINCT</span> last_name, first_name</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">FROM</span> person_tbl</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">ORDER</span> <span class="keyword">BY</span> last_name;</span><br></pre></td></tr></table></figure>
-<p>你也可以使用 GROUP BY 来读取数据表中不重复的数据：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">SELECT</span> last_name, first_name</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">FROM</span> person_tbl</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">GROUP</span> <span class="keyword">BY</span> (last_name, first_name);</span><br></pre></td></tr></table></figure>
-<h2 id="删除重复数据"><a href="#删除重复数据" class="headerlink" title="删除重复数据"></a>删除重复数据</h2><p>如果你想删除数据表中的重复数据，你可以使用以下的SQL语句：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">CREATE</span> <span class="keyword">TABLE</span> tmp <span class="keyword">SELECT</span> last_name, first_name, sex</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>                  <span class="keyword">FROM</span> person_tbl;</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span>                  <span class="keyword">GROUP</span> <span class="keyword">BY</span> (last_name, first_name);</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">DROP</span> <span class="keyword">TABLE</span> person_tbl;</span><br><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">ALTER</span> <span class="keyword">TABLE</span> tmp RENAME <span class="keyword">TO</span> person_tbl;</span><br></pre></td></tr></table></figure>
-<p>当然你也可以在数据表中添加 INDEX（索引） 和 PRIMAY KEY（主键）这种简单的方法来删除表中的重复记录。方法如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mysql<span class="operator">&gt;</span> <span class="keyword">ALTER</span> IGNORE <span class="keyword">TABLE</span> person_tbl</span><br><span class="line">    <span class="operator">-</span><span class="operator">&gt;</span> <span class="keyword">ADD</span> <span class="keyword">PRIMARY</span> <span class="keyword">KEY</span> (last_name, first_name);</span><br></pre></td></tr></table></figure>
-
-
-
-<h1 id="SQL注入"><a href="#SQL注入" class="headerlink" title="SQL注入"></a>SQL注入</h1><p>防止SQL注入，我们需要注意以下几个要点：</p>
-<ol>
-<li>永远不要信任用户的输入。对用户的输入进行校验，可以通过正则表达式，或限制长度；对单引号和 双”-“进行转换等。</li>
-<li>永远不要使用动态拼装sql，可以使用参数化的sql或者直接使用存储过程进行数据查询存取。</li>
-<li>永远不要使用管理员权限的数据库连接，为每个应用使用单独的权限有限的数据库连接。</li>
-<li>不要把机密信息直接存放，加密或者hash掉密码和敏感的信息。</li>
-<li>应用的异常信息应该给出尽可能少的提示，最好使用自定义的错误信息对原始错误信息进行包装</li>
-<li>sql注入的检测方法一般采取辅助软件或网站平台来检测，软件一般采用sql注入检测工具jsky，网站平台就有亿思网站安全平台检测工具。MDCSOFT SCAN等。采用MDCSOFT-IPS可以有效的防御SQL注入，XSS攻击等。</li>
-</ol>
-<h2 id="SQL-like语句注入"><a href="#SQL-like语句注入" class="headerlink" title="SQL like语句注入"></a>SQL like语句注入</h2><p>like查询时，如果用户输入的值有”<em>“和”%”，则会出现这种情况：用户本来只是想查询”abcd</em>“，查询结果中却有”abcd_”、”abcde”、”abcdf”等等；用户要查询”30%”（注：百分之三十）时也会出现问题。</p>
-<h1 id="备份与导入"><a href="#备份与导入" class="headerlink" title="备份与导入"></a>备份与导入</h1><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">mysqldump <span class="operator">-</span>u <span class="operator">&lt;</span>USER_HOME<span class="operator">&gt;</span> <span class="operator">-</span>p <span class="operator">&lt;</span>DATABASE_NAME <span class="operator">&gt;</span> news.sql   <span class="comment">-- 输入后会让你输入进入MySQL的密码</span></span><br><span class="line"><span class="comment">-- 登陆</span></span><br><span class="line">mysql<span class="operator">&gt;</span> use <span class="operator">&lt;</span>DATABASE_NAME<span class="operator">&gt;</span>;</span><br><span class="line">mysql<span class="operator">&gt;</span> source news.sql;</span><br><span class="line"><span class="comment">-- 或者</span></span><br><span class="line">mysql <span class="operator">-</span>u <span class="operator">&lt;</span>USER_HOME<span class="operator">&gt;</span> <span class="operator">-</span>p <span class="operator">&lt;</span>DATABASE_NAME<span class="operator">&gt;</span> <span class="operator">&lt;</span> news.sql</span><br><span class="line"><span class="comment">-- 输入密码即可</span></span><br></pre></td></tr></table></figure>
-
-
-<blockquote>
-<p>更新记录：</p>
-<ol>
-<li>创建 2016-04-11</li>
-<li>添加 时间戳与Java中时间的区别  2016-12-27</li>
-</ol>
-</blockquote>
-<hr>
-<p>[参考文献]:</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="http://www.cnblogs.com/zeroone/archive/2010/05/05/1727659.html">MySQL日期时间函数大全</a></li>
+</li>
 </ol>
 
       
