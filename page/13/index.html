@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -288,7 +288,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -313,268 +313,6 @@
       
           <h1 id="Timer"><a href="#Timer" class="headerlink" title="Timer"></a>Timer</h1><p>TimerService</p>
 <h2 id="SystemProcessingTimeService"><a href="#SystemProcessingTimeService" class="headerlink" title="SystemProcessingTimeService"></a>SystemProcessingTimeService</h2><p>org.apache.flink.streaming.runtime.tasks.SystemProcessingTimeService</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/03_G1_GC/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/metric/03_G1_GC/" class="post-title-link" itemprop="url">Java G1 GC</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2018-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2018-08-12T00:00:00+08:00">2018-08-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="1-03-G1-GC"><a href="#1-03-G1-GC" class="headerlink" title="1. 03_G1_GC"></a>1. 03_G1_GC</h1><h2 id="1-1-堆内存分配"><a href="#1-1-堆内存分配" class="headerlink" title="1.1. 堆内存分配"></a>1.1. 堆内存分配</h2><p>整个堆分为若干的region，region的大小可以通过参数设置；</p>
-<p>Region可以分为Eden、Survivor、Old、Humongous(专门存储大对象的Region：单个对象超过Region大小的50%，就是大对象；</p>
-<p>如果大对象超过一个Region，则会继续申请连续的空间，作为Humongous区)和Free(空闲Region: Region的内存被释放后的分区)；Free Region后续可以作为Eden、Survivor、Old或Humongous分区；</p>
-<p>堆分为新生代+老年代；</p>
-<h2 id="1-2-两个Set"><a href="#1-2-两个Set" class="headerlink" title="1.2. 两个Set"></a>1.2. 两个Set</h2><ol>
-<li><p>CSet: collection set, 待回收的Region集合</p>
-</li>
-<li><p>RSet: remembered set,引用当前Region集合的其他集合</p>
-<p>引用当前Region的其他Region集合，是points-in的，每个 Region 都有一个 RSet；在 <code>JDK10</code> 中，只有部分 Region 才存在 RSet。</p>
-<ul>
-<li><strong>young gc</strong>：指向「Eden」和「Survivor」Region 的 「Old」和「Humongous」Region 集合，避免全堆扫描</li>
-<li><strong>mixed gc</strong>：确定「Old」Region 之间的相关引用，确定 Region 的回收价值</li>
-</ul>
-</li>
-</ol>
-<h2 id="1-3-垃圾回收过程"><a href="#1-3-垃圾回收过程" class="headerlink" title="1.3. 垃圾回收过程"></a>1.3. 垃圾回收过程</h2><ol>
-<li>young gc：标记-复制<ol>
-<li>「新生代」的垃圾回收</li>
-<li>CSet 中，只包含 Eden、Survivor</li>
-</ol>
-</li>
-<li>mixed gc：标记-复制<ol>
-<li>「新生代」和「部分老年代」的垃圾回收</li>
-<li>CSet 中，包含 Eden、Survivor、部分 Old、Humongous</li>
-</ol>
-</li>
-<li>full gc：<ol>
-<li>G1 gc 失败，退化为 Serial 方式</li>
-<li>单线程全堆扫描，对整个 Heap 进行垃圾回收，涵盖所有的「新生代」和「老年代」</li>
-</ol>
-</li>
-</ol>
-<blockquote>
-<p>G1 垃圾收集器，GC 都是针对 CSet 进行的</p>
-</blockquote>
-<h3 id="1-3-1-Young-GC"><a href="#1-3-1-Young-GC" class="headerlink" title="1.3.1. Young GC"></a>1.3.1. Young GC</h3><p>Young GC，关键细节：</p>
-<ul>
-<li>针对「<strong>年轻代</strong>」的 Eden、Survivor 分区，进行 GC</li>
-<li><strong>存活的对象</strong>，放置在 「新的 Survivor 分区」或「Old 分区」</li>
-<li><strong>触发的时机</strong>：Eden 分区空间不足，无法为普通对象分配存储空间（非大对象）</li>
-</ul>
-<p><strong>Young GC 的执行过程</strong>：就是「标记-复制」算法</p>
-<ol>
-<li><strong>根扫描</strong></li>
-<li><strong>确定</strong>「老年代」对「新生代」的<strong>引用</strong>，避免全堆扫描：<ol>
-<li>根据 card table，扫描 dirty 部分，更新 RSet</li>
-<li>新生代中，根据 RSet，确定 Old 对 Eden 和 Survivor 对象的引用</li>
-</ol>
-</li>
-<li><strong>标记复制</strong>：将存活对象，放入到 Survivor 区 或者 Old 区<ol>
-<li>新的 Survivor 区：是 Free Region 升级来的</li>
-<li>被释放的 Eden 和 Survivor 区：会标记为 Free Region 空白的可用分区</li>
-</ol>
-</li>
-</ol>
-<p>Tips：</p>
-<ul>
-<li>G1 在 Young GC 过程中，是串行？并行？并发？是否会暂停工作线程？<ul>
-<li>Re：可以多线程，就看怎么设置了，会暂停工作线程，不是并发的。</li>
-</ul>
-</li>
-</ul>
-<h3 id="1-3-2-Mixed-GC"><a href="#1-3-2-Mixed-GC" class="headerlink" title="1.3.2. Mixed GC"></a>1.3.2. Mixed GC</h3><p>Mixed GC，关键细节：</p>
-<ul>
-<li>针对「<strong>年轻代</strong>」和「<strong>部分老年代</strong>」的 GC，具体 Eden、Survivor、Old、Humongous Region</li>
-<li><strong>存活的对象</strong>，放置在「新的 Survivor 分区」或「Old 分区」</li>
-<li><strong>触发的时机</strong>：「并发标记周期」中，完成了最后的「<strong>筛选回收</strong>」阶段后，标记出了 X 的 Old Region 分区</li>
-</ul>
-<p>Mixed GC 的执行过程：就是「标记-复制」算法</p>
-<ol>
-<li><strong>并发标记周期</strong>：针对 <code>Old 分区</code>，进行标记<ol>
-<li><strong>初始标记</strong>：依赖 Young GC</li>
-<li><strong>扫描根分区</strong>：如果有 Young GC，则，Young GC block 阻塞等待</li>
-<li><strong>并发标记</strong>：<ol>
-<li>可以并发进行 Young GC</li>
-<li>结束后，并不会进入 Young GC 阶段</li>
-</ol>
-</li>
-<li><strong>重新标记</strong>：不能进行 Young GC</li>
-<li><strong>筛选回收</strong>：结束后，进入 mixed 阶段</li>
-</ol>
-</li>
-<li><strong>Mixed GC</strong>，<strong>本质</strong>就是对 <strong>CSet</strong> 中 Region 的回收<ol>
-<li><strong>CSet</strong>：在 mixed 模式下，其中涵盖了 Eden、Survivor、Old、Humongous Region</li>
-<li><strong>筛选回收阶段</strong>：针对 Old 分区<ol>
-<li><strong>完全可回收的 Region</strong>：不存在存活的对象，直接回收 Region，标记为 Free Region 可用分区</li>
-<li>存在<strong>部分存活的对象的 Region</strong>：标记分数后，追加在 C-Set 中</li>
-</ol>
-</li>
-</ol>
-</li>
-</ol>
-<p>实际上，可以认为是 2 条线：</p>
-<ul>
-<li><strong>Young GC</strong>：<ul>
-<li>基于 C-Set，进行 Region 回收，本质上，只针对「年轻代」进行回收；</li>
-<li>如果 C-Set 中，涵盖了标记为 X 的 Old Region，则，称为 Mixed GC，此时，既针对「年轻代」，也针对「部分老年代」Region 进行回收</li>
-</ul>
-</li>
-<li><strong>并发标记周期</strong>：标记出 Old Region，哪些需要回收，标记为 X<ul>
-<li>完成「并发标记阶段」后，Young GC，自动升级为 mixed 模式，即，Mixed GC</li>
-<li>Mixed GC：基于 C-Set，进行 Region 回收，只不过，此时，C-Set 中，涵盖了一部分 Old Region</li>
-</ul>
-</li>
-</ul>
-<p><img src="_v_images/20200716205954650_1089567156.png"></p>
-<p>1 个插图：并发标记周期的说明</p>
-<ul>
-<li><strong>并发标记周期</strong>：<ul>
-<li>触发时机：「老年代」分区的占比，达到阈值</li>
-<li>整个周期说明</li>
-</ul>
-</li>
-<li><strong>Mixed GC</strong>：模式生效点、失效点<ul>
-<li><strong>生效点</strong>：存在 X 状态的 Old Region，即，标记并发周期的「筛选回收」阶段结束后，再次触发的 GC，就是 Mixed GC</li>
-<li><strong>失效点</strong>：完成所有的 X 状态 Old Region 的清理后，会进入 Young GC 状态</li>
-</ul>
-</li>
-<li><strong>补充说明</strong>：<ul>
-<li>部分 X 状态的 Old Region：每次 Mixed GC，只有部分 X 状态的 Old Region 会被放入 C-Set</li>
-<li>完整 C-Set 都被回收：C-Set 中所有 Region，每次 GC 都会被回收</li>
-</ul>
-</li>
-</ul>
-<p><strong>特别说明</strong>：</p>
-<blockquote>
-<p>G1的收集都是STW的；</p>
-<p>但「年轻代」和「老年代」的 GC <strong>界限模糊</strong>，采用了混合(<code>mixed</code>)收集的方式。</p>
-<p><strong>Young GC</strong>，可能快速切换为 Mixed GC，只要 X 标记的 Old Region 存在和消失，就会自动升级 or 降级；</p>
-<p>这样，即使堆内存很大时，也可以限制<strong>收集 Region 的范围</strong>，从而<strong>降低停顿</strong>，达到设置的「暂停时间的目标」。</p>
-</blockquote>
-<h3 id="1-3-3-其他"><a href="#1-3-3-其他" class="headerlink" title="1.3.3. 其他"></a>1.3.3. 其他</h3><h4 id="1-3-3-1-启发式算法"><a href="#1-3-3-1-启发式算法" class="headerlink" title="1.3.3.1. 启发式算法"></a>1.3.3.1. 启发式算法</h4><p><strong>启发式算法</strong>：根据执行状态，动态调整</p>
-<ol>
-<li>设置了「暂停时间的目标」（默认 200ms），G1 会自动调整「年轻代」的空间大小</li>
-<li>如果显式设置「年轻代」的大小，则，用户设置的「暂停时间的目标」会自动失效</li>
-</ol>
-<h4 id="1-3-3-2-SATB，增量式的标记算法"><a href="#1-3-3-2-SATB，增量式的标记算法" class="headerlink" title="1.3.3.2. SATB，增量式的标记算法"></a>1.3.3.2. SATB，增量式的标记算法</h4><p>G1 垃圾收集器，采用了 <strong>SATB</strong>（Snapshot At The Beginning），初始快照，增量式的标记算法，具体：</p>
-<ol>
-<li><strong>标记开始时</strong>：Region 创建一个 Snapshot</li>
-<li><strong>存量标记</strong>：只针对 Snapshot 中存活的对象，进行标记</li>
-<li><strong>增量标记</strong>：Snapshot 之后，新生成的对象，都被标记为「存活对象」，此次不回收，下次标记再说</li>
-</ol>
-<h4 id="1-3-3-3-G1：适用场景"><a href="#1-3-3-3-G1：适用场景" class="headerlink" title="1.3.3.3. G1：适用场景"></a>1.3.3.3. G1：适用场景</h4><p>就目前而言、CMS还是默认首选的GC策略、可能在以下场景下G1更适合：</p>
-<ol>
-<li><strong>多核+大内存</strong>：服务端多核CPU、JVM内存占用较大的应用（至少大于4G）</li>
-<li><strong>业务多碎片</strong>：应用在运行过程中会产生大量内存碎片、需要经常压缩空间</li>
-<li><strong>防止高并发雪崩</strong>：想要更可控、可预期的GC停顿周期；防止高并发下应用雪崩现象</li>
-</ol>
-<h3 id="1-3-4-小结"><a href="#1-3-4-小结" class="headerlink" title="1.3.4. 小结"></a>1.3.4. 小结</h3><p>G1 垃圾收集器，围绕其 Young GC 和 Mixed GC，从整体宏观的角度上，跟之前所有的「串行」「并行」「并发」的垃圾收集器，存在本质的差异：</p>
-<ol>
-<li>之前的垃圾收集器，要实现 <strong>2 个基本步骤</strong>：<ol>
-<li><strong>步骤1</strong>：找到需要回收的对象</li>
-<li><strong>步骤2</strong>：回收</li>
-<li><strong>Note</strong>：上面两个步骤「步骤2」依赖「步骤1」，并且串行进行</li>
-</ol>
-</li>
-<li>G1 垃圾收集器，在「<strong>老年代</strong>」，把 2 个步骤「同时进行」：<ol>
-<li><strong>找到需要回收的对象</strong>：<ol>
-<li>在找到需要回收的 Old Region 过程中，仍然可以同时「回收对象」，即 GC</li>
-<li>找到需要回收的 Old Region 过程，称为「<strong>并发标记周期</strong>」</li>
-</ol>
-</li>
-<li><strong>回收对象</strong>：<ol>
-<li>在「找需要回收的对象」<strong>过程中</strong>，可以持续并发的进行 GC，称为 <code>Young GC</code>，只会收「新生代」</li>
-<li>「找需要回收的对象」<strong>过程结束后</strong>，再进行的 GC，称为 <code>Mixed GC</code>，会同时回收「新生代」和「部分老年代」</li>
-</ol>
-</li>
-</ol>
-</li>
-</ol>
-<p>参考示意图：</p>
-<p><img src="_v_images/20200716205954411_225227554.png"></p>
-<p><img src="_v_images/20200716125557055_1896049925.png"></p>
-<p>G1 回收过程如下。</p>
-<ol>
-<li>G1 的年轻代回收，采用复制算法，并行进行收集，收集过程会 STW。</li>
-<li>G1 的老年代回收时也同时会对年轻代进行回收。主要分为四个阶段：<ol>
-<li>依然是初始标记阶段完成对根对象的标记，这个过程是STW的；</li>
-<li>并发标记阶段，这个阶段是和用户线程并行执行的；</li>
-<li>最终标记阶段，完成三色标记周期；</li>
-<li>复制/清除阶段，这个阶段会优先对可回收空间较大的 Region 进行回收，即 garbage first，这也是 G1 名称的由来。</li>
-</ol>
-</li>
-</ol>
-<p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/zy1994hyq/article/details/102495471">GC算法之G1算法</a></li>
-<li><a target="_blank" rel="noopener" href="https://ningg.top/jvm-series-jvm-practice-jvm-gc-g1/">JVM 实践：G1 垃圾收集器</a></li>
-</ol>
 
       
     </div>
@@ -625,7 +363,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -718,7 +456,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -797,7 +535,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -891,7 +629,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1107,7 +845,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:01" itemprop="dateModified" datetime="2021-04-22T22:07:01+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1189,7 +927,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:01" itemprop="dateModified" datetime="2021-04-22T22:07:01+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1219,6 +957,230 @@
 <p>3.SpringBoot启动类加注解</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@EnableJpaAuditing</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 <p>另外数据库添加相应控制也可以：<br>createTime ： CURRENT_TIMESTAMP<br>modifyTime ： CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/13.BlockingQueue/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/multithread/13.BlockingQueue/" class="post-title-link" itemprop="url">Java BlockingQueue</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-12T00:00:00+08:00">2017-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-BlockingQueue-简介"><a href="#1-BlockingQueue-简介" class="headerlink" title="1. BlockingQueue 简介"></a>1. BlockingQueue 简介</h1><p>在实际编程中，会经常使用到 JDK 中 Collection 集合框架中的各种容器类如实现 List,Map,Queue 接口的容器类，但是这些容器类基本上不是线程安全的，除了使用 Collections 可以将其转换为线程安全的容器，Doug Lea 大师为我们都准备了对应的线程安全的容器，如实现 List 接口的 CopyOnWriteArrayList（<a target="_blank" rel="noopener" href="https://juejin.im/post/5aeeb55f5188256715478c21">关于 CopyOnWriteArrayList 可以看这篇文章</a>），实现 Map 接口的 ConcurrentHashMap（<a target="_blank" rel="noopener" href="https://juejin.im/post/5aeeaba8f265da0b9d781d16">关于 ConcurrentHashMap 可以看这篇文章</a>），实现 Queue 接口的 ConcurrentLinkedQueue（<a target="_blank" rel="noopener" href="https://juejin.im/post/5aeeae756fb9a07ab11112af">关于 ConcurrentLinkedQueue 可以看这篇文章</a>）。</p>
+<p>最常用的”<strong>生产者-消费者</strong>“问题中，队列通常被视作线程间操作的数据容器，这样，可以对各个模块的业务功能进行解耦，生产者将“生产”出来的数据放置在数据容器中，而消费者仅仅只需要在“数据容器”中进行获取数据即可，这样生产者线程和消费者线程就能够进行解耦，只专注于自己的业务功能即可。阻塞队列（BlockingQueue）被广泛使用在“生产者-消费者”问题中，其原因是 BlockingQueue 提供了可阻塞的插入和移除的方法。<strong>当队列容器已满，生产者线程会被阻塞，直到队列未满；当队列容器为空时，消费者线程会被阻塞，直至队列非空时为止。</strong></p>
+<h1 id="2-基本操作"><a href="#2-基本操作" class="headerlink" title="2. 基本操作"></a>2. 基本操作</h1><p>BlockingQueue 基本操作总结如下（此图来源于 JAVA API 文档）：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Throws exception</th>
+<th>Special value</th>
+<th>Blocks</th>
+<th>Times out</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Insert</td>
+<td>add(e)</td>
+<td>offser(e)</td>
+<td>put(e)</td>
+<td>offser(e,time,unit)</td>
+</tr>
+<tr>
+<td>Remove</td>
+<td>remove()</td>
+<td>poll()</td>
+<td>take()</td>
+<td>poll(time,unit)</td>
+</tr>
+<tr>
+<td>Examine</td>
+<td>element()</td>
+<td>peek()</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody></table>
+<p>BlockingQueue 继承于 Queue 接口，因此，对数据元素的基本操作有：</p>
+<blockquote>
+<p>插入元素</p>
+</blockquote>
+<ol>
+<li><code>add(E e)</code> ：往队列插入数据，当队列满时，插入元素时会抛出 <code>IllegalStateException</code> 异常；</li>
+<li><code>offer(E e)</code>：当往队列插入数据时，插入成功返回<code>true</code>，否则则返回<code>false</code>。当队列满时不会抛出异常；</li>
+</ol>
+<blockquote>
+<p>删除元素</p>
+</blockquote>
+<ol>
+<li><code>remove(Object o)</code>：从队列中删除数据，成功则返回<code>true</code>，否则为<code>false</code></li>
+<li><code>poll()</code>：删除数据，当队列为空时，返回 null；</li>
+</ol>
+<blockquote>
+<p>查看元素</p>
+</blockquote>
+<ol>
+<li><code>element()</code>：获取队头元素，如果队列为空时则抛出 <code>NoSuchElementException</code> 异常；</li>
+<li><code>peek()</code>：获取队头元素，如果队列为空则抛出 <code>NoSuchElementException</code> 异常</li>
+</ol>
+<p>BlockingQueue 具有的特殊操作：</p>
+<blockquote>
+<p>插入数据：</p>
+</blockquote>
+<ol>
+<li><code>put(E e)</code>：当阻塞队列容量已经满时，往阻塞队列插入数据的线程会被阻塞，直至阻塞队列已经有空余的容量可供使用；</li>
+<li><code>offer(E e, long timeout, TimeUnit unit)</code>：若阻塞队列已经满时，同样会阻塞插入数据的线程，直至阻塞队列已经有空余的地方，与 <code>put</code> 方法不同的是，该方法会有一个超时时间，若超过当前给定的超时时间，插入数据的线程会退出；</li>
+</ol>
+<blockquote>
+<p>删除数据</p>
+</blockquote>
+<ol>
+<li><code>take()</code>：当阻塞队列为空时，获取队头数据的线程会被阻塞；</li>
+<li><code>poll(long timeout, TimeUnit unit)</code>：当阻塞队列为空时，获取数据的线程会被阻塞，另外，如果被阻塞的线程超过了给定的时长，该线程会退出</li>
+</ol>
+<h1 id="3-常用的-BlockingQueue"><a href="#3-常用的-BlockingQueue" class="headerlink" title="3. 常用的 BlockingQueue"></a>3. 常用的 BlockingQueue</h1><p>实现 BlockingQueue 接口的有<code>ArrayBlockingQueue</code>, <code>DelayQueue</code>, <code>LinkedBlockingDeque</code>, <code>LinkedBlockingQueue</code>, <code>LinkedTransferQueue</code>, <code>PriorityBlockingQueue</code>, <code>SynchronousQueue</code>，而这几种常见的阻塞队列也是在实际编程中会常用的，下面对这几种常见的阻塞队列进行说明：</p>
+<blockquote>
+<p>1.<code>ArrayBlockingQueue</code></p>
+</blockquote>
+<p>**<code>ArrayBlockingQueue</code>**是由数组实现的有界阻塞队列。该队列命令元素 FIFO（先进先出）。因此，对头元素时队列中存在时间最长的数据元素，而对尾数据则是当前队列最新的数据元素。<code>ArrayBlockingQueue</code> 可作为“有界数据缓冲区”，生产者插入数据到队列容器中，并由消费者提取。<code>ArrayBlockingQueue</code> 一旦创建，容量不能改变。</p>
+<p>当队列容量满时，尝试将元素放入队列将导致操作阻塞;尝试从一个空队列中取一个元素也会同样阻塞。</p>
+<p><code>ArrayBlockingQueue</code> 默认情况下不能保证线程访问队列的公平性，所谓公平性是指严格按照线程等待的绝对时间顺序，即最先等待的线程能够最先访问到 <code>ArrayBlockingQueue</code>。而非公平性则是指访问 <code>ArrayBlockingQueue</code> 的顺序不是遵守严格的时间顺序，有可能存在，一旦 <code>ArrayBlockingQueue</code> 可以被访问时，长时间阻塞的线程依然无法访问到 <code>ArrayBlockingQueue</code>。<strong>如果保证公平性，通常会降低吞吐量</strong>。如果需要获得公平性的 <code>ArrayBlockingQueue</code>，可采用如下代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> ArrayBlockingQueue&lt;Integer&gt; blockingQueue = <span class="keyword">new</span> ArrayBlockingQueue&lt;Integer&gt;(<span class="number">10</span>,<span class="keyword">true</span>);</span><br></pre></td></tr></table></figure>
+<p>关于 <code>ArrayBlockingQueue</code> 的实现原理，可以<a target="_blank" rel="noopener" href="https://juejin.im/post/5aeebdb26fb9a07aa83ea17e">看这篇文章</a>。</p>
+<blockquote>
+<p>2.<code>LinkedBlockingQueue</code></p>
+</blockquote>
+<p><code>LinkedBlockingQueue</code> 是用链表实现的有界阻塞队列，同样满足 FIFO 的特性，与 <code>ArrayBlockingQueue</code> 相比起来具有更高的吞吐量，为了防止 <code>LinkedBlockingQueue</code> 容量迅速增，损耗大量内存。通常在创建 <code>LinkedBlockingQueue</code> 对象时，会指定其大小，如果未指定，容量等于 <code>Integer.MAX_VALUE</code></p>
+<blockquote>
+<p>3.<code>PriorityBlockingQueue</code></p>
+</blockquote>
+<p><code>PriorityBlockingQueue</code> 是一个支持优先级的无界阻塞队列。默认情况下元素采用自然顺序进行排序，也可以通过自定义类实现 <code>compareTo()</code>方法来指定元素排序规则，或者初始化时通过构造器参数 <code>Comparator</code> 来指定排序规则。</p>
+<blockquote>
+<p>4.<code>SynchronousQueue</code></p>
+</blockquote>
+<p><code>SynchronousQueue</code> 每个插入操作必须等待另一个线程进行相应的删除操作，因此，<code>SynchronousQueue</code> 实际上没有存储任何数据元素，因为只有线程在删除数据时，其他线程才能插入数据，同样的，如果当前有线程在插入数据时，线程才能删除数据。<code>SynchronousQueue</code> 也可以通过构造器参数来为其指定公平性。</p>
+<blockquote>
+<p>5.<code>LinkedTransferQueue</code></p>
+</blockquote>
+<p><code>LinkedTransferQueue</code> 是一个由链表数据结构构成的无界阻塞队列，由于该队列实现了 <code>TransferQueue</code> 接口，与其他阻塞队列相比主要有以下不同的方法：</p>
+<p><strong><code>transfer(E e)</code></strong> 如果当前有线程（消费者）正在调用 <code>take()</code>方法或者可延时的 <code>poll()</code>方法进行消费数据时，生产者线程可以调用 <code>transfer</code> 方法将数据传递给消费者线程。如果当前没有消费者线程的话，生产者线程就会将数据插入到队尾，直到有消费者能够进行消费才能退出；</p>
+<p><strong><code>tryTransfer(E e)</code></strong> <code>tryTransfer</code> 方法如果当前有消费者线程（调用 <code>take</code> 方法或者具有超时特性的 <code>poll</code> 方法）正在消费数据的话，该方法可以将数据立即传送给消费者线程，如果当前没有消费者线程消费数据的话，就立即返回<code>false</code>。因此，与 <code>transfer</code> 方法相比，<code>transfer</code> 方法是必须等到有消费者线程消费数据时，生产者线程才能够返回。而 <code>tryTransfer</code> 方法能够立即返回结果退出。</p>
+<p><strong><code>tryTransfer(E e,long timeout,imeUnit unit)</code></strong><br>与 <code>transfer</code> 基本功能一样，只是增加了超时特性，如果数据才规定的超时时间内没有消费者进行消费的话，就返回<code>false</code>。</p>
+<blockquote>
+<p>6.<code>LinkedBlockingDeque</code></p>
+</blockquote>
+<p><code>LinkedBlockingDeque</code> 是基于链表数据结构的有界阻塞双端队列，如果在创建对象时为指定大小时，其默认大小为 <code>Integer.MAX_VALUE</code>。与 <code>LinkedBlockingQueue</code> 相比，主要的不同点在于，<code>LinkedBlockingDeque</code> 具有双端队列的特性。<code>LinkedBlockingDeque</code> 基本操作如下图所示（来源于 java 文档）</p>
+<p><img src="_v_images/20200721125024527_1529598628" alt="`LinkedBlockingDeque`的基本操作.png"></p>
+<p><code>LinkedBlockingDeque</code>的基本操作.png</p>
+<p>如上图所示，<code>LinkedBlockingDeque</code> 的基本操作可以分为四种类型：</p>
+<p>1.特殊情况，抛出异常；<br>2.特殊情况，返回特殊值如 null 或者 false；<br>3.当线程不满足操作条件时，线程会被阻塞直至条件满足；<br>4. 操作具有超时特性。</p>
+<p>另外，<code>LinkedBlockingDeque</code> 实现了 BlockingDueue 接口<br>而 <code>LinkedBlockingQueue</code> 实现的是 BlockingQueue，</p>
+<p>这两个接口的主要区别如下图所示（来源于 java 文档）：</p>
+<p><img src="_v_images/20200721125024023_871236957" alt="BlockingQueue和BlockingDeque的区别.png"></p>
+<p>BlockingQueue和BlockingDeque的区别</p>
+<p>从上图可以看出，两个接口的功能是可以等价使用的，比如 BlockingQueue 的 add 方法和 BlockingDeque 的 addLast 方法的功能是一样的。</p>
+<blockquote>
+<p>7.<code>DelayQueue</code></p>
+</blockquote>
+<p><code>DelayQueue</code> 是一个存放实现 <code>Delayed</code> 接口的数据的无界阻塞队列，只有当数据对象的延时时间达到时才能插入到队列进行存储。如果当前所有的数据都还没有达到创建时所指定的延时期，则队列没有队头，并且线程通过 <code>poll</code> 等方法获取数据元素则返回 <code>null</code>。所谓数据延时期满时，则是通过 <code>Delayed</code> 接口的<code>getDelay(TimeUnit.NANOSECONDS)</code>来进行判定，如果该方法返回的是小于等于 0 则说明该数据元素的延时期已满。</p>
+<h1 id="ArrayBlockingQueue-实现原理"><a href="#ArrayBlockingQueue-实现原理" class="headerlink" title="ArrayBlockingQueue 实现原理"></a>ArrayBlockingQueue 实现原理</h1><p>阻塞队列最核心的功能是，能够可阻塞式的插入和删除队列元素。当前队列为空时，会阻塞消费数据的线程，直至队列非空时，通知被阻塞的线程；当队列满时，会阻塞插入数据的线程，直至队列未满时，通知插入数据的线程（生产者线程）。那么，多线程中消息通知机制最常用的是 lock 的 condition 机制，关于 condition 可以<a target="_blank" rel="noopener" href="https://juejin.im/post/5aeea5e951882506a36c67f0">看这篇文章的详细介绍</a>。那么 ArrayBlockingQueue 的实现是不是也会采用 Condition 的通知机制呢？下面来看看。</p>
+<h2 id="2-1-ArrayBlockingQueue-的主要属性"><a href="#2-1-ArrayBlockingQueue-的主要属性" class="headerlink" title="2.1 ArrayBlockingQueue 的主要属性"></a><strong>2.1 ArrayBlockingQueue 的主要属性</strong></h2><p>ArrayBlockingQueue 的主要属性如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** The queued items */</span></span><br><span class="line"><span class="keyword">final</span> Object[] items;</span><br><span class="line"><span class="comment">/** items index for next take, poll, peek or remove */</span></span><br><span class="line"><span class="keyword">int</span> takeIndex;</span><br><span class="line"><span class="comment">/** items index for next put, offer, or add */</span></span><br><span class="line"><span class="keyword">int</span> putIndex;</span><br><span class="line"><span class="comment">/** Number of elements in the queue */</span></span><br><span class="line"><span class="keyword">int</span> count;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">Concurrency control uses the classic two-condition algorithm</span></span><br><span class="line"><span class="comment">found in any textbook.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/** Main lock guarding all access */</span></span><br><span class="line"><span class="keyword">final</span> ReentrantLock lock;</span><br><span class="line"><span class="comment">/** Condition for waiting takes */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Condition notEmpty;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>从源码中可以看出 ArrayBlockingQueue 内部是采用数组进行数据存储的（<code>属性items</code>），为了保证线程安全，采用的是<code>ReentrantLock lock</code>，为了保证可阻塞式的插入删除数据利用的是 Condition，当获取数据的消费者线程被阻塞时会将该线程放置到 notEmpty 等待队列中，当插入数据的生产者线程被阻塞时，会将该线程放置到 notFull 等待队列中。而 notEmpty 和 notFull 等中要属性在构造方法中进行创建：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">ArrayBlockingQueue</span><span class="params">(<span class="keyword">int</span> capacity, <span class="keyword">boolean</span> fair)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (capacity &lt;= <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException();</span><br><span class="line">    <span class="keyword">this</span>.items = <span class="keyword">new</span> Object[capacity];</span><br><span class="line">    lock = <span class="keyword">new</span> ReentrantLock(fair);</span><br><span class="line">    notEmpty = lock.newCondition();</span><br><span class="line">    notFull =  lock.newCondition();</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>接下来，主要看看可阻塞式的 put 和 take 方法是怎样实现的。</p>
+<h2 id="2-2-put-方法详解"><a href="#2-2-put-方法详解" class="headerlink" title="2.2 put 方法详解"></a><strong>2.2 put 方法详解</strong></h2><p><code>put(E e)</code>方法源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(E e)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    checkNotNull(e);</span><br><span class="line">    <span class="keyword">final</span> ReentrantLock lock = <span class="keyword">this</span>.lock;</span><br><span class="line">    lock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      <span class="comment">//如果当前队列已满，将线程移入到notFull等待队列中</span></span><br><span class="line">        <span class="keyword">while</span> (count == items.length)</span><br><span class="line">            notFull.await();</span><br><span class="line">     <span class="comment">//满足插入数据的要求，直接进行入队操作</span></span><br><span class="line">        enqueue(e);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+<p>该方法的逻辑很简单，当队列已满时（<code>count == items.length</code>）将线程移入到 notFull 等待队列中，如果当前满足插入数据的条件，就可以直接调用<code>enqueue(e)</code>插入数据元素。enqueue 方法源码为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">enqueue</span><span class="params">(E x)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// assert lock.getHoldCount() == 1;</span></span><br><span class="line">    <span class="comment">// assert items[putIndex] == null;</span></span><br><span class="line">    <span class="keyword">final</span> Object[] items = <span class="keyword">this</span>.items;</span><br><span class="line">   <span class="comment">//插入数据</span></span><br><span class="line">    items[putIndex] = x;</span><br><span class="line">    <span class="keyword">if</span> (++putIndex == items.length)</span><br><span class="line">        putIndex = <span class="number">0</span>;</span><br><span class="line">    count++;</span><br><span class="line">   <span class="comment">//通知消费者线程，当前队列中有数据可供消费</span></span><br><span class="line">    notEmpty.signal();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>enqueue 方法的逻辑同样也很简单，先完成插入数据，即往数组中添加数据（<code>items[putIndex] = x</code>），然后通知被阻塞的消费者线程，当前队列中有数据可供消费（<code>notEmpty.signal()</code>）。</p>
+<h2 id="2-3-take-方法详解"><a href="#2-3-take-方法详解" class="headerlink" title="2.3 take 方法详解"></a><strong>2.3 take 方法详解</strong></h2><p>take 方法源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> E <span class="title">take</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> ReentrantLock lock = <span class="keyword">this</span>.lock;</span><br><span class="line">    lock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="comment">//如果队列为空，没有数据，将消费者线程移入等待队列中</span></span><br><span class="line">        <span class="keyword">while</span> (count == <span class="number">0</span>)</span><br><span class="line">            notEmpty.await();</span><br><span class="line">		<span class="comment">//获取数据</span></span><br><span class="line">        <span class="keyword">return</span> dequeue();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>take 方法也主要做了两步：1. 如果当前队列为空的话，则将获取数据的消费者线程移入到等待队列中；2. 若队列不为空则获取数据，即完成出队操作<code>dequeue</code>。dequeue 方法源码为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> E <span class="title">dequeue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// assert lock.getHoldCount() == 1;</span></span><br><span class="line">    <span class="comment">// assert items[takeIndex] != null;</span></span><br><span class="line">    <span class="keyword">final</span> Object[] items = <span class="keyword">this</span>.items;</span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">	<span class="comment">//获取数据</span></span><br><span class="line">    E x = (E) items[takeIndex];</span><br><span class="line">    items[takeIndex] = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (++takeIndex == items.length)</span><br><span class="line">        takeIndex = <span class="number">0</span>;</span><br><span class="line">    count--;</span><br><span class="line">    <span class="keyword">if</span> (itrs != <span class="keyword">null</span>)</span><br><span class="line">        itrs.elementDequeued();</span><br><span class="line">    <span class="comment">//通知被阻塞的生产者线程</span></span><br><span class="line">	notFull.signal();</span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>dequeue 方法也主要做了两件事情：1. 获取队列中的数据，即获取数组中的数据元素（<code>(E) items[takeIndex]</code>）；2. 通知 notFull 等待队列中的线程，使其由等待队列移入到同步队列中，使其能够有机会获得 lock，并执行完成功退出。</p>
+<p>从以上分析，可以看出 put 和 take 方法主要是通过 condition 的通知机制来完成可阻塞式的插入数据和获取数据。在理解 ArrayBlockingQueue 后再去理解 LinkedBlockingQueue 就很容易了。</p>
+<h1 id="3-LinkedBlockingQueue-实现原理"><a href="#3-LinkedBlockingQueue-实现原理" class="headerlink" title="3. LinkedBlockingQueue 实现原理"></a>3. LinkedBlockingQueue 实现原理</h1><p>LinkedBlockingQueue 是用链表实现的有界阻塞队列，当构造对象时为指定队列大小时，队列默认大小为<code>Integer.MAX_VALUE</code>。从它的构造方法可以看出：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">LinkedBlockingQueue</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>(Integer.MAX_VALUE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="3-1-LinkedBlockingQueue-的主要属性"><a href="#3-1-LinkedBlockingQueue-的主要属性" class="headerlink" title="3.1 LinkedBlockingQueue 的主要属性"></a><strong>3.1 LinkedBlockingQueue 的主要属性</strong></h2><p>LinkedBlockingQueue 的主要属性有：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Current number of elements */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> AtomicInteger count = <span class="keyword">new</span> AtomicInteger();</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">Head of linked list.</span></span><br><span class="line"><span class="comment">Invariant: head.item == null</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">transient</span> Node&lt;E&gt; head;</span><br><span class="line"></span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">Tail of linked list.</span></span><br><span class="line"><span class="comment">Invariant: last.next == null</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">transient</span> Node&lt;E&gt; last;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** Lock held by take, poll, etc */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ReentrantLock takeLock = <span class="keyword">new</span> ReentrantLock();</span><br><span class="line"><span class="comment">/** Wait queue for waiting takes */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> Condition notEmpty = takeLock.newCondition();</span><br><span class="line"><span class="comment">/** Lock held by put, offer, etc */</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> ReentrantLock putLock = <span class="keyword">new</span> ReentrantLock();</span><br><span class="line">复制代码</span><br></pre></td></tr></table></figure>
+<p>可以看出与 ArrayBlockingQueue 主要的区别是，LinkedBlockingQueue 在插入数据和删除数据时分别是由两个不同的 lock（<code>takeLock</code>和<code>putLock</code>）来控制线程安全的，因此，也由这两个 lock 生成了两个对应的 condition（<code>notEmpty</code>和<code>notFull</code>）来实现可阻塞的插入和删除数据。并且，采用了链表的数据结构来实现队列，Node 结点的定义为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Node</span>&lt;<span class="title">E</span>&gt; </span>&#123;</span><br><span class="line">    E item;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * One of:</span></span><br><span class="line"><span class="comment"> * - the real successor Node</span></span><br><span class="line"><span class="comment"> * - this Node, meaning the successor is head.next</span></span><br><span class="line"><span class="comment"> * - null, meaning there is no successor (this is the last node)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">Node&amp;lt;E&amp;gt; next;</span><br><span class="line"></span><br><span class="line">Node(E x) &#123; item = x; &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>接下来，我们也同样来看看 put 方法和 take 方法的实现。</p>
+<h2 id="3-2-put-方法详解"><a href="#3-2-put-方法详解" class="headerlink" title="3.2 put 方法详解"></a><strong>3.2 put 方法详解</strong></h2><p>put 方法源码为:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">put</span><span class="params">(E e)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (e == <span class="keyword">null</span>) <span class="keyword">throw</span> <span class="keyword">new</span> NullPointerException();</span><br><span class="line">    <span class="comment">// Note: convention in all put/take/etc is to preset local var</span></span><br><span class="line">    <span class="comment">// holding count negative to indicate failure unless set.</span></span><br><span class="line">    <span class="keyword">int</span> c = -<span class="number">1</span>;</span><br><span class="line">    Node&lt;E&gt; node = <span class="keyword">new</span> Node&lt;E&gt;(e);</span><br><span class="line">    <span class="keyword">final</span> ReentrantLock putLock = <span class="keyword">this</span>.putLock;</span><br><span class="line">    <span class="keyword">final</span> AtomicInteger count = <span class="keyword">this</span>.count;</span><br><span class="line">    putLock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * Note that count is used in wait guard even though it is</span></span><br><span class="line"><span class="comment">         * not protected by lock. This works because count can</span></span><br><span class="line"><span class="comment">         * only decrease at this point (all other puts are shut</span></span><br><span class="line"><span class="comment">         * out by lock), and we (or some other waiting put) are</span></span><br><span class="line"><span class="comment">         * signalled if it ever changes from capacity. Similarly</span></span><br><span class="line"><span class="comment">         * for all other uses of count in other wait guards.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">		<span class="comment">//如果队列已满，则阻塞当前线程，将其移入等待队列</span></span><br><span class="line">        <span class="keyword">while</span> (count.get() == capacity) &#123;</span><br><span class="line">            notFull.await();</span><br><span class="line">        &#125;</span><br><span class="line">		<span class="comment">//入队操作，插入数据</span></span><br><span class="line">        enqueue(node);</span><br><span class="line">        c = count.getAndIncrement();</span><br><span class="line">		<span class="comment">//若队列满足插入数据的条件，则通知被阻塞的生产者线程</span></span><br><span class="line">        <span class="keyword">if</span> (c + <span class="number">1</span> &lt; capacity)</span><br><span class="line">            notFull.signal();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        putLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (c == <span class="number">0</span>)</span><br><span class="line">        signalNotEmpty();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>put 方法的逻辑也同样很容易理解，可见注释。基本上和 ArrayBlockingQueue 的 put 方法一样。take 方法的源码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> E <span class="title">take</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    E x;</span><br><span class="line">    <span class="keyword">int</span> c = -<span class="number">1</span>;</span><br><span class="line">    <span class="keyword">final</span> AtomicInteger count = <span class="keyword">this</span>.count;</span><br><span class="line">    <span class="keyword">final</span> ReentrantLock takeLock = <span class="keyword">this</span>.takeLock;</span><br><span class="line">    takeLock.lockInterruptibly();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="comment">//当前队列为空，则阻塞当前线程，将其移入到等待队列中，直至满足条件</span></span><br><span class="line">        <span class="keyword">while</span> (count.get() == <span class="number">0</span>) &#123;</span><br><span class="line">            notEmpty.await();</span><br><span class="line">        &#125;</span><br><span class="line">		<span class="comment">//移除队头元素，获取数据</span></span><br><span class="line">        x = dequeue();</span><br><span class="line">        c = count.getAndDecrement();</span><br><span class="line">        <span class="comment">//如果当前满足移除元素的条件，则通知被阻塞的消费者线程</span></span><br><span class="line">		<span class="keyword">if</span> (c &gt; <span class="number">1</span>)</span><br><span class="line">            notEmpty.signal();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        takeLock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (c == capacity)</span><br><span class="line">        signalNotFull();</span><br><span class="line">    <span class="keyword">return</span> x;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>take 方法的主要逻辑请见于注释，也很容易理解。</p>
+<h1 id="4-ArrayBlockingQueue-与-LinkedBlockingQueue-的比较"><a href="#4-ArrayBlockingQueue-与-LinkedBlockingQueue-的比较" class="headerlink" title="4. ArrayBlockingQueue 与 LinkedBlockingQueue 的比较"></a>4. ArrayBlockingQueue 与 LinkedBlockingQueue 的比较</h1><p><strong>相同点</strong>：ArrayBlockingQueue 和 LinkedBlockingQueue 都是通过 condition 通知机制来实现可阻塞式插入和删除元素，并满足线程安全的特性；</p>
+<p><strong>不同点</strong>：1. ArrayBlockingQueue 底层是采用的数组进行实现，而 LinkedBlockingQueue 则是采用链表数据结构；</p>
+<ol start="2">
+<li>ArrayBlockingQueue 插入和删除数据，只采用了一个 lock，而 LinkedBlockingQueue 则是在插入和删除分别采用了<code>putLock</code>和<code>takeLock</code>，这样可以降低线程由于线程无法获取到 lock 而进入 WAITING 状态的可能性，从而提高了线程并发执行的效率。</li>
+</ol>
 
       
     </div>
@@ -1269,7 +1231,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1378,7 +1340,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">237</span>
+          <span class="site-state-item-count">236</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

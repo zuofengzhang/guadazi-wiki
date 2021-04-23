@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -297,105 +297,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/ORC-file/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Hadoop/ORC-file/" class="post-title-link" itemprop="url">orcfile</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-26 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-26T00:00:00+08:00">2017-02-26</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="ORC-file"><a href="#ORC-file" class="headerlink" title="ORC file"></a>ORC file</h1><p>源码主要有core和mapreduce两个module，其中MapReduce module就是Hadoop的InputFormat和OutFormat，这个module下有两个包，mapred和MapReduce分别符合MapReduce的V1和V2的Input/Output Format.</p>
-<p>四个类：OrcInputFormat、OrcOutputFormat、OrcMapreduceRecordReader和OrcMapreduceRecordWriter</p>
-<h2 id="OrcInputFormat与OrcOutputFormat"><a href="#OrcInputFormat与OrcOutputFormat" class="headerlink" title="OrcInputFormat与OrcOutputFormat"></a>OrcInputFormat与OrcOutputFormat</h2><p>OrcInputFormat继承了FileInputFormat，getSplits用的就是FileInputFormat的实现，只是重写了createRecordReader方法。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> RecordReader&lt;NullWritable, V&gt;</span><br><span class="line">    createRecordReader(InputSplit inputSplit,</span><br><span class="line">                       TaskAttemptContext taskAttemptContext</span><br><span class="line">                       ) <span class="keyword">throws</span> IOException, InterruptedException &#123;</span><br><span class="line">  FileSplit split = (FileSplit) inputSplit;</span><br><span class="line">  Configuration conf = taskAttemptContext.getConfiguration();</span><br><span class="line">  Reader file = OrcFile.createReader(split.getPath(),</span><br><span class="line">      OrcFile.readerOptions(conf)</span><br><span class="line">          .maxLength(OrcConf.MAX_FILE_LENGTH.getLong(conf)));</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> OrcMapreduceRecordReader&lt;&gt;(file,</span><br><span class="line">      org.apache.orc.mapred.OrcInputFormat.buildOptions(conf,</span><br><span class="line">          file, split.getStart(), split.getLength()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里面用到了org.apache.orc.Reader和org.apache.orc.OrcFile. 模板里面的V通常会是OrcStruct，Orc中一个表的schema可以表示为一个OrcStruct。<br>同样滴，OrcOutputFormat当中也是重写了craeteRecordWriter方法：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> RecordWriter&lt;NullWritable, V&gt;</span><br><span class="line">     getRecordWriter(TaskAttemptContext taskAttemptContext</span><br><span class="line">                     ) <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">  Configuration conf = taskAttemptContext.getConfiguration();</span><br><span class="line">  Path filename = getDefaultWorkFile(taskAttemptContext, EXTENSION);</span><br><span class="line">  Writer writer = OrcFile.createWriter(filename,</span><br><span class="line">      org.apache.orc.mapred.OrcOutputFormat.buildOptions(conf));</span><br><span class="line">   <span class="keyword">return</span> <span class="keyword">new</span> OrcMapreduceRecordWriter&lt;V&gt;(writer);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里面用到了org.apache.orc.Writer和org.apache.orc.OrcFile.<br>以上用到的这三个类都是core module里的，之后再去读。</p>
-<h2 id="OrcMapreduceRecordReader"><a href="#OrcMapreduceRecordReader" class="headerlink" title="OrcMapreduceRecordReader"></a>OrcMapreduceRecordReader</h2><p>这个类里面其实复用了org.apache.orc.mapred包下面的一些Writable类，这些Writable类用来在MapReduce中支持Orc中的一些特殊数据类型，比如Map、List、Struct等等，可以将这些数据类型从DataInput中反序列化出来，也可以将数据序列化到DataOutput中去。</p>
-<p>从构造方法可以看到：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">OrcMapreduceRecordReader</span><span class="params">(Reader fileReader,</span></span></span><br><span class="line"><span class="function"><span class="params">                                Reader.Options options)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.batchReader = fileReader.rows(options);</span><br><span class="line">  <span class="keyword">if</span> (options.getSchema() == <span class="keyword">null</span>) &#123;</span><br><span class="line">    schema = fileReader.getSchema();</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    schema = options.getSchema();</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">this</span>.batch = schema.createRowBatch();</span><br><span class="line">  rowInBatch = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">this</span>.row = (V) OrcStruct.createValue(schema);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>其中batchReader是org.apache.orc.RecordReader类型的，这个RecordReader在core中。batch是真正有数据的地方。batch的类型是org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch，从java doc可以看出来它是干嘛用的：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * A VectorizedRowBatch is a set of rows, organized with each column</span></span><br><span class="line"><span class="comment"> * as a vector. It is the unit of query execution, organized to minimize</span></span><br><span class="line"><span class="comment"> * the cost per row and achieve high cycles-per-instruction.</span></span><br><span class="line"><span class="comment"> * The major fields are public by design to allow fast and convenient</span></span><br><span class="line"><span class="comment"> * access by the vectorized query execution code.</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure>
-<p>而schema是org.apache.orc.TypeDescription类型的，而TypeDescription其实是一个数据类型的描述，它有一个category，可以是INT、FLOAT等等，也可以是STRUCT。这里schema的category通常会是STRUCT。STRUCT和OrcStruct是对应的，是一个复合类型，其中可以包含其他类型的属性，用来表示一个表的schema。</p>
-<p>row就是batchReader从batch中读出来的一行记录。</p>
-<p>OrcMapreduceRecordReader中另外一个重要的方法是nextKeyValue：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">nextKeyValue</span><span class="params">()</span> <span class="keyword">throws</span> IOException, InterruptedException </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!ensureBatch()) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (schema.getCategory() == TypeDescription.Category.STRUCT) &#123;</span><br><span class="line">    OrcStruct result = (OrcStruct) row;</span><br><span class="line">    List&lt;TypeDescription&gt; children = schema.getChildren();</span><br><span class="line">    <span class="keyword">int</span> numberOfChildren = children.size();</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>; i &lt; numberOfChildren; ++i) &#123;</span><br><span class="line">      result.setFieldValue(i, OrcMapredRecordReader.nextValue(batch.cols[i], rowInBatch,</span><br><span class="line">          children.get(i), result.getFieldValue(i)));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    OrcMapredRecordReader.nextValue(batch.cols[<span class="number">0</span>], rowInBatch, schema, row);</span><br><span class="line">  &#125;</span><br><span class="line">  rowInBatch += <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看出来，这个方法中，判断当schema是STRUCT的category时，将它看做一个表的schema，取出里面包含的children，即各个字段的TypeDescription，然后读取各个字段的值，存入row中。这其中复用了OrcMapredRecordReader.nextValue()方法.</p>
-<h2 id="OrcMapreduceRecordWriter"><a href="#OrcMapreduceRecordWriter" class="headerlink" title="OrcMapreduceRecordWriter"></a>OrcMapreduceRecordWriter</h2><p>OrcMapreduceRecordWriter和OrcMapreduceRecordReader类似，只不过其中的batchReader换成了org.apache.orc<br>.Writer类型的writer。构造方法如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="title">OrcMapreduceRecordWriter</span><span class="params">(Writer writer)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.writer = writer;</span><br><span class="line">  schema = writer.getSchema();</span><br><span class="line">  <span class="keyword">this</span>.batch = schema.createRowBatch();</span><br><span class="line">  isTopStruct = schema.getCategory() == TypeDescription.Category.STRUCT;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这个类的主要方法就是write方法：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">write</span><span class="params">(NullWritable nullWritable, V v)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">  <span class="comment">// if the batch is full, write it out.</span></span><br><span class="line">  <span class="keyword">if</span> (batch.size == batch.getMaxSize()) &#123;</span><br><span class="line">    writer.addRowBatch(batch);</span><br><span class="line">    batch.reset();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// add the new row</span></span><br><span class="line">  <span class="keyword">int</span> row = batch.size++;</span><br><span class="line">  <span class="comment">// skip over the OrcKey or OrcValue</span></span><br><span class="line">  <span class="keyword">if</span> (v <span class="keyword">instanceof</span> OrcKey) &#123;</span><br><span class="line">    v = (V)((OrcKey) v).key;</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (v <span class="keyword">instanceof</span> OrcValue) &#123;</span><br><span class="line">    v = (V)((OrcValue) v).value;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (isTopStruct) &#123;</span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">int</span> f=<span class="number">0</span>; f &lt; schema.getChildren().size(); ++f) &#123;</span><br><span class="line">      OrcMapredRecordWriter.setColumn(schema.getChildren().get(f),</span><br><span class="line">          batch.cols[f], row, ((OrcStruct) v).getFieldValue(f));</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    OrcMapredRecordWriter.setColumn(schema, batch.cols[<span class="number">0</span>], row, v);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以看出来，write先把V类型（通常是OrcStruct）的记录写入batch，如果batch写满了，就批量写入writer。</p>
-<p>【参考文献】</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/bhq2010/article/details/76213895">ORC源码阅读(1) - mapreduce module</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/yarn-2.8/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -427,7 +328,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -507,7 +408,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -656,7 +557,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -744,7 +645,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -974,7 +875,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1031,6 +932,116 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/dubbo/base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/dubbo/base/" class="post-title-link" itemprop="url">Dubbo基础</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Dubbo-分布式服务治理框架"><a href="#Dubbo-分布式服务治理框架" class="headerlink" title="Dubbo-分布式服务治理框架"></a>Dubbo-分布式服务治理框架</h1><blockquote>
+<p>学习dubbo教程 笔记整理</p>
+<p><a target="_blank" rel="noopener" href="http://dubbo.io/Developer+Guide-zh.htm">Dubbo官方文档</a></p>
+</blockquote>
+<p>关键词：分布式治理</p>
+<p>Dubbo是阿里巴巴推出的一款分布式服务治理框架（虽然现在阿里内部一些部门已经不再使用）。</p>
+<p>Dubbo将分布式服务分为四个角色：服务提供者、服务消费者、注册中心和监控中心。</p>
+<h1 id="Dubbo角色"><a href="#Dubbo角色" class="headerlink" title="Dubbo角色"></a>Dubbo角色</h1><p>![][dubbo-roles]</p>
+<ol>
+<li>服务提供者注册到服务注册中心</li>
+<li>服务消费者从服务提供者订阅服务</li>
+<li>当服务提供者发生变化（出现新服务提供者、旧的服务提供者死掉等），注册中心通知服务消费者</li>
+<li>当服务消费者调用服务时，首先从注册中心查找服务，注册中心直接将选定的服务提供者的ip和端口等信息返回给服务消费者，服务消费者直接调用服务提供者</li>
+<li>服务提供者和服务消费者每个一分钟将收集的运行信息上报到监控中心</li>
+</ol>
+<p>只有服务消费者调用服务生成者是同步调用，其他都是异步的。</p>
+<p>Provider与Registry、Consumer与Register之间都保持着长连接，用于保持信息同步</p>
+<h1 id="简洁的项目结构"><a href="#简洁的项目结构" class="headerlink" title="简洁的项目结构"></a>简洁的项目结构</h1><h1 id="Dubbo支持的RPC协议"><a href="#Dubbo支持的RPC协议" class="headerlink" title="Dubbo支持的RPC协议"></a>Dubbo支持的RPC协议</h1><ol>
+<li>支持常见的传输协议：RMI、Dubbo、Hessain、WebService、Http等，<br> 其中Dubbo和RMI协议基于TCP实现，Hessian和WebService基于HTTP实现。</li>
+<li>传输框架：Netty、Mina、以及基于servlet等方式。</li>
+<li>序列化方式：Hessian2、dubbo、JSON（ fastjson 实现）、JAVA、SOAP 等。</li>
+<li>注册中心可以选择 zooKeeper Redis Dubbo Multicast</li>
+</ol>
+<h1 id="Dubbo-服务降级"><a href="#Dubbo-服务降级" class="headerlink" title="Dubbo 服务降级"></a>Dubbo 服务降级</h1><p><a target="_blank" rel="noopener" href="http://blog.csdn.net/zuoanyinxiang/article/details/51027576">Dubbo学习(七)：服务的升级和降级</a></p>
+<p>服务降级方式：</p>
+<ul>
+<li>服务接口拒绝服务：无用户特定信息，页面能访问，但是添加删除提示服务器繁忙。页面内容也可在Varnish或CDN内获取。</li>
+<li>页面拒绝服务：页面提示由于服务繁忙此服务暂停。跳转到varnish或nginx的一个静态页面。</li>
+<li>延迟持久化：页面访问照常，但是涉及记录变更，会提示稍晚能看到结果，将数据记录到异步队列或log，服务恢复后执行。</li>
+<li>随机拒绝服务：服务接口随机拒绝服务，让用户重试，目前较少有人采用。因为用户体验不佳。</li>
+</ul>
+<p>服务降级埋点的地方：</p>
+<ul>
+<li>消息中间件：所有API调用可以使用消息中间件进行控制</li>
+<li>前端页面：指定网址不可访问（NGINX+LUA）</li>
+<li>底层数据驱动：拒绝所有增删改动作，只允许查询</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/Jenkins_Docker/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1062,7 +1073,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1163,7 +1174,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1301,7 +1312,7 @@ Dockerfile的内容为:</li>
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/dubbo/base/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_2_in_or/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1315,7 +1326,7 @@ Dockerfile的内容为:</li>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/dubbo/base/" class="post-title-link" itemprop="url">Dubbo基础</a>
+            <a href="/database/MySQL/syntax_2_in_or/" class="post-title-link" itemprop="url">MySQL in or优化</a>
         </h2>
 
         <div class="post-meta">
@@ -1325,14 +1336,14 @@ Dockerfile的内容为:</li>
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
+              <time title="Created: 2017-02-16 22:40:00" itemprop="dateCreated datePublished" datetime="2017-02-16T22:40:00+08:00">2017-02-16</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-22 22:07:02" itemprop="dateModified" datetime="2021-04-22T22:07:02+08:00">2021-04-22</time>
+                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1340,7 +1351,7 @@ Dockerfile的内容为:</li>
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
                 </span>
             </span>
 
@@ -1355,43 +1366,31 @@ Dockerfile的内容为:</li>
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Dubbo-分布式服务治理框架"><a href="#Dubbo-分布式服务治理框架" class="headerlink" title="Dubbo-分布式服务治理框架"></a>Dubbo-分布式服务治理框架</h1><blockquote>
-<p>学习dubbo教程 笔记整理</p>
-<p><a target="_blank" rel="noopener" href="http://dubbo.io/Developer+Guide-zh.htm">Dubbo官方文档</a></p>
-</blockquote>
-<p>关键词：分布式治理</p>
-<p>Dubbo是阿里巴巴推出的一款分布式服务治理框架（虽然现在阿里内部一些部门已经不再使用）。</p>
-<p>Dubbo将分布式服务分为四个角色：服务提供者、服务消费者、注册中心和监控中心。</p>
-<h1 id="Dubbo角色"><a href="#Dubbo角色" class="headerlink" title="Dubbo角色"></a>Dubbo角色</h1><p>![][dubbo-roles]</p>
+          <p>MySQL会对sql语句做优化， </p>
 <ol>
-<li>服务提供者注册到服务注册中心</li>
-<li>服务消费者从服务提供者订阅服务</li>
-<li>当服务提供者发生变化（出现新服务提供者、旧的服务提供者死掉等），注册中心通知服务消费者</li>
-<li>当服务消费者调用服务时，首先从注册中心查找服务，注册中心直接将选定的服务提供者的ip和端口等信息返回给服务消费者，服务消费者直接调用服务提供者</li>
-<li>服务提供者和服务消费者每个一分钟将收集的运行信息上报到监控中心</li>
+<li>in 后面的条件不超过一定数量仍然会使用索引。mysql 会根据索引长度和in后面条件数量判断是否使用索引。</li>
+<li>如果是in后面是子查询，则不会使用索引。此时采用<code>join</code>来替换</li>
+<li>使用<code>union all</code>代替<code>in</code>和<code>or</code></li>
 </ol>
-<p>只有服务消费者调用服务生成者是同步调用，其他都是异步的。</p>
-<p>Provider与Registry、Consumer与Register之间都保持着长连接，用于保持信息同步</p>
-<h1 id="简洁的项目结构"><a href="#简洁的项目结构" class="headerlink" title="简洁的项目结构"></a>简洁的项目结构</h1><h1 id="Dubbo支持的RPC协议"><a href="#Dubbo支持的RPC协议" class="headerlink" title="Dubbo支持的RPC协议"></a>Dubbo支持的RPC协议</h1><ol>
-<li>支持常见的传输协议：RMI、Dubbo、Hessain、WebService、Http等，<br> 其中Dubbo和RMI协议基于TCP实现，Hessian和WebService基于HTTP实现。</li>
-<li>传输框架：Netty、Mina、以及基于servlet等方式。</li>
-<li>序列化方式：Hessian2、dubbo、JSON（ fastjson 实现）、JAVA、SOAP 等。</li>
-<li>注册中心可以选择 zooKeeper Redis Dubbo Multicast</li>
-</ol>
-<h1 id="Dubbo-服务降级"><a href="#Dubbo-服务降级" class="headerlink" title="Dubbo 服务降级"></a>Dubbo 服务降级</h1><p><a target="_blank" rel="noopener" href="http://blog.csdn.net/zuoanyinxiang/article/details/51027576">Dubbo学习(七)：服务的升级和降级</a></p>
-<p>服务降级方式：</p>
-<ul>
-<li>服务接口拒绝服务：无用户特定信息，页面能访问，但是添加删除提示服务器繁忙。页面内容也可在Varnish或CDN内获取。</li>
-<li>页面拒绝服务：页面提示由于服务繁忙此服务暂停。跳转到varnish或nginx的一个静态页面。</li>
-<li>延迟持久化：页面访问照常，但是涉及记录变更，会提示稍晚能看到结果，将数据记录到异步队列或log，服务恢复后执行。</li>
-<li>随机拒绝服务：服务接口随机拒绝服务，让用户重试，目前较少有人采用。因为用户体验不佳。</li>
-</ul>
-<p>服务降级埋点的地方：</p>
-<ul>
-<li>消息中间件：所有API调用可以使用消息中间件进行控制</li>
-<li>前端页面：指定网址不可访问（NGINX+LUA）</li>
-<li>底层数据驱动：拒绝所有增删改动作，只允许查询</li>
-</ul>
+<h1 id="使用union-all优化的样例"><a href="#使用union-all优化的样例" class="headerlink" title="使用union all优化的样例"></a>使用<code>union all</code>优化的样例</h1><p>一个文章库，里面有两个表：category和article。category里面有10条分类数据。article里面有 20万条。article里面有一个”article_category”字段是与category里的”category_id”字段相对应的。 article表里面已经把 article_category字义为了索引。数据库大小为1.3G。</p>
+<p><strong>问题描述：</strong></p>
+<p>执行一个很普通的查询： </p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Select</span> <span class="operator">*</span> <span class="keyword">FROM</span> `article` <span class="keyword">Where</span> article_category<span class="operator">=</span><span class="number">11</span> <span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">DESC</span> LIMIT <span class="number">5</span> </span><br></pre></td></tr></table></figure>
+<p>执行时间大约要5秒左右</p>
+<p><strong>解决方案：</strong><br>建一个索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> index idx_u <span class="keyword">on</span> article (article_category,article_id);</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Select</span> <span class="operator">*</span> <span class="keyword">FROM</span> `article` <span class="keyword">Where</span> article_category<span class="operator">=</span><span class="number">11</span> <span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">DESC</span> LIMIT <span class="number">5</span> </span><br></pre></td></tr></table></figure>
+<p>减少到0.0027秒</p>
+<p><strong>继续问题：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">Select</span> <span class="operator">*</span> <span class="keyword">FROM</span> `article` <span class="keyword">Where</span> article_category <span class="keyword">IN</span> (<span class="number">2</span>,<span class="number">3</span>) <span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">DESC</span> LIMIT <span class="number">5</span> </span><br></pre></td></tr></table></figure>
+<p>执行时间要11.2850秒。</p>
+<p><strong>使用OR:</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article</span><br><span class="line"><span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">2</span></span><br><span class="line"><span class="keyword">or</span> article_category<span class="operator">=</span><span class="number">3</span></span><br><span class="line"><span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span></span><br><span class="line">limit <span class="number">5</span></span><br></pre></td></tr></table></figure>
+<p>执行时间：11.0777</p>
+<p><strong>解决方案：</strong><br>避免使用in 或者 or (or会导致扫表)，使用union all</p>
+<p><strong>使用UNION ALL：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(<span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article <span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">2</span> <span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span> limit <span class="number">5</span>)</span><br><span class="line"><span class="keyword">UNION</span> <span class="keyword">ALL</span> (<span class="keyword">select</span> <span class="operator">*</span> <span class="keyword">from</span> article <span class="keyword">where</span> article_category<span class="operator">=</span><span class="number">3</span> <span class="keyword">order</span> <span class="keyword">by</span> article_id <span class="keyword">desc</span> limit <span class="number">5</span>)</span><br><span class="line"><span class="keyword">orDER</span> <span class="keyword">BY</span> article_id <span class="keyword">desc</span></span><br><span class="line">limit <span class="number">5</span></span><br></pre></td></tr></table></figure>
+<p>执行时间：0.0261</p>
 
       
     </div>
@@ -1476,7 +1475,7 @@ Dockerfile的内容为:</li>
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">237</span>
+          <span class="site-state-item-count">236</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
