@@ -183,6 +183,290 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/%E6%85%A2%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/MySQL/%E6%85%A2%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" class="post-title-link" itemprop="url">Untitled</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-23 15:25:52" itemprop="dateCreated datePublished" datetime="2021-04-23T15:25:52+08:00">2021-04-23</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="慢查询优化"><a href="#慢查询优化" class="headerlink" title="慢查询优化"></a>慢查询优化</h1><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysqldumpslow -s t -t 10  ~/Downloads/慢日志/mysql-slow.log</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">Count: <span class="number">2</span>  <span class="type">Time</span><span class="operator">=</span><span class="number">1238.48</span>s (<span class="number">2476</span>s)  Lock<span class="operator">=</span><span class="number">0.00</span>s (<span class="number">0</span>s)  <span class="keyword">Rows</span><span class="operator">=</span><span class="number">90750.0</span> (<span class="number">181500</span>), cdw[cdw]<span class="variable">@2hosts</span></span><br><span class="line">  <span class="keyword">select</span> t3.PRODUCT_CHANNEL_CODE,t3.MAIN_PROJECT_NAME ,</span><br><span class="line">  t3.MAIN_PROJECT_CODE ,t3.SUB_PROJECT_NAME,t3.SUB_PROJECT_CODE,</span><br><span class="line">  t3.CHANNEL_TYPE,t3.CHANNEL_NAME,t3.CHANNEL_ID,t3.CHANNEL_SUB_CODE,</span><br><span class="line">  t3.CHANNEL_SUB_TYPE,</span><br><span class="line">  t4.FRIST_CHANNEL,</span><br><span class="line">  t4.SECOND_CHANNEL,</span><br><span class="line">  t4.thrid_channel</span><br><span class="line">  <span class="keyword">from</span> (<span class="keyword">SELECT</span> t1.PRODUCT_CHANNEL_CODE,t1.MAIN_PROJECT_NAME ,</span><br><span class="line">  t1.MAIN_PROJECT_CODE ,t1.SUB_PROJECT_NAME,t1.SUB_PROJECT_CODE,</span><br><span class="line">  t1.CHANNEL_TYPE,t1.CHANNEL_NAME,t1.CHANNEL_ID,t2.CHANNEL_SUB_CODE,</span><br><span class="line">  t2.CHANNEL_SUB_TYPE <span class="keyword">FROM</span> qd_dz_db.qd_prochannel t1 <span class="keyword">left</span> <span class="keyword">join</span> qd_channel t2</span><br><span class="line">  <span class="keyword">on</span> t1.CHANNEL_ID<span class="operator">=</span>t2.CHANNEL_ID ) t3 <span class="keyword">join</span></span><br><span class="line">  (</span><br><span class="line">  <span class="keyword">SELECT</span></span><br><span class="line">  a.PRODUCT_CHANNEL_CODE,</span><br><span class="line">  b.FRIST_CHANNEL,</span><br><span class="line">  b.SECOND_CHANNEL,</span><br><span class="line">  b.THIRD_CHANNEL <span class="keyword">AS</span> thrid_channel</span><br><span class="line">  <span class="keyword">FROM</span></span><br><span class="line">  qd_dz_db.qd_prochannel a</span><br><span class="line">  <span class="keyword">JOIN</span></span><br><span class="line">  qd_dz_db.qd_channel b <span class="keyword">ON</span> a.CHANNEL_ID <span class="operator">=</span> b.CHANNEL_ID</span><br><span class="line">  )t4 <span class="keyword">on</span> t3.PRODUCT_CHANNEL_CODE<span class="operator">=</span>t4.PRODUCT_CHANNEL_CODE</span><br></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">explain</span><br><span class="line"><span class="keyword">select</span></span><br><span class="line">    t3.PRODUCT_CHANNEL_CODE,</span><br><span class="line">    t3.MAIN_PROJECT_NAME ,</span><br><span class="line">    t3.MAIN_PROJECT_CODE ,</span><br><span class="line">    t3.SUB_PROJECT_NAME,</span><br><span class="line">    t3.SUB_PROJECT_CODE,</span><br><span class="line">    t3.CHANNEL_TYPE,</span><br><span class="line">    t3.CHANNEL_NAME,</span><br><span class="line">    t3.CHANNEL_ID,</span><br><span class="line">    t3.CHANNEL_SUB_CODE,</span><br><span class="line">    t3.CHANNEL_SUB_TYPE,</span><br><span class="line">    t4.FRIST_CHANNEL,</span><br><span class="line">    t4.SECOND_CHANNEL,</span><br><span class="line">    t4.thrid_channel</span><br><span class="line">  <span class="keyword">from</span> (</span><br><span class="line">      <span class="keyword">SELECT</span></span><br><span class="line">          t1.PRODUCT_CHANNEL_CODE,</span><br><span class="line">          t1.MAIN_PROJECT_NAME ,</span><br><span class="line">          t1.MAIN_PROJECT_CODE ,</span><br><span class="line">          t1.SUB_PROJECT_NAME,</span><br><span class="line">          t1.SUB_PROJECT_CODE,</span><br><span class="line">          t1.CHANNEL_TYPE,</span><br><span class="line">          t1.CHANNEL_NAME,</span><br><span class="line">          t1.CHANNEL_ID,</span><br><span class="line">          t2.CHANNEL_SUB_CODE,</span><br><span class="line">          t2.CHANNEL_SUB_TYPE</span><br><span class="line">      <span class="keyword">FROM</span></span><br><span class="line">          qd_dz_db.qd_prochannel t1</span><br><span class="line">      <span class="keyword">left</span> <span class="keyword">join</span></span><br><span class="line">          qd_channel t2</span><br><span class="line">      <span class="keyword">on</span> t1.CHANNEL_ID<span class="operator">=</span>t2.CHANNEL_ID</span><br><span class="line">  ) t3</span><br><span class="line">  <span class="keyword">join</span></span><br><span class="line">  (</span><br><span class="line">      <span class="keyword">SELECT</span></span><br><span class="line">          a.PRODUCT_CHANNEL_CODE,</span><br><span class="line">          b.FRIST_CHANNEL,</span><br><span class="line">          b.SECOND_CHANNEL,</span><br><span class="line">          b.THIRD_CHANNEL <span class="keyword">AS</span> thrid_channel</span><br><span class="line">      <span class="keyword">FROM</span></span><br><span class="line">          qd_dz_db.qd_prochannel a</span><br><span class="line">      <span class="keyword">JOIN</span></span><br><span class="line">          qd_dz_db.qd_channel b</span><br><span class="line">      <span class="keyword">ON</span> a.CHANNEL_ID <span class="operator">=</span> b.CHANNEL_ID</span><br><span class="line">  )t4</span><br><span class="line">  <span class="keyword">on</span> t3.PRODUCT_CHANNEL_CODE<span class="operator">=</span>t4.PRODUCT_CHANNEL_CODE</span><br></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>select_type</th>
+<th>table</th>
+<th>partitions</th>
+<th>type</th>
+<th>possible_keys</th>
+<th>key</th>
+<th>key_len</th>
+<th>ref</th>
+<th>rows</th>
+<th>filtered</th>
+<th>Extra</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>SIMPLE</td>
+<td>b</td>
+<td>null</td>
+<td>ALL</td>
+<td>PRIMARY,index_qd_channel</td>
+<td>null</td>
+<td>null</td>
+<td>null</td>
+<td>212</td>
+<td>100.0</td>
+<td>null</td>
+</tr>
+<tr>
+<td>1</td>
+<td>SIMPLE</td>
+<td>a</td>
+<td>null</td>
+<td>ref</td>
+<td>index_qd_prochannel</td>
+<td>index_qd_prochannel</td>
+<td>4</td>
+<td>qd_dz_db.b.CHANNEL_ID</td>
+<td>43</td>
+<td>100.0</td>
+<td>null</td>
+</tr>
+<tr>
+<td>1</td>
+<td>SIMPLE</td>
+<td>t1</td>
+<td>null</td>
+<td>ALL</td>
+<td>null</td>
+<td>null</td>
+<td>null</td>
+<td>null</td>
+<td>56367</td>
+<td>10.0</td>
+<td>Using where; Using join buffer (Block Nested Loop)</td>
+</tr>
+<tr>
+<td>1</td>
+<td>SIMPLE</td>
+<td>t2</td>
+<td>null</td>
+<td>eq_ref</td>
+<td>PRIMARY,index_qd_channel</td>
+<td>PRIMARY</td>
+<td>4</td>
+<td>qd_dz_db.t1.CHANNEL_ID</td>
+<td>1</td>
+<td>100.0</td>
+<td>null</td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> qd_prochannel</span><br></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Non_unique</th>
+<th>Key_name</th>
+<th>Seq_in_index</th>
+<th>Column_name</th>
+<th>Collation</th>
+<th>Cardinality</th>
+<th>Sub_part</th>
+<th>Packed</th>
+<th>Null</th>
+<th>Index_type</th>
+<th>CommentIndex_comment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>qd_prochannel</td>
+<td>0</td>
+<td>PRIMARY</td>
+<td>1</td>
+<td>PR_CHANNEL_ID</td>
+<td>A</td>
+<td>56367</td>
+<td>null</td>
+<td>null</td>
+<td></td>
+<td>BTREE</td>
+<td></td>
+</tr>
+<tr>
+<td>qd_prochannel</td>
+<td>1</td>
+<td>index_qd_prochannel</td>
+<td>1</td>
+<td>CHANNEL_ID</td>
+<td>A</td>
+<td>1311</td>
+<td>null</td>
+<td>null</td>
+<td></td>
+<td>BTREE</td>
+<td></td>
+</tr>
+<tr>
+<td>qd_prochannel</td>
+<td>1</td>
+<td>index_qd_prochannel</td>
+<td>2</td>
+<td>MAIN_PROJECT_CODE</td>
+<td>A</td>
+<td>3316</td>
+<td>null</td>
+<td>null</td>
+<td>YES</td>
+<td>BTREE</td>
+<td></td>
+</tr>
+<tr>
+<td>qd_prochannel</td>
+<td>1</td>
+<td>index_qd_prochannel</td>
+<td>3</td>
+<td>CREATE_TIME</td>
+<td>A</td>
+<td>14092</td>
+<td>null</td>
+<td>null</td>
+<td>YES</td>
+<td>BTREE</td>
+<td></td>
+</tr>
+<tr>
+<td>qd_prochannel</td>
+<td>1</td>
+<td>index_qd_prochannel_MAIN_PROJECT_CODE</td>
+<td>1</td>
+<td>MAIN_PROJECT_CODE</td>
+<td>A</td>
+<td>613</td>
+<td>null</td>
+<td>null</td>
+<td>YES</td>
+<td>BTREE</td>
+<td></td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">show</span> index <span class="keyword">from</span> qd_channel</span><br></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Non_unique</th>
+<th>Key_name</th>
+<th>Seq_in_index</th>
+<th>Column_name</th>
+<th>Collation</th>
+<th>Cardinality</th>
+<th>Sub_part</th>
+<th>Packed</th>
+<th>Null</th>
+<th>Index_type</th>
+<th>Comment Index_comment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>qd_channel</td>
+<td>0</td>
+<td>PRIMARY</td>
+<td>1</td>
+<td>CHANNEL_ID</td>
+<td>A</td>
+<td>212</td>
+<td>null</td>
+<td>null</td>
+<td></td>
+<td>BTREE</td>
+<td></td>
+</tr>
+<tr>
+<td>qd_channel</td>
+<td>1</td>
+<td>index_qd_channel</td>
+<td>1</td>
+<td>CHANNEL_ID</td>
+<td>A</td>
+<td>212</td>
+<td>null</td>
+<td>null</td>
+<td></td>
+<td>BTREE</td>
+<td></td>
+</tr>
+<tr>
+<td>qd_channel</td>
+<td>1</td>
+<td>index_qd_channel</td>
+<td>2</td>
+<td>CHANNEL_CODE</td>
+<td>A</td>
+<td>212</td>
+<td>null</td>
+<td>null</td>
+<td>YES</td>
+<td>BTREE</td>
+<td></td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"></span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/tool/Maven/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -207,7 +491,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-23 13:04:00" itemprop="dateCreated datePublished" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              <time title="Created: 2021-04-23 15:25:52" itemprop="dateCreated datePublished" datetime="2021-04-23T15:25:52+08:00">2021-04-23</time>
             </span>
 
           
@@ -265,7 +549,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-23 13:04:00" itemprop="dateCreated datePublished" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              <time title="Created: 2021-04-23 15:25:52" itemprop="dateCreated datePublished" datetime="2021-04-23T15:25:52+08:00">2021-04-23</time>
             </span>
 
           
@@ -324,7 +608,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-23 13:04:00" itemprop="dateCreated datePublished" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              <time title="Created: 2021-04-23 15:25:52" itemprop="dateCreated datePublished" datetime="2021-04-23T15:25:52+08:00">2021-04-23</time>
             </span>
 
           
@@ -397,7 +681,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-23 13:04:00" itemprop="dateCreated datePublished" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              <time title="Created: 2021-04-23 15:25:51" itemprop="dateCreated datePublished" datetime="2021-04-23T15:25:51+08:00">2021-04-23</time>
             </span>
 
           
@@ -511,7 +795,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-23 13:04:00" itemprop="dateCreated datePublished" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              <time title="Created: 2021-04-23 15:25:51" itemprop="dateCreated datePublished" datetime="2021-04-23T15:25:51+08:00">2021-04-23</time>
             </span>
 
           
@@ -625,7 +909,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-23 13:04:00" itemprop="dateCreated datePublished" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              <time title="Created: 2021-04-23 15:25:51" itemprop="dateCreated datePublished" datetime="2021-04-23T15:25:51+08:00">2021-04-23</time>
             </span>
 
           
@@ -684,7 +968,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-23 13:04:00" itemprop="dateCreated datePublished" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              <time title="Created: 2021-04-23 15:25:51" itemprop="dateCreated datePublished" datetime="2021-04-23T15:25:51+08:00">2021-04-23</time>
             </span>
 
           
@@ -747,7 +1031,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-23 13:04:00" itemprop="dateCreated datePublished" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              <time title="Created: 2021-04-23 15:25:51" itemprop="dateCreated datePublished" datetime="2021-04-23T15:25:51+08:00">2021-04-23</time>
             </span>
 
           
@@ -921,7 +1205,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 15:25:52" itemprop="dateModified" datetime="2021-04-23T15:25:52+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1162,322 +1446,6 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL-Window/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Flink/Flink-SQL-Window/" class="post-title-link" itemprop="url">Flink sql window</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-04-12 19:47:00" itemprop="dateCreated datePublished" datetime="2021-04-12T19:47:00+08:00">2021-04-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>flink窗口函数包含滚动窗口、滑动窗口、会话窗口和OVER窗口</p>
-<h2 id="Flink-SQL-窗口的基本概念与使用"><a href="#Flink-SQL-窗口的基本概念与使用" class="headerlink" title="Flink SQL 窗口的基本概念与使用"></a>Flink SQL 窗口的基本概念与使用</h2><h3 id="滚动窗口"><a href="#滚动窗口" class="headerlink" title="滚动窗口"></a>滚动窗口</h3><p>滚动窗口（TUMBLE）将每个元素分配到一个指定大小的窗口中。通常，滚动窗口有一个固定的大小，并且不会出现重叠。例如，如果指定了一个5分钟大小的滚动窗口，无限流的数据会根据时间划分为<code>[0:00 - 0:05)</code>、<code>[0:05, 0:10)</code>、<code>[0:10, 0:15)</code>等窗口。下图展示了一个30秒的滚动窗口。<br><img src="_v_images/20210412125050690_701107302"><br>使用标识函数选出窗口的起始时间或者结束时间，窗口的时间属性用于下级Window的聚合。</p>
-<table>
-<thead>
-<tr>
-<th>窗口标识函数</th>
-<th>返回类型</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>TUMBLE_START(time-attr, size-interval)</code></td>
-<td>TIMESTAMP</td>
-<td>返回窗口的起始时间（包含边界）。例如<code>[00:10, 00:15)</code> 窗口，返回<code>00:10</code> 。</td>
-</tr>
-<tr>
-<td><code>TUMBLE_END(time-attr, size-interval)</code></td>
-<td>TIMESTAMP</td>
-<td>返回窗口的结束时间（包含边界）。例如<code>[00:00, 00:15]</code>窗口，返回<code>00:15</code>。</td>
-</tr>
-<tr>
-<td><code>TUMBLE_ROWTIME(time-attr, size-interval)</code></td>
-<td>TIMESTAMP(rowtime-attr)</td>
-<td>返回窗口的结束时间（不包含边界）。例如<code>[00:00, 00:15]</code>窗口，返回<code>00:14:59.999</code> 。返回值是一个rowtime attribute，即可以基于该字段做时间属性的操作，例如，级联窗口只能用在基于Event Time的Window上</td>
-</tr>
-<tr>
-<td><code>TUMBLE_PROCTIME(time-attr, size-interval)</code></td>
-<td>TIMESTAMP(rowtime-attr)</td>
-<td>返回窗口的结束时间（不包含边界）。例如<code>[00:00, 00:15]</code>窗口，返回<code>00:14:59.999</code>。返回值是一个proctime attribute，即可以基于该字段做时间属性的操作，例如，级联窗口只能用在基于Processing Time的Window上</td>
-</tr>
-</tbody></table>
-<p>TUMBLE window示例</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.apache.flink.api.common.typeinfo.TypeHint;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.api.common.typeinfo.TypeInformation;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.api.java.tuple.Tuple3;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.TimeCharacteristic;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.datastream.DataStream;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.streaming.api.functions.timestamps.AscendingTimestampExtractor;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.table.api.EnvironmentSettings;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.table.api.Table;</span><br><span class="line"><span class="keyword">import</span> org.apache.flink.table.api.bridge.java.StreamTableEnvironment;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> java.sql.Timestamp;</span><br><span class="line"><span class="keyword">import</span> java.util.Arrays;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TumbleWindowExample</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 1 注册环境</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        EnvironmentSettings mySetting = EnvironmentSettings</span><br><span class="line">                .newInstance()</span><br><span class="line"><span class="comment">//                .useOldPlanner()</span></span><br><span class="line">                .useBlinkPlanner()</span><br><span class="line">                .inStreamingMode()</span><br><span class="line">                .build();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 获取 environment</span></span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        <span class="comment">// 指定系统时间概念为 event time</span></span><br><span class="line">        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);</span><br><span class="line"></span><br><span class="line">        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env,mySetting);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 初始数据</span></span><br><span class="line">        DataStream&lt;Tuple3&lt;Long, String,Integer&gt;&gt; log = env.fromCollection(Arrays.asList(</span><br><span class="line">                <span class="comment">//时间 14:53:00</span></span><br><span class="line">                <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591180_000L</span>,<span class="string">&quot;xiao_ming&quot;</span>,<span class="number">300</span>),</span><br><span class="line">                <span class="comment">//时间 14:53:09</span></span><br><span class="line">                <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591189_000L</span>,<span class="string">&quot;zhang_san&quot;</span>,<span class="number">303</span>),</span><br><span class="line">                <span class="comment">//时间 14:53:12</span></span><br><span class="line">                <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591192_000L</span>, <span class="string">&quot;xiao_li&quot;</span>,<span class="number">204</span>),</span><br><span class="line">                <span class="comment">//时间 14:53:21</span></span><br><span class="line">                <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591201_000L</span>,<span class="string">&quot;li_si&quot;</span>, <span class="number">208</span>)</span><br><span class="line">                ));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 指定时间戳</span></span><br><span class="line">        SingleOutputStreamOperator&lt;Tuple3&lt;Long, String, Integer&gt;&gt; logWithTime = log.assignTimestampsAndWatermarks(<span class="keyword">new</span> AscendingTimestampExtractor&lt;Tuple3&lt;Long, String, Integer&gt;&gt;() &#123;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">long</span> <span class="title">extractAscendingTimestamp</span><span class="params">(Tuple3&lt;Long, String, Integer&gt; element)</span> </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> element.f0;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 转换为 Table</span></span><br><span class="line">        Table logT = tEnv.fromDataStream(logWithTime, <span class="string">&quot;t.rowtime, name, v&quot;</span>);</span><br><span class="line"></span><br><span class="line">        Table result = tEnv.sqlQuery(<span class="string">&quot;SELECT TUMBLE_START(t, INTERVAL &#x27;10&#x27; SECOND) AS window_start,&quot;</span> +</span><br><span class="line">                <span class="string">&quot;TUMBLE_END(t, INTERVAL &#x27;10&#x27; SECOND) AS window_end, SUM(v) FROM &quot;</span></span><br><span class="line">                + logT + <span class="string">&quot; GROUP BY TUMBLE(t, INTERVAL &#x27;10&#x27; SECOND)&quot;</span>);</span><br><span class="line"></span><br><span class="line">        TypeInformation&lt;Tuple3&lt;Timestamp,Timestamp,Integer&gt;&gt; tpinf = <span class="keyword">new</span> TypeHint&lt;Tuple3&lt;Timestamp,Timestamp,Integer&gt;&gt;()&#123;&#125;.getTypeInfo();</span><br><span class="line">        tEnv.toAppendStream(result, tpinf).print();</span><br><span class="line"></span><br><span class="line">        env.execute();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>sql逻辑，每十秒钟聚合<br>执行结果：  </p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(2019-11-01 06:53:00.0,2019-11-01 06:53:10.0,603)  </span><br><span class="line">(2019-11-01 06:53:20.0,2019-11-01 06:53:30.0,208)  </span><br><span class="line">(2019-11-01 06:53:10.0,2019-11-01 06:53:20.0,204)</span><br></pre></td></tr></table></figure>
-<h3 id="滑动窗口"><a href="#滑动窗口" class="headerlink" title="滑动窗口"></a>滑动窗口</h3><p>滑动窗口（HOP），也被称作Sliding Window。不同于滚动窗口，滑动窗口的窗口可以重叠。</p>
-<p>滑动窗口有两个参数：slide和size。slide为每次滑动的步长，size为窗口的大小。</p>
-<ul>
-<li>slide &lt; size，则窗口会重叠，每个元素会被分配到多个窗口。</li>
-<li>slide = size，则等同于滚动窗口（TUMBLE）。</li>
-<li>slide &gt; size，则为跳跃窗口，窗口之间不重叠且有间隙。</li>
-</ul>
-<p>通常，大部分元素符合多个窗口情景，窗口是重叠的。因此，滑动窗口在计算移动平均数（moving averages）时很实用。例如，计算过去5分钟数据的平均值，每10秒钟更新一次，可以设置slide为10秒，size为5分钟。下图为您展示间隔为30秒，窗口大小为1分钟的滑动窗口。</p>
-<p><img src="_v_images/20210412125050182_1936746176" alt="滑动窗口" title="滑动窗口"></p>
-<p>使用滑动窗口标识函数选出窗口的起始时间或者结束时间，窗口的时间属性用于下级Window的聚合。</p>
-<table>
-<thead>
-<tr>
-<th>窗口标识函数</th>
-<th>返回类型</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>HOP_START（&lt;time-attr&gt;, &lt;slide-interval&gt;, &lt;size-interval&gt;）</code></td>
-<td>TIMESTAMP</td>
-<td>返回窗口的起始时间（包含边界）。例如<code>[00:10, 00:15)</code> 窗口，返回<code>00:10</code> 。</td>
-</tr>
-<tr>
-<td><code>HOP_END（&lt;time-attr&gt;, &lt;slide-interval&gt;, &lt;size-interval&gt;）</code></td>
-<td>TIMESTAMP</td>
-<td>返回窗口的结束时间（包含边界）。例如<code>[00:00, 00:15)</code> 窗口，返回<code>00:15</code>。</td>
-</tr>
-<tr>
-<td><code>HOP_ROWTIME（&lt;time-attr&gt;, &lt;slide-interval&gt;, &lt;size-interval&gt;）</code></td>
-<td>TIMESTAMP（rowtime-attr）</td>
-<td>返回窗口的结束时间（不包含边界）。例如<code>[00:00, 00:15)</code> 窗口，返回<code>00:14:59.999</code>。返回值是一个rowtime attribute，即可以基于该字段做时间类型的操作，只能用在基于event time的window上。</td>
-</tr>
-<tr>
-<td><code>HOP_PROCTIME（&lt;time-attr&gt;, &lt;slide-interval&gt;, &lt;size-interval&gt;）</code></td>
-<td>TIMESTAMP（rowtime-attr）</td>
-<td>返回窗口的结束时间（不包含边界）。例如<code>[00:00, 00:15)</code> 窗口，返回<code>00:14:59.999</code> 。返回值是一个proctime attribute</td>
-</tr>
-</tbody></table>
-<p>滑动窗口实例：<br>java代码同上，sql语句改为：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> HOP_START(t, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>) <span class="keyword">AS</span> window_start, HOP_END(t, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>) <span class="keyword">AS</span> window_end, <span class="built_in">SUM</span>(v) <span class="keyword">FROM</span>   logT   <span class="keyword">GROUP</span> <span class="keyword">BY</span> HOP(t, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">SECOND</span>)</span><br></pre></td></tr></table></figure>
-<p>每间隔5秒统计10秒内的数据<br>sql结果如下：  </p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">(2019-11-01 06:53:15.0,2019-11-01 06:53:25.0,208)  </span><br><span class="line">(2019-11-01 06:53:10.0,2019-11-01 06:53:20.0,204)  </span><br><span class="line">(2019-11-01 06:53:05.0,2019-11-01 06:53:15.0,507)  </span><br><span class="line">(2019-11-01 06:53:20.0,2019-11-01 06:53:30.0,208)  </span><br><span class="line">(2019-11-01 06:53:00.0,2019-11-01 06:53:10.0,603)  </span><br><span class="line">(2019-11-01 06:52:55.0,2019-11-01 06:53:05.0,300)</span><br></pre></td></tr></table></figure>
-<h3 id="会话窗口"><a href="#会话窗口" class="headerlink" title="会话窗口"></a>会话窗口</h3><p>会话窗口（SESSION）通过Session活动来对元素进行分组。会话窗口与滚动窗口和滑动窗口相比，没有窗口重叠，没有固定窗口大小。相反，当它在一个固定的时间周期内不再收到元素，即会话断开时，这个窗口就会关闭。</p>
-<p>会话窗口通过一个间隔时间（Gap）来配置，这个间隔定义了非活跃周期的长度。例如，一个表示鼠标点击活动的数据流可能具有长时间的空闲时间，并在两段空闲之间散布着高浓度的点击。 如果数据在指定的间隔（Gap）之后到达，则会开始一个新的窗口。</p>
-<p>会话窗口示例如下图。每个Key由于不同的数据分布，形成了不同的Window。</p>
-<p><img src="_v_images/20210412125049773_363551252"><br>使用标识函数选出窗口的起始时间或者结束时间，窗口的时间属性用于下级Window的聚合。</p>
-<table>
-<thead>
-<tr>
-<th>窗口标识函数</th>
-<th>返回类型</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>SESSION_START（&lt;time-attr&gt;, &lt;gap-interval&gt;）</code></td>
-<td>Timestamp</td>
-<td>返回窗口的起始时间（包含边界）。如<code>[00:10, 00:15)</code> 的窗口，返回 <code>00:10</code> ，即为此会话窗口内第一条记录的时间。</td>
-</tr>
-<tr>
-<td><code>SESSION_END（&lt;time-attr&gt;, &lt;gap-interval&gt;）</code></td>
-<td>Timestamp</td>
-<td>返回窗口的结束时间（包含边界）。如<code>[00:00, 00:15)</code> 的窗口，返回 <code>00:15</code>，即为此会话窗口内最后一条记录的时间+<code>&lt;gap-interval&gt;</code>。</td>
-</tr>
-<tr>
-<td><code>SESSION_ROWTIME（&lt;time-attr&gt;, &lt;gap-interval&gt;）</code></td>
-<td>Timestamp（rowtime-attr）</td>
-<td>返回窗口的结束时间（不包含边界）。如 <code>[00:00, 00:15)</code> 的窗口，返回<code>00:14:59.999</code> 。返回值是一个rowtime attribute，也就是可以基于该字段进行时间类型的操作。该参数只能用于基于event time的window 。</td>
-</tr>
-<tr>
-<td><code>SESSION_PROCTIME（&lt;time-attr&gt;, &lt;gap-interval&gt;）</code></td>
-<td>Timestamp（rowtime-attr）</td>
-<td>返回窗口的结束时间（不包含边界）。如 <code>[00:00, 00:15)</code> 的窗口，返回 <code>00:14:59.999</code> 。返回值是一个 proctime attribute，也就是可以基于该字段进行时间类型的操作。该参数只能用于基于processing time的window 。</td>
-</tr>
-</tbody></table>
-<p>会话窗口实例：<br>java代码同上<br>sql语句如下：<br>每隔5秒聚合</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> SESSION_START(t, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>) <span class="keyword">AS</span> window_start,</span><br><span class="line">SESSION_END(t, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>) <span class="keyword">AS</span> window_end, <span class="built_in">SUM</span>(v) <span class="keyword">FROM</span>  logT  <span class="keyword">GROUP</span> <span class="keyword">BY</span> SESSION(t, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">SECOND</span>)</span><br></pre></td></tr></table></figure>
-<p>sql结果：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(2019-11-01 06:53:21.0,2019-11-01 06:53:26.0,208)  </span><br><span class="line">(2019-11-01 06:53:00.0,2019-11-01 06:53:05.0,300)  </span><br><span class="line">(2019-11-01 06:53:09.0,2019-11-01 06:53:17.0,507)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h3 id="OVER窗口"><a href="#OVER窗口" class="headerlink" title="OVER窗口"></a>OVER窗口</h3><p>OVER窗口（OVER Window）是传统数据库的标准开窗，不同于Group By Window，OVER窗口中每1个元素都对应1个窗口。窗口内的元素是当前元素往前多少个或往前多长时间的元素集合，因此流数据元素分布在多个窗口中。</p>
-<p>在应用OVER窗口的流式数据中，每1个元素都对应1个OVER窗口。每1个元素都触发1次数据计算，每个触发计算的元素所确定的行，都是该元素所在窗口的最后1行。在实时计算的底层实现中，OVER窗口的数据进行全局统一管理（数据只存储1份），逻辑上为每1个元素维护1个OVER窗口，为每1个元素进行窗口计算，完成计算后会清除过期的数据。</p>
-<p>Flink SQL中对OVER窗口的定义遵循标准SQL的定义语法，传统OVER窗口没有对其进行更细粒度的窗口类型命名划分。按照计算行的定义方式，OVER Window可以分为以下两类：</p>
-<ul>
-<li>ROWS OVER Window：每一行元素都被视为新的计算行，即每一行都是一个新的窗口。</li>
-<li>RANGE OVER Window：具有相同时间值的所有元素行视为同一计算行，即具有相同时间值的所有行都是同一个窗口。</li>
-</ul>
-<p>Rows OVER Window语义</p>
-<p>窗口数据</p>
-<p>ROWS OVER Window的每个元素都确定一个窗口。ROWS OVER Window分为Unbounded（无界流）和Bounded（有界流）两种情况。<br>Unbounded ROWS OVER Window数据示例如下图所示。<br><img src="_v_images/20210412125049063_1513990833"></p>
-<p>虽然上图所示窗口user1的w7、w8及user2的窗口w3、w4都是同一时刻到达，但它们仍然在不同的窗口，这一点与RANGE OVER Window不同。</p>
-<p>Bounded ROWS OVER Window数据以3个元素（往前2个元素）的窗口为例，如下图所示。</p>
-<p><img src="_v_images/20210412125048555_824932679"></p>
-<p>虽然上图所示窗口user1的w5、w6及user2的窗口w1、w2都是同一时刻到达，但它们仍然在不同的窗口，这一点与RANGE OVER Window不同。</p>
-<p>RANGE OVER Window语义</p>
-<p>窗口数据</p>
-<p>RANGE OVER Window所有具有共同元素值（元素时间戳）的元素行确定一个窗口，RANGE OVER Window分为Unbounded和Bounded的两种情况。<br>Unbounded RANGE OVER Window数据示例如下图所示。</p>
-<p><img src="_v_images/20210412125048048_1968314666"><br>上图所示窗口user1的w7、user2的窗口w3，两个元素同一时刻到达，属于相同的window，这一点与ROWS OVER Window不同。</p>
-<p>Bounded RANGE OVER Window数据，以3秒中数据<code>(INTERVAL &#39;2&#39; SECOND)</code>的窗口为例，如下图所示。</p>
-<p><img src="_v_images/20210412125047258_2027952546"></p>
-<p>上图所示窗口user1的w6、user2的窗口w3，元素都是同一时刻到达，属于相同的window，这一点与ROWS OVER Window不同。</p>
-<p>OVER窗口实例：<br>java代码同上<br>初始数据如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 初始数据</span></span><br><span class="line">DataStream&lt;Tuple3&lt;Long, String,Integer&gt;&gt; log = env.fromCollection(Arrays.asList(</span><br><span class="line">        <span class="comment">//时间 14:53:00</span></span><br><span class="line">        <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591180_000L</span>,<span class="string">&quot;xiao_ming&quot;</span>,<span class="number">999</span>),</span><br><span class="line">        <span class="comment">//时间 14:53:09</span></span><br><span class="line">        <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591189_000L</span>,<span class="string">&quot;zhang_san&quot;</span>,<span class="number">303</span>),</span><br><span class="line">        <span class="comment">//时间 14:53:12</span></span><br><span class="line">        <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591192_000L</span>, <span class="string">&quot;xiao_li&quot;</span>,<span class="number">888</span>),</span><br><span class="line">        <span class="comment">//时间 14:53:21</span></span><br><span class="line">        <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591201_000L</span>,<span class="string">&quot;li_si&quot;</span>, <span class="number">908</span>),</span><br><span class="line">        <span class="comment">//2019-11-01 14:53:31</span></span><br><span class="line">        <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591211_000L</span>,<span class="string">&quot;li_si&quot;</span>, <span class="number">555</span>),</span><br><span class="line">        <span class="comment">//2019-11-01 14:53:41</span></span><br><span class="line">        <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591221_000L</span>,<span class="string">&quot;zhang_san&quot;</span>, <span class="number">666</span>),</span><br><span class="line">        <span class="comment">//2019-11-01 14:53:51</span></span><br><span class="line">        <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591231_000L</span>,<span class="string">&quot;xiao_ming&quot;</span>, <span class="number">777</span>),</span><br><span class="line">        <span class="comment">//2019-11-01 14:54:01</span></span><br><span class="line">        <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591241_000L</span>,<span class="string">&quot;xiao_ming&quot;</span>, <span class="number">213</span>),</span><br><span class="line">        <span class="comment">//2019-11-01 14:54:11</span></span><br><span class="line">        <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591251_000L</span>,<span class="string">&quot;zhang_san&quot;</span>, <span class="number">300</span>),</span><br><span class="line">        <span class="comment">//2019-11-01 14:54:21</span></span><br><span class="line">        <span class="keyword">new</span> Tuple3&lt;&gt;(<span class="number">1572591261_000L</span>,<span class="string">&quot;li_si&quot;</span>, <span class="number">112</span>)</span><br><span class="line">));</span><br></pre></td></tr></table></figure>
-<p>ROWS over Windown sql语句如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> name,v,<span class="built_in">MAX</span>(v) <span class="keyword">OVER</span>(</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> name </span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> t </span><br><span class="line"><span class="keyword">ROWS</span> <span class="keyword">BETWEEN</span> <span class="number">2</span> PRECEDING <span class="keyword">AND</span> <span class="keyword">CURRENT</span> <span class="type">ROW</span></span><br><span class="line">) <span class="keyword">FROM</span> logT</span><br></pre></td></tr></table></figure>
-<p>sql结果如下：  </p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">(zhang_san,303,303)  </span><br><span class="line">(xiao_li,888,888)  </span><br><span class="line">(li_si,908,908)  </span><br><span class="line">(xiao_ming,999,999)  </span><br><span class="line">(zhang_san,666,666)  </span><br><span class="line">(li_si,555,908)  </span><br><span class="line">(xiao_ming,777,999)  </span><br><span class="line">(li_si,112,908)  </span><br><span class="line">(zhang_san,300,666)  </span><br><span class="line">(xiao_ming,213,999)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>RANGE OVER Window sql 语句如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> name,v,<span class="built_in">MAX</span>(v) <span class="keyword">OVER</span>(</span><br><span class="line"><span class="keyword">PARTITION</span> <span class="keyword">BY</span> name </span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> t </span><br><span class="line"><span class="keyword">RANGE</span> <span class="keyword">BETWEEN</span> <span class="type">INTERVAL</span> <span class="string">&#x27;15&#x27;</span> <span class="keyword">SECOND</span> PRECEDING <span class="keyword">AND</span> <span class="keyword">CURRENT</span> <span class="type">ROW</span></span><br><span class="line">) <span class="keyword">FROM</span>  logT</span><br></pre></td></tr></table></figure>
-<p>sql结果如下：  </p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">(xiao_ming,999,999)  </span><br><span class="line">(xiao_li,888,888)  </span><br><span class="line">(zhang_san,303,303)  </span><br><span class="line">(li_si,908,908)  </span><br><span class="line">(li_si,555,908)  </span><br><span class="line">(xiao_ming,777,777)  </span><br><span class="line">(zhang_san,666,666)  </span><br><span class="line">(li_si,112,112)  </span><br><span class="line">(xiao_ming,213,777)  </span><br><span class="line">(zhang_san,300,300)</span><br></pre></td></tr></table></figure>
-<p>本文的java代码来自：<br><a target="_blank" rel="noopener" href="https://github.com/CheckChe0803/flink-simple-tutorial/tree/master/table/src/main/java/sql/window">https://github.com/CheckChe08…</a></p>
-<h2 id="底层实现"><a href="#底层实现" class="headerlink" title="底层实现"></a>底层实现</h2><p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/UkpkS_JiRGR0ibZKYechbg">https://mp.weixin.qq.com/s/UkpkS_JiRGR0ibZKYechbg</a></p>
-<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>窗口是无限流上一种核心机制，可以流分割为有限大小的“窗口”，同时，在窗口内进行聚合，从而把源源不断产生的数据根据不同的条件划分成一段一段有边界的数据区间，使用户能够利用窗口功能实现很多复杂的统计分析需求。</p>
-<h3 id="Window分类"><a href="#Window分类" class="headerlink" title="Window分类"></a>Window分类</h3><p>1、TimeWindow与CountWindow Flink Window可以是时间驱动的（<code>TimeWindow</code>），也可以是数据驱动的（CountWindow）。由于flink-planner-blink SQL中目前只支持TimeWindow相应的表达语句（<code>TUMBLE</code>、<code>HOP</code>、<code>SESSION</code>），因此，本文主要介绍TimeWindow SQL示例和逻辑，CountWindow感兴趣的读者可自行分析。</p>
-<p>2、TimeWindow子类型 Flink TimeWindow有滑动窗口(<code>HOP</code>)、滚动窗口(<code>TUMBLE</code>)以及会话窗口(<code>SESSION</code>)三种，所选取的字段时间，可以是系统时间(<code>PROCTIME</code>)或事件时间(<code>EVENT TIME</code>)两种，接来下依次介绍。</p>
-<h4 id="Tumble-Window（滚动窗口）"><a href="#Tumble-Window（滚动窗口）" class="headerlink" title="Tumble Window（滚动窗口）"></a>Tumble Window（滚动窗口）</h4><p>翻转窗口Assigner将每个元素分配给具有指定大小的窗口。翻转窗口的大小是固定的，且不会重叠。例如，指定一个大小为5分钟的翻滚窗口，并每5分钟启动一个新窗口，如下图所示：</p>
-<p><img src="_v_images/20210412125430504_1844331455" alt="图片"></p>
-<p>TUMBLE ROWTIME语法示例：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> sessionOrderTableRowtime (</span><br><span class="line">    ctime <span class="type">TIMESTAMP</span>,</span><br><span class="line">    categoryName <span class="type">VARCHAR</span>,</span><br><span class="line">    shopName <span class="type">VARCHAR</span>,</span><br><span class="line">    itemName <span class="type">VARCHAR</span>,</span><br><span class="line">    userId <span class="type">VARCHAR</span>,</span><br><span class="line">    price <span class="type">FLOAT</span>,</span><br><span class="line">    action <span class="type">BIGINT</span>,</span><br><span class="line">    WATERMARK <span class="keyword">FOR</span> ctime <span class="keyword">AS</span> withOffset(ctime, <span class="number">1000</span>),</span><br><span class="line">    proc <span class="keyword">AS</span> PROCTIME()</span><br><span class="line">) <span class="keyword">with</span> (</span><br><span class="line">    `type` <span class="operator">=</span> <span class="string">&#x27;kafka&#x27;</span>,</span><br><span class="line">    format <span class="operator">=</span> <span class="string">&#x27;json&#x27;</span>,</span><br><span class="line">    updateMode <span class="operator">=</span> <span class="string">&#x27;append&#x27;</span>,</span><br><span class="line">    `group.id` <span class="operator">=</span> <span class="string">&#x27;groupId&#x27;</span>,</span><br><span class="line">    bootstrap.servers <span class="operator">=</span> <span class="string">&#x27;xxxxx:9092&#x27;</span>,</span><br><span class="line">    version <span class="operator">=</span> <span class="string">&#x27;0.10&#x27;</span>,</span><br><span class="line">    `zookeeper.connect` <span class="operator">=</span> <span class="string">&#x27;xxxxx:2181&#x27;</span>,</span><br><span class="line">    startingOffsets <span class="operator">=</span> <span class="string">&#x27;latest&#x27;</span>,</span><br><span class="line">    topic <span class="operator">=</span> <span class="string">&#x27;sessionsourceproctime&#x27;</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> popwindowsink (</span><br><span class="line">    countA <span class="type">BIGINT</span>,</span><br><span class="line">    ctime_start <span class="type">TIMESTAMP</span>,</span><br><span class="line">    ctime_end <span class="type">VARCHAR</span>,</span><br><span class="line">    ctime_rowtime <span class="type">VARCHAR</span>,</span><br><span class="line">    categoryName <span class="type">VARCHAR</span>,</span><br><span class="line">    price_sum <span class="type">FLOAT</span></span><br><span class="line">) <span class="keyword">with</span> (</span><br><span class="line">    format <span class="operator">=</span> <span class="string">&#x27;json&#x27;</span>,</span><br><span class="line">    updateMode <span class="operator">=</span> <span class="string">&#x27;append&#x27;</span>,</span><br><span class="line">    bootstrap.servers <span class="operator">=</span> <span class="string">&#x27;xxxxx:9092&#x27;</span>,</span><br><span class="line">    version <span class="operator">=</span> <span class="string">&#x27;0.10&#x27;</span>,</span><br><span class="line">    topic <span class="operator">=</span> <span class="string">&#x27;sessionsinkproctime&#x27;</span>,</span><br><span class="line">    `type` <span class="operator">=</span> <span class="string">&#x27;kafka&#x27;</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> popwindowsink</span><br><span class="line">(<span class="keyword">SELECT</span></span><br><span class="line"><span class="built_in">COUNT</span>(<span class="operator">*</span>),</span><br><span class="line">TUMBLE_START(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>),</span><br><span class="line">DATE_FORMAT(TUMBLE_END(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>), <span class="string">&#x27;yyyy-MM-dd-HH-mm-ss:SSS&#x27;</span>), <span class="comment">--将TUMBLE_END转为可视化的日期</span></span><br><span class="line">DATE_FORMAT(TUMBLE_ROWTIME(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>), <span class="string">&#x27;yyyy-MM-dd-HH-mm-ss:SSS&#x27;</span>), <span class="comment">--这里TUMBLE_ROWTIME为TUMBLE_END-1ms，一般用于后续窗口级联聚合</span></span><br><span class="line">categoryName,</span><br><span class="line"><span class="built_in">SUM</span>(price)</span><br><span class="line"><span class="keyword">FROM</span> sessionOrderTableRowtime</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> TUMBLE(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>), categoryName)</span><br></pre></td></tr></table></figure>
-<p>TUMBLEP ROCTIME语法示例：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> popwindowsink</span><br><span class="line">(<span class="keyword">SELECT</span></span><br><span class="line"><span class="built_in">COUNT</span>(<span class="operator">*</span>),</span><br><span class="line">TUMBLE_START(proc, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>),</span><br><span class="line">DATE_FORMAT(TUMBLE_END(proc, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>), <span class="string">&#x27;yyyy-MM-dd-HH-mm-ss:SSS&#x27;</span>),</span><br><span class="line">DATE_FORMAT(TUMBLE_PROCTIME(proc, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>), <span class="string">&#x27;yyyy-MM-dd-HH-mm-ss:SSS&#x27;</span>), <span class="comment">--注意这里proc字段即Source DDL中指定的PROCTIME</span></span><br><span class="line">categoryName,</span><br><span class="line"><span class="built_in">SUM</span>(price)</span><br><span class="line"><span class="keyword">FROM</span> sessionOrderTableRowtime</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> TUMBLE(proc, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>), categoryName)</span><br></pre></td></tr></table></figure>
-<p>ROWTIME与PROCTIME区别：</p>
-<ul>
-<li>在使用上：主要是填入的ctime、proc关键字的区别，这两个字段在Source DDL中指定方式不一样.</li>
-<li>在实现原理上：ROWTIME模式，根据ctime对应的值，去确定窗口的start、end；PROCTIME模式，在WindowOperator处理数据时，获取本地系统时间，去确定窗口的start、end.</li>
-</ul>
-<p>由于生产系统中，主要使用ROWTIME来计算、聚合、统计，PROCTIME一般用于测试或对统计精度要求不高的场景，本文后续都主要以ROWTIME进行分析。</p>
-<h4 id="Hop-Window（滑动窗口）"><a href="#Hop-Window（滑动窗口）" class="headerlink" title="Hop Window（滑动窗口）"></a>Hop Window（滑动窗口）</h4><p>滑动窗口Assigner将元素分配给多个固定长度的窗口。类似于滚动窗口分配程序，窗口的大小由窗口大小参数配置。因此，如果滑动窗口小于窗口大小，则滑动窗口可以重叠。在这种情况下，元素被分配到多个窗口。其实，滚动窗口TUMBLE是滑动窗口的一个特例。例子，设置一个10分钟长度的窗口，以5分钟间隔滑动。这样，每5分钟就会出现一个窗口，其中包含最近10分钟内到达的事件，如下图：</p>
-<p><img src="_v_images/20210412125430097_940076266" alt="图片"></p>
-<p>HOP ROWTIME语法示例：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> popwindowsink</span><br><span class="line">(<span class="keyword">SELECT</span></span><br><span class="line"><span class="built_in">COUNT</span>(<span class="operator">*</span>),</span><br><span class="line">HOP_START(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>,  <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">MINUTE</span>),</span><br><span class="line">DATE_FORMAT(HOP_END(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>,  <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">MINUTE</span>), <span class="string">&#x27;yyyy-MM-dd-HH-mm-ss:SSS&#x27;</span>),</span><br><span class="line">DATE_FORMAT(HOP_ROWTIME(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>,  <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">MINUTE</span>), <span class="string">&#x27;yyyy-MM-dd-HH-mm-ss:SSS&#x27;</span>), <span class="comment">--注意这里ctime字段即Source DDL中指定的ROWTIME</span></span><br><span class="line">categoryName,</span><br><span class="line"><span class="built_in">SUM</span>(price)</span><br><span class="line"><span class="keyword">FROM</span> sessionOrderTableRowtime</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> HOP(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>,  <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">MINUTE</span>), categoryName)</span><br></pre></td></tr></table></figure>
-<h4 id="Session-Window（会话窗口）"><a href="#Session-Window（会话窗口）" class="headerlink" title="Session Window（会话窗口）"></a>Session Window（会话窗口）</h4><p>会话窗口Assigner根据活动会话对元素进行分组。与翻滚窗口和滑动窗口相比，会话窗口不会重叠，也没有固定的开始和结束时间。相反，会话窗口在一段时间内不接收元素时关闭，即，当一段不活跃的间隙发生时，当前会话关闭，随后的元素被分配给新的会话。</p>
-<p><img src="_v_images/20210412125429689_1075804874" alt="图片"></p>
-<p>SESSION ROWTIME语法示例：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> popwindowsink</span><br><span class="line">(<span class="keyword">SELECT</span></span><br><span class="line"><span class="built_in">COUNT</span>(<span class="operator">*</span>),</span><br><span class="line">SESSION_START(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>),</span><br><span class="line">DATE_FORMAT(SESSION_END(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>, <span class="string">&#x27;yyyy-MM-dd-HH-mm-ss:SSS&#x27;</span>),</span><br><span class="line">DATE_FORMAT(SESSION_ROWTIME(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>), <span class="string">&#x27;yyyy-MM-dd-HH-mm-ss:SSS&#x27;</span>), <span class="comment">--注意这里ctime字段即Source DDL中指定的ROWTIME</span></span><br><span class="line">categoryName,</span><br><span class="line"><span class="built_in">SUM</span>(price)</span><br><span class="line"><span class="keyword">FROM</span> sessionOrderTableRowtime</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> SESSION(ctime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>), categoryName)</span><br></pre></td></tr></table></figure>
-<h3 id="Window分类及整体流程"><a href="#Window分类及整体流程" class="headerlink" title="Window分类及整体流程"></a>Window分类及整体流程</h3><p><img src="_v_images/20210412125429282_375710651" alt="图片"></p>
-<p>上图内部流程分析：</p>
-<p>应用层SQL:<br>1.1 window分类及配置，包括滑动、翻转、会话类型窗口<br>1.2 window时间类型配置，默认待字段名的EventTime，也可以通过PROCTIME()配置为ProcessingTime<br>Calcite解析引擎:<br>2.1 Calcite SQL解析，包括逻辑、优化、物理计划和算子绑定(#translateToPlanInternal)，在本文特指StreamExecGroupWindowAggregateRule和StreamExecGroupWindowAggregate物理计划<br>WindowOperator算子创建相关:<br>3.1 StreamExecGroupWindowAggregate#createWindowOperator创建算子<br>3.2 WindowAssigner的创建，根据输入的数据，和窗口类型，生成多个窗口<br>3.3 processElement()真实处理数据，包括聚合运算，生成窗口，更新缓存，提交数据等功能<br>3.4 Trigger根据数据或时间，来决定窗口触发</p>
-<h3 id="创建WindowOperator算子"><a href="#创建WindowOperator算子" class="headerlink" title="创建WindowOperator算子"></a>创建WindowOperator算子</h3><p>由于window语法主要是在group by语句中使用，calcite创建WindowOperator算子伴随着聚合策略的实现，包括聚合规则匹配(StreamExecGroupWindowAggregateRule)，以及生成聚合physical算子StreamExecGroupWindowAggregate两个子流程：</p>
-<p><img src="_v_images/20210412125428973_1212879820" alt="图片"></p>
-<p>上图内部流程分析：</p>
-<p>a. StreamExecGroupWindowAggregateRule会对window进行提前匹配，<br>生成的WindowEmitStrategy内部具有：是否为EventTime表标识、是否为SessionWindow、early fire和late fire配置、延迟毫秒数（窗口结束时间加上这个毫秒数即数据清理时间）<br>b. StreamExecGroupWindowAggregateRule会获取聚合逻辑计划中，window配置的时间字段，记录时间字段index信息，window的触发和清理都会用到这个时间<br>c. StreamExecGroupWindowAggregate入口即为translateToPlanInternal，它的实现方式与spark比较类似，会先循环调用child子节点translateToPlan方法，生成inputtranform信息作为输入<br>d.创建aggregateHandler是一个代码生成的过程，其生成的创建的class实现了accumulate、retract、merge、update方法，这个handler最后也传递给了WindowOperater，处理数据时，可以进行聚合、回撤并输出最新数据给下游<br>e. StreamExecGroupWindowAggregate与window相关的最后一步就是调用#createWindowOperator创建算子，其内部先创建了一个WindowOperatorBuilder，设置window类型、retract标识、trigger(window触发条件)、聚合函数句柄等，最后创建WindowOperator</p>
-<h3 id="WindowOperator处理数据图解"><a href="#WindowOperator处理数据图解" class="headerlink" title="WindowOperator处理数据图解"></a>WindowOperator处理数据图解</h3><p>在上一小节，已经完成了WindowOperator参数的设定，并创建实例，接下来我们主要分析WindowOperator真实处理数据的流程(起点在WindowOperator#processElement方法)：</p>
-<p><img src="_v_images/20210412125428666_1517359800" alt="图片"></p>
-<p>processElement处理数据流程：</p>
-<p>a、 获取当前record具有的事件时间，如果是Processing Time模式，从时间服务Service里面获取时间即可<br>b、使用上一步获取的时间，接着调用windowFunction.assignWindow生成窗口，其内部实际上是调用各类型的WindowAssigner生成窗口，windowFunction有三大类，分别是Paned（滑动）、Merge（会话）、General（前两种以外的），WindowAssigner类型大致有5类，分别是Tumbling（翻转）、Sliding（滑动）、Session（会话）、CountTumbling 、CountSlide这几类,根据输入的一条数据和时间，可以生成1到多个窗口<br>c、接下来是遍历涉及的窗口进行聚合，包括从windowState获取聚合前值、使用句柄进行聚合、更新状态至windowState，将当前转态<br>d、上一步聚合完成后，就可以遍历窗口，使用TriggerContext（其实就是不同类型窗口Trigger触发器的代理），综合early fire、late fire、水印时间与窗口结束时间，综合判断是否触发窗口写出<br>e、如果TriggerContext判断出触发条件为true，则调用emitWindowResult写出，其内部有retract判断，更新当前state及previous state，写出数据等操作<br>f、如果TriggerContext判断出触发条件为false，则触发需要注册cleanupTimer,到达指定时间后，触发onEventTime或onProcessingTime<br>g、onEventTime或onProcessingTime功能十分类似，首先会触发emitWindowResult提交结果，另外会判断窗口结束时间+Lateness和当前时间是否相等，相等则表示可以清除窗口数据、当前state及previous state、窗口对应trigger。</p>
-<h3 id="WindowOperator源码调试"><a href="#WindowOperator源码调试" class="headerlink" title="WindowOperator源码调试"></a>WindowOperator源码调试</h3><p>为了更直观的理解Window内部运行原理，这里我们引入一个Flink源码中已有的SQL Window测试用例，并进行了简单的修改（即修改为使用HOP滑动窗口）</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">classWindowJoinITCase&#123;</span><br><span class="line">  <span class="meta">@Test</span></span><br><span class="line">  <span class="function">def <span class="title">testRowTimeInnerJoinWithWindowAggregateOnFirstTime</span><span class="params">()</span>: Unit </span>= &#123;</span><br><span class="line">    val sqlQuery =</span><br><span class="line">      <span class="string">&quot;&quot;</span><span class="string">&quot;</span></span><br><span class="line"><span class="string">        |SELECT t1.key, HOP_END(t1.rowtime, INTERVAL &#x27;4&#x27; SECOND, INTERVAL &#x27;20&#x27; SECOND), COUNT(t1.key)</span></span><br><span class="line"><span class="string">        |FROM T1 AS t1</span></span><br><span class="line"><span class="string">        |GROUP BY HOP(t1.rowtime, INTERVAL &#x27;4&#x27; SECOND, INTERVAL &#x27;20&#x27; SECOND), t1.key</span></span><br><span class="line"><span class="string">        |&quot;</span><span class="string">&quot;&quot;</span>.stripMargin</span><br><span class="line"></span><br><span class="line">    val data1 = <span class="keyword">new</span> mutable.MutableList[(String, String, Long)]</span><br><span class="line">    data1.+=((<span class="string">&quot;A&quot;</span>, <span class="string">&quot;L-1&quot;</span>, <span class="number">1000L</span>))</span><br><span class="line">    data1.+=((<span class="string">&quot;A&quot;</span>, <span class="string">&quot;L-2&quot;</span>, <span class="number">2000L</span>))</span><br><span class="line">    data1.+=((<span class="string">&quot;A&quot;</span>, <span class="string">&quot;L-3&quot;</span>, <span class="number">3000L</span>))</span><br><span class="line">    <span class="comment">//data1.+=((&quot;B&quot;, &quot;L-8&quot;, 2000L))</span></span><br><span class="line">    data1.+=((<span class="string">&quot;B&quot;</span>, <span class="string">&quot;L-4&quot;</span>, <span class="number">4000L</span>))</span><br><span class="line">    data1.+=((<span class="string">&quot;C&quot;</span>, <span class="string">&quot;L-5&quot;</span>, <span class="number">2100L</span>))</span><br><span class="line">    data1.+=((<span class="string">&quot;A&quot;</span>, <span class="string">&quot;L-6&quot;</span>, <span class="number">10000L</span>))</span><br><span class="line">    data1.+=((<span class="string">&quot;A&quot;</span>, <span class="string">&quot;L-7&quot;</span>, <span class="number">13000L</span>))</span><br><span class="line"></span><br><span class="line">    val t1 = env.fromCollection(data1)</span><br><span class="line">      .assignTimestampsAndWatermarks(<span class="keyword">new</span> Row3WatermarkExtractor2)</span><br><span class="line">      .toTable(tEnv, <span class="string">&#x27;key, &#x27;</span>id, <span class="string">&#x27;rowtime)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    tEnv.registerTable(&quot;T1&quot;, t1)</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">    val sink = new TestingAppendSink</span></span><br><span class="line"><span class="string">    val t_r = tEnv.sqlQuery(sqlQuery)</span></span><br><span class="line"><span class="string">    val result = t_r.toAppendStream[Row]</span></span><br><span class="line"><span class="string">    result.addSink(sink)</span></span><br><span class="line"><span class="string">    env.execute()</span></span><br><span class="line"><span class="string">  &#125;</span></span><br><span class="line"><span class="string">&#125;</span></span><br></pre></td></tr></table></figure>
-<p>1、StreamExecGroupWindowAggregate#createWindowOperator()创建算子</p>
-<p>StreamExecGroupWindowAggregate#createWindowOperator()是创建WindowOperator算子的地方，对应的代码和注释：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">StreamExecGroupWindowAggregate</span></span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">private</span> def <span class="title">createWindowOperator</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      config: TableConfig,</span></span></span><br><span class="line"><span class="function"><span class="params">      aggsHandler: GeneratedNamespaceAggsHandleFunction[_],</span></span></span><br><span class="line"><span class="function"><span class="params">      recordEqualiser: GeneratedRecordEqualiser,</span></span></span><br><span class="line"><span class="function"><span class="params">      accTypes: Array[LogicalType],</span></span></span><br><span class="line"><span class="function"><span class="params">      windowPropertyTypes: Array[LogicalType],</span></span></span><br><span class="line"><span class="function"><span class="params">      aggValueTypes: Array[LogicalType],</span></span></span><br><span class="line"><span class="function"><span class="params">      inputFields: Seq[LogicalType],</span></span></span><br><span class="line"><span class="function"><span class="params">      timeIdx: Int)</span>: WindowOperator[_, _] </span>= &#123;</span><br><span class="line"></span><br><span class="line">    val builder = WindowOperatorBuilder</span><br><span class="line">      .builder()</span><br><span class="line">      .withInputFields(inputFields.toArray)</span><br><span class="line">    val timeZoneOffset = -config.getTimeZone.getOffset(Calendar.ZONE_OFFSET)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置WindowOperatorBuilder，最后通过Builder创建WindowOperator</span></span><br><span class="line">    val newBuilder = window match &#123;</span><br><span class="line">      <span class="function"><span class="keyword">case</span> <span class="title">TumblingGroupWindow</span><span class="params">(_, timeField, size)</span> <span class="comment">//Tumble PROCTIME模式，内部设置Assiger</span></span></span><br><span class="line"><span class="function">          <span class="keyword">if</span> <span class="title">isProctimeAttribute</span><span class="params">(timeField)</span> &amp;&amp; <span class="title">hasTimeIntervalType</span><span class="params">(size)</span> </span>=&gt;</span><br><span class="line">        builder.tumble(toDuration(size), timeZoneOffset).withProcessingTime()</span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">case</span> <span class="title">TumblingGroupWindow</span><span class="params">(_, timeField, size)</span> <span class="comment">//Tumble ROWTIME模式，内部设置Assiger</span></span></span><br><span class="line"><span class="function">          <span class="keyword">if</span> <span class="title">isRowtimeAttribute</span><span class="params">(timeField)</span> &amp;&amp; <span class="title">hasTimeIntervalType</span><span class="params">(size)</span> </span>=&gt;</span><br><span class="line">        builder.tumble(toDuration(size), timeZoneOffset).withEventTime(timeIdx)</span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">case</span> <span class="title">SlidingGroupWindow</span><span class="params">(_, timeField, size, slide)</span> <span class="comment">//HOP PROCTIME模式，内部设置Assiger</span></span></span><br><span class="line"><span class="function">          <span class="keyword">if</span> <span class="title">isProctimeAttribute</span><span class="params">(timeField)</span> &amp;&amp; <span class="title">hasTimeIntervalType</span><span class="params">(size)</span> </span>=&gt;</span><br><span class="line">        builder.sliding(toDuration(size), toDuration(slide), timeZoneOffset)</span><br><span class="line">          .withProcessingTime()</span><br><span class="line">       .....</span><br><span class="line">      <span class="function"><span class="keyword">case</span> <span class="title">SessionGroupWindow</span><span class="params">(_, timeField, gap)</span></span></span><br><span class="line"><span class="function">          <span class="keyword">if</span> <span class="title">isRowtimeAttribute</span><span class="params">(timeField)</span> </span>=&gt;</span><br><span class="line">        builder.session(toDuration(gap)).withEventTime(timeIdx)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Retraction和Trigger设置</span></span><br><span class="line">    <span class="comment">//默认是no retract和EventTime.afterEndOfWindow</span></span><br><span class="line">    <span class="keyword">if</span> (emitStrategy.produceUpdates) &#123;</span><br><span class="line">      <span class="comment">// mark this operator will send retraction and set new trigger</span></span><br><span class="line">      newBuilder</span><br><span class="line">        .withSendRetraction()</span><br><span class="line">        .triggering(emitStrategy.getTrigger)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    newBuilder</span><br><span class="line">      .aggregate(aggsHandler, recordEqualiser, accTypes, aggValueTypes, windowPropertyTypes)</span><br><span class="line">      .withAllowedLateness(Duration.ofMillis(emitStrategy.getAllowLateness))</span><br><span class="line">      .build()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>2、WindowOperator#processElement()处理数据，注册Timer</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">StreamExecGroupWindowAggregate</span></span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">private</span> def <span class="title">createWindowOperator</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      config: TableConfig,</span></span></span><br><span class="line"><span class="function"><span class="params">      aggsHandler: GeneratedNamespaceAggsHandleFunction[_],</span></span></span><br><span class="line"><span class="function"><span class="params">      recordEqualiser: GeneratedRecordEqualiser,</span></span></span><br><span class="line"><span class="function"><span class="params">      accTypes: Array[LogicalType],</span></span></span><br><span class="line"><span class="function"><span class="params">      windowPropertyTypes: Array[LogicalType],</span></span></span><br><span class="line"><span class="function"><span class="params">      aggValueTypes: Array[LogicalType],</span></span></span><br><span class="line"><span class="function"><span class="params">      inputFields: Seq[LogicalType],</span></span></span><br><span class="line"><span class="function"><span class="params">      timeIdx: Int)</span>: WindowOperator[_, _] </span>= &#123;</span><br><span class="line"></span><br><span class="line">    val builder = WindowOperatorBuilder</span><br><span class="line">      .builder()</span><br><span class="line">      .withInputFields(inputFields.toArray)</span><br><span class="line">    val timeZoneOffset = -config.getTimeZone.getOffset(Calendar.ZONE_OFFSET)</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置WindowOperatorBuilder，最后通过Builder创建WindowOperator</span></span><br><span class="line">    val newBuilder = window match &#123;</span><br><span class="line">      <span class="function"><span class="keyword">case</span> <span class="title">TumblingGroupWindow</span><span class="params">(_, timeField, size)</span> <span class="comment">//Tumble PROCTIME模式，内部设置Assiger</span></span></span><br><span class="line"><span class="function">          <span class="keyword">if</span> <span class="title">isProctimeAttribute</span><span class="params">(timeField)</span> &amp;&amp; <span class="title">hasTimeIntervalType</span><span class="params">(size)</span> </span>=&gt;</span><br><span class="line">        builder.tumble(toDuration(size), timeZoneOffset).withProcessingTime()</span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">case</span> <span class="title">TumblingGroupWindow</span><span class="params">(_, timeField, size)</span> <span class="comment">//Tumble ROWTIME模式，内部设置Assiger</span></span></span><br><span class="line"><span class="function">          <span class="keyword">if</span> <span class="title">isRowtimeAttribute</span><span class="params">(timeField)</span> &amp;&amp; <span class="title">hasTimeIntervalType</span><span class="params">(size)</span> </span>=&gt;</span><br><span class="line">        builder.tumble(toDuration(size), timeZoneOffset).withEventTime(timeIdx)</span><br><span class="line"></span><br><span class="line">      <span class="function"><span class="keyword">case</span> <span class="title">SlidingGroupWindow</span><span class="params">(_, timeField, size, slide)</span> <span class="comment">//HOP PROCTIME模式，内部设置Assiger</span></span></span><br><span class="line"><span class="function">          <span class="keyword">if</span> <span class="title">isProctimeAttribute</span><span class="params">(timeField)</span> &amp;&amp; <span class="title">hasTimeIntervalType</span><span class="params">(size)</span> </span>=&gt;</span><br><span class="line">        builder.sliding(toDuration(size), toDuration(slide), timeZoneOffset)</span><br><span class="line">          .withProcessingTime()</span><br><span class="line">       .....</span><br><span class="line">      <span class="function"><span class="keyword">case</span> <span class="title">SessionGroupWindow</span><span class="params">(_, timeField, gap)</span></span></span><br><span class="line"><span class="function">          <span class="keyword">if</span> <span class="title">isRowtimeAttribute</span><span class="params">(timeField)</span> </span>=&gt;</span><br><span class="line">        builder.session(toDuration(gap)).withEventTime(timeIdx)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Retraction和Trigger设置</span></span><br><span class="line">    <span class="comment">//默认是no retract和EventTime.afterEndOfWindow</span></span><br><span class="line">    <span class="keyword">if</span> (emitStrategy.produceUpdates) &#123;</span><br><span class="line">      <span class="comment">// mark this operator will send retraction and set new trigger</span></span><br><span class="line">      newBuilder</span><br><span class="line">        .withSendRetraction()</span><br><span class="line">        .triggering(emitStrategy.getTrigger)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    newBuilder</span><br><span class="line">      .aggregate(aggsHandler, recordEqualiser, accTypes, aggValueTypes, windowPropertyTypes)</span><br><span class="line">      .withAllowedLateness(Duration.ofMillis(emitStrategy.getAllowLateness))</span><br><span class="line">      .build()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>运行数据：</p>
-<p><img src="_v_images/20210412125428458_505070513" alt="图片"></p>
-<p>3、Timer触发 I、InternalTimerServiceImpl#advanceWatermark()</p>
-<p>WindowOperator#onEventTime()的调用前，可以先看其上层调用：InternalTimerServiceImpl#advanceWatermark()</p>
-<p><img src="_v_images/20210412125428150_761077256" alt="图片"></p>
-<p>当获取的watermark为9999L时，把eventTimeTimerQueue队列中所有小于这个值的timer poll出来，调用WindowOperator.onEnventTime(timer)</p>
-<p>II、WindwOperator#onEventTime()</p>
-<p>WindwOperator#onEventTime()方法比较清晰，主要是window的触发和window的清理两段逻辑：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">WindowOperator</span></span>&#123;</span><br><span class="line">    publicvoidonEventTime(InternalTimer&lt;K, W&gt; timer) <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        setCurrentKey(timer.getKey());</span><br><span class="line"></span><br><span class="line">        triggerContext.window = timer.getNamespace();</span><br><span class="line">        <span class="keyword">if</span> (triggerContext.onEventTime(timer.getTimestamp())) &#123;</span><br><span class="line">            <span class="comment">// fire</span></span><br><span class="line">            emitWindowResult(triggerContext.window);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (windowAssigner.isEventTime()) &#123;</span><br><span class="line">            windowFunction.cleanWindowIfNeeded(triggerContext.window, timer.getTimestamp());</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>III、emitWindowResult()提交结果</p>
-<p>#emitWindowResult()重点关注下其第一行代码：BaseRow aggResult = windowFunction.getWindowAggregationResult(window); 这个表示根据具体的TimeWindow{start=4000, end=24000}，去获取聚合数据，如果是滑动窗口，需要将4000, 8000 ,12000，16000 , 20000, 24000这几段affect窗口里面的聚合值合并起来，内部逻辑：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> classPanedWindowProcessFunction&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> BaseRow <span class="title">getWindowAggregationResult</span><span class="params">(W window)</span> <span class="keyword">throws</span> Exception </span>&#123;</span><br><span class="line">        Iterable&lt;W&gt; panes = windowAssigner.splitIntoPanes(window);</span><br><span class="line">        BaseRow acc = windowAggregator.createAccumulators();</span><br><span class="line">        <span class="comment">// null namespace means use heap data views</span></span><br><span class="line">        windowAggregator.setAccumulators(<span class="keyword">null</span>, acc);</span><br><span class="line">        <span class="keyword">for</span> (W pane : panes) &#123;</span><br><span class="line">            BaseRow paneAcc = ctx.getWindowAccumulators(pane);</span><br><span class="line">            <span class="keyword">if</span> (paneAcc != <span class="keyword">null</span>) &#123;</span><br><span class="line">                windowAggregator.merge(pane, paneAcc);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> windowAggregator.getValue(window);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><img src="_v_images/20210412125427840_804453196" alt="图片"></p>
-<h3 id="Emit（Trigger）触发器"><a href="#Emit（Trigger）触发器" class="headerlink" title="Emit（Trigger）触发器"></a>Emit（Trigger）触发器</h3><ul>
-<li>配置方式指定Trigger：Flink1.9.0目前支持通过TableConifg配置earlyFireInterval、lateFireInterval毫秒数，来指定窗口结束之前、窗口结束之后的触发策略（默认是watermark超过窗口结束后触发一次），策略的解析在WindowEmitStrategy，在StreamExecGroupWindowAggregateRule就会创建和解析这个策略</li>
-<li>SQL方式指定Trigger：Flink1.9.0代码中calcite部分已有SqlEmit相关的实现，后续可以支持SQL 语句（INSERT INTO）中配置EMIT触发器</li>
-</ul>
-<p>本文Emit和Trigger都是触发器这一个概念，只是使用的方式不一样</p>
-<p>1、Emit策略 Emit 策略是指在Flink SQL 中，query的输出策略（如能忍受的延迟）可能在不同的场景有不同的需求，而这部分需求，传统的 ANSI SQL 并没有对应的语法支持。比如用户需求：1小时的时间窗口，窗口触发之前希望每分钟都能看到最新的结果，窗口触发之后希望不丢失迟到一天内的数据。针对这类需求，抽象出了EMIT语法，并扩展到了SQL语法。</p>
-<p>2、用途 EMIT语法的用途目前总结起来主要提供了：控制延迟、数据精确性，两方面的功能。</p>
-<ul>
-<li>控制延迟。针对大窗口，设置窗口触发之前的EMIT输出频率，减少用户看到结果的延迟(WITH| WITHOUT DELAY)。</li>
-<li>数据精确性。不丢弃窗口触发之后的迟到的数据，修正输出结果(minIdleStateRetentionTime，在WindowEmitStrategy中生成allowLateness)。</li>
-</ul>
-<p>在选择EMIT策略时，还需要与处理开销进行权衡。因为越低的输出延迟、越高的数据精确性，都会带来越高的计算开销。</p>
-<p>3、语法 EMIT 语法是用来定义输出的策略，即是定义在输出（INSERT INTO）上的动作。当未配置时，保持原有默认行为，即 window 只在 watermark 触发时 EMIT 一个结果。</p>
-<p>语法：INSERT INTO tableName query EMIT strategy [, strategy]*</p>
-<p>strategy ::= {WITH DELAY timeInterval | WITHOUT DELAY} [BEFORE WATERMARK |AFTER WATERMARK]</p>
-<p>timeInterval ::=‘string’ timeUnit</p>
-<p>WITH DELAY：声明能忍受的结果延迟，即按指定 interval 进行间隔输出。WITHOUT DELAY：声明不忍受延迟，即每来一条数据就进行输出。BEFORE WATERMARK：窗口结束之前的策略配置，即watermark 触发之前。AFTER WATERMARK：窗口结束之后的策略配置，即watermark 触发之后。注：</p>
-<ul>
-<li>其中 strategy可以定义多个，同时定义before和after的策略。但不能同时定义两个 before 或 两个after 的策略。</li>
-<li>若配置了AFTER WATERMARK 策略，需要显式地在TableConfig中配置minIdleStateRetentionTime标识能忍受的最大迟到时间。</li>
-<li>minIdleStateRetentionTime在window中只影响窗口何时清除，不直接影响窗口何时触发， 例如配置为3600000，最多容忍1小时的迟到数据，超过这个时间的数据会直接丢弃</li>
-</ul>
-<p>4、示例 如果我们已经有一个TUMBLE（ctime, INTERVAL ‘1’ HOUR）的窗口，tumble_window 的输出是需要等到一小时结束才能看到结果，我们希望能尽早能看到窗口的结果（即使是不完整的结果）。例如，我们希望每分钟看到最新的窗口结果：INSERT INTO result SELECT * FROM tumble_window EMIT WITH DELAY ‘1’ MINUTE BEFORE WATERMARK – 窗口结束之前，每隔1分钟输出一次更新结果</p>
-<p>tumble_window 会忽略并丢弃窗口结束后到达的数据，而这部分数据对我们来说很重要，希望能统计进最终的结果里。而且我们知道我们的迟到数据不会太多，且迟到时间不会超过一天以上，并且希望收到迟到的数据立刻就更新结果：INSERT INTO result SELECT * FROM tumble_window EMIT WITH DELAY ‘1’ MINUTE BEFORE WATERMARK, WITHOUT DELAY AFTER WATERMARK –窗口结束之后，每条到达的数据都输出</p>
-<p>tEnv.getConfig.setIdleStateRetentionTime(Time.days(1), Time.days(2))//min、max，只有Time.days(1)这个参数直接对window生效</p>
-<p>补充一下WITH DELAY ‘1’这种配置的周期触发策略（即DELAY大于0），最后都是由ProcessingTime系统时间触发：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">WindowEmitStrategy</span></span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">private</span> def <span class="title">createTriggerFromInterval</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">      enableDelayEmit: Boolean,</span></span></span><br><span class="line"><span class="function"><span class="params">      interval: Long)</span>: Option[Trigger[TimeWindow]] </span>= &#123;</span><br><span class="line">    <span class="keyword">if</span> (!enableDelayEmit) &#123;</span><br><span class="line">      None</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (interval &gt; <span class="number">0</span>) &#123;</span><br><span class="line">       <span class="comment">// 系统时间触发，小于wm的所有timer都执行onProcessingTime()</span></span><br><span class="line">        Some(ProcessingTimeTriggers.every(Duration.ofMillis(interval)))</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">       <span class="comment">// 为0则每条都触发</span></span><br><span class="line">        Some(ElementTriggers.every())</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>5、Trigger类和结构关系 在源码中，Window Trigger的实现子类有10个左右，需要结合上一个小节的EMIT SQL能更容易理清他们之间的关系，这里简单介绍下：</p>
-<p><img src="_v_images/20210412125427432_1763085070" alt="图片"></p>
-<ul>
-<li><p>AfterEndOfWindow：这个就是没配置任何EMIT策略时，默认的EvenTime、ProcTime</p>
-</li>
-<li><p>Window触发策略（即窗口结束后触发一次）</p>
-</li>
-<li><p>EveryElement：即delay=0，在processElement()时直接触发，无论是在窗口结束之前或者窗口结束之后都触发，且不再注册timer</p>
-</li>
-<li><p>AfterEndOfWindowNoLate：对应EMIT WITHOUT DELAY AFTER WATERMARK，窗口结束之前不输出，窗口结束之后无延迟输出</p>
-</li>
-<li><p>AfterFirstElementPeriodic：对应WITH DELAY ‘1’ MINUTE BEFORE| AFTER WATERMARK，即按系统时间周期执行，由ProcessingTime系统时间周期触发</p>
-</li>
-</ul>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1547,7 +1515,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">236</span>
+          <span class="site-state-item-count">237</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
@@ -1560,7 +1528,7 @@ TestActivity存在泄漏，那我们应该怎么解决呢？因此我们就需�
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">127</span>
+        <span class="site-state-item-count">128</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
