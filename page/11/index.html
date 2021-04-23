@@ -183,7 +183,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-DataTypesAndSerialization/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Druid/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-DataTypesAndSerialization/" class="post-title-link" itemprop="url">Flink:数据类型与序列化</a>
+            <a href="/bigdata/Druid/" class="post-title-link" itemprop="url">Druid基础</a>
         </h2>
 
         <div class="post-meta">
@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -237,16 +237,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-Data-Types-amp-Serialization"><a href="#Flink-Data-Types-amp-Serialization" class="headerlink" title="Flink Data Types &amp; Serialization"></a>Flink Data Types &amp; Serialization</h1><h2 id="使用case-class的坑"><a href="#使用case-class的坑" class="headerlink" title="使用case class的坑"></a>使用case class的坑</h2><figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="class"><span class="keyword">class</span> <span class="title">Event</span>(<span class="params">id: <span class="type">Int</span></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">val</span> lb = <span class="keyword">new</span> <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">13:00:43,342 INFO  org.apache.flink.api.java.typeutils.TypeExtractor             - class org.myorg.quickstart.Event does not contain a setter for field id</span><br><span class="line">13:00:43,343 INFO  org.apache.flink.api.java.typeutils.TypeExtractor             - Class class org.myorg.quickstart.Event cannot be used as a POJO type because not all fields are valid POJO fields, and must be processed as GenericType. Please read the Flink documentation on &quot;Data Types &amp; Serialization&quot; for details of the effect on performance.</span><br></pre></td></tr></table></figure>
-<p><strong>提示信息：找不到setter，对于POJO类型必须所有的字段必须要有setter和getter</strong><br>命名是case class啊</p>
-<p>再看生产环境的例子： 折腾了一下午</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="class"><span class="keyword">class</span> <span class="title">Event</span>(<span class="params">uin: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 sPid: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 applyId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 bankType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 transactionId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 amount: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 createTime: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 bizType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 modifyTime: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">                 equ: <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span></span></span><br><span class="line"><span class="class"><span class="params">                </span>) </span>&#123;</span><br><span class="line"></span><br><span class="line">   <span class="function"><span class="keyword">def</span> <span class="title">this</span></span>(uin: <span class="type">String</span>,</span><br><span class="line">           sPid: <span class="type">String</span>,</span><br><span class="line">           applyId: <span class="type">String</span>,</span><br><span class="line">           bankType: <span class="type">Long</span>,</span><br><span class="line">           transactionId: <span class="type">String</span>,</span><br><span class="line">           amount: <span class="type">Long</span>,</span><br><span class="line">           createTime: <span class="type">Long</span>,</span><br><span class="line">           bizType: <span class="type">Long</span>,</span><br><span class="line">           modifyTime: <span class="type">String</span>,</span><br><span class="line">           equ: <span class="type">List</span>[<span class="type">Int</span>]</span><br><span class="line">          ) = &#123;</span><br><span class="line">    <span class="keyword">this</span>(uin, sPid, applyId, bankType, transactionId, amount, createTime, bizType, modifyTime)</span><br><span class="line">    <span class="keyword">if</span> (equ != <span class="literal">null</span>) &#123;</span><br><span class="line">      equities.appendAll(equ)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> _active = <span class="literal">false</span></span><br><span class="line">  <span class="keyword">val</span> equities: <span class="type">ListBuffer</span>[<span class="type">Int</span>] = <span class="keyword">new</span> <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">addEquity</span></span>(id: <span class="type">Int</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    equities.append(id)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">equityString</span></span>(separator: <span class="type">String</span>): <span class="type">String</span> = &#123;</span><br><span class="line">    equities.mkString(separator)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="literal">true</span></span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(active: <span class="type">String</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="string">&quot;1&quot;</span>.equals(active)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">isActive</span></span>() = &#123;</span><br><span class="line">    _active</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>使用的是flink 1.6版本的，case class识别出来了，但是equities没有传递到下一个算子中，始终没有值</p>
-<p>老老实实的修改成普通类</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Event</span>(<span class="params">_uin: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _sPid: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _applyId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _bankType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _transactionId: <span class="type">String</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _amount: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _createTime: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _bizType: <span class="type">Long</span>,</span></span></span><br><span class="line"><span class="class"><span class="params">            _modifyTime: <span class="type">String</span></span></span></span><br><span class="line"><span class="class"><span class="params">           </span>) <span class="keyword">extends</span> <span class="title">Serializable</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> equities: <span class="type">ListBuffer</span>[<span class="type">Int</span>] = <span class="keyword">new</span> <span class="type">ListBuffer</span>[<span class="type">Int</span>]</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> uin: <span class="type">String</span> = _uin</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> sPid: <span class="type">String</span> = _sPid</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> applyId: <span class="type">String</span> = _applyId</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> bankType: <span class="type">Long</span> = _bankType</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> transactionId: <span class="type">String</span> = _transactionId</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> amount: <span class="type">Long</span> = _amount</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> createTime: <span class="type">Long</span> = _createTime</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> bizType: <span class="type">Long</span> = _bizType</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> modifyTime: <span class="type">String</span> = _modifyTime</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">var</span> _active = <span class="literal">false</span></span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">this</span></span>(uin: <span class="type">String</span>,</span><br><span class="line">           sPid: <span class="type">String</span>,</span><br><span class="line">           applyId: <span class="type">String</span>,</span><br><span class="line">           bankType: <span class="type">Long</span>,</span><br><span class="line">           transactionId: <span class="type">String</span>,</span><br><span class="line">           amount: <span class="type">Long</span>,</span><br><span class="line">           createTime: <span class="type">Long</span>,</span><br><span class="line">           bizType: <span class="type">Long</span>,</span><br><span class="line">           modifyTime: <span class="type">String</span>,</span><br><span class="line">           equ: <span class="type">List</span>[<span class="type">Int</span>]</span><br><span class="line">          ) = &#123;</span><br><span class="line">    <span class="keyword">this</span>(uin, sPid, applyId, bankType, transactionId, amount, createTime, bizType, modifyTime)</span><br><span class="line">    <span class="keyword">if</span> (equ != <span class="literal">null</span>) &#123;</span><br><span class="line">      equities.appendAll(equ)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getUin</span></span>: <span class="type">String</span> = uin</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setUin</span></span>(<span class="type">Uin</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.uin = <span class="type">Uin</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getSPid</span></span>: <span class="type">String</span> = sPid</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setSPid</span></span>(<span class="type">SPid</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.sPid = <span class="type">SPid</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getApplyId</span></span>: <span class="type">String</span> = applyId</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setApplyId</span></span>(<span class="type">ApplyId</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.applyId = <span class="type">ApplyId</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getBankType</span></span>: <span class="type">Long</span> = bankType</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setBankType</span></span>(<span class="type">BankType</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.bankType = <span class="type">BankType</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getTransactionId</span></span>: <span class="type">String</span> = transactionId</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setTransactionId</span></span>(<span class="type">TransactionId</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.transactionId = <span class="type">TransactionId</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getAmount</span></span>: <span class="type">Long</span> = amount</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setAmount</span></span>(<span class="type">Amount</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.amount = <span class="type">Amount</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getCreateTime</span></span>: <span class="type">Long</span> = createTime</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setCreateTime</span></span>(<span class="type">CreateTime</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.createTime = <span class="type">CreateTime</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getBizType</span></span>: <span class="type">Long</span> = bizType</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setBizType</span></span>(<span class="type">BizType</span>: <span class="type">Long</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.bizType = <span class="type">BizType</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getModifyTime</span></span>: <span class="type">String</span> = modifyTime</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setModifyTime</span></span>(<span class="type">ModifyTime</span>: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">this</span>.modifyTime = <span class="type">ModifyTime</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">addEquity</span></span>(id: <span class="type">Int</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    equities.append(id)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">equityString</span></span>(separator: <span class="type">String</span>): <span class="type">String</span> = &#123;</span><br><span class="line">    equities.mkString(separator)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="literal">true</span></span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setActive</span></span>(active: <span class="type">String</span>): <span class="type">Event</span> = &#123;</span><br><span class="line">    _active = <span class="string">&quot;1&quot;</span>.equals(active)</span><br><span class="line">    <span class="keyword">this</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">isActive</span></span>() = &#123;</span><br><span class="line">    _active</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">rights</span></span>(split: <span class="type">String</span>) = &#123;</span><br><span class="line">    <span class="type">RightEvent</span>(<span class="keyword">this</span>, equities.mkString(split))</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">getEquities</span> </span>= equities</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">setEquities</span></span>(equities: <span class="type">ListBuffer</span>[<span class="type">Int</span>]) = &#123;</span><br><span class="line">    <span class="keyword">this</span>.equities = equities</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>可以了</p>
-<p>初步估计，序列化除了问题</p>
+          <h1 id="Druid"><a href="#Druid" class="headerlink" title="Druid"></a>Druid</h1><h2 id="什么样的业务适合用-Druid"><a href="#什么样的业务适合用-Druid" class="headerlink" title="什么样的业务适合用 Druid?"></a>什么样的业务适合用 Druid?</h2><p>建议如下：</p>
+<p>时序化数据：Druid 可以理解为时序数据库，所有的数据必须有时间字段。<br>实时数据接入可容忍丢数据（tranquility）： tranquility 有丢数据的风险，所以建议实时和离线一起用，实时接当天数据，离线第二天把今天的数据全部覆盖，保证数据完备性。<br>OLAP 查询而不是 OLTP 查询：Druid 查询并发有限，不适合 OLTP 查询。<br>非精确的去重计算：目前 Druid 的去重都是非精确的。<br>无 Join 操作：Druid 适合处理星型模型的数据，不支持关联操作。<br>数据没有 update 更新操作，只对 segment 粒度进行覆盖：由于时序化数据的特点，Druid 不支持数据的更新</p>
+<h2 id="离线批量入库脚本"><a href="#离线批量入库脚本" class="headerlink" title="离线批量入库脚本"></a>离线批量入库脚本</h2><h3 id="druid-indexing-on-spark"><a href="#druid-indexing-on-spark" class="headerlink" title="druid indexing on spark"></a>druid indexing on spark</h3><p><a target="_blank" rel="noopener" href="https://github.com/Fokko/druid-indexing-on-spark.git">https://github.com/Fokko/druid-indexing-on-spark.git</a></p>
+<h3 id="pyspark"><a href="#pyspark" class="headerlink" title="pyspark"></a>pyspark</h3><p>Druid是一款高性能的列式存储时序数据库，其支持实时数据分析并在OLAP数据分析领域有其特有的优势。Druid除了支持实时摄入数据外也支持离线批量导入数据，主要通过离线MR任务去HDFS上拉取数据并做聚合roll up处理入库。<br>该脚本可作为通用的druid入库离线任务脚本，方便在配置离线任务流即数据写到HDFS后起对应的入库任务。该脚本可运行在tesla平台作为pyspark任务执行。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/env python</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> __future__ <span class="keyword">import</span> print_function</span><br><span class="line"><span class="keyword">from</span> pyspark <span class="keyword">import</span> SparkContext</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> urllib2</span><br><span class="line"><span class="keyword">import</span> urlparse</span><br><span class="line"><span class="keyword">import</span> datetime</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">read_task_file</span>(<span class="params">filename</span>):</span></span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(filename, <span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        contents = f.read()</span><br><span class="line">        <span class="comment"># We don&#x27;t use the parsed data, but we want to throw early if it&#x27;s invalid</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            json.loads(contents)</span><br><span class="line">        <span class="keyword">except</span> Exception, e:</span><br><span class="line">            print(<span class="string">&#x27;Invalid JSON in task file &quot;&#123;0&#125;&quot;: &#123;1&#125;\n&#x27;</span>.<span class="built_in">format</span>(filename, <span class="built_in">repr</span>(e)))</span><br><span class="line">            sys.exit(<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> contents</span><br><span class="line"></span><br><span class="line"><span class="comment"># Keep trying until timeout_at, maybe die then</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">post_task</span>(<span class="params">url, task_json, timeout_at</span>):</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        task_url = url.rstrip(<span class="string">&quot;/&quot;</span>) + <span class="string">&quot;/druid/indexer/v1/task&quot;</span></span><br><span class="line">        req = urllib2.Request(task_url, task_json, &#123;<span class="string">&#x27;Content-Type&#x27;</span> : <span class="string">&#x27;application/json&#x27;</span>&#125;)</span><br><span class="line">        timeleft = timeout_at - time.time()</span><br><span class="line">        response_timeout = <span class="built_in">min</span>(<span class="built_in">max</span>(timeleft, <span class="number">5</span>), <span class="number">10</span>)</span><br><span class="line">        response = urllib2.urlopen(req, <span class="literal">None</span>, response_timeout)</span><br><span class="line">        <span class="keyword">return</span> response.read().rstrip()</span><br><span class="line">    <span class="keyword">except</span> urllib2.URLError <span class="keyword">as</span> e:</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">isinstance</span>(e, urllib2.HTTPError) <span class="keyword">and</span> e.code &gt;= <span class="number">400</span> <span class="keyword">and</span> e.code &lt;= <span class="number">500</span>:</span><br><span class="line">            <span class="comment"># 4xx (problem with the request) or 500 (something wrong on the server)</span></span><br><span class="line">            raise_friendly_error(e)</span><br><span class="line">        <span class="keyword">elif</span> time.time() &gt;= timeout_at:</span><br><span class="line">            <span class="comment"># No futher retries</span></span><br><span class="line">            raise_friendly_error(e)</span><br><span class="line">        <span class="keyword">elif</span> <span class="built_in">isinstance</span>(e, urllib2.HTTPError) <span class="keyword">and</span> e.code <span class="keyword">in</span> [<span class="number">301</span>, <span class="number">302</span>, <span class="number">303</span>, <span class="number">305</span>, <span class="number">307</span>] <span class="keyword">and</span> \</span><br><span class="line">                        e.info().getheader(<span class="string">&quot;Location&quot;</span>) <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="comment"># Set the new location in args.url so it can be used by await_task_completion and re-issue the request</span></span><br><span class="line">            location = urlparse.urlparse(e.info().getheader(<span class="string">&quot;Location&quot;</span>))</span><br><span class="line">            url = <span class="string">&quot;&#123;0&#125;://&#123;1&#125;&quot;</span>.<span class="built_in">format</span>(location.scheme, location.netloc)</span><br><span class="line">            print(<span class="string">&quot;Redirect response received, setting url to [&#123;0&#125;]\n&quot;</span>.<span class="built_in">format</span>(url))</span><br><span class="line">            <span class="keyword">return</span> post_task(url, task_json, timeout_at)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="comment"># If at first you don&#x27;t succeed, try, try again!</span></span><br><span class="line">            sleep_time = <span class="number">30</span></span><br><span class="line">            extra = <span class="string">&#x27;&#x27;</span></span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">hasattr</span>(e, <span class="string">&#x27;read&#x27;</span>):</span><br><span class="line">                extra = e.read().rstrip()</span><br><span class="line">            print(<span class="string">&quot;Waiting up to &#123;0&#125;s for indexing service to become available. [Got: &#123;1&#125; &#123;2&#125;]&quot;</span>.<span class="built_in">format</span>(<span class="built_in">max</span>(sleep_time, <span class="built_in">int</span>(timeout_at - time.time())), <span class="built_in">str</span>(e), extra).rstrip())</span><br><span class="line">            print(<span class="string">&quot;\n&quot;</span>)</span><br><span class="line">            time.sleep(sleep_time)</span><br><span class="line">            <span class="keyword">return</span> post_task(url, task_json, timeout_at)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Keep trying until timeout_at, maybe die then</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">await_task_completion</span>(<span class="params">url, task_id, timeout_at</span>):</span></span><br><span class="line">    <span class="keyword">while</span> <span class="literal">True</span>:</span><br><span class="line">        task_url = url.rstrip(<span class="string">&quot;/&quot;</span>) + <span class="string">&quot;/druid/indexer/v1/task/&#123;0&#125;/status&quot;</span>.<span class="built_in">format</span>(task_id)</span><br><span class="line">        req = urllib2.Request(task_url)</span><br><span class="line">        timeleft = timeout_at - time.time()</span><br><span class="line">        response_timeout = <span class="built_in">min</span>(<span class="built_in">max</span>(timeleft, <span class="number">5</span>), <span class="number">30</span>)</span><br><span class="line">        response = urllib2.urlopen(req, <span class="literal">None</span>, response_timeout)</span><br><span class="line">        response_obj = json.loads(response.read())</span><br><span class="line">        response_status_code = response_obj[<span class="string">&quot;status&quot;</span>][<span class="string">&quot;status&quot;</span>]</span><br><span class="line">        <span class="keyword">if</span> response_status_code <span class="keyword">in</span> [<span class="string">&#x27;SUCCESS&#x27;</span>, <span class="string">&#x27;FAILED&#x27;</span>]:</span><br><span class="line">            <span class="keyword">return</span> response_status_code</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">if</span> time.time() &lt; timeout_at:</span><br><span class="line">                print(<span class="string">&quot;Task &#123;0&#125; still running...&quot;</span>.<span class="built_in">format</span>(task_id))</span><br><span class="line">                timeleft = timeout_at - time.time()</span><br><span class="line">                time.sleep(<span class="built_in">min</span>(<span class="number">30</span>, timeleft))</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">raise</span> Exception(<span class="string">&quot;Task &#123;0&#125; did not finish in time!&quot;</span>.<span class="built_in">format</span>(task_id))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">raise_friendly_error</span>(<span class="params">e</span>):</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">isinstance</span>(e, urllib2.HTTPError):</span><br><span class="line">        text = e.read().strip()</span><br><span class="line">        reresult = re.search(<span class="string">r&#x27;&lt;pre&gt;(.*?)&lt;/pre&gt;&#x27;</span>, text, re.DOTALL)</span><br><span class="line">        <span class="keyword">if</span> reresult:</span><br><span class="line">            text = reresult.group(<span class="number">1</span>).strip()</span><br><span class="line">        <span class="keyword">raise</span> Exception(<span class="string">&quot;HTTP Error &#123;0&#125;: &#123;1&#125;, check overlord log for more details.\n&#123;2&#125;&quot;</span>.<span class="built_in">format</span>(e.code, e.reason, text))</span><br><span class="line">    <span class="keyword">raise</span> e</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_task_json</span>(<span class="params">content, hdfspath, data_source, date, segment, query</span>):</span></span><br><span class="line">    input_json = json.loads(content)</span><br><span class="line">    input_json[<span class="string">&quot;spec&quot;</span>][<span class="string">&quot;ioConfig&quot;</span>][<span class="string">&quot;inputSpec&quot;</span>][<span class="string">&quot;paths&quot;</span>] = hdfspath + <span class="string">&quot;/&quot;</span> + date</span><br><span class="line">    input_json[<span class="string">&quot;spec&quot;</span>][<span class="string">&quot;dataSchema&quot;</span>][<span class="string">&quot;dataSource&quot;</span>] = data_source</span><br><span class="line"></span><br><span class="line">    date_array = []</span><br><span class="line">    date_time = datetime.datetime(<span class="built_in">int</span>(date[<span class="number">0</span>:<span class="number">4</span>]),<span class="built_in">int</span>(date[<span class="number">4</span>:<span class="number">6</span>]),<span class="built_in">int</span>(date[<span class="number">6</span>:<span class="number">8</span>]))</span><br><span class="line">    date_time_next = date_time + datetime.timedelta(days=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    date_array.append(date_time.strftime(<span class="string">&#x27;%Y-%m-%dT%H:%M:%S+08:00&#x27;</span>) + <span class="string">&quot;/&quot;</span> + date_time_next.strftime(<span class="string">&#x27;%Y-%m-%dT%H:%M:%S+08:00&#x27;</span>))</span><br><span class="line">    input_json[<span class="string">&quot;spec&quot;</span>][<span class="string">&quot;dataSchema&quot;</span>][<span class="string">&quot;granularitySpec&quot;</span>][<span class="string">&quot;segmentGranularity&quot;</span>] = segment</span><br><span class="line">    input_json[<span class="string">&quot;spec&quot;</span>][<span class="string">&quot;dataSchema&quot;</span>][<span class="string">&quot;granularitySpec&quot;</span>][<span class="string">&quot;queryGranularity&quot;</span>] = query</span><br><span class="line">    input_json[<span class="string">&quot;spec&quot;</span>][<span class="string">&quot;dataSchema&quot;</span>][<span class="string">&quot;granularitySpec&quot;</span>][<span class="string">&quot;intervals&quot;</span>] = date_array</span><br><span class="line">    <span class="keyword">return</span> json.dumps(input_json, indent=<span class="number">2</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span>():</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Usage: druid_task.py &lt;url&gt; &lt;task_file&gt; &lt;date&gt; &lt;submit_timeout&gt; &lt;complete_timeout&gt; &lt;hdfs_path&gt; &lt;data_source&gt;</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &lt; <span class="number">10</span>:</span><br><span class="line">        print(<span class="string">&quot;Usage: druid_task.py &lt;url&gt; &lt;task_file&gt; &lt;date&gt; &lt;submit_timeout&gt; &lt;complete_timeout&gt; &lt;hdfs_path&gt; &lt;data_source&gt; &lt;segment&gt; &lt;query&gt;&quot;</span>)</span><br><span class="line">        exit(<span class="number">1</span>)</span><br><span class="line">    print(sys.argv)</span><br><span class="line"></span><br><span class="line">    url = sys.argv[<span class="number">1</span>].strip()</span><br><span class="line">    task_file = sys.argv[<span class="number">2</span>].strip()</span><br><span class="line">    date = sys.argv[<span class="number">3</span>].strip()</span><br><span class="line">    submit_timeout = sys.argv[<span class="number">4</span>].strip()</span><br><span class="line">    complete_timeout = sys.argv[<span class="number">5</span>].strip()</span><br><span class="line">    hdfspath = sys.argv[<span class="number">6</span>].strip()</span><br><span class="line">    data_source = sys.argv[<span class="number">7</span>].strip()</span><br><span class="line">    date_segment = sys.argv[<span class="number">8</span>].strip()</span><br><span class="line">    date_query = sys.argv[<span class="number">9</span>].strip()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># data path</span></span><br><span class="line">    datapath = hdfspath + <span class="string">&quot;/&quot;</span> + date</span><br><span class="line"></span><br><span class="line">    <span class="comment"># init spark context</span></span><br><span class="line">    sc = SparkContext(appName=<span class="string">&quot;druid_index_task_day&quot;</span>)</span><br><span class="line"></span><br><span class="line">    datafiles_rdd = sc.wholeTextFiles(datapath)</span><br><span class="line">    is_empty = datafiles_rdd.isEmpty()</span><br><span class="line">    print(is_empty)</span><br><span class="line">    print(<span class="string">&quot;datapath:&quot;</span> + datapath)</span><br><span class="line">    <span class="keyword">if</span> is_empty == <span class="literal">False</span>:</span><br><span class="line">        submit_timeout_at = time.time() + <span class="built_in">float</span>(submit_timeout)</span><br><span class="line">        complete_timeout_at = time.time() + <span class="built_in">float</span>(complete_timeout)</span><br><span class="line">        task_json = get_task_json(read_task_file(task_file), hdfspath, data_source, date, date_segment, date_query)</span><br><span class="line">        print(task_json)</span><br><span class="line"></span><br><span class="line">        task_id = json.loads(post_task(url, task_json, submit_timeout_at))[<span class="string">&quot;task&quot;</span>]</span><br><span class="line">        sys.stderr.write(<span class="string">&#x27;\033[1m&#x27;</span> + <span class="string">&quot;Task started: &quot;</span> + <span class="string">&#x27;\033[0m&#x27;</span> + <span class="string">&quot;&#123;0&#125;\n&quot;</span>.<span class="built_in">format</span>(task_id))</span><br><span class="line">        sys.stderr.write(<span class="string">&#x27;\033[1m&#x27;</span> + <span class="string">&quot;Task log:     &quot;</span> + <span class="string">&#x27;\033[0m&#x27;</span> + <span class="string">&quot;&#123;0&#125;/druid/indexer/v1/task/&#123;1&#125;/log\n&quot;</span>.<span class="built_in">format</span>(url.rstrip(<span class="string">&quot;/&quot;</span>),task_id))</span><br><span class="line">        sys.stderr.write(<span class="string">&#x27;\033[1m&#x27;</span> + <span class="string">&quot;Task status:  &quot;</span> + <span class="string">&#x27;\033[0m&#x27;</span> + <span class="string">&quot;&#123;0&#125;/druid/indexer/v1/task/&#123;1&#125;/status\n&quot;</span>.<span class="built_in">format</span>(url.rstrip(<span class="string">&quot;/&quot;</span>),task_id))</span><br><span class="line"></span><br><span class="line">        task_status = await_task_completion(url, task_id, complete_timeout_at)</span><br><span class="line">        print(<span class="string">&quot;Task finished with status: &#123;0&#125;\n&quot;</span>.<span class="built_in">format</span>(task_status))</span><br><span class="line">        <span class="keyword">if</span> task_status != <span class="string">&#x27;SUCCESS&#x27;</span>:</span><br><span class="line">            sys.exit(<span class="number">1</span>)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        print(<span class="string">&quot;Task finished with no data.&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&quot;__main__&quot;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure>
+<p>下钻和聚合</p>
 
       
     </div>
@@ -297,7 +293,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -349,7 +345,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/kudu/kudu/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/03.%E5%A4%A7%E5%A0%86%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -363,7 +359,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/kudu/kudu/" class="post-title-link" itemprop="url">kudu</a>
+            <a href="/Java/metric/03.%E5%A4%A7%E5%A0%86%E9%97%AE%E9%A2%98%E5%AE%9A%E4%BD%8D/" class="post-title-link" itemprop="url">大堆问题定位</a>
         </h2>
 
         <div class="post-meta">
@@ -380,7 +376,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -388,7 +384,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                  <a href="/categories/java/" itemprop="url" rel="index"><span itemprop="name">java</span></a>
                 </span>
             </span>
 
@@ -403,249 +399,33 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="kudu"><a href="#kudu" class="headerlink" title="kudu"></a>kudu</h1><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">ALTER</span> <span class="keyword">TABLE</span> `db_name`.`table_name`</span><br><span class="line">        ADD RANGE PARTITION VALUE = $&#123;partition&#125;</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/08.Thread-Native/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/multithread/08.Thread-Native/" class="post-title-link" itemprop="url">Java Thread与系统线程对应关系</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-07-03 00:00:00" itemprop="dateCreated datePublished" datetime="2019-07-03T00:00:00+08:00">2019-07-03</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SecurityManager securityManager = <span class="keyword">new</span> SecurityManager();</span><br><span class="line">ThreadInfo[] infos = ManagementFactory.getThreadMXBean().dumpAllThreads(<span class="keyword">true</span>,<span class="keyword">true</span>);</span><br><span class="line">Stream.of(infos).forEach(info-&gt;&#123; System.out.println(info.getThreadName()+<span class="string">&quot;\t&quot;</span>+info.getThreadId()+<span class="string">&quot;\t&quot;</span>+info.getThreadState());</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-
-
-<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="[参考文献]"></a>[参考文献]</h2><ol>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_27035123/article/details/77651534">Java线程与内核线程</a></li>
+          <h1 id="03-大堆问题定位"><a href="#03-大堆问题定位" class="headerlink" title="03.大堆问题定位"></a>03.大堆问题定位</h1><ol>
+<li>首先确定是内存问题，还是内存泄露。如果是内存问题，则可以通过JVM监控等手段，判断内存持续增长的区域；假设确定了是内存泄露，也可能是堆内或者堆外</li>
+<li>堆内内存泄露的情况，最有效的手段莫过于Heap Dump，使用<code>jmap -heap $PID</code>、<code>jcmd</code>或者<code>HeapDumpOnOutOfMemoryError</code>等等手段都可以获取，使用MAT找超级powerful的机器分析；MAT 其实提供了分析脚本可以在不用 IDE 加载整个 HEAP 获取到需要的信息, 也就是通过脚本解析 HEAP 逐步分析, 具体可参考 <a target="_blank" rel="noopener" href="https://www.techpaste.com/2015/07/how-to-analyse-large-heap-dumps">How to Analyse Large Heap Dumps</a>. PS: 曾经分析过 108G 的堆</li>
+<li>实际生产中，这么大的堆，不管是dump对生产系统的影响，还是dump本身的难度，都往往不切实际，相对低成本的手段：</li>
+<li><code>jmap -histo $PID</code>或<code>jmap -histo:live $PID</code>获得当前堆内对象的个数统计，并采样多次，查看一下里面object的分布，看哪类对象比较多，一般来说200G的堆，做一次<code>jmap -histo</code>可能要几十秒到一分钟，可能会触发full gc，如果使用 <code>CMS</code> 或 <code>G1</code> 的话, 可加入 <code>-XX:+ExplicitGCInvokesConcurrent</code> 使用并发收集器显式；如果不能探明的话, 只能使用 jmap 将整个堆 dump 下来。<br>所以如果有类似timeout killer的守护线程，要注意不要让它把进程kill掉</li>
+<li>详细的GC日志等，比如判断引用堆积情况等，看看没有没什么异常， 比如有没有因为metaspace 满了而导致的GC。这种情况，可以看看是不是打开XX:+TraceClassLoading -XX:+TraceClassUnloading 分析下类加载情况。</li>
+<li>使用Tencent JDK，可以利用old object sampling技术，不做Heap dump定位相当一部分memory leak</li>
+<li>堆外内存： 确认下是否是 Java 的 direct bytebuffer 泄露, 由于采用 reference 机制回收, 如果一直没有触发 JVM GC 或回收线程偏少也会导致堆外内存回收缓慢导致泄露<br>如果是 Native 或者使用 Unsafe 方式直接向 OS 申请内存, 可通过 NMT以及 pmap 等查看, JDK 团队分享的 <a target="_blank" rel="noopener" href="http://km.oa.com/group/42239/articles/show/404478?ts=1574932416">http://km.oa.com/group/42239/articles/show/404478?ts=1574932416</a> 可谓是面面俱到.</li>
+</ol>
+<h2 id="使用MAT命令行分析"><a href="#使用MAT命令行分析" class="headerlink" title="使用MAT命令行分析"></a>使用MAT命令行分析</h2><p><a target="_blank" rel="noopener" href="https://www.techpaste.com/2015/07/how-to-analyse-large-heap-dumps">How to Analyse Large Heap Dumps</a></p>
+<ol>
+<li><p>下载MAT</p>
+</li>
+<li><p>到MAT的安装目录下，打开<code>MemoryAnalyzer.ini</code>，调整MAT的启动jvm参数</p>
+ <figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">-Xms6144m</span></span><br><span class="line"><span class="attr">-Xmx8192m</span></span><br><span class="line"><span class="meta">-XX</span>:<span class="string">+UseConcMarkSweepGC</span></span><br><span class="line"><span class="meta">-XX</span>:<span class="string">+UseParNewGC</span></span><br><span class="line"><span class="meta">-XX</span>:<span class="string">+CMSParallelRemarkEnabled</span></span><br><span class="line"><span class="meta">-XX</span>:<span class="string">+CMSClassUnloadingEnabled</span></span><br><span class="line"><span class="meta">-XX</span>:<span class="string">+UseCMSInitiatingOccupancyOnly</span></span><br></pre></td></tr></table></figure>
+<p> 堆最大大小调整为机器内存大小</p>
+</li>
+<li><p>dump文件所在文件夹，确保有dump文件两倍的空间</p>
+</li>
+<li><p>到MAT的安装目录下，使用root账户运行命令<br> For UNIX:</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">./ParseHeapDump.sh /opt/heap_dump/jvm.hprof org.eclipse.mat.api:suspects</span><br><span class="line">./ParseHeapDump.sh /opt/heap_dump/jvm.hprof org.eclipse.mat.api:overview</span><br><span class="line">./ParseHeapDump.sh /opt/heap_dump/jvm.hprof org.eclipse.mat.api:top_components</span><br></pre></td></tr></table></figure>
+<p> For Windows:</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ParseHeapDump.bat D:\heap_dump\jvm.hprof org.eclipse.mat.api:suspects</span><br><span class="line">ParseHeapDump.bat D:\heap_dump\jvm.hprof org.eclipse.mat.api:overview</span><br><span class="line">ParseHeapDump.bat D:\heap_dump\jvm.hprof org.eclipse.mat.api:top_components</span><br></pre></td></tr></table></figure></li>
+<li><p>使用MAT打开生成的分析结果文件</p>
+</li>
 </ol>
 
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/11.async-wait-with-cycleBarrier/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/multithread/11.async-wait-with-cycleBarrier/" class="post-title-link" itemprop="url">使用CycleBarrier实现异步等待</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-07-03 00:00:00" itemprop="dateCreated datePublished" datetime="2019-07-03T00:00:00+08:00">2019-07-03</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <ul>
-<li>可循环利用的屏障  </li>
-<li>每个线程执行时，都会碰到一个屏障，直到所有线程执行结束，然后屏障便会打开，使所有线程继续往下执行</li>
-</ul>
-<p><code>CyclicBarrier(int parties)</code>和<code>CyclicBarrier(int parties, Runnable barrierAction)</code></p>
-<ul>
-<li>前者只需要声明需要拦截的线程数即可</li>
-<li>后者还需要定义一个等待所有线程到达屏障优先执行的Runnable对象</li>
-</ul>
-<p>实现原理：</p>
-<p>在CyclicBarrier的内部定义了一个Lock对象，每当一个线程调用await方法时，将拦截的线程数减1，然后判断剩余拦截数是否为初始值parties，如果不是，进入Lock对象的条件队列等待。如果是，执行barrierAction对象的Runnable方法，然后将锁的条件队列中的所有线程放入锁等待队列中，这些线程会依次的获取锁、释放锁。</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/10.async-wait-with-latch/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/multithread/10.async-wait-with-latch/" class="post-title-link" itemprop="url">使用CountLatch实现异步等待</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2019-07-03 00:00:00" itemprop="dateCreated datePublished" datetime="2019-07-03T00:00:00+08:00">2019-07-03</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="10-async-wait-with-latch"><a href="#10-async-wait-with-latch" class="headerlink" title="10.async-wait-with-latch"></a>10.async-wait-with-latch</h1><p>利用CountLatch异步等待</p>
-<blockquote>
-<p>摘自JavaFx源码</p>
-<p>com.sun.javafx.application.LauncherImpl#launchApplication(java.lang.Class&lt;? extends javafx.application.Application&gt;, java.lang.Class&lt;? extends javafx.application.Preloader&gt;, java.lang.String[])</p>
-</blockquote>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 接收异常</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">volatile</span> RuntimeException launchException = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">final</span> CountDownLatch launchLatch = <span class="keyword">new</span> CountDownLatch(<span class="number">1</span>);</span><br><span class="line">Thread launcherThread = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        launchApplication1(appClass, preloaderClass, args);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RuntimeException rte) &#123;</span><br><span class="line">        launchException = rte;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">        launchException =</span><br><span class="line">            <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Application launch exception&quot;</span>, ex);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Error err) &#123;</span><br><span class="line">        launchException =</span><br><span class="line">            <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Application launch error&quot;</span>, err);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="comment">// countDown</span></span><br><span class="line">        launchLatch.countDown();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line">launcherThread.setName(<span class="string">&quot;JavaFX-Launcher&quot;</span>);</span><br><span class="line">launcherThread.start();</span><br><span class="line"><span class="comment">// 异步线程启动</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Wait for FX launcher thread to finish before returning to user</span></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    launchLatch.await();</span><br><span class="line">&#125; <span class="keyword">catch</span> (InterruptedException ex) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Unexpected exception: &quot;</span>, ex);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (launchException != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> launchException;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
       
     </div>
 
@@ -695,7 +475,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -884,6 +664,248 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/08.Thread-Native/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/multithread/08.Thread-Native/" class="post-title-link" itemprop="url">Java Thread与系统线程对应关系</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-07-03 00:00:00" itemprop="dateCreated datePublished" datetime="2019-07-03T00:00:00+08:00">2019-07-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SecurityManager securityManager = <span class="keyword">new</span> SecurityManager();</span><br><span class="line">ThreadInfo[] infos = ManagementFactory.getThreadMXBean().dumpAllThreads(<span class="keyword">true</span>,<span class="keyword">true</span>);</span><br><span class="line">Stream.of(infos).forEach(info-&gt;&#123; System.out.println(info.getThreadName()+<span class="string">&quot;\t&quot;</span>+info.getThreadId()+<span class="string">&quot;\t&quot;</span>+info.getThreadState());</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="[参考文献]"></a>[参考文献]</h2><ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_27035123/article/details/77651534">Java线程与内核线程</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/10.async-wait-with-latch/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/multithread/10.async-wait-with-latch/" class="post-title-link" itemprop="url">使用CountLatch实现异步等待</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-07-03 00:00:00" itemprop="dateCreated datePublished" datetime="2019-07-03T00:00:00+08:00">2019-07-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="10-async-wait-with-latch"><a href="#10-async-wait-with-latch" class="headerlink" title="10.async-wait-with-latch"></a>10.async-wait-with-latch</h1><p>利用CountLatch异步等待</p>
+<blockquote>
+<p>摘自JavaFx源码</p>
+<p>com.sun.javafx.application.LauncherImpl#launchApplication(java.lang.Class&lt;? extends javafx.application.Application&gt;, java.lang.Class&lt;? extends javafx.application.Preloader&gt;, java.lang.String[])</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 接收异常</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">volatile</span> RuntimeException launchException = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">final</span> CountDownLatch launchLatch = <span class="keyword">new</span> CountDownLatch(<span class="number">1</span>);</span><br><span class="line">Thread launcherThread = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        launchApplication1(appClass, preloaderClass, args);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RuntimeException rte) &#123;</span><br><span class="line">        launchException = rte;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception ex) &#123;</span><br><span class="line">        launchException =</span><br><span class="line">            <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Application launch exception&quot;</span>, ex);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Error err) &#123;</span><br><span class="line">        launchException =</span><br><span class="line">            <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Application launch error&quot;</span>, err);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    <span class="comment">// countDown</span></span><br><span class="line">        launchLatch.countDown();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line">launcherThread.setName(<span class="string">&quot;JavaFX-Launcher&quot;</span>);</span><br><span class="line">launcherThread.start();</span><br><span class="line"><span class="comment">// 异步线程启动</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Wait for FX launcher thread to finish before returning to user</span></span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    launchLatch.await();</span><br><span class="line">&#125; <span class="keyword">catch</span> (InterruptedException ex) &#123;</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> RuntimeException(<span class="string">&quot;Unexpected exception: &quot;</span>, ex);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> (launchException != <span class="keyword">null</span>) &#123;</span><br><span class="line">    <span class="keyword">throw</span> launchException;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/11.async-wait-with-cycleBarrier/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/multithread/11.async-wait-with-cycleBarrier/" class="post-title-link" itemprop="url">使用CycleBarrier实现异步等待</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2019-07-03 00:00:00" itemprop="dateCreated datePublished" datetime="2019-07-03T00:00:00+08:00">2019-07-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ul>
+<li>可循环利用的屏障  </li>
+<li>每个线程执行时，都会碰到一个屏障，直到所有线程执行结束，然后屏障便会打开，使所有线程继续往下执行</li>
+</ul>
+<p><code>CyclicBarrier(int parties)</code>和<code>CyclicBarrier(int parties, Runnable barrierAction)</code></p>
+<ul>
+<li>前者只需要声明需要拦截的线程数即可</li>
+<li>后者还需要定义一个等待所有线程到达屏障优先执行的Runnable对象</li>
+</ul>
+<p>实现原理：</p>
+<p>在CyclicBarrier的内部定义了一个Lock对象，每当一个线程调用await方法时，将拦截的线程数减1，然后判断剩余拦截数是否为初始值parties，如果不是，进入Lock对象的条件队列等待。如果是，执行barrierAction对象的Runnable方法，然后将锁的条件队列中的所有线程放入锁等待队列中，这些线程会依次的获取锁、释放锁。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/flink-cep-office/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -915,7 +937,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1216,7 +1238,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1292,7 +1314,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">

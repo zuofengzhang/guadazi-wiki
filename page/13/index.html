@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -257,7 +257,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-timer/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/metric/03_G1_GC/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -271,7 +271,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-timer/" class="post-title-link" itemprop="url">Flink Timer</a>
+            <a href="/Java/metric/03_G1_GC/" class="post-title-link" itemprop="url">Java G1 GC</a>
         </h2>
 
         <div class="post-meta">
@@ -288,7 +288,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -311,8 +311,195 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Timer"><a href="#Timer" class="headerlink" title="Timer"></a>Timer</h1><p>TimerService</p>
-<h2 id="SystemProcessingTimeService"><a href="#SystemProcessingTimeService" class="headerlink" title="SystemProcessingTimeService"></a>SystemProcessingTimeService</h2><p>org.apache.flink.streaming.runtime.tasks.SystemProcessingTimeService</p>
+          <h1 id="1-03-G1-GC"><a href="#1-03-G1-GC" class="headerlink" title="1. 03_G1_GC"></a>1. 03_G1_GC</h1><h2 id="1-1-堆内存分配"><a href="#1-1-堆内存分配" class="headerlink" title="1.1. 堆内存分配"></a>1.1. 堆内存分配</h2><p>整个堆分为若干的region，region的大小可以通过参数设置；</p>
+<p>Region可以分为Eden、Survivor、Old、Humongous(专门存储大对象的Region：单个对象超过Region大小的50%，就是大对象；</p>
+<p>如果大对象超过一个Region，则会继续申请连续的空间，作为Humongous区)和Free(空闲Region: Region的内存被释放后的分区)；Free Region后续可以作为Eden、Survivor、Old或Humongous分区；</p>
+<p>堆分为新生代+老年代；</p>
+<h2 id="1-2-两个Set"><a href="#1-2-两个Set" class="headerlink" title="1.2. 两个Set"></a>1.2. 两个Set</h2><ol>
+<li><p>CSet: collection set, 待回收的Region集合</p>
+</li>
+<li><p>RSet: remembered set,引用当前Region集合的其他集合</p>
+<p>引用当前Region的其他Region集合，是points-in的，每个 Region 都有一个 RSet；在 <code>JDK10</code> 中，只有部分 Region 才存在 RSet。</p>
+<ul>
+<li><strong>young gc</strong>：指向「Eden」和「Survivor」Region 的 「Old」和「Humongous」Region 集合，避免全堆扫描</li>
+<li><strong>mixed gc</strong>：确定「Old」Region 之间的相关引用，确定 Region 的回收价值</li>
+</ul>
+</li>
+</ol>
+<h2 id="1-3-垃圾回收过程"><a href="#1-3-垃圾回收过程" class="headerlink" title="1.3. 垃圾回收过程"></a>1.3. 垃圾回收过程</h2><ol>
+<li>young gc：标记-复制<ol>
+<li>「新生代」的垃圾回收</li>
+<li>CSet 中，只包含 Eden、Survivor</li>
+</ol>
+</li>
+<li>mixed gc：标记-复制<ol>
+<li>「新生代」和「部分老年代」的垃圾回收</li>
+<li>CSet 中，包含 Eden、Survivor、部分 Old、Humongous</li>
+</ol>
+</li>
+<li>full gc：<ol>
+<li>G1 gc 失败，退化为 Serial 方式</li>
+<li>单线程全堆扫描，对整个 Heap 进行垃圾回收，涵盖所有的「新生代」和「老年代」</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>G1 垃圾收集器，GC 都是针对 CSet 进行的</p>
+</blockquote>
+<h3 id="1-3-1-Young-GC"><a href="#1-3-1-Young-GC" class="headerlink" title="1.3.1. Young GC"></a>1.3.1. Young GC</h3><p>Young GC，关键细节：</p>
+<ul>
+<li>针对「<strong>年轻代</strong>」的 Eden、Survivor 分区，进行 GC</li>
+<li><strong>存活的对象</strong>，放置在 「新的 Survivor 分区」或「Old 分区」</li>
+<li><strong>触发的时机</strong>：Eden 分区空间不足，无法为普通对象分配存储空间（非大对象）</li>
+</ul>
+<p><strong>Young GC 的执行过程</strong>：就是「标记-复制」算法</p>
+<ol>
+<li><strong>根扫描</strong></li>
+<li><strong>确定</strong>「老年代」对「新生代」的<strong>引用</strong>，避免全堆扫描：<ol>
+<li>根据 card table，扫描 dirty 部分，更新 RSet</li>
+<li>新生代中，根据 RSet，确定 Old 对 Eden 和 Survivor 对象的引用</li>
+</ol>
+</li>
+<li><strong>标记复制</strong>：将存活对象，放入到 Survivor 区 或者 Old 区<ol>
+<li>新的 Survivor 区：是 Free Region 升级来的</li>
+<li>被释放的 Eden 和 Survivor 区：会标记为 Free Region 空白的可用分区</li>
+</ol>
+</li>
+</ol>
+<p>Tips：</p>
+<ul>
+<li>G1 在 Young GC 过程中，是串行？并行？并发？是否会暂停工作线程？<ul>
+<li>Re：可以多线程，就看怎么设置了，会暂停工作线程，不是并发的。</li>
+</ul>
+</li>
+</ul>
+<h3 id="1-3-2-Mixed-GC"><a href="#1-3-2-Mixed-GC" class="headerlink" title="1.3.2. Mixed GC"></a>1.3.2. Mixed GC</h3><p>Mixed GC，关键细节：</p>
+<ul>
+<li>针对「<strong>年轻代</strong>」和「<strong>部分老年代</strong>」的 GC，具体 Eden、Survivor、Old、Humongous Region</li>
+<li><strong>存活的对象</strong>，放置在「新的 Survivor 分区」或「Old 分区」</li>
+<li><strong>触发的时机</strong>：「并发标记周期」中，完成了最后的「<strong>筛选回收</strong>」阶段后，标记出了 X 的 Old Region 分区</li>
+</ul>
+<p>Mixed GC 的执行过程：就是「标记-复制」算法</p>
+<ol>
+<li><strong>并发标记周期</strong>：针对 <code>Old 分区</code>，进行标记<ol>
+<li><strong>初始标记</strong>：依赖 Young GC</li>
+<li><strong>扫描根分区</strong>：如果有 Young GC，则，Young GC block 阻塞等待</li>
+<li><strong>并发标记</strong>：<ol>
+<li>可以并发进行 Young GC</li>
+<li>结束后，并不会进入 Young GC 阶段</li>
+</ol>
+</li>
+<li><strong>重新标记</strong>：不能进行 Young GC</li>
+<li><strong>筛选回收</strong>：结束后，进入 mixed 阶段</li>
+</ol>
+</li>
+<li><strong>Mixed GC</strong>，<strong>本质</strong>就是对 <strong>CSet</strong> 中 Region 的回收<ol>
+<li><strong>CSet</strong>：在 mixed 模式下，其中涵盖了 Eden、Survivor、Old、Humongous Region</li>
+<li><strong>筛选回收阶段</strong>：针对 Old 分区<ol>
+<li><strong>完全可回收的 Region</strong>：不存在存活的对象，直接回收 Region，标记为 Free Region 可用分区</li>
+<li>存在<strong>部分存活的对象的 Region</strong>：标记分数后，追加在 C-Set 中</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p>实际上，可以认为是 2 条线：</p>
+<ul>
+<li><strong>Young GC</strong>：<ul>
+<li>基于 C-Set，进行 Region 回收，本质上，只针对「年轻代」进行回收；</li>
+<li>如果 C-Set 中，涵盖了标记为 X 的 Old Region，则，称为 Mixed GC，此时，既针对「年轻代」，也针对「部分老年代」Region 进行回收</li>
+</ul>
+</li>
+<li><strong>并发标记周期</strong>：标记出 Old Region，哪些需要回收，标记为 X<ul>
+<li>完成「并发标记阶段」后，Young GC，自动升级为 mixed 模式，即，Mixed GC</li>
+<li>Mixed GC：基于 C-Set，进行 Region 回收，只不过，此时，C-Set 中，涵盖了一部分 Old Region</li>
+</ul>
+</li>
+</ul>
+<p><img src="_v_images/20200716205954650_1089567156.png"></p>
+<p>1 个插图：并发标记周期的说明</p>
+<ul>
+<li><strong>并发标记周期</strong>：<ul>
+<li>触发时机：「老年代」分区的占比，达到阈值</li>
+<li>整个周期说明</li>
+</ul>
+</li>
+<li><strong>Mixed GC</strong>：模式生效点、失效点<ul>
+<li><strong>生效点</strong>：存在 X 状态的 Old Region，即，标记并发周期的「筛选回收」阶段结束后，再次触发的 GC，就是 Mixed GC</li>
+<li><strong>失效点</strong>：完成所有的 X 状态 Old Region 的清理后，会进入 Young GC 状态</li>
+</ul>
+</li>
+<li><strong>补充说明</strong>：<ul>
+<li>部分 X 状态的 Old Region：每次 Mixed GC，只有部分 X 状态的 Old Region 会被放入 C-Set</li>
+<li>完整 C-Set 都被回收：C-Set 中所有 Region，每次 GC 都会被回收</li>
+</ul>
+</li>
+</ul>
+<p><strong>特别说明</strong>：</p>
+<blockquote>
+<p>G1的收集都是STW的；</p>
+<p>但「年轻代」和「老年代」的 GC <strong>界限模糊</strong>，采用了混合(<code>mixed</code>)收集的方式。</p>
+<p><strong>Young GC</strong>，可能快速切换为 Mixed GC，只要 X 标记的 Old Region 存在和消失，就会自动升级 or 降级；</p>
+<p>这样，即使堆内存很大时，也可以限制<strong>收集 Region 的范围</strong>，从而<strong>降低停顿</strong>，达到设置的「暂停时间的目标」。</p>
+</blockquote>
+<h3 id="1-3-3-其他"><a href="#1-3-3-其他" class="headerlink" title="1.3.3. 其他"></a>1.3.3. 其他</h3><h4 id="1-3-3-1-启发式算法"><a href="#1-3-3-1-启发式算法" class="headerlink" title="1.3.3.1. 启发式算法"></a>1.3.3.1. 启发式算法</h4><p><strong>启发式算法</strong>：根据执行状态，动态调整</p>
+<ol>
+<li>设置了「暂停时间的目标」（默认 200ms），G1 会自动调整「年轻代」的空间大小</li>
+<li>如果显式设置「年轻代」的大小，则，用户设置的「暂停时间的目标」会自动失效</li>
+</ol>
+<h4 id="1-3-3-2-SATB，增量式的标记算法"><a href="#1-3-3-2-SATB，增量式的标记算法" class="headerlink" title="1.3.3.2. SATB，增量式的标记算法"></a>1.3.3.2. SATB，增量式的标记算法</h4><p>G1 垃圾收集器，采用了 <strong>SATB</strong>（Snapshot At The Beginning），初始快照，增量式的标记算法，具体：</p>
+<ol>
+<li><strong>标记开始时</strong>：Region 创建一个 Snapshot</li>
+<li><strong>存量标记</strong>：只针对 Snapshot 中存活的对象，进行标记</li>
+<li><strong>增量标记</strong>：Snapshot 之后，新生成的对象，都被标记为「存活对象」，此次不回收，下次标记再说</li>
+</ol>
+<h4 id="1-3-3-3-G1：适用场景"><a href="#1-3-3-3-G1：适用场景" class="headerlink" title="1.3.3.3. G1：适用场景"></a>1.3.3.3. G1：适用场景</h4><p>就目前而言、CMS还是默认首选的GC策略、可能在以下场景下G1更适合：</p>
+<ol>
+<li><strong>多核+大内存</strong>：服务端多核CPU、JVM内存占用较大的应用（至少大于4G）</li>
+<li><strong>业务多碎片</strong>：应用在运行过程中会产生大量内存碎片、需要经常压缩空间</li>
+<li><strong>防止高并发雪崩</strong>：想要更可控、可预期的GC停顿周期；防止高并发下应用雪崩现象</li>
+</ol>
+<h3 id="1-3-4-小结"><a href="#1-3-4-小结" class="headerlink" title="1.3.4. 小结"></a>1.3.4. 小结</h3><p>G1 垃圾收集器，围绕其 Young GC 和 Mixed GC，从整体宏观的角度上，跟之前所有的「串行」「并行」「并发」的垃圾收集器，存在本质的差异：</p>
+<ol>
+<li>之前的垃圾收集器，要实现 <strong>2 个基本步骤</strong>：<ol>
+<li><strong>步骤1</strong>：找到需要回收的对象</li>
+<li><strong>步骤2</strong>：回收</li>
+<li><strong>Note</strong>：上面两个步骤「步骤2」依赖「步骤1」，并且串行进行</li>
+</ol>
+</li>
+<li>G1 垃圾收集器，在「<strong>老年代</strong>」，把 2 个步骤「同时进行」：<ol>
+<li><strong>找到需要回收的对象</strong>：<ol>
+<li>在找到需要回收的 Old Region 过程中，仍然可以同时「回收对象」，即 GC</li>
+<li>找到需要回收的 Old Region 过程，称为「<strong>并发标记周期</strong>」</li>
+</ol>
+</li>
+<li><strong>回收对象</strong>：<ol>
+<li>在「找需要回收的对象」<strong>过程中</strong>，可以持续并发的进行 GC，称为 <code>Young GC</code>，只会收「新生代」</li>
+<li>「找需要回收的对象」<strong>过程结束后</strong>，再进行的 GC，称为 <code>Mixed GC</code>，会同时回收「新生代」和「部分老年代」</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p>参考示意图：</p>
+<p><img src="_v_images/20200716205954411_225227554.png"></p>
+<p><img src="_v_images/20200716125557055_1896049925.png"></p>
+<p>G1 回收过程如下。</p>
+<ol>
+<li>G1 的年轻代回收，采用复制算法，并行进行收集，收集过程会 STW。</li>
+<li>G1 的老年代回收时也同时会对年轻代进行回收。主要分为四个阶段：<ol>
+<li>依然是初始标记阶段完成对根对象的标记，这个过程是STW的；</li>
+<li>并发标记阶段，这个阶段是和用户线程并行执行的；</li>
+<li>最终标记阶段，完成三色标记周期；</li>
+<li>复制/清除阶段，这个阶段会优先对可回收空间较大的 Region 进行回收，即 garbage first，这也是 G1 名称的由来。</li>
+</ol>
+</li>
+</ol>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/zy1994hyq/article/details/102495471">GC算法之G1算法</a></li>
+<li><a target="_blank" rel="noopener" href="https://ningg.top/jvm-series-jvm-practice-jvm-gc-g1/">JVM 实践：G1 垃圾收集器</a></li>
+</ol>
 
       
     </div>
@@ -363,7 +550,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -456,7 +643,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -535,7 +722,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -629,7 +816,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -845,7 +1032,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -896,86 +1083,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/lib/Jpa/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/lib/Jpa/" class="post-title-link" itemprop="url">Java JPA</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-12T00:00:00+08:00">2017-08-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Jpa"><a href="#Jpa" class="headerlink" title="Jpa"></a>Jpa</h1><h2 id="创建时间-更新时间"><a href="#创建时间-更新时间" class="headerlink" title="创建时间 更新时间"></a>创建时间 更新时间</h2><p>1.实体类加注解</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * 创建时间</span><br><span class="line"> *&#x2F;</span><br><span class="line">@CreatedDate</span><br><span class="line">@Column(name &#x3D; &quot;create_time&quot;)</span><br><span class="line">private Date createTime;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 修改时间</span><br><span class="line"> *&#x2F;</span><br><span class="line">@LastModifiedDate</span><br><span class="line">@Column(name &#x3D; &quot;modify_time&quot;)</span><br><span class="line">private Date modifyTime;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>2.实体类头加注解</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@EntityListeners(AuditingEntityListener.class)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>3.SpringBoot启动类加注解</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@EnableJpaAuditing</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>另外数据库添加相应控制也可以：<br>createTime ： CURRENT_TIMESTAMP<br>modifyTime ： CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/13.BlockingQueue/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1007,7 +1114,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1231,7 +1338,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-23 13:00:34" itemprop="dateModified" datetime="2021-04-23T13:00:34+08:00">2021-04-23</time>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1256,6 +1363,86 @@
       
           <p>Stalker</p>
 <p><a target="_blank" rel="noopener" href="http://openjdk.java.net/projects/code-tools/jmh/">JMH</a> 是 Java Microbenchmark Harness（微基准测试</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/lib/Jpa/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/lib/Jpa/" class="post-title-link" itemprop="url">Java JPA</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2017-08-12T00:00:00+08:00">2017-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-23 13:04:00" itemprop="dateModified" datetime="2021-04-23T13:04:00+08:00">2021-04-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Jpa"><a href="#Jpa" class="headerlink" title="Jpa"></a>Jpa</h1><h2 id="创建时间-更新时间"><a href="#创建时间-更新时间" class="headerlink" title="创建时间 更新时间"></a>创建时间 更新时间</h2><p>1.实体类加注解</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * 创建时间</span><br><span class="line"> *&#x2F;</span><br><span class="line">@CreatedDate</span><br><span class="line">@Column(name &#x3D; &quot;create_time&quot;)</span><br><span class="line">private Date createTime;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 修改时间</span><br><span class="line"> *&#x2F;</span><br><span class="line">@LastModifiedDate</span><br><span class="line">@Column(name &#x3D; &quot;modify_time&quot;)</span><br><span class="line">private Date modifyTime;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>2.实体类头加注解</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@EntityListeners(AuditingEntityListener.class)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>3.SpringBoot启动类加注解</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">@EnableJpaAuditing</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>另外数据库添加相应控制也可以：<br>createTime ： CURRENT_TIMESTAMP<br>modifyTime ： CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</p>
 
       
     </div>
