@@ -20,21 +20,26 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="Flink-runtime运行时概述其实这两个概念我们可以看作：资源共享链与资源共享组。当我们编写完一个Flink程序，从Client开始执行——&gt;JobManager——&gt;TaskManager——&gt;Slot启动并执行Task的过程中，会对我们提交的执行计划进行优化，其中有两个比较重要的优化过程是：任务链与处理槽共享组，前者是对执行效率的优化，后者是对内存资源的优化。 Grap">
+  <meta name="description" content="架构 当 Flink 集群启动后，首先会启动一个 JobManger 和一个或多个的 TaskManager。由 Client 提交任务给 JobManager，JobManager 再调度任务到各个 TaskManager 去执行，然后 TaskManager 将心跳和统计信息汇报给 JobManager。TaskManager 之间以流的形式进行数据的传输。上述三者均为独立的 JVM 进程。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Flink runtime">
 <meta property="og:url" content="http://example.com/bigdata/Flink/Flink-runtime/index.html">
 <meta property="og:site_name" content="Guadazi">
-<meta property="og:description" content="Flink-runtime运行时概述其实这两个概念我们可以看作：资源共享链与资源共享组。当我们编写完一个Flink程序，从Client开始执行——&gt;JobManager——&gt;TaskManager——&gt;Slot启动并执行Task的过程中，会对我们提交的执行计划进行优化，其中有两个比较重要的优化过程是：任务链与处理槽共享组，前者是对执行效率的优化，后者是对内存资源的优化。 Grap">
+<meta property="og:description" content="架构 当 Flink 集群启动后，首先会启动一个 JobManger 和一个或多个的 TaskManager。由 Client 提交任务给 JobManager，JobManager 再调度任务到各个 TaskManager 去执行，然后 TaskManager 将心跳和统计信息汇报给 JobManager。TaskManager 之间以流的形式进行数据的传输。上述三者均为独立的 JVM 进程。">
 <meta property="og:locale">
+<meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424153039.svg">
+<meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424153212.png">
+<meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424153246.png">
 <meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210423124550.png">
+<meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424152810.png">
 <meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210423124551.png">
+<meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424152912.png">
 <meta property="article:published_time" content="2021-01-15T11:47:00.000Z">
-<meta property="article:modified_time" content="2021-04-24T04:58:52.094Z">
+<meta property="article:modified_time" content="2021-06-01T11:57:43.648Z">
 <meta property="article:author" content="aaronzhang">
 <meta property="article:tag" content="Flink">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210423124550.png">
+<meta name="twitter:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424153039.svg">
 
 <link rel="canonical" href="http://example.com/bigdata/Flink/Flink-runtime/">
 
@@ -222,7 +227,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:52" itemprop="dateModified" datetime="2021-04-24T12:58:52+08:00">2021-04-24</time>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -245,16 +250,83 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="Flink-runtime运行时"><a href="#Flink-runtime运行时" class="headerlink" title="Flink-runtime运行时"></a>Flink-runtime运行时</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>其实这两个概念我们可以看作：资源共享链与资源共享组。当我们编写完一个Flink程序，从Client开始执行——&gt;JobManager——&gt;TaskManager——&gt;Slot启动并执行Task的过程中，会对我们提交的执行计划进行优化，其中有两个比较重要的优化过程是：任务链与处理槽共享组，前者是对执行效率的优化，后者是对内存资源的优化。</p>
-<h3 id="Graph优化"><a href="#Graph优化" class="headerlink" title="Graph优化"></a>Graph优化</h3><p>在<code>StreamGraph</code>转换为JobGraph过程中，关键在于将多个 <code>StreamNode</code> 优化为一个 <code>JobVertex</code>，对应的 StreamEdge 则转化为 <code>JobEdge</code>，并且 <code>JobVertex</code> 和 <code>JobEdge</code> 之间通过 <code>IntermediateDataSet</code> （中间数据集）形成一个生产者和消费者的连接关系。每个<code>JobVertex</code>就是<code>JobManger</code>的一个任务调度单位（任务Task）。为了避免在这个过程中将关联性很强的几个<code>StreamNode</code>（算子）放到不同<code>JobVertex</code>（<code>Task</code>）中，从而导致因为<code>Task</code>执行产生的效率问题（数据交换（网络传输）、线程上下文切换），Flink会在<code>StreamGraph</code>转换为<code>JobGraph</code>过程中将可以优化的算子合并为一个算子链（也就是形成一个Task）。这样就可以把这条链上的算子放到一个线程中去执行，这样就提高了任务执行效率。</p>
+        <h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424153039.svg" alt="The processes involved in executing a Flink dataflow"></p>
+<p>当 Flink 集群启动后，首先会启动一个 JobManger 和一个或多个的 TaskManager。由 Client 提交任务给 JobManager，JobManager 再调度任务到各个 TaskManager 去执行，然后 TaskManager 将心跳和统计信息汇报给 JobManager。TaskManager 之间以流的形式进行数据的传输。上述三者均为独立的 JVM 进程。</p>
+<ul>
+<li><strong>Client</strong> 为提交 Job 的客户端，可以是运行在任何机器上（与 JobManager 环境连通即可）。提交 Job 后，Client 可以结束进程（Streaming的任务），也可以不结束并等待结果返回。</li>
+<li><strong>JobManager</strong> 主要负责调度 Job 并协调 Task 做 checkpoint，职责上很像 Storm 的 Nimbus。从 Client 处接收到 Job 和 JAR 包等资源后，会生成优化后的执行计划，并以 Task 的单元调度到各个 TaskManager 去执行。</li>
+<li><strong>TaskManager</strong> 在启动的时候就设置好了槽位数（Slot），每个 slot 能启动一个 Task，Task 为线程。从 JobManager 处接收需要部署的 Task，部署启动后，与自己的上游建立 Netty 连接，接收数据并处理。</li>
+</ul>
+<p>可以看到 Flink 的任务调度是多线程模型，并且不同Job/Task混合在一个 TaskManager 进程中。虽然这种方式可以有效提高 CPU 利用率，但是个人不太喜欢这种设计，因为不仅缺乏资源隔离机制，同时也不方便调试。类似 Storm 的进程模型，一个JVM 中只跑该 Job 的 Tasks 实际应用中更为合理。</p>
+<h2 id="Graph转换"><a href="#Graph转换" class="headerlink" title="Graph转换"></a>Graph转换</h2><p>看起来有点乱，怎么有这么多不一样的图。实际上，还有更多的图。Flink 中的执行图可以分成四层：StreamGraph -&gt; JobGraph -&gt; ExecutionGraph -&gt; 物理执行图。</p>
+<ul>
+<li><strong>StreamGraph：</strong>是根据用户通过 Stream API 编写的代码生成的最初的图。用来表示程序的拓扑结构。</li>
+<li><strong>JobGraph：</strong>StreamGraph经过优化后生成了 JobGraph，提交给 JobManager 的数据结构。主要的优化为，将多个符合条件的节点 chain 在一起作为一个节点，这样可以减少数据在节点之间流动所需要的序列化/反序列化/传输消耗。</li>
+<li><strong>ExecutionGraph：</strong>JobManager 根据 JobGraph 生成ExecutionGraph。ExecutionGraph是JobGraph的并行化版本，是调度层最核心的数据结构。</li>
+<li><strong>物理执行图：</strong>JobManager 根据 ExecutionGraph 对 Job 进行调度后，在各个TaskManager 上部署 Task 后形成的“图”，并不是一个具体的数据结构。</li>
+</ul>
+<p>例如上文中的2个并发度（Source为1个并发度）的 <code>SocketTextStreamWordCount</code> 四层执行图的演变过程如下图所示（点击查看大图）：</p>
+<p><a target="_blank" rel="noopener" href="http://img3.tbcdn.cn/5476e8b07b923/TB1tA_GJFXXXXapXFXXXXXXXXXX"><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424153212.png" alt="img"></a></p>
+<p>这里对一些名词进行简单的解释。</p>
+<ul>
+<li><p>StreamGraph：</p>
+<p>根据用户通过 Stream API 编写的代码生成的最初的图。</p>
+<ul>
+<li>StreamNode：用来代表 operator 的类，并具有所有相关的属性，如并发度、入边和出边等。</li>
+<li>StreamEdge：表示连接两个StreamNode的边。</li>
+</ul>
+</li>
+<li><p>JobGraph：</p>
+<p>StreamGraph经过优化后生成了 JobGraph，提交给 JobManager 的数据结构。</p>
+<ul>
+<li>JobVertex：经过优化后符合条件的多个StreamNode可能会chain在一起生成一个JobVertex，即一个JobVertex包含一个或多个operator，JobVertex的输入是JobEdge，输出是IntermediateDataSet。</li>
+<li>IntermediateDataSet：表示JobVertex的输出，即经过operator处理产生的数据集。producer是JobVertex，consumer是JobEdge。</li>
+<li>JobEdge：代表了job graph中的一条数据传输通道。source 是 IntermediateDataSet，target 是 JobVertex。即数据通过JobEdge由IntermediateDataSet传递给目标JobVertex。</li>
+</ul>
+</li>
+<li><p>ExecutionGraph：</p>
+<p>JobManager 根据 JobGraph 生成ExecutionGraph。ExecutionGraph是JobGraph的并行化版本，是调度层最核心的数据结构。</p>
+<ul>
+<li>ExecutionJobVertex：和JobGraph中的JobVertex一一对应。每一个ExecutionJobVertex都有和并发度一样多的 ExecutionVertex。</li>
+<li>ExecutionVertex：表示ExecutionJobVertex的其中一个并发子任务，输入是ExecutionEdge，输出是IntermediateResultPartition。</li>
+<li>IntermediateResult：和JobGraph中的IntermediateDataSet一一对应。一个IntermediateResult包含多个IntermediateResultPartition，其个数等于该operator的并发度。</li>
+<li>IntermediateResultPartition：表示ExecutionVertex的一个输出分区，producer是ExecutionVertex，consumer是若干个ExecutionEdge。</li>
+<li>ExecutionEdge：表示ExecutionVertex的输入，source是IntermediateResultPartition，target是ExecutionVertex。source和target都只能是一个。</li>
+<li>Execution：是执行一个 ExecutionVertex 的一次尝试。当发生故障或者数据需要重算的情况下 ExecutionVertex 可能会有多个 ExecutionAttemptID。一个 Execution 通过 ExecutionAttemptID 来唯一标识。JM和TM之间关于 task 的部署和 task status 的更新都是通过 ExecutionAttemptID 来确定消息接受者。</li>
+</ul>
+</li>
+<li><p>物理执行图：</p>
+<p>JobManager 根据 ExecutionGraph 对 Job 进行调度后，在各个TaskManager 上部署 Task 后形成的“图”，并不是一个具体的数据结构。</p>
+<ul>
+<li>Task：Execution被调度后在分配的 TaskManager 中启动对应的 Task。Task 包裹了具有用户执行逻辑的 operator。</li>
+<li>ResultPartition：代表由一个Task的生成的数据，和ExecutionGraph中的IntermediateResultPartition一一对应。</li>
+<li>ResultSubpartition：是ResultPartition的一个子分区。每个ResultPartition包含多个ResultSubpartition，其数目要由下游消费 Task 数和 DistributionPattern 来决定。</li>
+<li>InputGate：代表Task的输入封装，和JobGraph中JobEdge一一对应。每个InputGate消费了一个或多个的ResultPartition。</li>
+<li>InputChannel：每个InputGate会包含一个以上的InputChannel，和ExecutionGraph中的ExecutionEdge一一对应，也和ResultSubpartition一对一地相连，即一个InputChannel接收一个ResultSubpartition的输出。</li>
+</ul>
+</li>
+</ul>
+<p><a target="_blank" rel="noopener" href="http://img3.tbcdn.cn/5476e8b07b923/TB1qmtpJVXXXXagXXXXXXXXXXXX"><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424153246.png" alt="img"></a></p>
+<p>首先我们看到，JobGraph 之上除了 StreamGraph 还有 OptimizedPlan。OptimizedPlan 是由 Batch API 转换而来的。StreamGraph 是由 Stream API 转换而来的。为什么 API 不直接转换成 JobGraph？因为，Batch 和 Stream 的图结构和优化方法有很大的区别，比如 Batch 有很多执行前的预分析用来优化图的执行，而这种优化并不普适于 Stream，所以通过 OptimizedPlan 来做 Batch 的优化会更方便和清晰，也不会影响 Stream。JobGraph 的责任就是统一 Batch 和 Stream 的图，用来描述清楚一个拓扑图的结构，并且做了 chaining 的优化，chaining 是普适于 Batch 和 Stream 的，所以在这一层做掉。ExecutionGraph 的责任是方便调度和各个 tasks 状态的监控和跟踪，所以 ExecutionGraph 是并行化的 JobGraph。而“物理执行图”就是最终分布式在各个机器上运行着的tasks了。所以可以看到，这种解耦方式极大地方便了我们在各个层所做的工作，各个层之间是相互隔离的。</p>
+<p>后续的文章，将会详细介绍 Flink 是如何生成这些执行图的。由于我目前关注 Flink 的流处理功能，所以主要有以下内容：</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2016/05/04/flink-internal-how-to-build-streamgraph/">如何生成 StreamGraph</a></li>
+<li><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2016/05/10/flink-internals-how-to-build-jobgraph/">如何生成 JobGraph</a></li>
+<li>如何生成 ExecutionGraph</li>
+<li>如何进行调度（如何生成物理执行图）</li>
+</ol>
+<h2 id="资源共享链与资源共享组"><a href="#资源共享链与资源共享组" class="headerlink" title="资源共享链与资源共享组"></a>资源共享链与资源共享组</h2><p>当我们编写完一个Flink程序，从Client开始执行——&gt;JobManager——&gt;TaskManager——&gt;Slot启动并执行Task的过程中，会对我们提交的执行计划进行优化，其中有两个比较重要的优化过程是：任务链与处理槽共享组，前者是对执行效率的优化，后者是对内存资源的优化。</p>
+<h3 id="Graph转换-1"><a href="#Graph转换-1" class="headerlink" title="Graph转换"></a>Graph转换</h3><p>在<code>StreamGraph</code>转换为JobGraph过程中，关键在于将多个 <code>StreamNode</code> 优化为一个 <code>JobVertex</code>，对应的 StreamEdge 则转化为 <code>JobEdge</code>，并且 <code>JobVertex</code> 和 <code>JobEdge</code> 之间通过 <code>IntermediateDataSet</code> （中间数据集）形成一个生产者和消费者的连接关系。每个<code>JobVertex</code>就是<code>JobManger</code>的一个任务调度单位（任务Task）。</p>
+<p>为了避免在这个过程中将关联性很强的几个<code>StreamNode</code>（算子）放到不同<code>JobVertex</code>（<code>Task</code>）中，从而导致因为<code>Task</code>执行产生的效率问题（数据交换（网络传输）、线程上下文切换），Flink会在<code>StreamGraph</code>转换为<code>JobGraph</code>过程中将可以优化的算子合并为一个算子链（也就是形成一个Task）。这样就可以把这条链上的算子放到一个线程中去执行，这样就提高了任务执行效率。</p>
 <h2 id="作业链Task-chain"><a href="#作业链Task-chain" class="headerlink" title="作业链Task-chain"></a>作业链Task-chain</h2><p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210423124550.png" alt="img"></p>
 <ul>
 <li><p>Chain：Flink会尽可能地将多个operator链接（chain）在一起形成一个task pipline。每个task pipline在一个线程中执行</p>
 </li>
 <li><p>优点：<em>它能减少线程之间的切换，减少消息的序列化/反序列化，减少数据在缓冲区的交换，减少了延迟的同时提高整体的吞吐量。</em></p>
+<p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424152810.png" alt="img"></p>
 </li>
 </ul>
-<p>StreamGraph转换为JobGraph过程中，实际上是逐条审查每一个StreamEdge和该SteamEdge两头连接的两个StreamNode的特性，来决定该StreamEdge两头的StreamNode是不是可以合并在一起形成算子链。这个判断过程flink给出了明确的规则，我们看一下StreamingJobGraphGenerator中的isChainable（）方法：</p>
+<p>StreamGraph转换为JobGraph过程中，实际上是逐条审查每一个StreamEdge和该SteamEdge两头连接的两个StreamNode的特性，来决定该StreamEdge两头的StreamNode是不是可以合并在一起形成算子链。这个判断过程flink给出了明确的规则，我们看一下<code>StreamingJobGraphGenerator</code>中的<code>isChainable()</code>方法：</p>
 <p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210423124551.png" alt="img"></p>
 <p>该方法返回true时两个端点才可以合并到一起，根据源码我们可以得出形成作业链的规则如下：</p>
 <ol>
@@ -268,11 +340,11 @@
 <li>用户没有禁用 chain</li>
 </ol>
 <p>二、开启/禁用全局作业链</p>
-<p>用户能够通过禁用全局作业链的操作来关闭整个Flink的作业链，但是这个操作会影响到这个作业的执行情况，除非我们非常清楚作业的执行过程，否则不建议这么做：StreamExecutionEnvironment.disableOperatorChaining()。全局作业链关闭之后，如果想创建对应Operator的作业链，可以使用startNewChain()方法：someStream.filter(…).map(…).startNewChain().map(…)。注意该方法只对当前操作符及之后的操作符有效，所以上述代码只对两个map进行链条绑定。</p>
+<p>用户能够通过禁用全局作业链的操作来关闭整个Flink的作业链，但是这个操作会影响到这个作业的执行情况，除非我们非常清楚作业的执行过程，否则不建议这么做：<code>StreamExecutionEnvironment.disableOperatorChaining()</code>。全局作业链关闭之后，如果想创建对应Operator的作业链，可以使用startNewChain()方法：<code>someStream.filter(...).map(...).startNewChain().map(...)</code>。注意该方法只对当前操作符及之后的操作符有效，所以上述代码只对两个map进行链条绑定。</p>
 <p>三、禁用局部作业链</p>
-<p>如果我们只想对某个算子执行禁用作业链，只需调用disableChaining（）方法：someSteam.map().disableChaining().filter()，该方法只会禁用当前算子的链条（上述代码中就是map），对其他算子操作不产生影响。</p>
+<p>如果我们只想对某个算子执行禁用作业链，只需调用<code>disableChaining()</code>方法：<code>someSteam.map().disableChaining().filter()</code>，该方法只会禁用当前算子的链条（上述代码中就是map），对其他算子操作不产生影响。</p>
 <h2 id="处理槽共享组-出于某中目的将多个Task放到同一个slot中执行"><a href="#处理槽共享组-出于某中目的将多个Task放到同一个slot中执行" class="headerlink" title="处理槽共享组(出于某中目的将多个Task放到同一个slot中执行)"></a>处理槽共享组(出于某中目的将多个Task放到同一个slot中执行)</h2><p>一、Task Slot</p>
-<p>TaskManager 是一个 JVM 进程，并会以独立的线程来执行一个task。为了控制一个 TaskManager 能接受多少个 task，Flink 提出了 <em>Task Slot</em> 的概念，通过 <em>Task Slot</em> 来定义Flink 中的计算资源。solt 对TaskManager内存进行平均分配，每个solt内存都相同，加起来和等于TaskManager可用内存，但是仅仅对内存做了隔离，并没有对cpu进行隔离。将资源 slot 化意味着来自不同job的task不会为了内存而竞争，而是每个task都拥有一定数量的内存储备。</p>
+<p>TaskManager 是一个 JVM 进程，并会以独立的线程来执行一个task。为了控制一个 TaskManager 能接受多少个 task，Flink 提出了 <em>Task Slot</em> 的概念，通过 <em>Task Slot</em> 来定义Flink 中的计算资源。solt 对TaskManager内存进行平均分配，每个solt内存都相同，加起来的和等于TaskManager可用内存，但是仅仅对内存做了隔离，并没有对cpu进行隔离。将资源 slot 化意味着来自不同job的task不会为了内存而竞争，而是每个task都拥有一定数量的内存储备。</p>
 <p>通过调整 task slot 的数量，用户可以定义task之间是如何相互隔离的。每个 TaskManager 有一个slot，也就意味着每个task运行在独立的 JVM 中。每个 TaskManager 有多个slot的话，也就是说多个task运行在同一个JVM中。而在同一个JVM进程中的task，可以共享TCP连接（基于多路复用）和心跳消息，可以减少数据的网络传输。也能共享一些数据结构，一定程度上减少了每个task的消耗。</p>
 <p>二、共享槽</p>
 <p>一个TaskManager中至少有一个插槽slot，每个插槽均分内存并且之间是内存隔离的，但是共享CPU。算子根据计算复杂度可以分为资源密集型与非资源密集型算子（可以认为有的算子计算时内存需求大，有些算子内存需求小）。现在有这么个情况：某个Job下的Tasks中既有资源密集型Task（A），又有非资源密集型Task（B），他们被分到不同的slot上，这就会产生一个问题，有的slot内存使用率大，有的slot内存使用率小，这样就很不公平，内存没有得到充分的利用。所以我们可以采用一个方案：将A、B放到同一个slot当中。</p>
@@ -281,18 +353,19 @@
 <li>flink计算一个job所需slot数量时，只需要确定所其最大并行度（前提，保持默认SlotSharingGroup），而不用计算每一个任务的并行度的总和；</li>
 <li>能更好的利用资源，如果没有solt共享，那些资源需求不大的map子任务将和资源需求更大的window占用相同的资源。</li>
 </ul>
+<p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424152912.png" alt="img"></p>
 <p>Flink相同资源组里的多个Task可以共享一个Slot资源槽。具体共享机制又分两种：</p>
 <p><strong>1、CoLocationGroup:</strong> 强制将 subtasks 放到同一个 slot 中，是一种硬约束</p>
 <ul>
 <li>保证把JobVertices的第n个运行实例和其他相同组内的JobVertices第n个实例运作在相同的slot中（所有的并行度相同的subTasks运行在同一个slot ）；</li>
-<li>主要用于迭代流(训练机?学习模型) ，用来保证迭代头与迭代尾的第i个subtask能被调度到同一个TaskManager上。</li>
+<li>主要用于迭代流(训练机器学习模型) ，用来保证迭代头与迭代尾的第i个subtask能被调度到同一个TaskManager上。</li>
 </ul>
 <p><strong>2、SlotSharingGroup:</strong> 允许不同的JobVertices的部署在相同的Slot中，但这是一种宽约束，只是尽量做到不能完全保证。</p>
 <ul>
 <li>SlotSharingGroup是Flink中用来实现slot共享的类，它尽可能地让subTasks共享一个slot；</li>
 <li>保证同一个group的并行度相同的sub-tasks 共享同一个slots ；</li>
 <li>算子的默认group为default（即默认一个job下的subtask都可以共享一个slot）</li>
-<li>为了防止不合理的共享，用户可以强制指定operator的共享组，比如： someStream.filter(…).slotSharingGroup(“group1”)；就强制指定了filter的slot共享组为group1；</li>
+<li>为了防止不合理的共享，用户可以强制指定operator的共享组，比如： <code>someStream.filter(...).slotSharingGroup(&quot;group1&quot;)；</code>就强制指定了filter的slot共享组为group1；</li>
 <li>要想确定一个未做SlotSharingGroup设置的算子的group是什么，可以根据上游算子的 group 和自身是否设置 group共同确定；</li>
 <li>适当设置可以减少每个slot运行的线程数，从而整体上减少机?的负载。</li>
 </ul>
@@ -318,12 +391,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/bigdata/iceberg/DataLake%E4%B8%89%E5%89%91%E5%AE%A2(AVERYZHANG-MB1%E7%9A%84%E5%86%B2%E7%AA%81%E7%89%88%E6%9C%AC)/" rel="prev" title="DataLake三剑客">
-      <i class="fa fa-chevron-left"></i> DataLake三剑客
+    <a href="/bigdata/Flink/Flink-State-TTL/" rel="prev" title="Flink-state-ttl">
+      <i class="fa fa-chevron-left"></i> Flink-state-ttl
     </a></div>
       <div class="post-nav-item">
-    <a href="/bigdata/iceberg/DataLake%E4%B8%89%E5%89%91%E5%AE%A2/" rel="next" title="DataLake三剑客">
-      DataLake三剑客 <i class="fa fa-chevron-right"></i>
+    <a href="/bigdata/Flink/RealTimeSystem-backpress/" rel="next" title="【转】实时流处理系统反压机制">
+      【转】实时流处理系统反压机制 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -383,7 +456,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink-runtime%E8%BF%90%E8%A1%8C%E6%97%B6"><span class="nav-number">1.</span> <span class="nav-text">Flink-runtime运行时</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E8%BF%B0"><span class="nav-number">1.1.</span> <span class="nav-text">概述</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Graph%E4%BC%98%E5%8C%96"><span class="nav-number">1.1.1.</span> <span class="nav-text">Graph优化</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%9C%E4%B8%9A%E9%93%BETask-chain"><span class="nav-number">1.2.</span> <span class="nav-text">作业链Task-chain</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E6%A7%BD%E5%85%B1%E4%BA%AB%E7%BB%84-%E5%87%BA%E4%BA%8E%E6%9F%90%E4%B8%AD%E7%9B%AE%E7%9A%84%E5%B0%86%E5%A4%9A%E4%B8%AATask%E6%94%BE%E5%88%B0%E5%90%8C%E4%B8%80%E4%B8%AAslot%E4%B8%AD%E6%89%A7%E8%A1%8C"><span class="nav-number">1.3.</span> <span class="nav-text">处理槽共享组(出于某中目的将多个Task放到同一个slot中执行)</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">架构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Graph%E8%BD%AC%E6%8D%A2"><span class="nav-number">2.</span> <span class="nav-text">Graph转换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B5%84%E6%BA%90%E5%85%B1%E4%BA%AB%E9%93%BE%E4%B8%8E%E8%B5%84%E6%BA%90%E5%85%B1%E4%BA%AB%E7%BB%84"><span class="nav-number">3.</span> <span class="nav-text">资源共享链与资源共享组</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Graph%E8%BD%AC%E6%8D%A2-1"><span class="nav-number">3.1.</span> <span class="nav-text">Graph转换</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%9C%E4%B8%9A%E9%93%BETask-chain"><span class="nav-number">4.</span> <span class="nav-text">作业链Task-chain</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%84%E7%90%86%E6%A7%BD%E5%85%B1%E4%BA%AB%E7%BB%84-%E5%87%BA%E4%BA%8E%E6%9F%90%E4%B8%AD%E7%9B%AE%E7%9A%84%E5%B0%86%E5%A4%9A%E4%B8%AATask%E6%94%BE%E5%88%B0%E5%90%8C%E4%B8%80%E4%B8%AAslot%E4%B8%AD%E6%89%A7%E8%A1%8C"><span class="nav-number">5.</span> <span class="nav-text">处理槽共享组(出于某中目的将多个Task放到同一个slot中执行)</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -397,7 +470,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">239</span>
+          <span class="site-state-item-count">242</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

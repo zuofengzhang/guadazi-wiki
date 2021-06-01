@@ -20,17 +20,22 @@
     var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="Flink-connectors">
+  <meta name="description" content="Flink SQL原理之Connector插件机制  Connector是Flink与外部存储连接的桥梁，Flink在对接外部存储和数据格式上  对于一个外部存储系统的库表来说，需要处理三方面的定义：  connector: 定义了流、批、读、写的实现  Format: 定义了数据的解析  Schema: 定义了表的字段信息 Flink使用Java SPI机制实现插件，方便扩展和管理。Flink更">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Guadazi">
 <meta property="og:url" content="http://example.com/bigdata/Flink/Flink-connectors/index.html">
 <meta property="og:site_name" content="Guadazi">
-<meta property="og:description" content="Flink-connectors">
+<meta property="og:description" content="Flink SQL原理之Connector插件机制  Connector是Flink与外部存储连接的桥梁，Flink在对接外部存储和数据格式上  对于一个外部存储系统的库表来说，需要处理三方面的定义：  connector: 定义了流、批、读、写的实现  Format: 定义了数据的解析  Schema: 定义了表的字段信息 Flink使用Java SPI机制实现插件，方便扩展和管理。Flink更">
 <meta property="og:locale">
-<meta property="article:published_time" content="2021-04-24T04:58:51.836Z">
-<meta property="article:modified_time" content="2021-04-24T04:58:51.837Z">
+<meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210505014933.png">
+<meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210505012958.png">
+<meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210505014815.png">
+<meta property="og:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210429220246.png">
+<meta property="article:published_time" content="2021-06-01T11:57:43.511Z">
+<meta property="article:modified_time" content="2021-06-01T11:57:43.512Z">
 <meta property="article:author" content="aaronzhang">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://gitee.com/averyzhang/pic-go/raw/master/img/20210505014933.png">
 
 <link rel="canonical" href="http://example.com/bigdata/Flink/Flink-connectors/">
 
@@ -211,7 +216,7 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2021-04-24 12:58:51" itemprop="dateCreated datePublished" datetime="2021-04-24T12:58:51+08:00">2021-04-24</time>
+              <time title="Created: 2021-06-01 19:57:43" itemprop="dateCreated datePublished" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
             </span>
 
           
@@ -225,7 +230,109 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="Flink-connectors"><a href="#Flink-connectors" class="headerlink" title="Flink-connectors"></a>Flink-connectors</h1>
+        <h1 id="Flink-SQL原理之Connector插件机制"><a href="#Flink-SQL原理之Connector插件机制" class="headerlink" title="Flink SQL原理之Connector插件机制"></a>Flink SQL原理之Connector插件机制</h1><blockquote>
+<p> Connector是Flink与外部存储连接的桥梁，Flink在对接外部存储和数据格式上</p>
+<p> 对于一个外部存储系统的库表来说，需要处理三方面的定义：</p>
+<ol>
+<li><p>connector: 定义了流、批、读、写的实现</p>
+</li>
+<li><p>Format: 定义了数据的解析</p>
+</li>
+<li><p>Schema: 定义了表的字段信息</p>
+<p>Flink使用Java SPI机制实现插件，方便扩展和管理。Flink更专注于计算，</p>
+<p>而各种不同的Connector专注于实现批量读写、流式读写、数据一致性协议、分区、offset和时间戳生成等逻辑</p>
+<p>本文主要介绍Flink Connector插件机制</p>
+</li>
+</ol>
+</blockquote>
+<h2 id="Java-SPI"><a href="#Java-SPI" class="headerlink" title="Java SPI"></a>Java SPI</h2><p>(Service provider interface，服务提供者接口)，是Java提供的一套实现扩展的API。</p>
+<p>Java SPI是符合<a target="_blank" rel="noopener" href="https://www.kancloud.cn/digest/java-designer-patten/163177">接口隔离原则</a>的设计，实现调用者和实现者的解耦，不同的实现方实现了可插拔：</p>
+<ol>
+<li>接口定义了交互的”协议”</li>
+<li>根据不同的实现方案，定义该接口的不同实现类</li>
+<li>调用者根据实际的使用需要，启用、扩展或者替换框架的实现策略</li>
+</ol>
+<p>常见的SPI的例子：</p>
+<ul>
+<li>数据库驱动加载: JDBC加载不同类型的数据库的驱动</li>
+<li>日志门面实现类的加载: Slf4J加载不同提供商的日志实现类</li>
+</ul>
+<p>使用介绍：</p>
+<ol>
+<li>服务提供者提供接口的实现类，实现类必须含义不带参数的改造方法</li>
+<li>在Jar包的<code>META-INF/services</code>目录下创建一个以“接口全限定名”为命名的文件，内容为实现类的全限定名；</li>
+<li>将接口的实现类所在的Jar包放在<code>classpath</code>中</li>
+<li><code>java.util.ServiceLoder</code>通过扫描<code>META-INF/services</code>目录下的配置文件找到实现类，加载类到JVM</li>
+</ol>
+<p><code>ServiceLoader</code></p>
+<ol>
+<li> <code>ServiceLoader</code>可以跨越jar包获取META-INF下的配置文件</li>
+<li>通过反射方法Class.forName()加载类对象，并用instance()方法将类实例化</li>
+<li>把实例化后的类缓存到providers对象中，(<code>LinkedHashMap&lt;String,S&gt;</code>类型）<br> 然后返回实例对象</li>
+</ol>
+<p>性能损失</p>
+<ol>
+<li>延迟加载，需要遍历全部和加载全部实现类</li>
+<li>非线程安全</li>
+</ol>
+<h2 id="TableFactory的定义"><a href="#TableFactory的定义" class="headerlink" title="TableFactory的定义"></a>TableFactory的定义</h2><p>flink-table-common模块中定义了TableFactory的接口、调用者和工具类, </p>
+<h3 id="TableFactory"><a href="#TableFactory" class="headerlink" title="TableFactory"></a>TableFactory</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> org.apache.flink.table.factories;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">用于从基于字符串的属性中创建与表相关的不同实例的一个工厂。 该工厂使用Java的服务提供商接口（SPI）做服务发现，使用一组描述所需配置的规范化属性来调用工厂。 工厂允许匹配给定的属性集。</span></span><br><span class="line"><span class="comment">将实现此接口的类添加到要找到的当前类路径中的JAR文件的&quot;META_INF/services/org.apache.flink.table.factories.TableFactory&quot;文件中</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">TableFactory</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	指定为此工厂实现的Context。 该框架保证仅在满足指定的属性和值集的情况下才与此工厂匹配。</span></span><br><span class="line"><span class="comment">典型的属性可能是：</span></span><br><span class="line"><span class="comment">-connector.type</span></span><br><span class="line"><span class="comment">-format.type</span></span><br><span class="line"><span class="comment">指定的属性版本允许框架在字符串格式更改的情况下提供向后兼容的属性：</span></span><br><span class="line"><span class="comment">-connector.property</span></span><br><span class="line"><span class="comment">-version-format.property-version</span></span><br><span class="line"><span class="comment">空上下文意味着工厂匹配所有请求。</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function">Map&lt;String, String&gt; <span class="title">requiredContext</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	返回该工厂可以处理的属性键列表。 此方法将用于验证。 如果传递了该工厂无法处理的属性，则将引发异常。 该列表不得包含上下文指定的键。</span></span><br><span class="line"><span class="comment">示例属性可能是：</span></span><br><span class="line"><span class="comment">   - schema.#.type</span></span><br><span class="line"><span class="comment">	    - schema.#.name</span></span><br><span class="line"><span class="comment">	    - connector.topic</span></span><br><span class="line"><span class="comment">	    - format.line-delimiter</span></span><br><span class="line"><span class="comment">	    - format.ignore-parse-errors</span></span><br><span class="line"><span class="comment">	    - format.fields.#.type</span></span><br><span class="line"><span class="comment">	    - format.fields.#.name</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">注意：使用“＃”表示值的数组，其中“＃”表示一个或多个数字。 诸如“ format.property-version”之类的属性版本不得成为受支持属性的一部分。</span></span><br><span class="line"><span class="comment">在某些情况下，将通配符声明为“ *”可能会很有用。 通配符只能在属性键的末尾声明。</span></span><br><span class="line"><span class="comment">例如，如果应支持任意格式：</span></span><br><span class="line"><span class="comment">- format.*</span></span><br><span class="line"><span class="comment">注意：应谨慎使用通配符，因为它们会吞下不受支持的属性，从而可能导致不良行为</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="function">List&lt;String&gt; <span class="title">supportedProperties</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>以flink-hbase为例, 在<code>META-INF/services/</code>中定义了文件<code>org.apache.flink.table.factories.TableFactory</code></p>
+<p>文件的内容为:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">org.apache.flink.addons.hbase.HBaseTableFactory</span><br></pre></td></tr></table></figure>
+<p>这个类就是TableFactory的实现</p>
+<h2 id="TableFactory查找"><a href="#TableFactory查找" class="headerlink" title="TableFactory查找"></a>TableFactory查找</h2><p>Flink 在 Connector的实现上，也是采用SPI机制</p>
+<p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210505014933.png"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">graph LR</span><br><span class="line">A[SPI查找实现类]--&gt;B[是否TableFactory的子类]</span><br><span class="line">B--&gt;C[是否满足必要属性]</span><br><span class="line">C--&gt;D[是否满足属性匹配]</span><br><span class="line">D--&gt;E[创建TableFactory实现类]</span><br></pre></td></tr></table></figure>
+<p>入口方法: <code>org.apache.flink.table.factories.TableFactoryService#find(java.lang.Class&lt;T&gt;, java.util.Map&lt;java.lang.String,java.lang.String&gt;)</code></p>
+<p>调用样例: </p>
+<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">TableFactoryService</span>.find(classOf[<span class="type">TableFactory</span>[_]],sinkProperties)</span><br></pre></td></tr></table></figure>
+<p>最终调用查找方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">	<span class="keyword">private</span> <span class="keyword">static</span> &lt;T extends TableFactory&gt; <span class="function">T <span class="title">findSingleInternal</span><span class="params">(</span></span></span><br><span class="line"><span class="function"><span class="params">			Class&lt;T&gt; factoryClass,</span></span></span><br><span class="line"><span class="function"><span class="params">			Map&lt;String, String&gt; properties,</span></span></span><br><span class="line"><span class="function"><span class="params">			Optional&lt;ClassLoader&gt; classLoader)</span> </span>&#123;</span><br><span class="line"><span class="comment">// 查找Factory</span></span><br><span class="line">		List&lt;TableFactory&gt; tableFactories = discoverFactories(classLoader);</span><br><span class="line"><span class="comment">// 过滤Factory    </span></span><br><span class="line">		List&lt;T&gt; filtered = filter(tableFactories, factoryClass, properties);</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> (filtered.size() &gt; <span class="number">1</span>) &#123;</span><br><span class="line"><span class="comment">// 查找到超过1个，抛出异常      </span></span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> AmbiguousTableFactoryException(</span><br><span class="line">				filtered,</span><br><span class="line">				factoryClass,</span><br><span class="line">				tableFactories,</span><br><span class="line">				properties);</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> filtered.get(<span class="number">0</span>);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>查找实现类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> List&lt;TableFactory&gt; <span class="title">discoverFactories</span><span class="params">(Optional&lt;ClassLoader&gt; classLoader)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">try</span> &#123;</span><br><span class="line">			List&lt;TableFactory&gt; result = <span class="keyword">new</span> LinkedList&lt;&gt;();</span><br><span class="line">			ClassLoader cl = classLoader.orElse(Thread.currentThread().getContextClassLoader());</span><br><span class="line">			ServiceLoader</span><br><span class="line">				.load(TableFactory.class, cl)</span><br><span class="line">				.iterator()</span><br><span class="line">				.forEachRemaining(result::add);</span><br><span class="line">			<span class="keyword">return</span> result;</span><br><span class="line">		&#125; <span class="keyword">catch</span> (ServiceConfigurationError e) &#123;</span><br><span class="line">			LOG.error(<span class="string">&quot;Could not load service provider for table factories.&quot;</span>, e);</span><br><span class="line">			<span class="keyword">throw</span> <span class="keyword">new</span> TableException(<span class="string">&quot;Could not load service provider for table factories.&quot;</span>, e);</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>过滤</p>
+<p>有三层过滤: </p>
+<ul>
+<li>filterByFactoryClass: 判断是否为TableFactory的实现类</li>
+<li>filterByContext: 判断必要属性是否匹配: 来源于TableFactory.requiredContext</li>
+<li>filterBySupportedProperties: 判断属性是否支持：来源于TableFactory.supportedProperties</li>
+</ul>
+<h2 id="TableFactory的分类"><a href="#TableFactory的分类" class="headerlink" title="TableFactory的分类"></a>TableFactory的分类</h2><p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210505012958.png" alt="OPPO&#39;s Real-time Data Warehouse and Development of Flink SQL | Medium"></p>
+<p>对于一个外部存储系统的库表来说，需要处理三方面的定义：</p>
+<ol>
+<li>connector: 定义了流、批、读、写的实现</li>
+<li>Format: 定义了数据的解析</li>
+<li>Schema: 定义了表的字段信息</li>
+</ol>
+<p>Schema信息可以在注册库表的时候直接增加，connector、format信息通过TableFactory实现可插拔</p>
+<p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210505014815.png"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">classDiagram</span><br><span class="line">      TableFactory &lt;|-- StreamTableSourceFactory~T~</span><br><span class="line">      TableFactory &lt;|-- StreamTableSinkFactory~T~</span><br><span class="line">      TableFactory &lt;|-- BatchTableSourceFactory~T~</span><br><span class="line">      TableFactory &lt;|-- BatchTableSinkFactory~T~</span><br><span class="line">      TableFactory &lt;|-- TableFormatFactory~T~</span><br><span class="line">	  StreamTableSourceFactory &lt;|-- HBaseTableFactory</span><br><span class="line">	  StreamTableSinkFactory &lt;|-- HBaseTableFactory</span><br><span class="line">      class TableFactory&#123;</span><br><span class="line">         +requiredConext() Map~StringString~</span><br><span class="line">         +supportedProperties() List~String~</span><br><span class="line">      &#125;</span><br><span class="line">      class StreamTableSourceFactory&#123;</span><br><span class="line">      	 +createStreamTableSink(Map&lt;String, String&gt;) StreamTableSink~T~</span><br><span class="line">      	 +createTableSink(Map&lt;String, String&gt;) TableSink~T~</span><br><span class="line">      &#125;</span><br><span class="line">	  class StreamTableSinkFactory&#123;</span><br><span class="line">		  +createStreamTableSink(Map&lt;String, String&gt;) StreamTableSink~T~</span><br><span class="line">		  +createTableSink(Map&lt;String, String&gt;) TableSink~T~</span><br><span class="line"></span><br><span class="line">	  &#125;</span><br><span class="line">      class BatchTableSourceFactory&#123;</span><br><span class="line">      	+createBatchTableSource(Map&lt;String, String&gt;) BatchTableSource~T~</span><br><span class="line">      	+createTableSource(Map&lt;String, String&gt;) TableSource~T~</span><br><span class="line">      &#125;</span><br><span class="line">      class BatchTableSinkFactory&#123;</span><br><span class="line">      	+createBatchTableSink(Map&lt;String, String&gt;) BatchTableSink~T~</span><br><span class="line">      	+createTableSink(Map&lt;String, String&gt;) TableSink~T~</span><br><span class="line">      &#125;</span><br><span class="line">	  class TableFormatFactory&#123;</span><br><span class="line">		  +supportsSchemaDerivation()</span><br><span class="line">		  +supportedProperties() List~String~</span><br><span class="line">	  &#125;</span><br><span class="line">	  class HBaseTableFactory&#123;</span><br><span class="line">	  &#125;</span><br></pre></td></tr></table></figure>
+<p>TableFactory可以分为:</p>
+<ul>
+<li>StreamTableSourceFactory</li>
+<li>StreamTableSinkFactory</li>
+<li>BatchTableSourceFactory</li>
+<li>BatchTableSinkFactory</li>
+<li>TableFormatFactory</li>
+</ul>
+<h2 id="常见的Connector样例"><a href="#常见的Connector样例" class="headerlink" title="常见的Connector样例"></a>常见的Connector样例</h2><p>援引一张1.10的优化设计图</p>
+<p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210429220246.png" alt="img"></p>
+<h3 id="kafka-DDL定义"><a href="#kafka-DDL定义" class="headerlink" title="kafka-DDL定义"></a>kafka-DDL定义</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> orders_kafka (</span><br><span class="line">  ...</span><br><span class="line">  etime <span class="type">timestamp</span>(<span class="number">3</span>),</span><br><span class="line">  watermark <span class="keyword">for</span> etime <span class="keyword">as</span> etime <span class="operator">-</span> <span class="type">interval</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">second</span> </span><br><span class="line">) <span class="keyword">WITH</span> (</span><br><span class="line">  <span class="string">&#x27;connector.type&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;kafka&#x27;</span>, <span class="comment">-- connector信息</span></span><br><span class="line">  <span class="string">&#x27;connector.version&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;universal&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;connector.topic&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;kafka-2-mysql-window&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;connector.properties.zookeeper.connect&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;localhost:2181&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;connector.properties.bootstrap.servers&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;localhost:9092&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;connector.properties.group.id&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;order-streaming-test&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;connector.startup-mode&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;earliest-offset&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;update-mode&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;append&#x27;</span>,</span><br><span class="line">  <span class="string">&#x27;format.type&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;json&#x27;</span>, <span class="comment">-- format信息</span></span><br><span class="line">  <span class="string">&#x27;format.derive-schema&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;true&#x27;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<h3 id="MySQL-DDL定义"><a href="#MySQL-DDL定义" class="headerlink" title="MySQL-DDL定义"></a>MySQL-DDL定义</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> agg_result (</span><br><span class="line">  ...</span><br><span class="line">  time_id STRING</span><br><span class="line">) <span class="keyword">WITH</span> (</span><br><span class="line">   <span class="string">&#x27;connector.type&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;jdbc&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.driver&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;com.mysql.cj.jdbc.Driver&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.url&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;jdbc:mysql://localhost:3306/fdata&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.table&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;t_agg_result&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.username&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;root&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.password&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;---&#x27;</span></span><br><span class="line">)   </span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+<p>参考文献</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/117654469">Flink深入浅出：JDBC Connector源码分析</a></li>
+</ol>
+
     </div>
 
     
@@ -305,7 +412,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink-connectors"><span class="nav-number">1.</span> <span class="nav-text">Flink-connectors</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink-SQL%E5%8E%9F%E7%90%86%E4%B9%8BConnector%E6%8F%92%E4%BB%B6%E6%9C%BA%E5%88%B6"><span class="nav-number">1.</span> <span class="nav-text">Flink SQL原理之Connector插件机制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Java-SPI"><span class="nav-number">1.1.</span> <span class="nav-text">Java SPI</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TableFactory%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="nav-number">1.2.</span> <span class="nav-text">TableFactory的定义</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TableFactory"><span class="nav-number">1.2.1.</span> <span class="nav-text">TableFactory</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TableFactory%E6%9F%A5%E6%89%BE"><span class="nav-number">1.3.</span> <span class="nav-text">TableFactory查找</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#TableFactory%E7%9A%84%E5%88%86%E7%B1%BB"><span class="nav-number">1.4.</span> <span class="nav-text">TableFactory的分类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E7%9A%84Connector%E6%A0%B7%E4%BE%8B"><span class="nav-number">1.5.</span> <span class="nav-text">常见的Connector样例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#kafka-DDL%E5%AE%9A%E4%B9%89"><span class="nav-number">1.5.1.</span> <span class="nav-text">kafka-DDL定义</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MySQL-DDL%E5%AE%9A%E4%B9%89"><span class="nav-number">1.5.2.</span> <span class="nav-text">MySQL-DDL定义</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -319,7 +426,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">239</span>
+          <span class="site-state-item-count">242</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

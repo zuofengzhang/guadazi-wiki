@@ -183,6 +183,452 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/storm/base/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/storm/base/" class="post-title-link" itemprop="url">Apache Storm专题</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="大数据流式计算及应用实践"><a href="#大数据流式计算及应用实践" class="headerlink" title="大数据流式计算及应用实践"></a>大数据流式计算及应用实践</h1><p>面向感知的数据流处理模型<br>R树、B+树</p>
+<p>CAP（Consistency，Availability，tolerance to network Partitions） 理论说明，分布式系统中的一致性、可用性、分区容错性三者不可兼得。</p>
+<p>所以，并行关系数据库必然无法获得较强的扩展性和良好的系统可用性。<br>面对这些挑战，以Google的BigTable为代表的NoSQL（notonlySQL）数据库发展起来。BigTable是一个多维稀疏排序表，由行和列组成，每个存储单元都有一个时间戳，形成三维结构。同一个数据单元的多个操作形成数据的多个版本，由时间戳来区分。</p>
+<p>高性能批数据处理模式、流式数据处理模式和两者混合的模式。</p>
+<p>批处理模式就是修改以Hadoop为代表的批处理框架，减少中间结果的写盘次数，增加作业间的流水化程度来提高单位时间的吞吐量。流处理模式，是针对流式数据的一种天然适合的处理方法，将到达的数据在维护的滑动窗口内进行处理，这将在下一章详细说明，典型系统如YahooS4和Storm。而两者混合的模式，主要思路是基于MapReduce模型增加或改变其中的某些处理步骤，以实现流处理。</p>
+<p>四个时间点？<br>契税 多少？<br>查封 离婚 继承</p>
+<p>距离 环境 学校</p>
+<p>高性能批数据处理模式、流式数据处理模式和两者混合的模式。其中，批处理模式就是修改以Hadoop为代表的批处理框架，减少中间结果的写盘次数，增加作业间的流水化程度来提高单位时间的吞吐量。流处理模式，是针对流式数据的一种天然适合的处理方法，将到达的数据在维护的滑动窗口内进行处理，这将在下一章详细说明，典型系统如Yahoo S4和Storm。而两者混合的模式，主要思路是基于MapReduce模型增加或改变其中的某些处理步骤，以实现流处理。例如，DEDUCE系统扩展了IBM的流式数据处理System S，使其支持MapReduce。此外，SparkStreaming通过引入离散流（discretized streams）编程模型，改进了批处理模式，大幅提高了处理速度，并在Spark系统上实现了集成。</p>
+<p>Storm 作为 一种 分布式 系统 的 体系 结构、 分布式 通信、 作业、 接 入/ 处理 组件 和 若干 进阶 的 概念。</p>
+<p>丁维龙; 等. Storm：大数据流式计算及应用实践 (高端云计算与大数据丛书) (Kindle 位置 1278-1279). 电子工业出版社. Kindle 版本. </p>
+<p>supervisor</p>
+<p>工作进程执行指定topology的子集，而同一个topology可以由多个工作进程完成；一个工作进程由多个工作线程组成，工作线程是spout/bolt的运行时实例，数量由spout/bolt的数目及其配置确定。supervisor是分布式部署的，在Storm中的地位类似于Hadoop中的TaskTracker。</p>
+<p>首先是作业在Storm系统中的部署。<br>    ① 用户将作业打包（即将topology的代码组织为jar文件），通过Storm的客户端命令或者控制台节点的Web接口，提交至Storm系统的主控节点；<br>    ② 主控节点根据系统的全局配置和作业中的局部配置，将接收的代码分发至调度的工作节点；<br>    ③ 工作节点下载来自主控节点的代码包，并根据主控节点的调度生成相关的工作进程和线程。</p>
+<p>其次是系统节点状态的协调，包括如下几个部分。<br>    ①主控节点与协调节点之间：主控节点将系统全局的配置、节点局部的配置、主控节点运行时的状态，通过服务接口交由Zookeeper维护，由协调节点实现配置管理与状态监控；<br>    ②工作节点与协调节点之间：工作节点将自身的状态、工作进程和工作线程的状态，通过服务接口交由Zookeeper维护，由协调节点实现状态获取与更新；<br>    ③主控节点与控制台节点之间：控制台节点调用主控节点开放相关的接口，可以获取系统、作业、工作进程、工作线程和任务的运行时状态。</p>
+<p>最后是工作节点间作业计算结果的数据传输，包括如下几个部分。<br>    ①组件间线程级的数据传递：在同一进程内，spout/bolt的工作线程将处理结果向作业的下游组件传递；<br>    ②组件间进程级的数据传递：在不同进程间（无论是否在同一台机器中），spout/bolt的工作线程将处理的结果向作业的下游组件传递。进程是操作系统中程序运行时的基本单元，线程是进程的最小调度单位，Storm的分布式数据处理，也是通过进程线程的调度实现的。<br>    注意：考虑到作业的独立性与安全性，Storm不支持跨作业的数据传递，故这里工作节点间的数据传输，一定存在于同一作业（隶属同一topology）的运行时实例进程/线程之间。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Hadoop/hadoop-cluser-configuration/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Hadoop/hadoop-cluser-configuration/" class="post-title-link" itemprop="url">Hadoop集群节点配置及搭建</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-24 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-24T00:00:00+08:00">2017-02-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>[&lt;&lt;] Hadoop专题</p>
+<p>在<a href="hadoop-01">上一篇</a>中介绍了在Docker搭建三个节点的Hadoop集群，本文主要介绍hadoop集群节点的配置</p>
+<p>NameNode<br>SecondNameNode<br>DataNode</p>
+<p>JobTracker<br>JobTask</p>
+<p>移动计算 而非 移动数据</p>
+<h2 id="查看classpath"><a href="#查看classpath" class="headerlink" title="查看classpath"></a>查看classpath</h2><p>hadoop命令行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hadoop classpath</span><br><span class="line">/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*</span><br></pre></td></tr></table></figure>
+<p>配置文件</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">property</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>yarn.application.classpath<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">value</span>&gt;</span>/opt/module/hadoop/etc/hadoop:/opt/module/hadoop/share/hadoop/common/lib/*:/opt/module/hadoop/share/hadoop/common/*:/opt/module/hadoop/share/hadoop/hdfs:/opt/module/hadoop/share/hadoop/hdfs/lib/*:/opt/module/hadoop/share/hadoop/hdfs/*:/opt/module/hadoop/share/hadoop/mapreduce/lib/*:/opt/module/hadoop/share/hadoop/mapreduce/*:/opt/module/hadoop/share/hadoop/yarn:/opt/module/hadoop/share/hadoop/yarn/lib/*:/opt/module/hadoop/share/hadoop/yarn/*<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">property</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>[参考文献]</p>
+<ol>
+<li></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/Jenkins_Docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/docker/Jenkins_Docker/" class="post-title-link" itemprop="url">在Docker上搭建Jenkins环境</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ol>
+<li>从网易镜像仓库下载Jenkins</li>
+</ol>
+<p><a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/search/?keyword=jenkins">网易镜像仓库</a></p>
+<p>拉取到本地</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull hub.c.163.com/library/jenkins:latest</span><br></pre></td></tr></table></figure>
+<p>查看镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker images</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY                      TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">hub.c.163.com&#x2F;library&#x2F;jenkins   latest              88d9d8a30b47        8 months ago        810MB</span><br></pre></td></tr></table></figure>
+<p>从官网下载最新的Jenkins</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://updates.jenkins-ci.org/download/war/2.107.2/jenkins.war</span><br></pre></td></tr></table></figure>
+<p>DockerFile</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FROM hub.c.163.com/library/jenkins</span><br><span class="line"><span class="meta">#</span><span class="bash"> 将最新的Jenkins拷贝到`/usr/share/jenkins/`目录</span></span><br><span class="line">ADD jenkins.war /usr/share/jenkins/</span><br></pre></td></tr></table></figure>
+<p>常见镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t avery/jenkins .</span><br></pre></td></tr></table></figure>
+<p>启动一个Container</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run --name prod_jenkins2 -d -p 9005:8080 -p 9006:50000 -v  /Users/avery/docker/jenkins/backup/jenkins_home:/var/jenkins_home avery/jenkins</span><br></pre></td></tr></table></figure>
+<ol>
+<li>创建本地Jenkins数据目录，将该目录映射到docker中的Jenkins目录，方便备份数据</li>
+<li>8080端口是Jenkins web service的默认端口，将宿主机的端口映射到8080端口，可以直接访问</li>
+<li>–name 命名为prod_jenkins2</li>
+<li>-d 后台运行</li>
+<li>-p 端口映射</li>
+<li>-v 文件目录映射</li>
+</ol>
+<p>查看</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker container ls -a</span><br><span class="line">CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                     PORTS                   NAMES</span><br><span class="line">cb8cdf3be078        avery/jenkins       &quot;/bin/tini -- /usr/l…&quot;   3 hours ago         Exited (143) 3 hours ago                           prod_jenkins2</span><br></pre></td></tr></table></figure>
+<p>启动后，可以直接通过url ‘<a href="http://localhost:9001&#39;">http://localhost:9001&#39;</a> 访问，Jenkins首次打开，需要获取随机密码</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 获取jenkins密码</span></span><br><span class="line">docker container exec cb8cdf3be078 cat /var/jenkins_home/secrets/initialAdminPassword</span><br><span class="line">a7cefff7d2634cc6a9542491f465eb52</span><br><span class="line"><span class="meta">#</span><span class="bash"> 或者直接进入shell查看</span></span><br><span class="line">docker exec -it cb8cdf3be078 bash</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/hadoop-cluser-in-docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/docker/hadoop-cluser-in-docker/" class="post-title-link" itemprop="url">在Docker上搭建Hadoop集群container</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>为了学习Hadoop，尝试使用Vbox搭建环境，不是很方便。后面转向Docker。本文将使用Docker搭建Hadoop集群记录下来，以备后用</p>
+</blockquote>
+<p>基础环境</p>
+<ul>
+<li>MacOS 10.12</li>
+<li>Docker 17.03.1-ce</li>
+</ul>
+<p>网易镜像 <a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/home/">https://c.163yun.com/hub#/m/home/</a></p>
+<h1 id="安装Docker"><a href="#安装Docker" class="headerlink" title="安装Docker"></a>安装Docker</h1><p>在MacOS 上安装Docker即为简单，从官网上下载dmg包，拖到应用目录启动即可。</p>
+<p>安装完成后 查看docker 版本:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker version</span></span><br><span class="line"></span><br><span class="line">Client:</span><br><span class="line"> Version:      17.03.1-ce</span><br><span class="line"> API version:  1.27</span><br><span class="line"> Go version:   go1.7.5</span><br><span class="line"> Git commit:   c6d412e</span><br><span class="line"> Built:        Tue Mar 28 00:40:02 2017</span><br><span class="line"> OS/Arch:      darwin/amd64</span><br><span class="line"></span><br><span class="line">Server:</span><br><span class="line"> Version:      17.03.1-ce</span><br><span class="line"> API version:  1.27 (minimum version 1.12)</span><br><span class="line"> Go version:   go1.7.5</span><br><span class="line"> Git commit:   c6d412e</span><br><span class="line"> Built:        Fri Mar 24 00:00:50 2017</span><br><span class="line"> OS/Arch:      linux/amd64</span><br><span class="line"> Experimental: true</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="docker-建立镜像"><a href="#docker-建立镜像" class="headerlink" title="docker 建立镜像"></a>docker 建立镜像</h1><p>建立三个镜像，存储目录如下:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> tree</span></span><br><span class="line">.</span><br><span class="line">├── centos-ssh-root</span><br><span class="line">│   └── Dockerfile</span><br><span class="line">├── centos-ssh-root-jdk</span><br><span class="line">│   ├── Dockerfile</span><br><span class="line">│   └── jdk-7u79.tar.gz</span><br><span class="line">└── centos-ssh-root-jdk-hadoop</span><br><span class="line">    ├── Dockerfile</span><br><span class="line">    └── hadoop-2.7.3.tar.gz</span><br></pre></td></tr></table></figure>
+<h2 id="建立CentOS-SSH-root基础镜像"><a href="#建立CentOS-SSH-root基础镜像" class="headerlink" title="建立CentOS-SSH-root基础镜像"></a>建立CentOS-SSH-root基础镜像</h2><p>建立一个带有ssh和root账户的CentOS镜像</p>
+<ol>
+<li>新建Dockerfile文件<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir  centos-ssh-root</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 新建 Dockerfile 文件</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> vi  Dockerfile</span></span><br></pre></td></tr></table></figure>
+Dockerfile的内容为:</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 选择一个已有的os镜像作为基础  国内首选仓库 c.163.com</span></span><br><span class="line">FROM hub.c.163.com/public/centos:7.2.1511 </span><br><span class="line">RUN yum clean all</span><br><span class="line">RUN yum install -y yum-plugin-ovl || true</span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装基础的工具包</span></span><br><span class="line">RUN yum install -y vim tar wget curl rsync bzip2 iptables tcpdump less telnet net-tools lsof sysstat cronie python-setuptools</span><br><span class="line">RUN yum clean all</span><br><span class="line">RUN easy_install supervisor</span><br><span class="line">RUN cp -f /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span><br><span class="line">EXPOSE 22</span><br><span class="line">RUN mkdir -p /etc/supervisor/conf.d/</span><br><span class="line">RUN /usr/bin/echo_supervisord_conf &gt; /etc/supervisord.conf</span><br><span class="line">RUN echo [include] &gt;&gt; /etc/supervisord.conf</span><br><span class="line">RUN echo &#x27;files = /etc/supervisor/conf.d/*.conf&#x27; &gt;&gt; /etc/supervisord.conf</span><br><span class="line"><span class="meta">#</span><span class="bash">COPY sshd.conf /etc/supervisor/conf.d/sshd.conf</span></span><br><span class="line">CMD [&quot;/usr/bin/supervisord&quot;]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 镜像的作者</span>  </span><br><span class="line">MAINTAINER avery </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 安装openssh-server和sudo软件包，并且将sshd的UsePAM参数设置成no</span>  </span><br><span class="line">RUN yum install -y openssh-server sudo  </span><br><span class="line">RUN sed -i &#x27;s/UsePAM yes/UsePAM no/g&#x27; /etc/ssh/sshd_config  </span><br><span class="line"><span class="meta">#</span><span class="bash">安装openssh-clients</span></span><br><span class="line">RUN yum  install -y openssh-clients</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加测试用户root，密码abc.123，并且将此用户添加到sudoers里</span>  </span><br><span class="line">RUN echo &quot;root:abc.123&quot; | chpasswd  </span><br><span class="line">RUN echo &quot;root   ALL=(ALL)       ALL&quot; &gt;&gt; /etc/sudoers  </span><br><span class="line"><span class="meta">#</span><span class="bash"> 下面这两句比较特殊，</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 在centos6上必须要有，否则创建出来的容器sshd不能登录</span>  </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为了避免文件已存在报错，首先删掉私钥文件</span></span><br><span class="line">RUN rm -rf /etc/ssh/ssh_host_rsa_key</span><br><span class="line">RUN rm -rf /etc/ssh/ssh_host_dsa_key</span><br><span class="line"></span><br><span class="line">RUN ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key  </span><br><span class="line">RUN ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key  </span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 启动sshd服务并且暴露22端口</span>  </span><br><span class="line"><span class="meta">#</span><span class="bash"> RUN mkdir /var/run/sshd</span>  </span><br><span class="line">EXPOSE 22  </span><br><span class="line">CMD [&quot;/usr/sbin/sshd&quot;, &quot;-D&quot;]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>创建镜像</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 在Dockerfile同级目录下执行下面的命令，最后的.必须有</span></span><br><span class="line">docker build -t=&quot;avery/centos-ssh-root&quot; .</span><br></pre></td></tr></table></figure>
+<p>查看刚刚创建成功的镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        35 hours ago        776 MB</span><br></pre></td></tr></table></figure>
+<h1 id="创建带有JDK的镜像"><a href="#创建带有JDK的镜像" class="headerlink" title="创建带有JDK的镜像"></a>创建带有JDK的镜像</h1><ol>
+<li>准备 下载JDK<br>此处使用JDK7u79<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir centos-ssh-root-jdk</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root-jdk</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> cp ~/Download/jdk-7u79.tar.gz .</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> vi Dockerfile</span></span><br></pre></td></tr></table></figure></li>
+<li>Dockerfile文件</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FROM avery/centos-ssh-root</span><br><span class="line">ADD jdk-7u79.tar.gz /usr/local/</span><br><span class="line">RUN mv /usr/local/jdk1.7.0_79 /usr/local/jdk1.7</span><br><span class="line"><span class="meta">#</span><span class="bash"> 添加环境变量</span></span><br><span class="line">ENV JAVA_HOME /usr/local/jdk1.7</span><br><span class="line">ENV PATH $JAVA_HOME/bin:$PATH</span><br><span class="line"><span class="meta">#</span><span class="bash"> 可能上面的设置不会生效</span></span><br><span class="line">RUN echo &#x27;JAVA_HOME=/usr/local/jdk1.7/&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;PATH=$JAVA_HOME/bin:$PATH&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;export JAVA_HOME&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN echo &#x27;export PATH&#x27; &gt;&gt; .bash_profile</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>创建镜像</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t=&quot;avery/centos-ssh-root&quot; .</span><br></pre></td></tr></table></figure>
+<ol start="4">
+<li>查看镜像</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root-jdk          latest              e773519d0452        34 hours ago        1.39 GB</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        35 hours ago        776 MB</span><br></pre></td></tr></table></figure>
+<h2 id="构建hadoop镜像"><a href="#构建hadoop镜像" class="headerlink" title="构建hadoop镜像"></a>构建hadoop镜像</h2><ol>
+<li>准备</li>
+</ol>
+<p>官网下载 hadoop-2.7.3.tar.gz</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> mkdir centos-ssh-root-jdk-hadoop</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> <span class="built_in">cd</span> centos-ssh-root-jdk-hadoop</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> cp ../hadoop-2.7.3.tar.gz .</span> </span><br><span class="line"><span class="meta">%</span><span class="bash"> vi Dockerfile</span></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>Dockerfile</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">FROM avery/centos-ssh-root-jdk</span><br><span class="line">ADD hadoop-2.7.3.tar.gz /usr/local</span><br><span class="line">RUN mv /usr/local/hadoop-2.7.3 usr/local/hadoop</span><br><span class="line">ENV HADOOP_HOME /usr/local/hadoop</span><br><span class="line">ENV PATH $HADOOP_HOME/bin:$PATH</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 为了防止环境变量失效</span></span><br><span class="line">RUN  echo &#x27;HADOOP_HOME=/usr/local/hadoop/&#x27; &gt;&gt;.bash_profile</span><br><span class="line">RUN  echo &#x27;PATH=$HADOOP_HOME/bin:$PATH&#x27; &gt;&gt; .bash_profile </span><br><span class="line">RUN  echo &#x27;export HADOOP_HOME&#x27; &gt;&gt; .bash_profile</span><br><span class="line">RUN  echo &#x27;export PATH&#x27; &gt;&gt; .bash_profile</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>创建镜像<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t=&quot;avery/centos-ssh-root-jdk-hadoop&quot; .</span><br></pre></td></tr></table></figure></li>
+<li>查看</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker images</span></span><br><span class="line">REPOSITORY                         TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">avery/centos-ssh-root-jdk-hadoop   latest              c93aadf2b6c5        1 hours ago        2.05 GB</span><br><span class="line">avery/centos-ssh-root-jdk          latest              e773519d0452        1 hours ago        1.39 GB</span><br><span class="line">avery/centos-ssh-root              latest              ba72ccadf508        1 hours ago        776 MB</span><br></pre></td></tr></table></figure>
+<h1 id="docker-搭建-Hadoop集群"><a href="#docker-搭建-Hadoop集群" class="headerlink" title="docker 搭建 Hadoop集群"></a>docker 搭建 Hadoop集群</h1><p>此处搭建的集群只在本机使用，各个Docker container没有独立的ip，如需要通过IP访问可以参考<a target="_blank" rel="noopener" href="http://blog.csdn.net/xu470438000/article/details/50512442">使用docker搭建hadoop分布式集群</a></p>
+<p>在MacOS上修改系统文件，需要关闭Rootless:</p>
+<p>重启按住 Command+R，进入恢复模式，打开Terminal。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil disable</span><br></pre></td></tr></table></figure>
+<p>重启即可。如果要恢复默认，那么</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrutil enable</span><br></pre></td></tr></table></figure>
+
+<h2 id="创建3台container"><a href="#创建3台container" class="headerlink" title="创建3台container"></a>创建3台container</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker run --name hadoop0 --hostname hadoop0 -d -P -p 50070:50070 -p 8088:8088 avery/centos-ssh-root-jdk-hadoop</span><br><span class="line"></span><br><span class="line">docker run --name hadoop1 --hostname hadoop1 -d -P avery/centos-ssh-root-jdk-hadoop</span><br><span class="line"></span><br><span class="line">docker run --name hadoop2 --hostname hadoop2 -d -P avery/centos-ssh-root-jdk-hadoop</span><br></pre></td></tr></table></figure>
+<p>查看三个container的信息</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker container ls</span><br><span class="line">CONTAINER ID        IMAGE                              COMMAND               CREATED             STATUS              PORTS                                                                     NAMES</span><br><span class="line">78e5e35adfa4        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:32776-&gt;22/tcp                                                     hadoop2</span><br><span class="line">5f27fd91c7ba        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:32775-&gt;22/tcp                                                     hadoop1</span><br><span class="line">1d7fd37371cc        avery/centos-ssh-root-jdk-hadoop   &quot;/usr/sbin/sshd -D&quot;   3 minutes ago       Up 3 minutes        0.0.0.0:8088-&gt;8088/tcp, 0.0.0.0:50070-&gt;50070/tcp, 0.0.0.0:32774-&gt;22/tcp   hadoop0</span><br></pre></td></tr></table></figure>
+<p>查看三个container的ip:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop0</span></span><br><span class="line">172.17.0.2</span><br><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop1</span></span><br><span class="line">172.17.0.3</span><br><span class="line"><span class="meta">%</span><span class="bash"> docker inspect --format=<span class="string">&#x27;&#123;&#123;.NetworkSettings.IPAddress&#125;&#125;&#x27;</span> hadoop2</span></span><br><span class="line">172.17.0.4</span><br></pre></td></tr></table></figure>
+
+<h2 id="集群规划"><a href="#集群规划" class="headerlink" title="集群规划"></a>集群规划</h2><p>准备搭建一个具有三个节点的集群，一主两从 </p>
+<ul>
+<li>主节点：hadoop0 ip：172.17.0.2</li>
+<li>从节点1：hadoop1 ip：172.17.0.3</li>
+<li>从节点2：hadoop2 ip：172.17.0.4</li>
+</ul>
+<h2 id="连接container"><a href="#连接container" class="headerlink" title="连接container"></a>连接container</h2><p>验证ssh连接</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32774</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32775</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br><span class="line"><span class="meta">%</span><span class="bash"> ssh root@localhost -p 32776</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 输入密码 abc.123</span></span><br></pre></td></tr></table></figure>
+<p>使用exec</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker exec -it hadoop0 /bin/bash</span><br></pre></td></tr></table></figure>
+
+<h2 id="修改container的主机名"><a href="#修改container的主机名" class="headerlink" title="修改container的主机名"></a>修改container的主机名</h2><p>分别修改三个container的hosts</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/hosts </span><br></pre></td></tr></table></figure>
+<p>添加下面配置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">172.17.0.2    hadoop0</span><br><span class="line">172.17.0.3    hadoop1</span><br><span class="line">172.17.0.4    hadoop2</span><br></pre></td></tr></table></figure>
+<h2 id="ssh-免密"><a href="#ssh-免密" class="headerlink" title="ssh 免密"></a>ssh 免密</h2><p>设置ssh免密码登录<br>在hadoop0上执行下面操作</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">mkdir .ssh</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop0</span><br><span class="line">ssh-copy-id -i hadoop1</span><br><span class="line">ssh-copy-id -i hadoop2</span><br></pre></td></tr></table></figure>
+<p>在hadoop1上执行下面操作</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop1</span><br></pre></td></tr></table></figure>
+<p>在hadoop2上执行下面操作</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd  ~</span><br><span class="line">cd .ssh</span><br><span class="line">ssh-keygen -t rsa</span><br><span class="line"><span class="meta">#</span><span class="bash"> (一直按回车即可)</span></span><br><span class="line">ssh-copy-id -i localhost</span><br><span class="line">ssh-copy-id -i hadoop2</span><br></pre></td></tr></table></figure>
+<p>至此，Docker搭建Hadoop集群的准备工作</p>
+<hr>
+<p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="http://blog.csdn.net/xu470438000/article/details/50512442">使用docker搭建hadoop分布式集群</a></li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/dubbo/base/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +660,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:52" itemprop="dateModified" datetime="2021-04-24T12:58:52+08:00">2021-04-24</time>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -293,107 +739,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/docker/Jenkins_Docker/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/docker/Jenkins_Docker/" class="post-title-link" itemprop="url">在Docker上搭建Jenkins环境</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-23 00:00:00" itemprop="dateCreated datePublished" datetime="2017-02-23T00:00:00+08:00">2017-02-23</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:51" itemprop="dateModified" datetime="2021-04-24T12:58:51+08:00">2021-04-24</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <ol>
-<li>从网易镜像仓库下载Jenkins</li>
-</ol>
-<p><a target="_blank" rel="noopener" href="https://c.163yun.com/hub#/m/search/?keyword=jenkins">网易镜像仓库</a></p>
-<p>拉取到本地</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker pull hub.c.163.com/library/jenkins:latest</span><br></pre></td></tr></table></figure>
-<p>查看镜像</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker images</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY                      TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">hub.c.163.com&#x2F;library&#x2F;jenkins   latest              88d9d8a30b47        8 months ago        810MB</span><br></pre></td></tr></table></figure>
-<p>从官网下载最新的Jenkins</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget http://updates.jenkins-ci.org/download/war/2.107.2/jenkins.war</span><br></pre></td></tr></table></figure>
-<p>DockerFile</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">FROM hub.c.163.com/library/jenkins</span><br><span class="line"><span class="meta">#</span><span class="bash"> 将最新的Jenkins拷贝到`/usr/share/jenkins/`目录</span></span><br><span class="line">ADD jenkins.war /usr/share/jenkins/</span><br></pre></td></tr></table></figure>
-<p>常见镜像</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t avery/jenkins .</span><br></pre></td></tr></table></figure>
-<p>启动一个Container</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run --name prod_jenkins2 -d -p 9005:8080 -p 9006:50000 -v  /Users/avery/docker/jenkins/backup/jenkins_home:/var/jenkins_home avery/jenkins</span><br></pre></td></tr></table></figure>
-<ol>
-<li>创建本地Jenkins数据目录，将该目录映射到docker中的Jenkins目录，方便备份数据</li>
-<li>8080端口是Jenkins web service的默认端口，将宿主机的端口映射到8080端口，可以直接访问</li>
-<li>–name 命名为prod_jenkins2</li>
-<li>-d 后台运行</li>
-<li>-p 端口映射</li>
-<li>-v 文件目录映射</li>
-</ol>
-<p>查看</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker container ls -a</span><br><span class="line">CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                     PORTS                   NAMES</span><br><span class="line">cb8cdf3be078        avery/jenkins       &quot;/bin/tini -- /usr/l…&quot;   3 hours ago         Exited (143) 3 hours ago                           prod_jenkins2</span><br></pre></td></tr></table></figure>
-<p>启动后，可以直接通过url ‘<a href="http://localhost:9001&#39;">http://localhost:9001&#39;</a> 访问，Jenkins首次打开，需要获取随机密码</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 获取jenkins密码</span></span><br><span class="line">docker container exec cb8cdf3be078 cat /var/jenkins_home/secrets/initialAdminPassword</span><br><span class="line">a7cefff7d2634cc6a9542491f465eb52</span><br><span class="line"><span class="meta">#</span><span class="bash"> 或者直接进入shell查看</span></span><br><span class="line">docker exec -it cb8cdf3be078 bash</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/syntax_2_in_or/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -425,7 +770,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:51" itemprop="dateModified" datetime="2021-04-24T12:58:51+08:00">2021-04-24</time>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -492,255 +837,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/superset/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/superset/" class="post-title-link" itemprop="url">SuperSet</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:52" itemprop="dateModified" datetime="2021-04-24T12:58:52+08:00">2021-04-24</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">docker serach superset</span><br><span class="line">docker pull amancevice/superset</span><br><span class="line">docker images</span><br><span class="line">mkdir ~/apps/data/superset/</span><br><span class="line">docker run -d -p 8088:8088 -v  ~/apps/data/superset/:/home/superset amancevice/superset</span><br><span class="line">docker ps</span><br><span class="line"></span><br><span class="line">CONTAINER ID   IMAGE                 COMMAND                  CREATED          STATUS                            PORTS                    NAMES</span><br><span class="line">71a1400d1e98   amancevice/superset   &quot;gunicorn superset.a…&quot;   10 seconds ago   Up 9 seconds (health: starting)   0.0.0.0:8088-&gt;8088/tcp   quizzical_wright</span><br><span class="line">docker exec -it 71a1400d1e98 superset-init</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/PhantomJS/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/PhantomJS/" class="post-title-link" itemprop="url">PhamtomJs</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:52" itemprop="dateModified" datetime="2021-04-24T12:58:52+08:00">2021-04-24</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>PhamtomJs 是服务端的无界面的Chrome浏览器，提供JS API和shell命令行，方便操作</p>
-<blockquote>
-<p><a target="_blank" rel="noopener" href="http://phantomjs.org/quick-start.html">官方的文档</a></p>
-</blockquote>
-<h1 id="Java-操作"><a href="#Java-操作" class="headerlink" title="Java 操作"></a>Java 操作</h1><h2 id="阻塞式"><a href="#阻塞式" class="headerlink" title="阻塞式"></a>阻塞式</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">openWithPhanatomjs</span><span class="params">(String viewUrl)</span> </span>&#123;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs start&quot;</span> + viewUrl);</span><br><span class="line">      InputStreamReader inReader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream inputStream = <span class="keyword">null</span>;</span><br><span class="line">      BufferedReader reader = <span class="keyword">null</span>;</span><br><span class="line">      InputStream errorStream = <span class="keyword">null</span>;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">          String path = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              path = Thread.currentThread().getContextClassLoader().getResource(<span class="string">&quot;/&quot;</span>).toURI().getPath();</span><br><span class="line">          &#125; <span class="keyword">catch</span> (URISyntaxException e) &#123;</span><br><span class="line">              e.printStackTrace();</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="keyword">final</span> String s = path + File.separator + <span class="string">&quot;otwp.js&quot;</span>;</span><br><span class="line"><span class="comment">//            logger.info(s);</span></span><br><span class="line">          Process process = Runtime.getRuntime().exec(phanatomjsHome + <span class="string">&quot; &quot;</span> + s + <span class="string">&quot; &quot;</span> + viewUrl);</span><br><span class="line">          inputStream = process.getInputStream();</span><br><span class="line">          inReader = <span class="keyword">new</span> InputStreamReader(inputStream, <span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">          reader = <span class="keyword">new</span> BufferedReader(inReader);</span><br><span class="line">          String line = <span class="keyword">null</span>;</span><br><span class="line">          <span class="keyword">while</span> ((line = reader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">          errorStream = process.getErrorStream();</span><br><span class="line">          <span class="keyword">final</span> BufferedReader bufferedReader = <span class="keyword">new</span> BufferedReader(<span class="keyword">new</span> InputStreamReader(errorStream));</span><br><span class="line">          <span class="keyword">while</span> ((line = bufferedReader.readLine()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">              logger.info(line);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">          logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">      &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">          <span class="keyword">try</span> &#123;</span><br><span class="line">              <span class="keyword">if</span> (inReader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inReader.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (inputStream != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  inputStream.close();</span><br><span class="line">              &#125;</span><br><span class="line">              <span class="keyword">if</span> (reader != <span class="keyword">null</span>) &#123;</span><br><span class="line">                  reader.close();</span><br><span class="line">              &#125;</span><br><span class="line">          &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">              logger.error(<span class="string">&quot;&quot;</span>, e);</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      logger.info(<span class="string">&quot;openWithPhanatomjs end&quot;</span> + viewUrl);</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>
-
-<h1 id="样例"><a href="#样例" class="headerlink" title="样例"></a>样例</h1><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// run this js with command:</span></span><br><span class="line"><span class="comment">// phantomjs openTableauWithPhantomjs.js &lt;Tableau view url&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(<span class="string">&quot;start open with Phantomjs&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> system = <span class="built_in">require</span>(<span class="string">&#x27;system&#x27;</span>);</span><br><span class="line"><span class="keyword">if</span> (system.args.length === <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Please input view url&#x27;</span>);</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">    phantom.exit();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">var</span> viewUrl = system.args[<span class="number">1</span>];</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">&#x27;Open url: &#x27;</span> + viewUrl);</span><br><span class="line">    <span class="keyword">var</span> page = <span class="built_in">require</span>(<span class="string">&#x27;webpage&#x27;</span>).create();</span><br><span class="line">    <span class="keyword">var</span> t = <span class="built_in">Date</span>.now();</span><br><span class="line"></span><br><span class="line">    page.onConsoleMessage = <span class="function"><span class="keyword">function</span> (<span class="params">msg</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(msg);</span><br><span class="line">    &#125;;</span><br><span class="line">    page.onLoadFinished = <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;加载完毕, 状态: &#x27;</span> + status);</span><br><span class="line"></span><br><span class="line">    &#125;;</span><br><span class="line">    page.settings.resourceTimeout=<span class="number">100000</span>;</span><br><span class="line"></span><br><span class="line">    page.open(viewUrl, <span class="function"><span class="keyword">function</span> (<span class="params">status</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> title = page.evaluate(<span class="function"><span class="keyword">function</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">document</span>.title;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="built_in">console</span>.log(status + <span class="string">&#x27;\ttitle:&#x27;</span> + title);</span><br><span class="line">        <span class="keyword">if</span> (status !== <span class="string">&#x27;success&#x27;</span>) &#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;Fail to load the address!&#x27;</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            t = <span class="built_in">Date</span>.now() - t;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">&#x27;open success: elase time : &#x27;</span> + t);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">&#x27;exit&#x27;</span>);</span><br><span class="line">        phantom.exit();</span><br><span class="line"></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<hr>
-<p>[参考文献]</p>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://www.qcloud.com/community/article/743451001489391682">PhantomJS 基础及示例</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/HBase-client/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/HBase/HBase-client/" class="post-title-link" itemprop="url">HBase-client</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:52" itemprop="dateModified" datetime="2021-04-24T12:58:52+08:00">2021-04-24</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="HBase-client"><a href="#HBase-client" class="headerlink" title="HBase-client"></a>HBase-client</h1><h2 id="读取到旧region的原因"><a href="#读取到旧region的原因" class="headerlink" title="读取到旧region的原因"></a>读取到旧region的原因</h2><p> hbase查询，查询在两张表间切换，查询了三天另一张表，原表已经重建过了，查询切换回原表出现读取到旧region的问题</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/solr/SolrCloud/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -772,7 +868,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:52" itemprop="dateModified" datetime="2021-04-24T12:58:52+08:00">2021-04-24</time>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -856,7 +952,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/online-bug/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/superset/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -870,7 +966,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/HBase/online-bug/" class="post-title-link" itemprop="url">HBase线上异常分析</a>
+            <a href="/bigdata/superset/" class="post-title-link" itemprop="url">SuperSet</a>
         </h2>
 
         <div class="post-meta">
@@ -887,7 +983,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:52" itemprop="dateModified" datetime="2021-04-24T12:58:52+08:00">2021-04-24</time>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -910,17 +1006,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="online-bug"><a href="#online-bug" class="headerlink" title="online-bug"></a>online-bug</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">075</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 33697ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">175</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 114225ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">267</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_2] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 121313ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">375</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_3] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 259454ms</span><br><span class="line"><span class="number">2021</span>-<span class="number">02</span>-<span class="number">02</span> <span class="number">06</span>:<span class="number">47</span>:<span class="number">00</span>,<span class="number">467</span> INFO  [&lt;ip&gt;,<span class="number">60020</span>,1591261891345_ChoreService_2] regionserver.HRegionServer: &lt;ip&gt;,<span class="number">60020</span>,<span class="number">1591261891345</span>-MemstoreFlusherChore requesting flush of hbase:rsgroup,,<span class="number">1591262014513.</span>066ea97b2a302a0e0aec8bc8cf00a680. because m has an old edit so flush to free WALs after random delay 191262ms</span><br></pre></td></tr></table></figure>
-
-<p>关于MemStore的刷新方式：<br>1、MemStore达到上限hbase.hregion.memstore.flush.size 默认是128M的时候，会触发MemStore的刷新。这个参数表示单个MemStore的大小的阈值。这个时候是不阻塞写操作的。</p>
-<p>2、当一个Region的MemStore总量达到hbase.hregion.memstore.block.multiplier * hbase.hregion.memstore.flush.size（默认2*128M=256M）时，会阻塞这个region的写操作，并强制刷写到HFile。触发这个刷新只会发生在MemStore即将写满128M时put了一个巨大的记录的情况，这时会阻塞写操作，强制刷新成功才能继续写入。</p>
-<p>3、一个RegionServer会有很多个Region，很多的MemStore，所以可能单个Region并没有超过阈值，但是整个RegionServer的内存已经占用非常多了，这时候还有另外两个参数控制内存的刷写：hbase.regionserver.global.memstore.upperLimit 默认0.4，当RegionServer上全部的MemStore占用超过heap(heap的大小在hbase-env.sh中设置HBASE_HEAPSIZE，默认1G，我们设置的4G)的40%时，强制阻塞所有的写操作，将所有的MemStore刷写到HFile；hbase.regionserver.global.memstore.lowerLimit 默认0.35，表示所有的MemStore占用超过heap的35%时，会选择一些占用内存比较大的MemStore阻塞写操作并进行flush，这是为了降低阻塞全部写操作flush带来的问题。</p>
-<p>4、当HLog达到最大值（hbase.regionserver.maxlogs * hbase.regionserver.hlog.blocksize 默认32*64M = 2G）时，也会触发MemStore的刷新，强制将更新固化到HFile中，避免在RegionServer crash时恢复时间过长。</p>
-<p>5、定期会进行MemStore的刷新，hbase.regionserver.optionalcacheflushinterval 默认3600000，一小时，确保MemStore的数据不会长时间没有固化到HFile中。为避免所有的MemStore在同一时间都进行flush导致的问题，定期的flush操作有20000左右的随机延时。</p>
-<p>6、手工可以进行flush操作，在hbase shell调用flush，可以针对某个表或者某个region进行flush：<br>hbase(main):010:0&gt; help ‘flush’<br>Flush all regions in passed table or pass a region row to flush an individual region.  For example:</p>
-<p>  hbase&gt; flush ‘TABLENAME’<br>  hbase&gt; flush ‘REGIONNAME’</p>
-<p>7、手工flush：<br>在API中只看到有setMemStoreFlushSize 指定memstore flush到HDFS上的文件大小，默认是64M，不确定是否可以直接触发flush MemStore。</p>
-<p><a target="_blank" rel="noopener" href="https://lihuimintu.github.io/2019/06/27/HBase-IO-Case/">HBase Region 过多导致集群问题事件</a></p>
+          <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">docker serach superset</span><br><span class="line">docker pull amancevice/superset</span><br><span class="line">docker images</span><br><span class="line">mkdir ~/apps/data/superset/</span><br><span class="line">docker run -d -p 8088:8088 -v  ~/apps/data/superset/:/home/superset amancevice/superset</span><br><span class="line">docker ps</span><br><span class="line"></span><br><span class="line">CONTAINER ID   IMAGE                 COMMAND                  CREATED          STATUS                            PORTS                    NAMES</span><br><span class="line">71a1400d1e98   amancevice/superset   &quot;gunicorn superset.a…&quot;   10 seconds ago   Up 9 seconds (health: starting)   0.0.0.0:8088-&gt;8088/tcp   quizzical_wright</span><br><span class="line">docker exec -it 71a1400d1e98 superset-init</span><br><span class="line"></span><br></pre></td></tr></table></figure>
 
       
     </div>
@@ -940,7 +1026,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/cluster_deploy/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/HBase/HBase-client/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -954,7 +1040,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/cluster_deploy/" class="post-title-link" itemprop="url">mac搭建hadoop、hive、spark、flink环境</a>
+            <a href="/bigdata/HBase/HBase-client/" class="post-title-link" itemprop="url">HBase-client</a>
         </h2>
 
         <div class="post-meta">
@@ -971,7 +1057,81 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:52" itemprop="dateModified" datetime="2021-04-24T12:58:52+08:00">2021-04-24</time>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="HBase-client"><a href="#HBase-client" class="headerlink" title="HBase-client"></a>HBase-client</h1><h2 id="读取到旧region的原因"><a href="#读取到旧region的原因" class="headerlink" title="读取到旧region的原因"></a>读取到旧region的原因</h2><p> hbase查询，查询在两张表间切换，查询了三天另一张表，原表已经重建过了，查询切换回原表出现读取到旧region的问题</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/%E9%9B%86%E7%BE%A4%E6%90%AD%E5%BB%BA/" class="post-title-link" itemprop="url">mac搭建hadoop、hive、spark、flink环境</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1015,139 +1175,6 @@
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动</span></span><br><span class="line">bin/start-cluster.sh</span><br></pre></td></tr></table></figure>
 
 <h2 id="搭建AthenaX"><a href="#搭建AthenaX" class="headerlink" title="搭建AthenaX"></a>搭建AthenaX</h2><p><a target="_blank" rel="noopener" href="https://athenax.readthedocs.io/en/latest/getting_started/">Building AthenaX and Flink</a></p>
-<h2 id="mac-install-kafka"><a href="#mac-install-kafka" class="headerlink" title="mac install kafka"></a>mac install kafka</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">brew install zookeeper</span><br><span class="line">brew install kafka</span><br></pre></td></tr></table></figure>
-<p>修改 /usr/local/etc/kafka/server.properties, 找到 listeners=PLAINTEXT://:9092 那一行，把注释取消掉。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ brew services start zookeeper</span><br><span class="line">$ brew services start kafka</span><br></pre></td></tr></table></figure>
-<p>创建topic</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;usr&#x2F;local&#x2F;bin&#x2F;kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic order-streaming-test</span><br></pre></td></tr></table></figure>
-<h3 id="清理topic"><a href="#清理topic" class="headerlink" title="清理topic"></a>清理topic</h3><p>cd /usr/local/var/lib/kafka-logs</p>
-<p><a target="_blank" rel="noopener" href="https://colobu.com/2019/09/27/install-Kafka-on-Mac/">install kafka on mac</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/RPC/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/RPC/" class="post-title-link" itemprop="url">RPC</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-01-10 00:00:00" itemprop="dateCreated datePublished" datetime="2017-01-10T00:00:00+08:00">2017-01-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-24 12:58:52" itemprop="dateModified" datetime="2021-04-24T12:58:52+08:00">2021-04-24</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Distributed/" itemprop="url" rel="index"><span itemprop="name">Distributed</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>RPC -  Remote Procedure Call 远程过程调用<br>是一种进程间通信方式。它允许程序调用另一个地址空间（通常是共享网络的另一台机器上）的过程或函数，而不用程序员显式编码这个远程调用的细节。即程序员无论是调用本地的还是远程的，本质上编写的调用代码基本相同。</p>
-<p>RPC 的鼻祖<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Bruce_Jay_Nelson">Bruce Jay Nelson</a> 在1980s提出了基本的实现结构<br><img src="/images/distributed/RPC/rpc-struct-01.png" alt="RPC基本实现结构"></p>
-<p>图中的<code>user</code>即为<code>client</code></p>
-<h1 id="常见的RPC协议"><a href="#常见的RPC协议" class="headerlink" title="常见的RPC协议"></a>常见的RPC协议</h1><p>CORBAR: 为了解决异构平台的 RPC，使用了 <code>IDL</code>（Interface Definition Language）来定义远程接口，并将其映射到特定的平台语言中。后来大部分的跨语言平台 RPC 基本都采用了此类方式，比如我们熟悉的 Web Service（SOAP），近年开源的Thrift 等。他们大部分都通过 IDL 定义，并提供工具来映射生成不同语言平台的 user-stub 和 server-stub，并通过框架库来提供 RPCRuntime 的支持。不过貌似每个不同的 RPC 框架都定义了各自不同的 IDL 格式，导致程序员的学习成本进一步上升（苦逼啊），Web Service 尝试建立业界标准，无赖标准规范复杂而效率偏低，否则 Thrift 等更高效的 RPC 框架就没必要出现了。</p>
-<p>IDL 是为了跨平台语言实现 RPC 不得已的选择，要解决更广泛的问题自然导致了更复杂的方案。而对于同一平台内的 RPC 而言显然没必要搞个中间语言出来，例如Java原生的 RMI，这样对于 java 程序员而言显得更直接简单，降低使用的学习成本。目前市面上提供的 RPC 框架已经可算是五花八门，百家争鸣了。需要根据实际使用场景谨慎选型，需要考虑的选型因素我觉得至少包括下面几点：</p>
-<ol>
-<li>性能指标</li>
-<li>是否需要跨语言平台</li>
-<li>内网开放还是公网开放</li>
-<li>开源 RPC 框架本身的质量、社区活跃度</li>
-</ol>
-<h2 id="CORBAR"><a href="#CORBAR" class="headerlink" title="CORBAR"></a>CORBAR</h2><h2 id="RMI"><a href="#RMI" class="headerlink" title="RMI"></a>RMI</h2><h2 id="Web-Service（SOAP）"><a href="#Web-Service（SOAP）" class="headerlink" title="Web Service（SOAP）"></a>Web Service（SOAP）</h2><h2 id="Thrift"><a href="#Thrift" class="headerlink" title="Thrift"></a>Thrift</h2><h1 id="异步调用与同步调用"><a href="#异步调用与同步调用" class="headerlink" title="异步调用与同步调用"></a>异步调用与同步调用</h1><ol>
-<li>同步调用<br>客户方等待调用执行完成并返回结果。  </li>
-<li>异步调用<br>客户方调用后不用等待执行结果返回，但依然可以通过回调通知等方式获取返回结果。<br>若客户方不关心调用返回结果，则变成单向异步调用，单向调用不用返回结果。  </li>
-</ol>
-<h2 id="RPC-结构拆解"><a href="#RPC-结构拆解" class="headerlink" title="RPC 结构拆解"></a>RPC 结构拆解</h2><p><img src="http://img.blog.csdn.net/20150108170231000?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbWluZGZsb2F0aW5n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center" alt="img"></p>
-<p>RPC 服务方通过 <code>RpcServer</code> 去导出（export）远程接口方法，而客户方通过 <code>RpcClient</code> 去引入（import）远程接口方法。客户方像调用本地方法一样去调用远程接口方法，RPC 框架提供接口的代理实现，实际的调用将委托给代理<code>RpcProxy</code> 。代理封装调用信息并将调用转交给<code>RpcInvoker</code> 去实际执行。在客户端的<code>RpcInvoker</code> 通过连接器<code>RpcConnector</code> 去维持与服务端的通道<code>RpcChannel</code>，并使用<code>RpcProtocol</code> 执行协议编码（encode）并将编码后的请求消息通过通道发送给服务方。</p>
-<p>RPC 服务端接收器 <code>RpcAcceptor</code> 接收客户端的调用请求，同样使用<code>RpcProtocol</code> 执行协议解码（decode）。解码后的调用信息传递给<code>RpcProcessor</code> 去控制处理调用过程，最后再委托调用给<code>RpcInvoker</code> 去实际执行并返回调用结果。</p>
-<h2 id="RPC-组件职责"><a href="#RPC-组件职责" class="headerlink" title="RPC 组件职责"></a>RPC 组件职责</h2><p>上面我们进一步拆解了 RPC 实现结构的各个组件组成部分，下面我们详细说明下每个组件的职责划分。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">1. RpcServer  </span><br><span class="line">   负责导出（export）远程接口  </span><br><span class="line">2. RpcClient  </span><br><span class="line">   负责导入（import）远程接口的代理实现  </span><br><span class="line">3. RpcProxy  </span><br><span class="line">   远程接口的代理实现  </span><br><span class="line">4. RpcInvoker  </span><br><span class="line">   客户方实现：负责编码调用信息和发送调用请求到服务方并等待调用结果返回  </span><br><span class="line">   服务方实现：负责调用服务端接口的具体实现并返回调用结果  </span><br><span class="line">5. RpcProtocol  </span><br><span class="line">   负责协议编&#x2F;解码  </span><br><span class="line">6. RpcConnector  </span><br><span class="line">   负责维持客户方和服务方的连接通道和发送数据到服务方  </span><br><span class="line">7. RpcAcceptor  </span><br><span class="line">   负责接收客户方请求并返回请求结果  </span><br><span class="line">8. RpcProcessor  </span><br><span class="line">   负责在服务方控制调用过程，包括管理调用线程池、超时时间等  </span><br><span class="line">9. RpcChannel  </span><br><span class="line">   数据传输通道  </span><br></pre></td></tr></table></figure>
-<h2 id="RPC-实现分析"><a href="#RPC-实现分析" class="headerlink" title="RPC 实现分析"></a>RPC 实现分析</h2><p>在进一步拆解了组件并划分了职责之后，这里以在  Java 平台实现该 RPC 框架概念模型为例，详细分析下实现中需要考虑的因素。</p>
-<h3 id="导出远程接口"><a href="#导出远程接口" class="headerlink" title="导出远程接口"></a>导出远程接口</h3><p>导出远程接口的意思是指只有导出的接口可以供远程调用，而未导出的接口则不能。在 java 中导出接口的代码片段可能如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">DemoService demo   = <span class="keyword">new</span> ...;  </span><br><span class="line">RpcServer   server = <span class="keyword">new</span> ...;  </span><br><span class="line">server.export(DemoService.class, demo, options);  </span><br></pre></td></tr></table></figure>
-<p>我们可以导出整个接口，也可以更细粒度一点只导出接口中的某些方法，如：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 只导出 DemoService 中签名为 hi(String s) 的方法  </span></span><br><span class="line">server.export(DemoService.class, demo, <span class="string">&quot;hi&quot;</span>, <span class="keyword">new</span> Class&lt;?&gt;[] &#123; String.class &#125;, options);  </span><br></pre></td></tr></table></figure>
-<p>java 中还有一种比较特殊的调用就是多态，也就是一个接口可能有多个实现，那么远程调用时到底调用哪个？这个本地调用的语义是通过 jvm 提供的引用多态性隐式实现的，那么对于 RPC 来说跨进程的调用就没法隐式实现了。如果前面<code>DemoService</code> 接口有 2 个实现，那么在导出接口时就需要特殊标记不同的实现，如：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">DemoService demo   = <span class="keyword">new</span> ...;  </span><br><span class="line">DemoService demo2  = <span class="keyword">new</span> ...;  </span><br><span class="line">RpcServer   server = <span class="keyword">new</span> ...;  </span><br><span class="line">server.export(DemoService.class, demo, options);  </span><br><span class="line">server.export(<span class="string">&quot;demo2&quot;</span>, DemoService.class, demo2, options);  </span><br></pre></td></tr></table></figure>
-<p>上面 demo2 是另一个实现，我们标记为 “demo2” 来导出，那么远程调用时也需要传递该标记才能调用到正确的实现类，这样就解决了多态调用的语义。</p>
-<h3 id="导入远程接口与客户端代理"><a href="#导入远程接口与客户端代理" class="headerlink" title="导入远程接口与客户端代理"></a>导入远程接口与客户端代理</h3><p>导入相对于导出远程接口，客户端代码为了能够发起调用必须要获得远程接口的方法或过程定义。目前，大部分跨语言平台 RPC 框架采用根据 IDL 定义通过 code generator 去生成 stub 代码，这种方式下实际导入的过程就是通过代码生成器在编译期完成的。我所使用过的一些跨语言平台 RPC 框架如 CORBAR、WebService、ICE、Thrift 均是此类方式。</p>
-<p>代码生成的方式对跨语言平台 RPC 框架而言是必然的选择，而对于同一语言平台的 RPC 则可以通过共享接口定义来实现。在 java 中导入接口的代码片段可能如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">RpcClient client = <span class="keyword">new</span> ...;  </span><br><span class="line">DemoService demo = client.refer(DemoService.class);  </span><br><span class="line">demo.hi(<span class="string">&quot;how are you?&quot;</span>);  </span><br></pre></td></tr></table></figure>
-<p>在 java 中 ‘import’ 是关键字，所以代码片段中我们用 refer 来表达导入接口的意思。这里的导入方式本质也是一种代码生成技术，只不过是在运行时生成，比静态编译期的代码生成看起来更简洁些。java 里至少提供了两种技术来提供动态代码生成，一种是 jdk 动态代理，另外一种是字节码生成。动态代理相比字节码生成使用起来更方便，但动态代理方式在性能上是要逊色于直接的字节码生成的，而字节码生成在代码可读性上要差很多。两者权衡起来，个人认为牺牲一些性能来获得代码可读性和可维护性显得更重要。</p>
-<h3 id="协议编解码"><a href="#协议编解码" class="headerlink" title="协议编解码"></a>协议编解码</h3><p>客户端代理在发起调用前需要对调用信息进行编码，这就要考虑需要编码些什么信息并以什么格式传输到服务端才能让服务端完成调用。出于效率考虑，编码的信息越少越好（传输数据少），编码的规则越简单越好（执行效率高）。我们先看下需要编码些什么信息：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">-- 调用编码 --  </span><br><span class="line">1. 接口方法  </span><br><span class="line">   包括接口名、方法名  </span><br><span class="line">2. 方法参数  </span><br><span class="line">   包括参数类型、参数值  </span><br><span class="line">3. 调用属性  </span><br><span class="line">   包括调用属性信息，例如调用附件隐式参数、调用超时时间等  </span><br><span class="line">  </span><br><span class="line">-- 返回编码 --  </span><br><span class="line"> 1. 返回结果  </span><br><span class="line">    接口方法中定义的返回值  </span><br><span class="line"> 2. 返回码  </span><br><span class="line">    异常返回码  </span><br><span class="line"> 3. 返回异常信息  </span><br><span class="line">    调用异常信息  </span><br></pre></td></tr></table></figure>
-<p>除了以上这些必须的调用信息，我们可能还需要一些元信息以方便程序编解码以及未来可能的扩展。这样我们的编码消息里面就分成了两部分，一部分是元信息、另一部分是调用的必要信息。如果设计一种 RPC 协议消息的话，元信息我们把它放在协议消息头中，而必要信息放在协议消息体中。下面给出一种概念上的 RPC 协议消息设计格式：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">-- 消息头 --  </span><br><span class="line">magic      : 协议魔数，为解码设计  </span><br><span class="line">header size: 协议头长度，为扩展设计  </span><br><span class="line">version    : 协议版本，为兼容设计  </span><br><span class="line">st         : 消息体序列化类型  </span><br><span class="line">hb         : 心跳消息标记，为长连接传输层心跳设计  </span><br><span class="line">ow         : 单向消息标记，  </span><br><span class="line">rp         : 响应消息标记，不置位默认是请求消息  </span><br><span class="line">status code: 响应消息状态码  </span><br><span class="line">reserved   : 为字节对齐保留  </span><br><span class="line">message id : 消息 id  </span><br><span class="line">body size  : 消息体长度  </span><br><span class="line">  </span><br><span class="line">-- 消息体 --  </span><br><span class="line">采用序列化编码，常见有以下格式  </span><br><span class="line">xml   : 如 webservie soap  </span><br><span class="line">json  : 如 JSON-RPC  </span><br><span class="line">binary: 如 thrift; hession; kryo 等  </span><br></pre></td></tr></table></figure>
-<p>格式确定后编解码就简单了，由于头长度一定所以我们比较关心的就是消息体的序列化方式。序列化我们关心三个方面：<br>\1. 序列化和反序列化的效率，越快越好。 <br>\2. 序列化后的字节长度，越小越好。 <br>\3. 序列化和反序列化的兼容性，接口参数对象若增加了字段，是否兼容。<br>上面这三点有时是鱼与熊掌不可兼得，这里面涉及到具体的序列化库实现细节，就不在本文进一步展开分析了。</p>
-<h3 id="传输服务"><a href="#传输服务" class="headerlink" title="传输服务"></a>传输服务</h3><p>协议编码之后，自然就是需要将编码后的 RPC 请求消息传输到服务方，服务方执行后返回结果消息或确认消息给客户方。RPC 的应用场景实质是一种可靠的请求应答消息流，和 HTTP 类似。因此选择长连接方式的 TCP 协议会更高效，与 HTTP 不同的是在协议层面我们定义了每个消息的唯一 id，因此可以更容易的复用连接。</p>
-<p>既然使用长连接，那么第一个问题是到底 client 和 server 之间需要多少根连接？实际上单连接和多连接在使用上没有区别，对于数据传输量较小的应用类型，单连接基本足够。单连接和多连接最大的区别在于，每根连接都有自己私有的发送和接收缓冲区，因此大数据量传输时分散在不同的连接缓冲区会得到更好的吞吐效率。所以，如果你的数据传输量不足以让单连接的缓冲区一直处于饱和状态的话，那么使用多连接并不会产生任何明显的提升，反而会增加连接管理的开销。</p>
-<p>连接是由 client 端发起建立并维持。如果 client 和 server 之间是直连的，那么连接一般不会中断（当然物理链路故障除外）。如果 client 和 server 连接经过一些负载中转设备，有可能连接一段时间不活跃时会被这些中间设备中断。为了保持连接有必要定时为每个连接发送心跳数据以维持连接不中断。心跳消息是 RPC 框架库使用的内部消息，在前文协议头结构中也有一个专门的心跳位，就是用来标记心跳消息的，它对业务应用透明。</p>
-<h3 id="执行调用"><a href="#执行调用" class="headerlink" title="执行调用"></a>执行调用</h3><p>client stub 所做的事情仅仅是编码消息并传输给服务方，而真正调用过程发生在服务方。server stub 从前文的结构拆解中我们细分了 <code>RpcProcessor</code> 和<code>RpcInvoker</code> 两个组件，一个负责控制调用过程，一个负责真正调用。这里我们还是以 java 中实现这两个组件为例来分析下它们到底需要做什么？</p>
-<p>java 中实现代码的动态接口调用目前一般通过反射调用。除了原生的 jdk 自带的反射，一些第三方库也提供了性能更优的反射调用，因此 <code>RpcInvoker</code> 就是封装了反射调用的实现细节。</p>
-<p>调用过程的控制需要考虑哪些因素，<code>RpcProcessor</code> 需要提供什么样地调用控制服务呢？下面提出几点以启发思考：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">1. 效率提升  </span><br><span class="line">   每个请求应该尽快被执行，因此我们不能每请求来再创建线程去执行，需要提供线程池服务。  </span><br><span class="line">2. 资源隔离  </span><br><span class="line">   当我们导出多个远程接口时，如何避免单一接口调用占据所有线程资源，而引发其他接口执行阻塞。  </span><br><span class="line">3. 超时控制  </span><br><span class="line">   当某个接口执行缓慢，而 client 端已经超时放弃等待后，server 端的线程继续执行此时显得毫无意义。  </span><br></pre></td></tr></table></figure>
-
-<h2 id="RPC-异常处理"><a href="#RPC-异常处理" class="headerlink" title="RPC 异常处理"></a>RPC 异常处理</h2><p>无论 RPC 怎样努力把远程调用伪装的像本地调用，但它们依然有很大的不同点，而且有一些异常情况是在本地调用时绝对不会碰到的。在说异常处理之前，我们先比较下本地调用和 RPC 调用的一些差异：</p>
-<ol>
-<li>本地调用一定会执行，而远程调用则不一定，调用消息可能因为网络原因并未发送到服务方。</li>
-<li>本地调用只会抛出接口声明的异常，而远程调用还会跑出 RPC 框架运行时的其他异常。</li>
-<li>本地调用和远程调用的性能可能差距很大，这取决于 RPC 固有消耗所占的比重。<br>正是这些区别决定了使用 RPC 时需要更多考量。当调用远程接口抛出异常时，异常可能是一个业务异常，也可能是 RPC 框架抛出的运行时异常（如：网络中断等）。业务异常表明服务方已经执行了调用，可能因为某些原因导致未能正常执行，而 RPC 运行时异常则有可能服务方根本没有执行，对调用方而言的异常处理策略自然需要区分。</li>
-</ol>
-<p>由于 RPC 固有的消耗相对本地调用高出几个数量级，本地调用的固有消耗是纳秒级，而 RPC 的固有消耗是在毫秒级。那么对于过于轻量的计算任务就并不合适导出远程接口由独立的进程提供服务，只有花在计算任务上时间远远高于 RPC 的固有消耗才值得导出为远程接口提供服务。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>至此我们提出了一个 RPC 实现的概念框架，并详细分析了需要考虑的一些实现细节。无论 RPC 的概念是如何优雅，但是“草丛中依然有几条蛇隐藏着”，只有深刻理解了 RPC 的本质，才能更好地应用。</p>
 
       
     </div>
@@ -1166,7 +1193,7 @@
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/15/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/">15</a><span class="page-number current">16</span><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/24/">24</a><a class="extend next" rel="next" href="/page/17/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <a class="extend prev" rel="prev" href="/page/15/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/">15</a><span class="page-number current">16</span><a class="page-number" href="/page/17/">17</a><span class="space">&hellip;</span><a class="page-number" href="/page/25/">25</a><a class="extend next" rel="next" href="/page/17/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1232,7 +1259,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">239</span>
+          <span class="site-state-item-count">242</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

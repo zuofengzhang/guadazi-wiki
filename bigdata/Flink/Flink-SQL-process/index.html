@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Flink SQL原理之SQL执行流程 Flink使用Calcite实现了SQL的解析、转换、执行计划优化和转换，那么，Flink SQL是如何执行的呢？  Calcite处理SQL的流程 SQL解析（SQL -&gt; SqlNode）: 将SQL解析为AST(抽象语法树, Calcite中用SqlNode表示) SqlNode验证(SqlNode -&gt; SqlNode) : 根据元数据信">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Guadazi">
+<meta property="og:url" content="http://example.com/bigdata/Flink/Flink-SQL-process/index.html">
+<meta property="og:site_name" content="Guadazi">
+<meta property="og:description" content="Flink SQL原理之SQL执行流程 Flink使用Calcite实现了SQL的解析、转换、执行计划优化和转换，那么，Flink SQL是如何执行的呢？  Calcite处理SQL的流程 SQL解析（SQL -&gt; SqlNode）: 将SQL解析为AST(抽象语法树, Calcite中用SqlNode表示) SqlNode验证(SqlNode -&gt; SqlNode) : 根据元数据信">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-06-01T11:57:43.644Z">
+<meta property="article:modified_time" content="2021-06-01T11:57:43.645Z">
+<meta property="article:author" content="aaronzhang">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/bigdata/Flink/Flink-SQL-process/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title> | Guadazi</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Guadazi</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL-process/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-06-01 19:57:43" itemprop="dateCreated datePublished" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Flink-SQL原理之SQL执行流程"><a href="#Flink-SQL原理之SQL执行流程" class="headerlink" title="Flink SQL原理之SQL执行流程"></a>Flink SQL原理之SQL执行流程</h1><blockquote>
+<p>Flink使用Calcite实现了SQL的解析、转换、执行计划优化和转换，那么，Flink SQL是如何执行的呢？</p>
+</blockquote>
+<h2 id="Calcite处理SQL的流程"><a href="#Calcite处理SQL的流程" class="headerlink" title="Calcite处理SQL的流程"></a>Calcite处理SQL的流程</h2><ol>
+<li>SQL解析（SQL -&gt; SqlNode）: 将SQL解析为AST(抽象语法树, Calcite中用SqlNode表示)</li>
+<li>SqlNode验证(SqlNode -&gt; SqlNode) : 根据元数据信息(表名、字段名、函数名和数据类型等)进行语法验证</li>
+<li>语义分析(SqlNode -&gt; RelNode/RexNode: relational expression): 根据SqlNode与元数据信息构建RelNode树，也就是逻辑计划(Logical Plan)</li>
+<li>逻辑计划优化(RelNode-&gt;RelNode): 优化器的核心，Calcite提供了两种Planner(HepPlanner和VolcanoPlanner),按照相应的规则(Rule)进行优化<ul>
+<li>HepPlanner: 启发式优化器，RBO, 按照规则匹配，直到最大次数或遍历后不再match rule</li>
+<li>VolcanoPlanner: CBO，一直迭代，直到找到cost最小的plan</li>
+</ul>
+</li>
+<li>生成物理执行计划: 将Plan映射为Flink Graph</li>
+</ol>
+<h2 id="Flink-SQL的执行流程"><a href="#Flink-SQL的执行流程" class="headerlink" title="Flink SQL的执行流程"></a>Flink SQL的执行流程</h2><h3 id="测试样例"><a href="#测试样例" class="headerlink" title="测试样例"></a>测试样例</h3><p>MySQL实体表</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> IF <span class="keyword">NOT</span> <span class="keyword">EXISTS</span> t_rt_agg_result(</span><br><span class="line">  ks <span class="type">int</span>(<span class="number">11</span>) <span class="keyword">not</span> <span class="keyword">null</span> <span class="keyword">primary</span> <span class="keyword">key</span> auto_increment ,</span><br><span class="line">  biz <span class="type">int</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;biz code&#x27;</span>,</span><br><span class="line">  ei <span class="type">varchar</span>(<span class="number">10</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;first level event name&#x27;</span>,</span><br><span class="line">  sei <span class="type">varchar</span>(<span class="number">10</span>) <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;second level event name&#x27;</span>,</span><br><span class="line">  uv long <span class="keyword">NULL</span> COMMENT <span class="string">&#x27;user count&#x27;</span>,</span><br><span class="line">  pv long <span class="keyword">NULL</span>,</span><br><span class="line">  time_id <span class="type">varchar</span>(<span class="number">10</span>) <span class="keyword">NOT</span> <span class="keyword">NULL</span>,</span><br><span class="line">  update_time <span class="type">TIMESTAMP</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span> <span class="keyword">DEFAULT</span> <span class="built_in">CURRENT_TIMESTAMP</span> <span class="keyword">ON</span> <span class="keyword">UPDATE</span> <span class="built_in">CURRENT_TIMESTAMP</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>数据源</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> orders (</span><br><span class="line">  biz <span class="type">int</span>,</span><br><span class="line">  ei STRING,</span><br><span class="line">  sei STRING,</span><br><span class="line">  ui STRing,</span><br><span class="line">  etime <span class="type">timestamp</span>(<span class="number">3</span>),</span><br><span class="line">  watermark <span class="keyword">for</span> etime <span class="keyword">as</span> etime <span class="operator">-</span> <span class="type">interval</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">second</span> </span><br><span class="line">) <span class="keyword">WITH</span> (</span><br><span class="line">   <span class="string">&#x27;connector.type&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;filesystem&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.path&#x27;</span><span class="operator">=</span><span class="string">&#x27;/Users/zhangzuofeng1/orders.csv&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;format.type&#x27;</span><span class="operator">=</span><span class="string">&#x27;csv&#x27;</span></span><br><span class="line">) </span><br></pre></td></tr></table></figure>
+<p>假设选用Blink planner运行两个SQL: </p>
+<ul>
+<li>创建MySQL表的DDL语句</li>
+<li>从Source消费数据写入MySQL的DML语句</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> agg_result (</span><br><span class="line">  biz <span class="type">int</span>,</span><br><span class="line">  ei STRING,</span><br><span class="line">  sei STRING,</span><br><span class="line">  uv <span class="type">bigint</span>,</span><br><span class="line">  pv <span class="type">bigint</span>,</span><br><span class="line">  time_id STRING</span><br><span class="line">) <span class="keyword">WITH</span> (</span><br><span class="line">   <span class="string">&#x27;connector.type&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;jdbc&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.driver&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;com.mysql.cj.jdbc.Driver&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.url&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;jdbc:mysql://localhost:3306/fdata&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.table&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;t_agg_result&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.username&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;root&#x27;</span>,</span><br><span class="line">   <span class="string">&#x27;connector.password&#x27;</span> <span class="operator">=</span> <span class="string">&#x27;abc.ABC.123&#x27;</span></span><br><span class="line">)  </span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT</span> <span class="keyword">INTO</span> MyUserTable</span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">       biz,</span><br><span class="line">       ei,</span><br><span class="line">       sei,</span><br><span class="line">       <span class="built_in">count</span>(<span class="keyword">DISTINCT</span> ui) <span class="keyword">AS</span> uv,</span><br><span class="line">       <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">AS</span> pv,</span><br><span class="line">       DATE_FORMAT(TUMBLE_START(etime, <span class="type">INTERVAL</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">MINUTE</span>), <span class="string">&#x27;yyyyMMddHHmm&#x27;</span>) <span class="keyword">AS</span> timeId</span><br><span class="line"><span class="keyword">FROM</span> orders</span><br><span class="line"><span class="keyword">WHERE</span> ui <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span></span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> biz,</span><br><span class="line">         ei,</span><br><span class="line">         sei,</span><br><span class="line">         TUMBLE(etime, <span class="type">INTERVAL</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">MINUTE</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> agg_result </span><br><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">       biz,</span><br><span class="line">       ei,</span><br><span class="line">       sei,</span><br><span class="line">       <span class="built_in">count</span>(<span class="keyword">DISTINCT</span> ui) <span class="keyword">AS</span> uv,</span><br><span class="line">       <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">AS</span> pv,</span><br><span class="line">       DATE_FORMAT(TUMBLE_START(etime, <span class="type">INTERVAL</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">MINUTE</span>), <span class="string">&#x27;yyyyMMddHHmm&#x27;</span>) <span class="keyword">AS</span> timeId</span><br><span class="line"><span class="keyword">FROM</span> orders</span><br><span class="line"><span class="keyword">WHERE</span> ui <span class="keyword">IS</span> <span class="keyword">NOT</span> <span class="keyword">NULL</span></span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> biz,</span><br><span class="line">         ei,</span><br><span class="line">         sei,</span><br><span class="line">         TUMBLE(etime, <span class="type">INTERVAL</span> <span class="string">&#x27;1&#x27;</span> <span class="keyword">MINUTE</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>执行下面MySQL</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">tEnv.sqlUpdate(ddlSql);</span><br><span class="line">tEnv.sqlUpdate(dmlSql);</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">&#x3D;&#x3D; Abstract Syntax Tree &#x3D;&#x3D;</span><br><span class="line">LogicalProject(ei&#x3D;[$0], sei&#x3D;[$1], ui&#x3D;[$2], etime&#x3D;[$3])</span><br><span class="line">+- LogicalFilter(condition&#x3D;[&lt;&gt;($0, _UTF-16LE&#39;a&#39;)])</span><br><span class="line">   +- LogicalTableScan(table&#x3D;[[default_catalog, default_database, Unregistered_TableSource_1298380324, source: [CsvTableSource(read fields: ei, sei, ui, etime)]]])</span><br><span class="line"></span><br><span class="line">&#x3D;&#x3D; Optimized Logical Plan &#x3D;&#x3D;</span><br><span class="line">Calc(select&#x3D;[ei, sei, ui, etime], where&#x3D;[&lt;&gt;(ei, _UTF-16LE&#39;a&#39;:VARCHAR(10) CHARACTER SET &quot;UTF-16LE&quot;)])</span><br><span class="line">+- TableSourceScan(table&#x3D;[[default_catalog, default_database, Unregistered_TableSource_1298380324, source: [CsvTableSource(read fields: ei, sei, ui, etime)]]], fields&#x3D;[ei, sei, ui, etime])</span><br><span class="line"></span><br><span class="line">&#x3D;&#x3D; Physical Execution Plan &#x3D;&#x3D;</span><br><span class="line">Stage 1 : Data Source</span><br><span class="line">	content : Source: Custom File source</span><br><span class="line"></span><br><span class="line">	Stage 2 : Operator</span><br><span class="line">		content : CsvTableSource(read fields: ei, sei, ui, etime)</span><br><span class="line">		ship_strategy : REBALANCE</span><br><span class="line"></span><br><span class="line">		Stage 3 : Operator</span><br><span class="line">			content : SourceConversion(table&#x3D;[default_catalog.default_database.Unregistered_TableSource_1298380324, source: [CsvTableSource(read fields: ei, sei, ui, etime)]], fields&#x3D;[ei, sei, ui, etime])</span><br><span class="line">			ship_strategy : FORWARD</span><br><span class="line"></span><br><span class="line">			Stage 4 : Operator</span><br><span class="line">				content : Calc(select&#x3D;[ei, sei, ui, etime], where&#x3D;[(ei &lt;&gt; _UTF-16LE&#39;a&#39;:VARCHAR(10) CHARACTER SET &quot;UTF-16LE&quot;)])</span><br><span class="line">				ship_strategy : FORWARD</span><br></pre></td></tr></table></figure>
+
+
+
+
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123;<span class="attr">&quot;nodes&quot;</span>:[&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">10</span>,<span class="attr">&quot;type&quot;</span>:<span class="string">&quot;Source: Custom File source&quot;</span>,<span class="attr">&quot;pact&quot;</span>:<span class="string">&quot;Data Source&quot;</span>,<span class="attr">&quot;contents&quot;</span>:<span class="string">&quot;Source: Custom File source&quot;</span>,<span class="attr">&quot;parallelism&quot;</span>:<span class="number">1</span>&#125;,&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">11</span>,<span class="attr">&quot;type&quot;</span>:<span class="string">&quot;CsvTableSource(read fields: biz, ei, sei, ui, etime)&quot;</span>,<span class="attr">&quot;pact&quot;</span>:<span class="string">&quot;Operator&quot;</span>,<span class="attr">&quot;contents&quot;</span>:<span class="string">&quot;CsvTableSource(read fields: biz, ei, sei, ui, etime)&quot;</span>,<span class="attr">&quot;parallelism&quot;</span>:<span class="number">12</span>,<span class="attr">&quot;predecessors&quot;</span>:[&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">10</span>,<span class="attr">&quot;ship_strategy&quot;</span>:<span class="string">&quot;REBALANCE&quot;</span>,<span class="attr">&quot;side&quot;</span>:<span class="string">&quot;second&quot;</span>&#125;]&#125;,&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">12</span>,<span class="attr">&quot;type&quot;</span>:<span class="string">&quot;SourceConversion(table=[default_catalog.default_database.orders, source: [CsvTableSource(read fields: biz, ei, sei, ui, etime)]], fields=[biz, ei, sei, ui, etime])&quot;</span>,<span class="attr">&quot;pact&quot;</span>:<span class="string">&quot;Operator&quot;</span>,<span class="attr">&quot;contents&quot;</span>:<span class="string">&quot;SourceConversion(table=[default_catalog.default_database.orders, source: [CsvTableSource(read fields: biz, ei, sei, ui, etime)]], fields=[biz, ei, sei, ui, etime])&quot;</span>,<span class="attr">&quot;parallelism&quot;</span>:<span class="number">12</span>,<span class="attr">&quot;predecessors&quot;</span>:[&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">11</span>,<span class="attr">&quot;ship_strategy&quot;</span>:<span class="string">&quot;FORWARD&quot;</span>,<span class="attr">&quot;side&quot;</span>:<span class="string">&quot;second&quot;</span>&#125;]&#125;,&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">13</span>,<span class="attr">&quot;type&quot;</span>:<span class="string">&quot;WatermarkAssigner(rowtime=[etime], watermark=[(etime - 5000:INTERVAL SECOND)])&quot;</span>,<span class="attr">&quot;pact&quot;</span>:<span class="string">&quot;Operator&quot;</span>,<span class="attr">&quot;contents&quot;</span>:<span class="string">&quot;WatermarkAssigner(rowtime=[etime], watermark=[(etime - 5000:INTERVAL SECOND)])&quot;</span>,<span class="attr">&quot;parallelism&quot;</span>:<span class="number">12</span>,<span class="attr">&quot;predecessors&quot;</span>:[&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">12</span>,<span class="attr">&quot;ship_strategy&quot;</span>:<span class="string">&quot;FORWARD&quot;</span>,<span class="attr">&quot;side&quot;</span>:<span class="string">&quot;second&quot;</span>&#125;]&#125;,&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">14</span>,<span class="attr">&quot;type&quot;</span>:<span class="string">&quot;Calc(select=[biz, ei, sei, ui, etime], where=[ui IS NOT NULL])&quot;</span>,<span class="attr">&quot;pact&quot;</span>:<span class="string">&quot;Operator&quot;</span>,<span class="attr">&quot;contents&quot;</span>:<span class="string">&quot;Calc(select=[biz, ei, sei, ui, etime], where=[ui IS NOT NULL])&quot;</span>,<span class="attr">&quot;parallelism&quot;</span>:<span class="number">12</span>,<span class="attr">&quot;predecessors&quot;</span>:[&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">13</span>,<span class="attr">&quot;ship_strategy&quot;</span>:<span class="string">&quot;FORWARD&quot;</span>,<span class="attr">&quot;side&quot;</span>:<span class="string">&quot;second&quot;</span>&#125;]&#125;,&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">16</span>,<span class="attr">&quot;type&quot;</span>:<span class="string">&quot;GroupWindowAggregate(groupBy=[biz, ei, sei], window=[TumblingGroupWindow(&#x27;w$, etime, 60000)], properties=[w$start, w$end, w$rowtime, w$proctime], select=[biz, ei, sei, COUNT(DISTINCT ui) AS uv, COUNT(*) AS pv, start(&#x27;w$) AS w$start, end(&#x27;w$) AS w$end, rowtime(&#x27;w$) AS w$rowtime, proctime(&#x27;w$) AS w$proctime])&quot;</span>,<span class="attr">&quot;pact&quot;</span>:<span class="string">&quot;Operator&quot;</span>,<span class="attr">&quot;contents&quot;</span>:<span class="string">&quot;GroupWindowAggregate(groupBy=[biz, ei, sei], window=[TumblingGroupWindow(&#x27;w$, etime, 60000)], properties=[w$start, w$end, w$rowtime, w$proctime], select=[biz, ei, sei, COUNT(DISTINCT ui) AS uv, COUNT(*) AS pv, start(&#x27;w$) AS w$start, end(&#x27;w$) AS w$end, rowtime(&#x27;w$) AS w$rowtime, proctime(&#x27;w$) AS w$proctime])&quot;</span>,<span class="attr">&quot;parallelism&quot;</span>:<span class="number">12</span>,<span class="attr">&quot;predecessors&quot;</span>:[&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">14</span>,<span class="attr">&quot;ship_strategy&quot;</span>:<span class="string">&quot;HASH&quot;</span>,<span class="attr">&quot;side&quot;</span>:<span class="string">&quot;second&quot;</span>&#125;]&#125;,&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">17</span>,<span class="attr">&quot;type&quot;</span>:<span class="string">&quot;Calc(select=[biz, ei, sei, uv, pv, (w$start DATE_FORMAT _UTF-16LE&#x27;yyyyMMddHHmm&#x27;) AS timeId])&quot;</span>,<span class="attr">&quot;pact&quot;</span>:<span class="string">&quot;Operator&quot;</span>,<span class="attr">&quot;contents&quot;</span>:<span class="string">&quot;Calc(select=[biz, ei, sei, uv, pv, (w$start DATE_FORMAT _UTF-16LE&#x27;yyyyMMddHHmm&#x27;) AS timeId])&quot;</span>,<span class="attr">&quot;parallelism&quot;</span>:<span class="number">12</span>,<span class="attr">&quot;predecessors&quot;</span>:[&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">16</span>,<span class="attr">&quot;ship_strategy&quot;</span>:<span class="string">&quot;FORWARD&quot;</span>,<span class="attr">&quot;side&quot;</span>:<span class="string">&quot;second&quot;</span>&#125;]&#125;,&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">18</span>,<span class="attr">&quot;type&quot;</span>:<span class="string">&quot;SinkConversionToTuple2&quot;</span>,<span class="attr">&quot;pact&quot;</span>:<span class="string">&quot;Operator&quot;</span>,<span class="attr">&quot;contents&quot;</span>:<span class="string">&quot;SinkConversionToTuple2&quot;</span>,<span class="attr">&quot;parallelism&quot;</span>:<span class="number">12</span>,<span class="attr">&quot;predecessors&quot;</span>:[&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">17</span>,<span class="attr">&quot;ship_strategy&quot;</span>:<span class="string">&quot;FORWARD&quot;</span>,<span class="attr">&quot;side&quot;</span>:<span class="string">&quot;second&quot;</span>&#125;]&#125;,&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">19</span>,<span class="attr">&quot;type&quot;</span>:<span class="string">&quot;Sink: JDBCUpsertTableSink(biz, ei, sei, uv, pv, time_id)&quot;</span>,<span class="attr">&quot;pact&quot;</span>:<span class="string">&quot;Data Sink&quot;</span>,<span class="attr">&quot;contents&quot;</span>:<span class="string">&quot;Sink: JDBCUpsertTableSink(biz, ei, sei, uv, pv, time_id)&quot;</span>,<span class="attr">&quot;parallelism&quot;</span>:<span class="number">12</span>,<span class="attr">&quot;predecessors&quot;</span>:[&#123;<span class="attr">&quot;id&quot;</span>:<span class="number">18</span>,<span class="attr">&quot;ship_strategy&quot;</span>:<span class="string">&quot;FORWARD&quot;</span>,<span class="attr">&quot;side&quot;</span>:<span class="string">&quot;second&quot;</span>&#125;]&#125;]&#125;</span><br></pre></td></tr></table></figure>
+<p>Parser: Provides methods for parsing SQL objects from a SQL string.</p>
+<p>org.apache.flink.table.planner.delegation.PlannerBase</p>
+<p>org.apache.flink.table.planner.operations.SqlToOperationConverter#convert</p>
+<p>SqlNode 转换为 Operation</p>
+<ol>
+<li>结合元数据验证</li>
+</ol>
+<p><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1803116">https://cloud.tencent.com/developer/article/1803116</a></p>
+<p><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1697401">https://cloud.tencent.com/developer/article/1697401</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/bigdata/Flink/case/%E6%AC%BA%E8%AF%88%E6%A3%80%E6%B5%8B/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/bigdata/Flink/blink/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink-SQL%E5%8E%9F%E7%90%86%E4%B9%8BSQL%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="nav-number">1.</span> <span class="nav-text">Flink SQL原理之SQL执行流程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Calcite%E5%A4%84%E7%90%86SQL%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="nav-number">1.1.</span> <span class="nav-text">Calcite处理SQL的流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Flink-SQL%E7%9A%84%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="nav-number">1.2.</span> <span class="nav-text">Flink SQL的执行流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E6%A0%B7%E4%BE%8B"><span class="nav-number">1.2.1.</span> <span class="nav-text">测试样例</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">aaronzhang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">242</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">128</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">aaronzhang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
