@@ -183,6 +183,119 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/database/sql-lock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/database/sql-lock/" class="post-title-link" itemprop="url">数据库锁的基本原理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2016-12-01 00:00:00" itemprop="dateCreated datePublished" datetime="2016-12-01T00:00:00+08:00">2016-12-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="数据库锁的基本原理"><a href="#数据库锁的基本原理" class="headerlink" title="数据库锁的基本原理"></a>数据库锁的基本原理</h1><h2 id="为什么要锁"><a href="#为什么要锁" class="headerlink" title="为什么要锁"></a>为什么要锁</h2><p>数据库通常有大量的用户在同时操作，所以并发的情况下需要控制对临界资源的操作，数据库通过锁来控制对临界资源的访问，从而保证数据的一致性。例如对于同一个账户，操作之前账户余额为1000，同时开始2个事务，一个事务取款100，一个事务往账户中汇入100，那么2个事务结束后，账户的余额必须还是1000，否则要么银行不干，要么个人不干。 </p>
+<h2 id="锁类型"><a href="#锁类型" class="headerlink" title="锁类型"></a>锁类型</h2><h3 id="共享锁-读锁"><a href="#共享锁-读锁" class="headerlink" title="共享锁(读锁)"></a>共享锁(读锁)</h3><p>读锁是共享的，互相不阻塞，也就是可以多个客户同时读取同一资源，而不互相干扰。</p>
+<p>加锁条件：当执行select时，数据库为这个事务分配一把共享锁，来锁定被查询的数据。 </p>
+<p>解锁条件：默认情况下，数据被读取之后，数据库立即解锁。例如select * from table中，先锁定第一行，读取后，立即解锁第一行，然后再锁定第二行，这样大大降低锁争用程度。在repeatable read和serializable 这两种事务隔离级别下，共享锁是在事务结束时释放的，serializable对表加锁。 </p>
+<h3 id="排它锁-独占锁-写锁"><a href="#排它锁-独占锁-写锁" class="headerlink" title="排它锁(独占锁)(写锁)"></a>排它锁(独占锁)(写锁)</h3><p>写锁是排他的，一个写锁会阻塞其他的读锁和写锁，只有这样才能保证同一时刻，只有一个用户能够写入，并阻止其他用户读取正在写入的同一资源。如果要锁定的数据资源，已经放置了其他的锁，则不能再放置排它锁。<br>加锁条件：当执行insert update 和delete语句时，数据库会对操纵的资源使用排它锁。<br>解锁条件：事务结束时解锁。 </p>
+<h2 id="锁原理"><a href="#锁原理" class="headerlink" title="锁原理"></a>锁原理</h2><p>锁的基本原理如下：</p>
+<p>1.当第一个事务访问数据库资源时，如果执行select语句，则必须先获得共享锁，如果执行insert update和delete时，必须获得排它锁<br>2.当第二个事务也要访问相同的资源时，如果执行select语句，也必须先获得共享锁，如果执行insert update或者delete，也必须获得共享锁。根据已经放置在资源上的锁类型，来决定第二个事务是应该等待第一个事务释放锁，还是立即获得锁。 </p>
+<table>
+<thead>
+<tr>
+<th>资源上的锁</th>
+<th>第二个事务进行读</th>
+<th>第二个事务进行写</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>无</td>
+<td>立即获得共享锁</td>
+<td>立即获得排他锁</td>
+</tr>
+<tr>
+<td>共享锁</td>
+<td>立即获得共享锁</td>
+<td>等待第一个事务释放锁</td>
+</tr>
+<tr>
+<td>排他锁</td>
+<td>等待第一个事务释放锁</td>
+<td>等待第一个事务释放锁</td>
+</tr>
+</tbody></table>
+<h2 id="锁粒度"><a href="#锁粒度" class="headerlink" title="锁粒度"></a>锁粒度</h2><p>常见的锁有表锁、 行锁、 页锁、外键锁等。 </p>
+<p>锁有一定的消耗，主要有：获得锁，检查锁是否已经解除，释放锁等，这些操作都会增加系统的开销。<br>表锁开销比较小，但是并发性能也较差，行锁并发性能高，但是需要更多锁，数据库系统一般都支持锁的自动升级，例如一个事务中的锁过多的时候，可能会将行锁升级到表锁。</p>
+<p>mysql的各个存储引擎根据不同的应用场景采用不同的锁机制，MyISAM存储引擎采用表锁，InnoDB使用行锁。如果执行alert table之类的操作，服务器也会采用表锁，而忽略存储引擎的锁机制。<br>页锁，某些数据库支持页锁，页锁粒度介于行锁和表锁之间，用于锁定存放数据的页，1页通常含有n个数据行。 </p>
+<p>外键锁：外键会产生高级别的锁，后面介绍死锁的时候会提到。 </p>
+<h2 id="乐观锁和悲观锁"><a href="#乐观锁和悲观锁" class="headerlink" title="乐观锁和悲观锁"></a>乐观锁和悲观锁</h2><p>悲观锁：假设如果不加锁就一定会出现问题。<br>乐观锁：先假定不会出现并发问题，出现问题后再采取相应的措施。<br>悲观锁通过<code>select * from tbl for update</code>实现。<br>乐观锁可以在表中加一个version字段，每次更新的时候都+1，这样如果出现并发，第二次更新的时候version的值已经不再匹配，可以在这时采取相应的措施。</p>
+<h2 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h2><h3 id="死锁是如何产生的"><a href="#死锁是如何产生的" class="headerlink" title="死锁是如何产生的"></a>死锁是如何产生的</h3><p>同java的死锁一样，都是互相等待对方释放锁，造成了相互阻塞，造成的死锁。<br>请看下面的表格： </p>
+<p><img src="/images/database/lock/concept-02.gif"></p>
+<h3 id="如何避免死锁"><a href="#如何避免死锁" class="headerlink" title="如何避免死锁"></a>如何避免死锁</h3><p>1.修改操作表的顺序<br>从上面的示例中可以看出，如果调整一下操作表的顺序就可以避免死锁。<br>2.外键<br>如果向子表写记录，那么外键约束会检查父表的记录，并锁住父表的记录，来保证这条记录不会在这个事务完成之时就被删除了。<br>产生高级别的锁，会阻止其他事务操作或者其他DML操作，如果是因为外键产生的死锁，可以去掉外键约束，由应用来保证数据的完整性，通常生产环境都不建议加外键约束。<br>3.短事务<br>缩短事务的执行时间，可以减少锁的持有时间，可以降低死锁的风险。 </p>
+<h2 id="锁可能出现的问题"><a href="#锁可能出现的问题" class="headerlink" title="锁可能出现的问题"></a>锁可能出现的问题</h2><p>上锁是有开销的，即使不是给数据行而是给数据页上锁，也是有一定的时间的，如果第一个事务update一张大表，这时候第二个事务update这张大表比较靠后的位置的数据，这时候就可能会出现，第一个事务还没来得及给相应的数据上锁，第二个事务已经上了锁，所以出现第一个事务要等待第二个事务提交后释放锁，才能继续执行的情况。 </p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/database/MySQL/best_practices/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +327,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -330,119 +443,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/database/sql-lock/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/database/sql-lock/" class="post-title-link" itemprop="url">数据库锁的基本原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-12-01 00:00:00" itemprop="dateCreated datePublished" datetime="2016-12-01T00:00:00+08:00">2016-12-01</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/DataBase/" itemprop="url" rel="index"><span itemprop="name">DataBase</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="数据库锁的基本原理"><a href="#数据库锁的基本原理" class="headerlink" title="数据库锁的基本原理"></a>数据库锁的基本原理</h1><h2 id="为什么要锁"><a href="#为什么要锁" class="headerlink" title="为什么要锁"></a>为什么要锁</h2><p>数据库通常有大量的用户在同时操作，所以并发的情况下需要控制对临界资源的操作，数据库通过锁来控制对临界资源的访问，从而保证数据的一致性。例如对于同一个账户，操作之前账户余额为1000，同时开始2个事务，一个事务取款100，一个事务往账户中汇入100，那么2个事务结束后，账户的余额必须还是1000，否则要么银行不干，要么个人不干。 </p>
-<h2 id="锁类型"><a href="#锁类型" class="headerlink" title="锁类型"></a>锁类型</h2><h3 id="共享锁-读锁"><a href="#共享锁-读锁" class="headerlink" title="共享锁(读锁)"></a>共享锁(读锁)</h3><p>读锁是共享的，互相不阻塞，也就是可以多个客户同时读取同一资源，而不互相干扰。</p>
-<p>加锁条件：当执行select时，数据库为这个事务分配一把共享锁，来锁定被查询的数据。 </p>
-<p>解锁条件：默认情况下，数据被读取之后，数据库立即解锁。例如select * from table中，先锁定第一行，读取后，立即解锁第一行，然后再锁定第二行，这样大大降低锁争用程度。在repeatable read和serializable 这两种事务隔离级别下，共享锁是在事务结束时释放的，serializable对表加锁。 </p>
-<h3 id="排它锁-独占锁-写锁"><a href="#排它锁-独占锁-写锁" class="headerlink" title="排它锁(独占锁)(写锁)"></a>排它锁(独占锁)(写锁)</h3><p>写锁是排他的，一个写锁会阻塞其他的读锁和写锁，只有这样才能保证同一时刻，只有一个用户能够写入，并阻止其他用户读取正在写入的同一资源。如果要锁定的数据资源，已经放置了其他的锁，则不能再放置排它锁。<br>加锁条件：当执行insert update 和delete语句时，数据库会对操纵的资源使用排它锁。<br>解锁条件：事务结束时解锁。 </p>
-<h2 id="锁原理"><a href="#锁原理" class="headerlink" title="锁原理"></a>锁原理</h2><p>锁的基本原理如下：</p>
-<p>1.当第一个事务访问数据库资源时，如果执行select语句，则必须先获得共享锁，如果执行insert update和delete时，必须获得排它锁<br>2.当第二个事务也要访问相同的资源时，如果执行select语句，也必须先获得共享锁，如果执行insert update或者delete，也必须获得共享锁。根据已经放置在资源上的锁类型，来决定第二个事务是应该等待第一个事务释放锁，还是立即获得锁。 </p>
-<table>
-<thead>
-<tr>
-<th>资源上的锁</th>
-<th>第二个事务进行读</th>
-<th>第二个事务进行写</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>无</td>
-<td>立即获得共享锁</td>
-<td>立即获得排他锁</td>
-</tr>
-<tr>
-<td>共享锁</td>
-<td>立即获得共享锁</td>
-<td>等待第一个事务释放锁</td>
-</tr>
-<tr>
-<td>排他锁</td>
-<td>等待第一个事务释放锁</td>
-<td>等待第一个事务释放锁</td>
-</tr>
-</tbody></table>
-<h2 id="锁粒度"><a href="#锁粒度" class="headerlink" title="锁粒度"></a>锁粒度</h2><p>常见的锁有表锁、 行锁、 页锁、外键锁等。 </p>
-<p>锁有一定的消耗，主要有：获得锁，检查锁是否已经解除，释放锁等，这些操作都会增加系统的开销。<br>表锁开销比较小，但是并发性能也较差，行锁并发性能高，但是需要更多锁，数据库系统一般都支持锁的自动升级，例如一个事务中的锁过多的时候，可能会将行锁升级到表锁。</p>
-<p>mysql的各个存储引擎根据不同的应用场景采用不同的锁机制，MyISAM存储引擎采用表锁，InnoDB使用行锁。如果执行alert table之类的操作，服务器也会采用表锁，而忽略存储引擎的锁机制。<br>页锁，某些数据库支持页锁，页锁粒度介于行锁和表锁之间，用于锁定存放数据的页，1页通常含有n个数据行。 </p>
-<p>外键锁：外键会产生高级别的锁，后面介绍死锁的时候会提到。 </p>
-<h2 id="乐观锁和悲观锁"><a href="#乐观锁和悲观锁" class="headerlink" title="乐观锁和悲观锁"></a>乐观锁和悲观锁</h2><p>悲观锁：假设如果不加锁就一定会出现问题。<br>乐观锁：先假定不会出现并发问题，出现问题后再采取相应的措施。<br>悲观锁通过<code>select * from tbl for update</code>实现。<br>乐观锁可以在表中加一个version字段，每次更新的时候都+1，这样如果出现并发，第二次更新的时候version的值已经不再匹配，可以在这时采取相应的措施。</p>
-<h2 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h2><h3 id="死锁是如何产生的"><a href="#死锁是如何产生的" class="headerlink" title="死锁是如何产生的"></a>死锁是如何产生的</h3><p>同java的死锁一样，都是互相等待对方释放锁，造成了相互阻塞，造成的死锁。<br>请看下面的表格： </p>
-<p><img src="/images/database/lock/concept-02.gif"></p>
-<h3 id="如何避免死锁"><a href="#如何避免死锁" class="headerlink" title="如何避免死锁"></a>如何避免死锁</h3><p>1.修改操作表的顺序<br>从上面的示例中可以看出，如果调整一下操作表的顺序就可以避免死锁。<br>2.外键<br>如果向子表写记录，那么外键约束会检查父表的记录，并锁住父表的记录，来保证这条记录不会在这个事务完成之时就被删除了。<br>产生高级别的锁，会阻止其他事务操作或者其他DML操作，如果是因为外键产生的死锁，可以去掉外键约束，由应用来保证数据的完整性，通常生产环境都不建议加外键约束。<br>3.短事务<br>缩短事务的执行时间，可以减少锁的持有时间，可以降低死锁的风险。 </p>
-<h2 id="锁可能出现的问题"><a href="#锁可能出现的问题" class="headerlink" title="锁可能出现的问题"></a>锁可能出现的问题</h2><p>上锁是有开销的，即使不是给数据行而是给数据页上锁，也是有一定的时间的，如果第一个事务update一张大表，这时候第二个事务update这张大表比较靠后的位置的数据，这时候就可能会出现，第一个事务还没来得及给相应的数据上锁，第二个事务已经上了锁，所以出现第一个事务要等待第二个事务提交后释放锁，才能继续执行的情况。 </p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/database/mongodb/the-little-mongodb-book/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -474,7 +474,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -508,7 +508,7 @@
 <h2 id="鸣谢"><a href="#鸣谢" class="headerlink" title="鸣谢"></a>鸣谢</h2><p>特别感谢 <a target="_blank" rel="noopener" href="http://twitter.com/perryneal">Perry Neal</a>, 赐予我你的视野，精神，和热情。你赐予了我无尽的力量。感恩。</p>
 <h2 id="最新版本"><a href="#最新版本" class="headerlink" title="最新版本"></a>最新版本</h2><p>最新的版本由 Asya Kamsky 更新到了 MongoDB 2.6 。本书最新代码可以在这里获得:</p>
 <p><a target="_blank" rel="noopener" href="http://github.com/karlseguin/the-little-mongodb-book">http://github.com/karlseguin/the-little-mongodb-book</a>.</p>
-<h3 id="中文版本"><a href="#中文版本" class="headerlink" title="中文版本"></a>中文版本</h3><p>Karl 在 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book">the-little-mongodb-book</a> 的 Github 链接中给出了 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang">justinyhuang</a> 的 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang/the-little-mongodb-book-cn">the-little-mongodb-book-cn</a> 链接。但貌似 justinyhuang 并没有同步更新到 MongoDB 2.6 。内容上也和原文稍微有点出入，并且由于本人水平有限，无法提交自信正确的内容。因此重开一项目。如果你被搜索引擎引导到本工程，在此向你致歉，并希望有能力者且有时间者一同完善和同步本工程。你可以通过我的 邮箱 <a href="mailto:&#x67;&#101;&#x6d;&#105;&#110;&#105;&#121;&#101;&#108;&#x6c;&#x6f;&#119;&#64;&#103;&#109;&#97;&#x69;&#x6c;&#x2e;&#x63;&#x6f;&#109;">&#x67;&#101;&#x6d;&#105;&#110;&#105;&#121;&#101;&#108;&#x6c;&#x6f;&#119;&#64;&#103;&#109;&#97;&#x69;&#x6c;&#x2e;&#x63;&#x6f;&#109;</a> 来联系我，或者通过 <a target="_blank" rel="noopener" href="https://twitter.com/geminiyellow">@geminiyellow</a> 在 Twitter 上关注我。</p>
+<h3 id="中文版本"><a href="#中文版本" class="headerlink" title="中文版本"></a>中文版本</h3><p>Karl 在 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book">the-little-mongodb-book</a> 的 Github 链接中给出了 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang">justinyhuang</a> 的 <a target="_blank" rel="noopener" href="https://github.com/justinyhuang/the-little-mongodb-book-cn">the-little-mongodb-book-cn</a> 链接。但貌似 justinyhuang 并没有同步更新到 MongoDB 2.6 。内容上也和原文稍微有点出入，并且由于本人水平有限，无法提交自信正确的内容。因此重开一项目。如果你被搜索引擎引导到本工程，在此向你致歉，并希望有能力者且有时间者一同完善和同步本工程。你可以通过我的 邮箱 <a href="mailto:&#103;&#x65;&#x6d;&#105;&#110;&#x69;&#121;&#x65;&#108;&#108;&#111;&#119;&#64;&#x67;&#109;&#x61;&#x69;&#x6c;&#46;&#99;&#x6f;&#109;">&#103;&#x65;&#x6d;&#105;&#110;&#x69;&#121;&#x65;&#108;&#108;&#111;&#119;&#64;&#x67;&#109;&#x61;&#x69;&#x6c;&#46;&#99;&#x6f;&#109;</a> 来联系我，或者通过 <a target="_blank" rel="noopener" href="https://twitter.com/geminiyellow">@geminiyellow</a> 在 Twitter 上关注我。</p>
 <p>最新中文版本基于 <a target="_blank" rel="noopener" href="https://github.com/asya999">asya999</a> 在 May 29, 2014 提交的 <a target="_blank" rel="noopener" href="https://github.com/karlseguin/the-little-mongodb-book/pull/38">#38</a> SHA 是：6d4dce8ead6a767e1e8de1b59f714510d36d366f</p>
 <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><blockquote>
 <p>这章那么短不是我的错，MongoDB 就真的很易学。</p>
@@ -975,7 +975,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1138,7 +1138,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1456,7 +1456,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1563,7 +1563,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1678,7 +1678,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1840,7 +1840,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1917,7 +1917,7 @@ db.setProfilingLevel(1, 1000);</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">

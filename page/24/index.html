@@ -183,6 +183,121 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/hive/mapjoin-optimization/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/hive/mapjoin-optimization/" class="post-title-link" itemprop="url">Hive MapJoin优化实践</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2015-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2015-08-12T00:00:00+08:00">2015-08-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/BigData/" itemprop="url" rel="index"><span itemprop="name">BigData</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="MapJoin-Optimization"><a href="#MapJoin-Optimization" class="headerlink" title="MapJoin Optimization"></a>MapJoin Optimization</h1><p>主要的几个优化参数：</p>
+<ol>
+<li>smalltable的大小，超过这个值才会使用map join</li>
+<li>map join的合并</li>
+<li>local task内存: mapjoin的小表转换为hashtable后的大小阈值，超过了会报错</li>
+<li>本地任务可以使用的最大内存比例</li>
+<li>join条件字段类型需要一致</li>
+<li>map节点的内存大小</li>
+</ol>
+<p>在Hive中，common join是很慢的，如果我们是一张大表关联多张小表，可以使用mapjoin加快速度。</p>
+<p>mapjoin主要有以下参数：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--是否自动转换为mapjoin</span></span><br><span class="line">hive.auto.convert.join</span><br><span class="line"><span class="comment">--小表的最大文件大小，默认为25000000，即25M</span></span><br><span class="line">hive.mapjoin.smalltable.filesize</span><br><span class="line"><span class="comment">--是否将多个mapjoin合并为一个</span></span><br><span class="line">hive.auto.convert.join.noconditionaltask</span><br><span class="line"><span class="comment">--多个mapjoin转换为1个时，所有小表的文件大小总和的最大值</span></span><br><span class="line">hive.auto.convert.join.noconditionaltask.size</span><br></pre></td></tr></table></figure>
+<p>例如，一个大表顺序关联3个小表a(10M), b(8M),c(12M)，<br>如果<code>hive.auto.convert.join.noconditionaltask.size</code>的值：</p>
+<ol>
+<li>&lt;=18M，则无法合并mapjoin，必须执行3个mapjoin；</li>
+<li><blockquote>
+<p>18M &lt;30M，则可以合并a和b表的mapjoin，所以只需要执行2个mapjoin；</p>
+</blockquote>
+</li>
+<li><blockquote>
+<p>30M，则可以将3个mapjoin都合并为1个。</p>
+</blockquote>
+</li>
+</ol>
+<h2 id="合并mapjoin"><a href="#合并mapjoin" class="headerlink" title="合并mapjoin"></a>合并mapjoin</h2><p><strong>合并<code>mapjoin</code>有啥好处呢？</strong><br>因为每个<code>mapjoin</code>都要执行一次map，需要读写一次数据，所以多个<code>mapjoin</code>就要做多次的数据读写，合并mapjoin后只用读写一次，自然能大大加快速度。<br>但是执行map是内存大小是有限制的，在一次map里对多个小表做mapjoin就必须把多个小表都加入内存，为了防止内存溢出，所以加了<code>hive.auto.convert.join.noconditionaltask.size</code>参数来做限制。不过，这个值只是限制输入的表文件的大小，并不代表实际<code>mapjoin</code>时<code>hashtable</code>的大小。</p>
+<p>我们可以通过explain查看执行计划，来看看<code>mapjoin</code>是否生效。</p>
+<p>具体示例</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> hive.auto.convert.join<span class="operator">=</span><span class="literal">true</span>;</span><br><span class="line"><span class="keyword">set</span> hive.mapjoin.smalltable.filesize<span class="operator">=</span><span class="number">300000000</span>;</span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join.noconditionaltask<span class="operator">=</span><span class="literal">true</span>;</span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join.noconditionaltask.size<span class="operator">=</span><span class="number">300000000</span>;</span><br></pre></td></tr></table></figure>
+<p>使用<code>mapjoin</code>时，会先执行一个本地任务(<code>mapreduce local task</code>)将小表转成hashtable并序列化为文件再压缩，随后这些hashtable文件会被上传到hadoop缓存，提供给各个<code>mapjoin</code>使用。这里有三个参数我们需要注意：</p>
+<h2 id="local-task-memory-小表转换成hashtable的内存阈值"><a href="#local-task-memory-小表转换成hashtable的内存阈值" class="headerlink" title="local task memory: 小表转换成hashtable的内存阈值"></a>local task memory: 小表转换成hashtable的内存阈值</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--将小表转成hashtable的本地任务的最大内存使用率,默认0.9</span></span><br><span class="line">hive.mapjoin.localtask.max.memory.usage</span><br><span class="line"><span class="comment">--如果mapjoin后面紧跟着一个group by任务，这种情况下 本地任务的最大内存使用率，默认是0.55</span></span><br><span class="line">hive.mapjoin.followby.gby.localtask.max.memory.usage</span><br><span class="line"><span class="comment">--localtask每处理完多少行，就执行内存检查。默认为100000</span></span><br><span class="line">hive.mapjoin.check.memory.rows</span><br></pre></td></tr></table></figure>
+<p>如果我们的<code>localtask</code>的内存使用超过阀值，任务会直接失败。</p>
+<h2 id="字段类型要一致"><a href="#字段类型要一致" class="headerlink" title="字段类型要一致"></a>字段类型要一致</h2><p>此外，使用mapjoin时还要注意，用作join的关联字段的字段类型最好要一致。</p>
+<p>我就碰到一个诡异的问题，执行mapjoin 的local task时一直卡住，40万行的小表处理了好几个小时，正常情况下应该几秒钟就完成了。查了好久原因，结果原来是做join的关联字段的类型不一致，一边是int， 一边是string，hive解释计划里显示它们都会被转成double再来join。我把字段类型改为一致的，瞬间就快了。照理说就算转成double也不该这么慢，不知道是不是hive的bug。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--是否自动转换为mapjoin</span></span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line"><span class="comment">--小表的最大文件大小，默认为25000000，即25M</span></span><br><span class="line"><span class="keyword">set</span> hive.mapjoin.smalltable.filesize <span class="operator">=</span> <span class="number">25000000</span>;</span><br><span class="line"><span class="comment">--是否将多个mapjoin合并为一个</span></span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join.noconditionaltask <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line"><span class="comment">--多个mapjoin转换为1个时，所有小表的文件大小总和的最大值。</span></span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join.noconditionaltask.size <span class="operator">=</span> <span class="number">10000000</span>;</span><br></pre></td></tr></table></figure>
+<p>hive的join 有一种优化的方式：map join</p>
+<p>但是，使用这种优化的时候要小心一点，先说一下优化配置的参数：</p>
+<h2 id="localtask-max-memory-usage-本地任务内存百分比"><a href="#localtask-max-memory-usage-本地任务内存百分比" class="headerlink" title="localtask max memory usage: 本地任务内存百分比"></a>localtask max memory usage: 本地任务内存百分比</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> hive.optimize.correlation<span class="operator">=</span><span class="literal">true</span></span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join<span class="operator">=</span><span class="literal">true</span></span><br><span class="line"><span class="keyword">set</span> hive.mapjoin.localtask.max.memory.usage<span class="operator">=</span><span class="number">0.99</span></span><br><span class="line">hive.mapjoin.localtask.max.memory.usage</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>说明：本地任务可以使用内存的百分比 默认值： 0.90，如果你的localtask mapjoin 表很小可以试试，但彻底解决需要</p>
+</blockquote>
+<p><code>set hive.auto.convert.join=false;</code>关闭自动mapjoin 但这个参数用的时候一定要注意，</p>
+<p>如果你的sql 很长join会常多，关闭mapjoin任务数会成10倍激增，contener满了任务同样会非常之慢，<br><code>set hive.auto.convert.join=false;</code>一定要用在localtask级别这种超轻量及的job上。</p>
+<h2 id="local-mem-map节点的内存大小"><a href="#local-mem-map节点的内存大小" class="headerlink" title="local mem: map节点的内存大小"></a>local mem: map节点的内存大小</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--设置本地memory的大小值，单位为M</span></span><br><span class="line">hive.mapred.local.mem</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/multithread/01.thread-lifecycle/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -214,7 +329,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -450,7 +565,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/hive/mapjoin-optimization/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/hive/base/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -464,7 +579,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/hive/mapjoin-optimization/" class="post-title-link" itemprop="url">Hive MapJoin优化实践</a>
+            <a href="/bigdata/hive/base/" class="post-title-link" itemprop="url">Hive base</a>
         </h2>
 
         <div class="post-meta">
@@ -481,7 +596,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -489,7 +604,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/BigData/" itemprop="url" rel="index"><span itemprop="name">BigData</span></a>
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
                 </span>
             </span>
 
@@ -504,49 +619,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="MapJoin-Optimization"><a href="#MapJoin-Optimization" class="headerlink" title="MapJoin Optimization"></a>MapJoin Optimization</h1><p>主要的几个优化参数：</p>
-<ol>
-<li>smalltable的大小，超过这个值才会使用map join</li>
-<li>map join的合并</li>
-<li>local task内存: mapjoin的小表转换为hashtable后的大小阈值，超过了会报错</li>
-<li>本地任务可以使用的最大内存比例</li>
-<li>join条件字段类型需要一致</li>
-<li>map节点的内存大小</li>
-</ol>
-<p>在Hive中，common join是很慢的，如果我们是一张大表关联多张小表，可以使用mapjoin加快速度。</p>
-<p>mapjoin主要有以下参数：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--是否自动转换为mapjoin</span></span><br><span class="line">hive.auto.convert.join</span><br><span class="line"><span class="comment">--小表的最大文件大小，默认为25000000，即25M</span></span><br><span class="line">hive.mapjoin.smalltable.filesize</span><br><span class="line"><span class="comment">--是否将多个mapjoin合并为一个</span></span><br><span class="line">hive.auto.convert.join.noconditionaltask</span><br><span class="line"><span class="comment">--多个mapjoin转换为1个时，所有小表的文件大小总和的最大值</span></span><br><span class="line">hive.auto.convert.join.noconditionaltask.size</span><br></pre></td></tr></table></figure>
-<p>例如，一个大表顺序关联3个小表a(10M), b(8M),c(12M)，<br>如果<code>hive.auto.convert.join.noconditionaltask.size</code>的值：</p>
-<ol>
-<li>&lt;=18M，则无法合并mapjoin，必须执行3个mapjoin；</li>
-<li><blockquote>
-<p>18M &lt;30M，则可以合并a和b表的mapjoin，所以只需要执行2个mapjoin；</p>
-</blockquote>
-</li>
-<li><blockquote>
-<p>30M，则可以将3个mapjoin都合并为1个。</p>
-</blockquote>
-</li>
-</ol>
-<h2 id="合并mapjoin"><a href="#合并mapjoin" class="headerlink" title="合并mapjoin"></a>合并mapjoin</h2><p><strong>合并<code>mapjoin</code>有啥好处呢？</strong><br>因为每个<code>mapjoin</code>都要执行一次map，需要读写一次数据，所以多个<code>mapjoin</code>就要做多次的数据读写，合并mapjoin后只用读写一次，自然能大大加快速度。<br>但是执行map是内存大小是有限制的，在一次map里对多个小表做mapjoin就必须把多个小表都加入内存，为了防止内存溢出，所以加了<code>hive.auto.convert.join.noconditionaltask.size</code>参数来做限制。不过，这个值只是限制输入的表文件的大小，并不代表实际<code>mapjoin</code>时<code>hashtable</code>的大小。</p>
-<p>我们可以通过explain查看执行计划，来看看<code>mapjoin</code>是否生效。</p>
-<p>具体示例</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> hive.auto.convert.join<span class="operator">=</span><span class="literal">true</span>;</span><br><span class="line"><span class="keyword">set</span> hive.mapjoin.smalltable.filesize<span class="operator">=</span><span class="number">300000000</span>;</span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join.noconditionaltask<span class="operator">=</span><span class="literal">true</span>;</span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join.noconditionaltask.size<span class="operator">=</span><span class="number">300000000</span>;</span><br></pre></td></tr></table></figure>
-<p>使用<code>mapjoin</code>时，会先执行一个本地任务(<code>mapreduce local task</code>)将小表转成hashtable并序列化为文件再压缩，随后这些hashtable文件会被上传到hadoop缓存，提供给各个<code>mapjoin</code>使用。这里有三个参数我们需要注意：</p>
-<h2 id="local-task-memory-小表转换成hashtable的内存阈值"><a href="#local-task-memory-小表转换成hashtable的内存阈值" class="headerlink" title="local task memory: 小表转换成hashtable的内存阈值"></a>local task memory: 小表转换成hashtable的内存阈值</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--将小表转成hashtable的本地任务的最大内存使用率,默认0.9</span></span><br><span class="line">hive.mapjoin.localtask.max.memory.usage</span><br><span class="line"><span class="comment">--如果mapjoin后面紧跟着一个group by任务，这种情况下 本地任务的最大内存使用率，默认是0.55</span></span><br><span class="line">hive.mapjoin.followby.gby.localtask.max.memory.usage</span><br><span class="line"><span class="comment">--localtask每处理完多少行，就执行内存检查。默认为100000</span></span><br><span class="line">hive.mapjoin.check.memory.rows</span><br></pre></td></tr></table></figure>
-<p>如果我们的<code>localtask</code>的内存使用超过阀值，任务会直接失败。</p>
-<h2 id="字段类型要一致"><a href="#字段类型要一致" class="headerlink" title="字段类型要一致"></a>字段类型要一致</h2><p>此外，使用mapjoin时还要注意，用作join的关联字段的字段类型最好要一致。</p>
-<p>我就碰到一个诡异的问题，执行mapjoin 的local task时一直卡住，40万行的小表处理了好几个小时，正常情况下应该几秒钟就完成了。查了好久原因，结果原来是做join的关联字段的类型不一致，一边是int， 一边是string，hive解释计划里显示它们都会被转成double再来join。我把字段类型改为一致的，瞬间就快了。照理说就算转成double也不该这么慢，不知道是不是hive的bug。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--是否自动转换为mapjoin</span></span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line"><span class="comment">--小表的最大文件大小，默认为25000000，即25M</span></span><br><span class="line"><span class="keyword">set</span> hive.mapjoin.smalltable.filesize <span class="operator">=</span> <span class="number">25000000</span>;</span><br><span class="line"><span class="comment">--是否将多个mapjoin合并为一个</span></span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join.noconditionaltask <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line"><span class="comment">--多个mapjoin转换为1个时，所有小表的文件大小总和的最大值。</span></span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join.noconditionaltask.size <span class="operator">=</span> <span class="number">10000000</span>;</span><br></pre></td></tr></table></figure>
-<p>hive的join 有一种优化的方式：map join</p>
-<p>但是，使用这种优化的时候要小心一点，先说一下优化配置的参数：</p>
-<h2 id="localtask-max-memory-usage-本地任务内存百分比"><a href="#localtask-max-memory-usage-本地任务内存百分比" class="headerlink" title="localtask max memory usage: 本地任务内存百分比"></a>localtask max memory usage: 本地任务内存百分比</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">set</span> hive.optimize.correlation<span class="operator">=</span><span class="literal">true</span></span><br><span class="line"><span class="keyword">set</span> hive.auto.convert.join<span class="operator">=</span><span class="literal">true</span></span><br><span class="line"><span class="keyword">set</span> hive.mapjoin.localtask.max.memory.usage<span class="operator">=</span><span class="number">0.99</span></span><br><span class="line">hive.mapjoin.localtask.max.memory.usage</span><br></pre></td></tr></table></figure>
-<blockquote>
-<p>说明：本地任务可以使用内存的百分比 默认值： 0.90，如果你的localtask mapjoin 表很小可以试试，但彻底解决需要</p>
-</blockquote>
-<p><code>set hive.auto.convert.join=false;</code>关闭自动mapjoin 但这个参数用的时候一定要注意，</p>
-<p>如果你的sql 很长join会常多，关闭mapjoin任务数会成10倍激增，contener满了任务同样会非常之慢，<br><code>set hive.auto.convert.join=false;</code>一定要用在localtask级别这种超轻量及的job上。</p>
-<h2 id="local-mem-map节点的内存大小"><a href="#local-mem-map节点的内存大小" class="headerlink" title="local mem: map节点的内存大小"></a>local mem: map节点的内存大小</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">--设置本地memory的大小值，单位为M</span></span><br><span class="line">hive.mapred.local.mem</span><br></pre></td></tr></table></figure>
+          <h1 id="base"><a href="#base" class="headerlink" title="base"></a>base</h1>
       
     </div>
 
@@ -596,7 +669,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -689,79 +762,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/hive/base/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/hive/base/" class="post-title-link" itemprop="url">Hive base</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2015-08-12 00:00:00" itemprop="dateCreated datePublished" datetime="2015-08-12T00:00:00+08:00">2015-08-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="base"><a href="#base" class="headerlink" title="base"></a>base</h1>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/Java/io/java-zip/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -793,7 +793,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -899,7 +899,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -923,302 +923,6 @@
 
       
           <h1 id="通信协议"><a href="#通信协议" class="headerlink" title="通信协议"></a>通信协议</h1><h1 id="存储结构"><a href="#存储结构" class="headerlink" title="存储结构"></a>存储结构</h1>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/Java/step/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/Java/step/" class="post-title-link" itemprop="url">Java软件工程师知识结构</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2014-05-30 12:26:00" itemprop="dateCreated datePublished" datetime="2014-05-30T12:26:00+08:00">2014-05-30</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="1-Java基础"><a href="#1-Java基础" class="headerlink" title="1 Java基础"></a>1 Java基础</h1><h2 id="1-1-Collection和Map"><a href="#1-1-Collection和Map" class="headerlink" title="1.1 Collection和Map"></a>1.1 Collection和Map</h2><ol>
-<li>掌握Collection和Map的继承体系。<a href="/Java/collection/collection-map/" title="Java Collection与Map">Java Collection与map</a></li>
-<li>掌握ArrayList、LinkedList、Vector、Stack、PriorityQueue、HashSet、LinkedHashSet、TreeSet、HashMap、LinkedHashMap、TreeMap、WeakHashMap、EnumMap、TreeMap(红黑树)、HashTable的特点和实现原理。</li>
-<li>掌握CopyOnWriteArrayList、CopyOnWriteArraySet、<a href="/Java/collection/ConcurrentHashMap/">ConcurrentHashMap</a>的实现原理和适用场景。</li>
-<li>Java并发容器</li>
-</ol>
-<h2 id="1-2-IO"><a href="#1-2-IO" class="headerlink" title="1.2 IO"></a>1.2 IO</h2><ol>
-<li>掌握InputStream、OutputStream、Reader、Writer的继承体系。 <a href="/Java/io/BIO/" title="Java IO">Java IO</a> , <a href="/Java/io/java-zip/">Java 压缩</a> , <a href="/Java/io/java-XML-JSON/">Java XML与JSON</a>, <a href="/Java/io/object-serialization/">Java序列化</a></li>
-<li>掌握字节流(FileInputStream、DataInputStream、BufferedInputStream、FileOutputSteam、DataOutputStream、BufferedOutputStream)和 字符流(BufferedReader、InputStreamReader、FileReader、BufferedWriter、OutputStreamWriter、PrintWriter、FileWriter)，并熟练运用。</li>
-<li>掌握NIO实现原理及使用方法。 <a href="/Java/io/IO-Model/">IO模式</a> <a href="/Java/io/NIO/">Java NIO</a></li>
-<li>Netty原理 <a href="/JavaWeb/Netty/Netty-theory/">这可能是目前最透彻的Netty原理架构解析</a></li>
-<li>IO理论 <a href="/Java/io/high-performance-network-programming/">高性能网络编程</a></li>
-</ol>
-<h2 id="1-3-异常"><a href="#1-3-异常" class="headerlink" title="1.3 异常"></a>1.3 异常</h2><ol>
-<li>掌握Throwable继承体系。<a target="_blank" rel="noopener" href="http://blog.csdn.net/hguisu/article/details/6155636" title="深入理解java异常处理机制">深入理解java异常处理机制</a></li>
-<li>掌握异常工作原理。</li>
-<li>了解常见受检异常(比如FileNotFoundException)、非受检异常(比如NullPointerException)和错误(比如IOError)。</li>
-</ol>
-<h2 id="1-4-多线程"><a href="#1-4-多线程" class="headerlink" title="1.4 多线程"></a>1.4 多线程</h2><ol>
-<li><p><a href="/Java/multithread/05.ThreadPool/">线程池的实现原理、参数配置、平滑关机</a> 了解Executors可以创建的三种 (JAVA8增加了一种，共四种)线程池的特点及适用范围。 <a href="/Java/multithread/05.ThreadPool/">Java多线程5: 线程池</a></p>
-</li>
-<li><p>掌握多线程同步机制，并熟练运用。</p>
-</li>
-</ol>
-<ul>
-<li>CPU、操作系统锁机制与Java编译优化(指令重排与内存栅栏)</li>
-<li><a href="/Java/multithread/01.thread-lifecycle/">线程生命周期</a></li>
-<li><a href="/Java/multithread/03.volatile/">volatile</a></li>
-<li><a href="/Java/multithread/01.1.monitor-synchronized/">monitor与Synchronized: 实现原理、偏向锁-轻型锁-重型锁</a></li>
-<li><a target="_blank" rel="noopener" href="http://www.cnblogs.com/waterystone/p/4920797.html">AQS</a></li>
-<li>CAS</li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/fuyuwei2015/article/details/83719444">RetreentLock</a>、ReadAndWriteLook</li>
-<li>CountDownLatch、Atomic、Semaphore</li>
-<li>Fork/Join</li>
-<li><a href="/Java/multithread/06.BlockingQueue/">阻塞队列</a></li>
-<li>Disruptor队列</li>
-<li>生产者消费者模式</li>
-<li><a href="/Java/multithread/02.Lock-Semaphore-Atomic/">Java多线程2: Lock、信号量、原子量与队列</a></li>
-<li><a href="/Java/multithread/04.thread-synchronization/">Java多线程4: 同步锁与Java线程同步方法比较</a></li>
-<li><a href="/Java/multithread/06.BlockingQueue/">Java多线程6: Java阻塞队列与生产者消费者模式</a></li>
-<li><a href="1">Java多线程7: 分段锁</a></li>
-<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/b3c4dd85901e">CompletableFuture</a> 、<a target="_blank" rel="noopener" href="https://blog.csdn.net/CoderBruis/article/details/103181520">深入解读CompletableFuture源码与原理</a></li>
-<li>Quartz定时任务内部实现</li>
-<li>Guava并发包</li>
-</ul>
-<ol start="3">
-<li>并发包</li>
-</ol>
-<h2 id="1-5-Socket"><a href="#1-5-Socket" class="headerlink" title="1.5 Socket"></a>1.5 Socket</h2><ol>
-<li>掌握Socket通信原理。<a href="/Java/Socket/">Java Socket</a></li>
-<li>熟练使用多线程结合Socket进行编程。</li>
-</ol>
-<h2 id="1-6-Stream-API"><a href="#1-6-Stream-API" class="headerlink" title="1.6 Stream API"></a>1.6 Stream API</h2><ol>
-<li>Lambda 实现原理</li>
-<li>懒加载实现原理</li>
-</ol>
-<h1 id="2-Java虚拟机"><a href="#2-Java虚拟机" class="headerlink" title="2 Java虚拟机"></a>2 Java虚拟机</h1><h2 id="2-1-JVM内存区域划分"><a href="#2-1-JVM内存区域划分" class="headerlink" title="2.1 JVM内存区域划分"></a>2.1 JVM内存区域划分</h2><p><a href="/Java/JVM/">深入理解JVM(Java虚拟机)</a><br><a href="/Java/metric/01_tuner">Java性能专题</a></p>
-<ol>
-<li>掌握JMM分区: 程序计数器、堆、虚拟机栈、本地方法栈、方法区（JAVA8已移除）、元空间（JAVA8新增）的作用及基本原理。</li>
-<li>掌握堆的划分：新生代（Eden、Survivor1、Survivor2）和老年代的作用及工作原理。</li>
-<li>垃圾回收：常见算法与策略、<a href="/Java/metric/02_CMS_GC/">CMS GC</a>、G1</li>
-<li>[重点] 掌握JVM内存参数设置及调优<ul>
-<li>Eden与Survivor分配</li>
-<li><a href="/Java/metric/jstack/">JStack</a>、Jstat、vmstat、jmap、jutil</li>
-<li>线上排查</li>
-</ul>
-</li>
-</ol>
-<h2 id="2-2-类加载"><a href="#2-2-类加载" class="headerlink" title="2.2 类加载"></a>2.2 类加载</h2><ol>
-<li>掌握类的加载阶段：加载、链接（验证、准备、解析）、初始化、使用、卸载。</li>
-<li>掌握类加载器分类及其应用：启动类加载器、扩展类加载器、应用程序类加载器、自定义加载器。</li>
-<li>双亲委派</li>
-<li>动态加载</li>
-<li>CodeGen</li>
-</ol>
-<h1 id="3-J2EE"><a href="#3-J2EE" class="headerlink" title="3 J2EE"></a>3 J2EE</h1><ol>
-<li>掌握JSP内置对象、动作及相关特点和工作原理。<a href="/JavaWeb/JSP/">JSP</a></li>
-<li>掌握Servlet的特点和工作原理。 <a href="/JavaWeb/Servlet/">Servlet</a></li>
-<li>Spring: IOC和AOP实现原理（控制反转和动态代理）。 <a href="/JavaWeb/Spring/base/">Spring</a></li>
-<li>MVC框架（Spring MVC，Struts等）的工作原理，并熟练运用。 <a href="/JavaWeb/Struts2-basic">Struts2</a> <a href="1">Spring MVC</a>工作原理、事务</li>
-<li>Spring MVC: 线程安全、请求原理、事务与传递、异步</li>
-<li>ORM框架(Hibernate，MyBatis等)的工作原理，并熟练运用。 <a href="/JavaWeb/Hibernate/concept">Hibernate基本概念</a> <a href="/JavaWeb/Hibernate/Association-Relationship/">Hibernate关联关系XML实现</a> <a href="/JavaWeb/Hibernate/Annotation/">Hibernate注解</a> <a href="1">MyBatis原理与缓存</a></li>
-</ol>
-<h1 id="4-数据结构与算法"><a href="#4-数据结构与算法" class="headerlink" title="4 数据结构与算法"></a>4 数据结构与算法</h1><ol>
-<li>掌握<a target="_blank" rel="noopener" href="http://www.docin.com/p-1532910757.html">线性表</a>和<a target="_blank" rel="noopener" href="http://www.docin.com/p-682548027.html">树</a>的特点并熟练运用: B-Tree节点结构</li>
-<li>掌握<a href="/data-struct/SortAndSearchAlgrithom/">常用排序和查找算法</a>：插入排序(直接插入排序、希尔排序)、选择排序(直接选择排序、堆排序)、交换排序(冒泡排序、快速排序)、归并排序，顺序查找、二分查找、二叉查找树、哈希查找。广度优先搜索(队列实现)</li>
-<li>熟练运用常见排序和查找算法思想解决编程问题: Top K问题、大数组查找TopN、数组去重、跳台阶问题、不定长字符串转定长字符串</li>
-<li>了解<a href="/data-struct/BasicAlgrithom/">几大基本算法</a>：贪心算法、分治策略、动态规划、蓄水池抽样</li>
-</ol>
-<h1 id="5-计算机网络"><a href="#5-计算机网络" class="headerlink" title="5 计算机网络"></a>5 计算机网络</h1><ol>
-<li>掌握网络的分层结构，及每层的功能特点。<a href="/network/base/">计算机网络基础知识</a></li>
-<li>Http报文、状态码</li>
-<li>掌握TCP/IP的通信原理(三次握手、四次挥手)</li>
-<li><a href="/network/security/HTTPS-SSL/" title="HTTPS与SSL">HTTPS</a>,<a href="/network/security/encrypt-decrypt-signature-certificate/">加密、验签与证书</a></li>
-</ol>
-<h1 id="6-数据库"><a href="#6-数据库" class="headerlink" title="6 数据库"></a>6 数据库</h1><ol>
-<li>掌握复杂的SQL语句编写。<a href="/database/MySQL/base/">MySQL</a>   <a href="/database/concept/">数据库设计</a></li>
-<li>掌握数据库的优化（SQL层面和表设计层面）。<a target="_blank" rel="noopener" href="http://www.jb51.net/article/24392.htm">MySQL 性能优化的最佳20多条经验</a></li>
-<li><a href="/database/MySQL/base">MySQL</a><ul>
-<li>InnoDB数据结构、索引</li>
-<li>InnoDB与MyASIM区别</li>
-<li>行级锁与表级锁</li>
-</ul>
-</li>
-<li>MySQL集群<ul>
-<li>集群</li>
-<li>读写分离与实现</li>
-<li>双写</li>
-</ul>
-</li>
-<li>熟悉高并发、大数据情况下的数据库开发。</li>
-</ol>
-<h1 id="7-Web技术"><a href="#7-Web技术" class="headerlink" title="7 Web技术"></a>7 Web技术</h1><ol>
-<li>掌握<a href="/web/AJAX/">AJAX</a>的工作原理。</li>
-<li>至少熟悉一款JS框架(比如JQuery)。<a href="/web/JQuery/">JQuery</a></li>
-</ol>
-<h1 id="8-设计模式"><a href="#8-设计模式" class="headerlink" title="8 设计模式"></a>8 设计模式</h1><ol>
-<li>熟悉常见的<a href="/design-pattern/base/">设计模式</a>。</li>
-<li>会将设计模式理论应用到实际开发中。</li>
-</ol>
-<h1 id="9-Linux"><a href="#9-Linux" class="headerlink" title="9 Linux"></a>9 Linux</h1><ol>
-<li>熟练运用Linux常见命令。</li>
-<li>熟悉Linux操作系统基本概念及特点。</li>
-<li>熟悉<a target="_blank" rel="noopener" href="http://www.codeceo.com/article/shell-learn-30-mins.html">Shell脚本</a>。</li>
-</ol>
-<h1 id="10-操作系统"><a href="#10-操作系统" class="headerlink" title="10 操作系统"></a>10 操作系统</h1><ol>
-<li>掌握操作系统的进程管理。</li>
-<li>了解操作系统的I/O。</li>
-<li>Linux系统调优: 命令与方法</li>
-</ol>
-<h1 id="11-正则表达式"><a href="#11-正则表达式" class="headerlink" title="11 正则表达式"></a>11 正则表达式</h1><ol>
-<li>掌握常见正则表达式符号。</li>
-<li>熟练运用正则表达式解决实际问题(比如匹配电话号码、邮箱、域名等)。<a href="/Java/regular-expression/">常用的正则表达式与Java中的运用</a></li>
-</ol>
-<h1 id="12-安全"><a href="#12-安全" class="headerlink" title="12 安全"></a>12 安全</h1><ol>
-<li><a href="/web/XSS">XSS</a></li>
-<li><a href="/web/JSONP/">CROS</a></li>
-<li>RTFS</li>
-<li>加密解密与验签</li>
-<li>HTTPS</li>
-<li>跨域请求的方法</li>
-</ol>
-<h1 id="13-分布式"><a href="#13-分布式" class="headerlink" title="13 分布式"></a>13 分布式</h1><ol>
-<li>分布式事务<ul>
-<li>分布式锁：基于DB事务、基于Redis、基于ZooKeeper</li>
-<li>ACID</li>
-<li>CAP、BASE</li>
-<li>TCC</li>
-</ul>
-</li>
-<li>微服务</li>
-<li>Nginx: 原理、负载均衡算法、动态切换</li>
-<li>消息中间件 Kafka、ActiveMQ</li>
-<li>分布式缓存及其集群: 雪崩、穿透、Master选举切换</li>
-<li><a href="/database/Redis/base/">Redis</a>：集群、并发竞争问题、事务与CAS操作、持久化、订阅、缓存失败策略</li>
-<li><a href="/database/memcached/base/">Memcached</a>: 数据结构</li>
-<li>ZooKeeper: 数据结构、集群、Master选举切换</li>
-<li><a href="/distributed/RPC/">RPC</a>：<a href="/">WebService: SOAP、UUDI、WSDL</a>等</li>
-<li>服务治理SOA框架的使用与原理<ul>
-<li><a href="1">Dubbo</a>: 架构、雪崩、服务异常与逻辑异常追踪、服务降级、服务发现</li>
-</ul>
-</li>
-<li>分库分表<ul>
-<li>常见分库分表方案：水平分表与垂直分表的业务设计</li>
-<li>扩容与迁移</li>
-<li>MyCat</li>
-<li>Sharding-JDBC</li>
-</ul>
-</li>
-<li>唯一主键生成器</li>
-<li>算法: 一致性hash、轮询、Paxos、fast leader、raft</li>
-<li>系统设计<ul>
-<li>高可用</li>
-<li>可扩展</li>
-<li>限流(滑动窗口、漏桶、令牌桶)</li>
-<li>幂等</li>
-</ul>
-</li>
-<li>常见场景<ul>
-<li>电商</li>
-</ul>
-</li>
-<li>Docker</li>
-</ol>
-<h1 id="14-大数据"><a href="#14-大数据" class="headerlink" title="14 大数据"></a>14 大数据</h1><ol>
-<li>实时计算: 基数算法</li>
-<li>Storm 原理</li>
-<li>Flink 原理</li>
-<li>Hadoop<ul>
-<li>NameNode动态切换</li>
-<li>MapReduce与shuffle、数据倾斜问题</li>
-</ul>
-</li>
-<li>Yarn</li>
-<li>HBase</li>
-<li>Kylin</li>
-<li>Hive</li>
-<li>Lucene、solar、ElasticSearch</li>
-<li>爬虫</li>
-<li>推荐算法：协同过滤</li>
-<li>画像系统原理</li>
-</ol>
-<h1 id="15-机器学习"><a href="#15-机器学习" class="headerlink" title="15. 机器学习"></a>15. 机器学习</h1><h1 id="16-其他"><a href="#16-其他" class="headerlink" title="16 其他"></a>16 其他</h1><ol>
-<li>Quartz 原理：调度与分布式</li>
-<li>缓存: Ehcache、Spring Data cache、Guava-cache<ul>
-<li>LRUCache</li>
-<li>FastLRUCache</li>
-</ul>
-</li>
-<li>连接池：Druid</li>
-<li><a href="/interview/">虐菜</a></li>
-<li><a href="/software-engineering/base/">软件工程基本知识</a></li>
-<li>CORBAR</li>
-<li>WebSocket</li>
-<li>Tomcat实现原理</li>
-</ol>
-<h1 id="17-2018-中期计划"><a href="#17-2018-中期计划" class="headerlink" title="17. 2018 中期计划"></a>17. 2018 中期计划</h1><ol>
-<li><a href="/distributed/tomcat/principle/">apache Tomcat 源码分析</a></li>
-<li><a href="/distributed/storm/principle/">apache Storm 源码分析</a></li>
-<li><a href="/Java/multithread/disruptor_principle/">disruptor源码分析</a></li>
-<li>分布式服务架构：原理、设计与实战</li>
-<li>HBase</li>
-</ol>
-
       
     </div>
 
@@ -1268,7 +972,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1533,6 +1237,302 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/Java/step/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java/step/" class="post-title-link" itemprop="url">Java软件工程师知识结构</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2014-05-30 12:26:00" itemprop="dateCreated datePublished" datetime="2014-05-30T12:26:00+08:00">2014-05-30</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="1-Java基础"><a href="#1-Java基础" class="headerlink" title="1 Java基础"></a>1 Java基础</h1><h2 id="1-1-Collection和Map"><a href="#1-1-Collection和Map" class="headerlink" title="1.1 Collection和Map"></a>1.1 Collection和Map</h2><ol>
+<li>掌握Collection和Map的继承体系。<a href="/Java/collection/collection-map/" title="Java Collection与Map">Java Collection与map</a></li>
+<li>掌握ArrayList、LinkedList、Vector、Stack、PriorityQueue、HashSet、LinkedHashSet、TreeSet、HashMap、LinkedHashMap、TreeMap、WeakHashMap、EnumMap、TreeMap(红黑树)、HashTable的特点和实现原理。</li>
+<li>掌握CopyOnWriteArrayList、CopyOnWriteArraySet、<a href="/Java/collection/ConcurrentHashMap/">ConcurrentHashMap</a>的实现原理和适用场景。</li>
+<li>Java并发容器</li>
+</ol>
+<h2 id="1-2-IO"><a href="#1-2-IO" class="headerlink" title="1.2 IO"></a>1.2 IO</h2><ol>
+<li>掌握InputStream、OutputStream、Reader、Writer的继承体系。 <a href="/Java/io/BIO/" title="Java IO">Java IO</a> , <a href="/Java/io/java-zip/">Java 压缩</a> , <a href="/Java/io/java-XML-JSON/">Java XML与JSON</a>, <a href="/Java/io/object-serialization/">Java序列化</a></li>
+<li>掌握字节流(FileInputStream、DataInputStream、BufferedInputStream、FileOutputSteam、DataOutputStream、BufferedOutputStream)和 字符流(BufferedReader、InputStreamReader、FileReader、BufferedWriter、OutputStreamWriter、PrintWriter、FileWriter)，并熟练运用。</li>
+<li>掌握NIO实现原理及使用方法。 <a href="/Java/io/IO-Model/">IO模式</a> <a href="/Java/io/NIO/">Java NIO</a></li>
+<li>Netty原理 <a href="/JavaWeb/Netty/Netty-theory/">这可能是目前最透彻的Netty原理架构解析</a></li>
+<li>IO理论 <a href="/Java/io/high-performance-network-programming/">高性能网络编程</a></li>
+</ol>
+<h2 id="1-3-异常"><a href="#1-3-异常" class="headerlink" title="1.3 异常"></a>1.3 异常</h2><ol>
+<li>掌握Throwable继承体系。<a target="_blank" rel="noopener" href="http://blog.csdn.net/hguisu/article/details/6155636" title="深入理解java异常处理机制">深入理解java异常处理机制</a></li>
+<li>掌握异常工作原理。</li>
+<li>了解常见受检异常(比如FileNotFoundException)、非受检异常(比如NullPointerException)和错误(比如IOError)。</li>
+</ol>
+<h2 id="1-4-多线程"><a href="#1-4-多线程" class="headerlink" title="1.4 多线程"></a>1.4 多线程</h2><ol>
+<li><p><a href="/Java/multithread/05.ThreadPool/">线程池的实现原理、参数配置、平滑关机</a> 了解Executors可以创建的三种 (JAVA8增加了一种，共四种)线程池的特点及适用范围。 <a href="/Java/multithread/05.ThreadPool/">Java多线程5: 线程池</a></p>
+</li>
+<li><p>掌握多线程同步机制，并熟练运用。</p>
+</li>
+</ol>
+<ul>
+<li>CPU、操作系统锁机制与Java编译优化(指令重排与内存栅栏)</li>
+<li><a href="/Java/multithread/01.thread-lifecycle/">线程生命周期</a></li>
+<li><a href="/Java/multithread/03.volatile/">volatile</a></li>
+<li><a href="/Java/multithread/01.1.monitor-synchronized/">monitor与Synchronized: 实现原理、偏向锁-轻型锁-重型锁</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.cnblogs.com/waterystone/p/4920797.html">AQS</a></li>
+<li>CAS</li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/fuyuwei2015/article/details/83719444">RetreentLock</a>、ReadAndWriteLook</li>
+<li>CountDownLatch、Atomic、Semaphore</li>
+<li>Fork/Join</li>
+<li><a href="/Java/multithread/06.BlockingQueue/">阻塞队列</a></li>
+<li>Disruptor队列</li>
+<li>生产者消费者模式</li>
+<li><a href="/Java/multithread/02.Lock-Semaphore-Atomic/">Java多线程2: Lock、信号量、原子量与队列</a></li>
+<li><a href="/Java/multithread/04.thread-synchronization/">Java多线程4: 同步锁与Java线程同步方法比较</a></li>
+<li><a href="/Java/multithread/06.BlockingQueue/">Java多线程6: Java阻塞队列与生产者消费者模式</a></li>
+<li><a href="1">Java多线程7: 分段锁</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/b3c4dd85901e">CompletableFuture</a> 、<a target="_blank" rel="noopener" href="https://blog.csdn.net/CoderBruis/article/details/103181520">深入解读CompletableFuture源码与原理</a></li>
+<li>Quartz定时任务内部实现</li>
+<li>Guava并发包</li>
+</ul>
+<ol start="3">
+<li>并发包</li>
+</ol>
+<h2 id="1-5-Socket"><a href="#1-5-Socket" class="headerlink" title="1.5 Socket"></a>1.5 Socket</h2><ol>
+<li>掌握Socket通信原理。<a href="/Java/Socket/">Java Socket</a></li>
+<li>熟练使用多线程结合Socket进行编程。</li>
+</ol>
+<h2 id="1-6-Stream-API"><a href="#1-6-Stream-API" class="headerlink" title="1.6 Stream API"></a>1.6 Stream API</h2><ol>
+<li>Lambda 实现原理</li>
+<li>懒加载实现原理</li>
+</ol>
+<h1 id="2-Java虚拟机"><a href="#2-Java虚拟机" class="headerlink" title="2 Java虚拟机"></a>2 Java虚拟机</h1><h2 id="2-1-JVM内存区域划分"><a href="#2-1-JVM内存区域划分" class="headerlink" title="2.1 JVM内存区域划分"></a>2.1 JVM内存区域划分</h2><p><a href="/Java/JVM/">深入理解JVM(Java虚拟机)</a><br><a href="/Java/metric/01_tuner">Java性能专题</a></p>
+<ol>
+<li>掌握JMM分区: 程序计数器、堆、虚拟机栈、本地方法栈、方法区（JAVA8已移除）、元空间（JAVA8新增）的作用及基本原理。</li>
+<li>掌握堆的划分：新生代（Eden、Survivor1、Survivor2）和老年代的作用及工作原理。</li>
+<li>垃圾回收：常见算法与策略、<a href="/Java/metric/02_CMS_GC/">CMS GC</a>、G1</li>
+<li>[重点] 掌握JVM内存参数设置及调优<ul>
+<li>Eden与Survivor分配</li>
+<li><a href="/Java/metric/jstack/">JStack</a>、Jstat、vmstat、jmap、jutil</li>
+<li>线上排查</li>
+</ul>
+</li>
+</ol>
+<h2 id="2-2-类加载"><a href="#2-2-类加载" class="headerlink" title="2.2 类加载"></a>2.2 类加载</h2><ol>
+<li>掌握类的加载阶段：加载、链接（验证、准备、解析）、初始化、使用、卸载。</li>
+<li>掌握类加载器分类及其应用：启动类加载器、扩展类加载器、应用程序类加载器、自定义加载器。</li>
+<li>双亲委派</li>
+<li>动态加载</li>
+<li>CodeGen</li>
+</ol>
+<h1 id="3-J2EE"><a href="#3-J2EE" class="headerlink" title="3 J2EE"></a>3 J2EE</h1><ol>
+<li>掌握JSP内置对象、动作及相关特点和工作原理。<a href="/JavaWeb/JSP/">JSP</a></li>
+<li>掌握Servlet的特点和工作原理。 <a href="/JavaWeb/Servlet/">Servlet</a></li>
+<li>Spring: IOC和AOP实现原理（控制反转和动态代理）。 <a href="/JavaWeb/Spring/base/">Spring</a></li>
+<li>MVC框架（Spring MVC，Struts等）的工作原理，并熟练运用。 <a href="/JavaWeb/Struts2-basic">Struts2</a> <a href="1">Spring MVC</a>工作原理、事务</li>
+<li>Spring MVC: 线程安全、请求原理、事务与传递、异步</li>
+<li>ORM框架(Hibernate，MyBatis等)的工作原理，并熟练运用。 <a href="/JavaWeb/Hibernate/concept">Hibernate基本概念</a> <a href="/JavaWeb/Hibernate/Association-Relationship/">Hibernate关联关系XML实现</a> <a href="/JavaWeb/Hibernate/Annotation/">Hibernate注解</a> <a href="1">MyBatis原理与缓存</a></li>
+</ol>
+<h1 id="4-数据结构与算法"><a href="#4-数据结构与算法" class="headerlink" title="4 数据结构与算法"></a>4 数据结构与算法</h1><ol>
+<li>掌握<a target="_blank" rel="noopener" href="http://www.docin.com/p-1532910757.html">线性表</a>和<a target="_blank" rel="noopener" href="http://www.docin.com/p-682548027.html">树</a>的特点并熟练运用: B-Tree节点结构</li>
+<li>掌握<a href="/data-struct/SortAndSearchAlgrithom/">常用排序和查找算法</a>：插入排序(直接插入排序、希尔排序)、选择排序(直接选择排序、堆排序)、交换排序(冒泡排序、快速排序)、归并排序，顺序查找、二分查找、二叉查找树、哈希查找。广度优先搜索(队列实现)</li>
+<li>熟练运用常见排序和查找算法思想解决编程问题: Top K问题、大数组查找TopN、数组去重、跳台阶问题、不定长字符串转定长字符串</li>
+<li>了解<a href="/data-struct/BasicAlgrithom/">几大基本算法</a>：贪心算法、分治策略、动态规划、蓄水池抽样</li>
+</ol>
+<h1 id="5-计算机网络"><a href="#5-计算机网络" class="headerlink" title="5 计算机网络"></a>5 计算机网络</h1><ol>
+<li>掌握网络的分层结构，及每层的功能特点。<a href="/network/base/">计算机网络基础知识</a></li>
+<li>Http报文、状态码</li>
+<li>掌握TCP/IP的通信原理(三次握手、四次挥手)</li>
+<li><a href="/network/security/HTTPS-SSL/" title="HTTPS与SSL">HTTPS</a>,<a href="/network/security/encrypt-decrypt-signature-certificate/">加密、验签与证书</a></li>
+</ol>
+<h1 id="6-数据库"><a href="#6-数据库" class="headerlink" title="6 数据库"></a>6 数据库</h1><ol>
+<li>掌握复杂的SQL语句编写。<a href="/database/MySQL/base/">MySQL</a>   <a href="/database/concept/">数据库设计</a></li>
+<li>掌握数据库的优化（SQL层面和表设计层面）。<a target="_blank" rel="noopener" href="http://www.jb51.net/article/24392.htm">MySQL 性能优化的最佳20多条经验</a></li>
+<li><a href="/database/MySQL/base">MySQL</a><ul>
+<li>InnoDB数据结构、索引</li>
+<li>InnoDB与MyASIM区别</li>
+<li>行级锁与表级锁</li>
+</ul>
+</li>
+<li>MySQL集群<ul>
+<li>集群</li>
+<li>读写分离与实现</li>
+<li>双写</li>
+</ul>
+</li>
+<li>熟悉高并发、大数据情况下的数据库开发。</li>
+</ol>
+<h1 id="7-Web技术"><a href="#7-Web技术" class="headerlink" title="7 Web技术"></a>7 Web技术</h1><ol>
+<li>掌握<a href="/web/AJAX/">AJAX</a>的工作原理。</li>
+<li>至少熟悉一款JS框架(比如JQuery)。<a href="/web/JQuery/">JQuery</a></li>
+</ol>
+<h1 id="8-设计模式"><a href="#8-设计模式" class="headerlink" title="8 设计模式"></a>8 设计模式</h1><ol>
+<li>熟悉常见的<a href="/design-pattern/base/">设计模式</a>。</li>
+<li>会将设计模式理论应用到实际开发中。</li>
+</ol>
+<h1 id="9-Linux"><a href="#9-Linux" class="headerlink" title="9 Linux"></a>9 Linux</h1><ol>
+<li>熟练运用Linux常见命令。</li>
+<li>熟悉Linux操作系统基本概念及特点。</li>
+<li>熟悉<a target="_blank" rel="noopener" href="http://www.codeceo.com/article/shell-learn-30-mins.html">Shell脚本</a>。</li>
+</ol>
+<h1 id="10-操作系统"><a href="#10-操作系统" class="headerlink" title="10 操作系统"></a>10 操作系统</h1><ol>
+<li>掌握操作系统的进程管理。</li>
+<li>了解操作系统的I/O。</li>
+<li>Linux系统调优: 命令与方法</li>
+</ol>
+<h1 id="11-正则表达式"><a href="#11-正则表达式" class="headerlink" title="11 正则表达式"></a>11 正则表达式</h1><ol>
+<li>掌握常见正则表达式符号。</li>
+<li>熟练运用正则表达式解决实际问题(比如匹配电话号码、邮箱、域名等)。<a href="/Java/regular-expression/">常用的正则表达式与Java中的运用</a></li>
+</ol>
+<h1 id="12-安全"><a href="#12-安全" class="headerlink" title="12 安全"></a>12 安全</h1><ol>
+<li><a href="/web/XSS">XSS</a></li>
+<li><a href="/web/JSONP/">CROS</a></li>
+<li>RTFS</li>
+<li>加密解密与验签</li>
+<li>HTTPS</li>
+<li>跨域请求的方法</li>
+</ol>
+<h1 id="13-分布式"><a href="#13-分布式" class="headerlink" title="13 分布式"></a>13 分布式</h1><ol>
+<li>分布式事务<ul>
+<li>分布式锁：基于DB事务、基于Redis、基于ZooKeeper</li>
+<li>ACID</li>
+<li>CAP、BASE</li>
+<li>TCC</li>
+</ul>
+</li>
+<li>微服务</li>
+<li>Nginx: 原理、负载均衡算法、动态切换</li>
+<li>消息中间件 Kafka、ActiveMQ</li>
+<li>分布式缓存及其集群: 雪崩、穿透、Master选举切换</li>
+<li><a href="/database/Redis/base/">Redis</a>：集群、并发竞争问题、事务与CAS操作、持久化、订阅、缓存失败策略</li>
+<li><a href="/database/memcached/base/">Memcached</a>: 数据结构</li>
+<li>ZooKeeper: 数据结构、集群、Master选举切换</li>
+<li><a href="/distributed/RPC/">RPC</a>：<a href="/">WebService: SOAP、UUDI、WSDL</a>等</li>
+<li>服务治理SOA框架的使用与原理<ul>
+<li><a href="1">Dubbo</a>: 架构、雪崩、服务异常与逻辑异常追踪、服务降级、服务发现</li>
+</ul>
+</li>
+<li>分库分表<ul>
+<li>常见分库分表方案：水平分表与垂直分表的业务设计</li>
+<li>扩容与迁移</li>
+<li>MyCat</li>
+<li>Sharding-JDBC</li>
+</ul>
+</li>
+<li>唯一主键生成器</li>
+<li>算法: 一致性hash、轮询、Paxos、fast leader、raft</li>
+<li>系统设计<ul>
+<li>高可用</li>
+<li>可扩展</li>
+<li>限流(滑动窗口、漏桶、令牌桶)</li>
+<li>幂等</li>
+</ul>
+</li>
+<li>常见场景<ul>
+<li>电商</li>
+</ul>
+</li>
+<li>Docker</li>
+</ol>
+<h1 id="14-大数据"><a href="#14-大数据" class="headerlink" title="14 大数据"></a>14 大数据</h1><ol>
+<li>实时计算: 基数算法</li>
+<li>Storm 原理</li>
+<li>Flink 原理</li>
+<li>Hadoop<ul>
+<li>NameNode动态切换</li>
+<li>MapReduce与shuffle、数据倾斜问题</li>
+</ul>
+</li>
+<li>Yarn</li>
+<li>HBase</li>
+<li>Kylin</li>
+<li>Hive</li>
+<li>Lucene、solar、ElasticSearch</li>
+<li>爬虫</li>
+<li>推荐算法：协同过滤</li>
+<li>画像系统原理</li>
+</ol>
+<h1 id="15-机器学习"><a href="#15-机器学习" class="headerlink" title="15. 机器学习"></a>15. 机器学习</h1><h1 id="16-其他"><a href="#16-其他" class="headerlink" title="16 其他"></a>16 其他</h1><ol>
+<li>Quartz 原理：调度与分布式</li>
+<li>缓存: Ehcache、Spring Data cache、Guava-cache<ul>
+<li>LRUCache</li>
+<li>FastLRUCache</li>
+</ul>
+</li>
+<li>连接池：Druid</li>
+<li><a href="/interview/">虐菜</a></li>
+<li><a href="/software-engineering/base/">软件工程基本知识</a></li>
+<li>CORBAR</li>
+<li>WebSocket</li>
+<li>Tomcat实现原理</li>
+</ol>
+<h1 id="17-2018-中期计划"><a href="#17-2018-中期计划" class="headerlink" title="17. 2018 中期计划"></a>17. 2018 中期计划</h1><ol>
+<li><a href="/distributed/tomcat/principle/">apache Tomcat 源码分析</a></li>
+<li><a href="/distributed/storm/principle/">apache Storm 源码分析</a></li>
+<li><a href="/Java/multithread/disruptor_principle/">disruptor源码分析</a></li>
+<li>分布式服务架构：原理、设计与实战</li>
+<li>HBase</li>
+</ol>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/%E7%A7%92%E6%9E%81%E7%9B%91%E6%8E%A7%E8%AE%BE%E8%AE%A1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1564,7 +1564,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1607,7 +1607,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-KuduSink/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/StreamProcessingWithApacheFlink/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1621,7 +1621,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-KuduSink/" class="post-title-link" itemprop="url">【草稿】FlinkKuduSink</a>
+            <a href="/bigdata/Flink/StreamProcessingWithApacheFlink/" class="post-title-link" itemprop="url">【草稿】Stream processing with Apache Flink</a>
         </h2>
 
         <div class="post-meta">
@@ -1638,7 +1638,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1661,8 +1661,11 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="FlinkKuduSink"><a href="#FlinkKuduSink" class="headerlink" title="FlinkKuduSink"></a>FlinkKuduSink</h1><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">org.apache.kudu.client.NonRecoverableException: Couldn<span class="string">&#x27;t find a valid master in (9.7.185.196:7050). Exceptions received: [org.apache.kudu.client.RpcRemoteException: [peer master-] server sent error Service unavailable: service kudu.master.MasterService not registered on TabletServer]</span></span><br><span class="line"><span class="string">	at org.apache.kudu.client.KuduException.transformException(KuduException.java:110)</span></span><br><span class="line"><span class="string">	at org.apache.kudu.client.KuduClient.joinAndHandleException(KuduClient.java:413)</span></span><br><span class="line"><span class="string">	at org.apache.kudu.client.KuduClient.tableExists(KuduClient.java:229)</span></span><br><span class="line"><span class="string">	at org.apache.flink.connectors.kudu.connector.writer.KuduWriter.obtainTable(KuduWriter.java:74)</span></span><br><span class="line"><span class="string">	at org.apache.flink.connectors.kudu.connector.writer.KuduWriter.&lt;init&gt;(KuduWriter.java:59)</span></span><br><span class="line"><span class="string">	at org.apache.flink.connectors.kudu.streaming.KuduSink.open(KuduSink.java:62)</span></span><br><span class="line"><span class="string">	at org.apache.flink.api.common.functions.util.FunctionUtils.openFunction(FunctionUtils.java:36)</span></span><br><span class="line"><span class="string">	at org.apache.flink.streaming.api.operators.AbstractUdfStreamOperator.open(AbstractUdfStreamOperator.java:102)</span></span><br><span class="line"><span class="string">	at org.apache.flink.streaming.api.operators.StreamSink.open(StreamSink.java:48)</span></span><br><span class="line"><span class="string">	at org.apache.flink.streaming.runtime.tasks.StreamTask.openAllOperators(StreamTask.java:426)</span></span><br><span class="line"><span class="string">	at org.apache.flink.streaming.runtime.tasks.StreamTask.invoke(StreamTask.java:292)</span></span><br><span class="line"><span class="string">	at org.apache.flink.runtime.taskmanager.Task.run(Task.java:726)</span></span><br><span class="line"><span class="string">	at java.lang.Thread.run(Thread.java:748)</span></span><br><span class="line"><span class="string">	Suppressed: org.apache.kudu.client.KuduException$OriginalException: Original asynchronous stack trace</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.ConnectToCluster.incrementCountAndCheckExhausted(ConnectToCluster.java:244)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.ConnectToCluster.access$100(ConnectToCluster.java:49)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.ConnectToCluster$ConnectToMasterErrCB.call(ConnectToCluster.java:363)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.ConnectToCluster$ConnectToMasterErrCB.call(ConnectToCluster.java:352)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.doCall(Deferred.java:1280)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.runCallbacks(Deferred.java:1259)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.handleContinuation(Deferred.java:1315)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.doCall(Deferred.java:1286)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.runCallbacks(Deferred.java:1259)</span></span><br><span class="line"><span class="string">		at com.stumbleupon.async.Deferred.callback(Deferred.java:1002)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.KuduRpc.handleCallback(KuduRpc.java:275)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.KuduRpc.errback(KuduRpc.java:329)</span></span><br><span class="line"><span class="string">		at org.apache.kudu.client.RpcProxy.responseReceived(RpcProxy.java:247)</span></span><br></pre></td></tr></table></figure>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line">org.apache.kudu.client.NonRecoverableException: must specify at least one key column</span><br><span class="line">	at org.apache.kudu.client.KuduException.transformException(KuduException.java:<span class="number">110</span>)</span><br><span class="line">	at org.apache.kudu.client.KuduClient.joinAndHandleException(KuduClient.java:<span class="number">413</span>)</span><br><span class="line">	at org.apache.kudu.client.KuduClient.createTable(KuduClient.java:<span class="number">118</span>)</span><br><span class="line">	at org.apache.flink.connectors.kudu.connector.writer.KuduWriter.obtainTable(KuduWriter.java:<span class="number">78</span>)</span><br><span class="line">	at org.apache.flink.connectors.kudu.connector.writer.KuduWriter.&lt;init&gt;(KuduWriter.java:<span class="number">59</span>)</span><br><span class="line">	at org.apache.flink.connectors.kudu.streaming.KuduSink.open(KuduSink.java:<span class="number">62</span>)</span><br><span class="line">	at org.apache.flink.api.common.functions.util.FunctionUtils.openFunction(FunctionUtils.java:<span class="number">36</span>)</span><br><span class="line">	at org.apache.flink.streaming.api.operators.AbstractUdfStreamOperator.open(AbstractUdfStreamOperator.java:<span class="number">102</span>)</span><br><span class="line">	at org.apache.flink.streaming.api.operators.StreamSink.open(StreamSink.java:<span class="number">48</span>)</span><br><span class="line">	at org.apache.flink.streaming.runtime.tasks.StreamTask.openAllOperators(StreamTask.java:<span class="number">426</span>)</span><br><span class="line">	at org.apache.flink.streaming.runtime.tasks.StreamTask.invoke(StreamTask.java:<span class="number">292</span>)</span><br><span class="line">	at org.apache.flink.runtime.taskmanager.Task.run(Task.java:<span class="number">726</span>)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:<span class="number">748</span>)</span><br><span class="line">	Suppressed: org.apache.kudu.client.KuduException$OriginalException: Original asynchronous stack trace</span><br><span class="line">		at org.apache.kudu.client.RpcProxy.dispatchMasterError(RpcProxy.java:<span class="number">386</span>)</span><br><span class="line">		at org.apache.kudu.client.RpcProxy.responseReceived(RpcProxy.java:<span class="number">279</span>)</span><br><span class="line">		at org.apache.kudu.client.RpcProxy.access$<span class="number">000</span>(RpcProxy.java:<span class="number">59</span>)</span><br><span class="line">		at org.apache.kudu.client.RpcProxy$<span class="number">1.</span>call(RpcProxy.java:<span class="number">149</span>)</span><br><span class="line">		at org.apache.kudu.client.RpcProxy$<span class="number">1.</span>call(RpcProxy.java:<span class="number">145</span>)</span><br><span class="line">		at org.apache.kudu.client.Connection.messageReceived(Connection.java:<span class="number">390</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.SimpleChannelUpstreamHandler.handleUpstream(SimpleChannelUpstreamHandler.java:<span class="number">70</span>)</span><br><span class="line">		at org.apache.kudu.client.Connection.handleUpstream(Connection.java:<span class="number">238</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:<span class="number">564</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline$DefaultChannelHandlerContext.sendUpstream(DefaultChannelPipeline.java:<span class="number">791</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.Channels.fireMessageReceived(Channels.java:<span class="number">296</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.oneone.OneToOneDecoder.handleUpstream(OneToOneDecoder.java:<span class="number">70</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:<span class="number">564</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline$DefaultChannelHandlerContext.sendUpstream(DefaultChannelPipeline.java:<span class="number">791</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.Channels.fireMessageReceived(Channels.java:<span class="number">296</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.unfoldAndFireMessageReceived(FrameDecoder.java:<span class="number">462</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.callDecode(FrameDecoder.java:<span class="number">443</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.messageReceived(FrameDecoder.java:<span class="number">303</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.SimpleChannelUpstreamHandler.handleUpstream(SimpleChannelUpstreamHandler.java:<span class="number">70</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:<span class="number">564</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline$DefaultChannelHandlerContext.sendUpstream(DefaultChannelPipeline.java:<span class="number">791</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.Channels.fireMessageReceived(Channels.java:<span class="number">296</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.unfoldAndFireMessageReceived(FrameDecoder.java:<span class="number">462</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.callDecode(FrameDecoder.java:<span class="number">443</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.handler.codec.frame.FrameDecoder.messageReceived(FrameDecoder.java:<span class="number">303</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.SimpleChannelUpstreamHandler.handleUpstream(SimpleChannelUpstreamHandler.java:<span class="number">70</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:<span class="number">564</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.DefaultChannelPipeline.sendUpstream(DefaultChannelPipeline.java:<span class="number">559</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.Channels.fireMessageReceived(Channels.java:<span class="number">268</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.Channels.fireMessageReceived(Channels.java:<span class="number">255</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.socket.nio.NioWorker.read(NioWorker.java:<span class="number">88</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.socket.nio.AbstractNioWorker.process(AbstractNioWorker.java:<span class="number">108</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.socket.nio.AbstractNioSelector.run(AbstractNioSelector.java:<span class="number">337</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.socket.nio.AbstractNioWorker.run(AbstractNioWorker.java:<span class="number">89</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.channel.socket.nio.NioWorker.run(NioWorker.java:<span class="number">178</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.util.ThreadRenamingRunnable.run(ThreadRenamingRunnable.java:<span class="number">108</span>)</span><br><span class="line">		at org.apache.kudu.shaded.org.jboss.netty.util.internal.DeadLockProofWorker$<span class="number">1.</span>run(DeadLockProofWorker.java:<span class="number">42</span>)</span><br><span class="line">		at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:<span class="number">1149</span>)</span><br><span class="line">		at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:<span class="number">624</span>)</span><br><span class="line">		... <span class="number">1</span> more</span><br><span class="line"></span><br><span class="line">Rows per page:</span><br><span class="line"><span class="number">5</span></span><br><span class="line"><span class="number">1</span> - <span class="number">1</span> of <span class="number">1</span></span><br></pre></td></tr></table></figure>
+          <h1 id="Stream-processing-with-Apache-Flink"><a href="#Stream-processing-with-Apache-Flink" class="headerlink" title="Stream processing with Apache Flink"></a>Stream processing with Apache Flink</h1><h2 id="状态-重放是保证exactly-once的基础"><a href="#状态-重放是保证exactly-once的基础" class="headerlink" title="状态+重放是保证exactly once的基础"></a>状态+重放是保证exactly once的基础</h2><p>Connecting a stateful streaming application running on Flink and an event log is interesting for multiple reasons.<br>In this architecture the event log persists the input events and can replay them in deterministic order.<br>In case of a failure, Flink recovers a stateful streaming application by restoring its state from a previous checkpoint and resetting the read position on the event log.<br>The application will replay (and fast forward) the input events from the event log until it reaches the tail of the stream.<br>This technique is used to recover from failures but can also be leveraged to update an application, fix bugs and repair previously emitted results, migrate an application to a different cluster, or perform A/B tests with different application versions.</p>
+<p>将运行在Flink上的有状态流应用程序与事件日志连接起来非常有趣，原因有很多。在这种体系结构中，事件日志保存输入事件，并可以以确定的顺序重播它们。在失败的情况下，Flink通过从以前的检查点恢复有状态流应用程序的状态并重新设置事件日志上的读位置来恢复有状态流应用程序。应用程序将重播(并快进)事件日志中的输入事件，直到它到达流的尾部。此技术用于从故障中恢复，但也可用于更新应用程序、修复bug和修复以前发出的结果、将应用程序迁移到不同的集群或使用不同的应用程序版本执行a/B测试。</p>
+<h2 id="事件驱动"><a href="#事件驱动" class="headerlink" title="事件驱动"></a>事件驱动</h2><p>Event-driven applications offer several benefits compared to transactional applications or microservices. Local state access provides very good performance compared to reading and writing queries against remote datastores. Scaling and fault tolerance are handled by the stream processor, and by leveraging an event log as the input source the complete input of an application is reliably stored and can be deterministically replayed. Furthermore, Flink can reset the state of an application to a previous savepoint, making it possible to evolve or rescale an application without losing its state.</p>
+<p>与事务性应用程序或微服务相比，事件驱动应用程序有几个优点。与对远程数据存储读写查询相比，本地状态访问提供了非常好的性能。扩展和容错由流处理器处理，通过利用事件日志作为输入源，应用程序的完整输入被可靠地存储并可以确定地重播。此外，Flink可以将应用程序的状态重置为以前的保存点，从而可以在不丢失状态的情况下演化或重新调整应用程序</p>
+
       
     </div>
 

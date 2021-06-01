@@ -183,7 +183,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-SQL-inside/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-AsyncIO/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -197,7 +197,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-SQL-inside/" class="post-title-link" itemprop="url">Flink SQL inside</a>
+            <a href="/bigdata/Flink/Flink-AsyncIO/" class="post-title-link" itemprop="url">Flink asyncIO</a>
         </h2>
 
         <div class="post-meta">
@@ -214,7 +214,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -237,597 +237,335 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p><a target="_blank" rel="noopener" href="https://github.com/ververica/sql-training/wiki">Apache Flink® SQL Training</a></p>
-<h1 id="Flink-SQL"><a href="#Flink-SQL" class="headerlink" title="Flink SQL"></a>Flink SQL</h1><ul>
-<li>Flink SQL/Table 如何转化为Flink graph?</li>
-<li>Blink 进行了什么优化?</li>
-</ul>
-<p>本节将主要从 SQL/Table API 如何转化为真正的 Job Graph 的流程开始，让大家对 Blink Planner 有一个比较清晰的认识，希望对大家阅读 Blink 代码，或者使用 Blink 方面有所帮助。然后介绍 Blink Planner 的改进及优化。</p>
-<p><img src="vx_images/5763696502773"></p>
-<p>从上图可以很清楚的看到，解析的过程涉及到了三层：Table API/SQL，Blink Planner，Runtime，下面将对主要的步骤进行讲解：</p>
-<p>Table API&amp;SQL 解析验证：在 Flink 1.9 中，Table API 进行了大量的重构，引入了一套新的 Operation，这套 Operation 主要是用来描述任务的 Logic Tree。</p>
-<p>当 SQL 传输进来后，首先会去做 SQL 解析，SQL 解析完成之后，会得到 SqlNode Tree(抽象语法树)，然后会紧接着去做 Validator（验证），验证时会去访问 FunctionManger 和 CatalogManger，FunctionManger 主要是查询用户定义的 UDF，以及检查 UDF 是否合法，CatalogManger 主要是检查这个 Table 或者 Database 是否存在，如果验证都通过，就会生成一个 Operation DAG（有向无环图）。</p>
-<p>从这一步可以看出，Table API 和 SQL 在 Flink 中最终都会转化为统一的结构，即 Operation DAG。</p>
-<p>生成RelNode：Operation DAG 会被转化为 RelNode(关系表达式) DAG。</p>
-<p>优化：优化器会对 RelNode 做各种优化，优化器的输入是各种优化的规则，以及各种统计信息。当前，在 Blink Planner 里面，绝大部分的优化规则，Stream 和 Batch 是共享的。差异在于，对 Batch 而言，它没有 state 的概念，而对于 Stream 而言，它是不支持 sort 的，所以目前 Blink Planner 中，还是运行了两套独立的规则集（Rule Set），然后定义了两套独立的 Physical Rel：BatchPhysical Rel 和 StreamPhysical Rel。优化器优化的结果，就是具体的 Physical Rel DAG。</p>
-<p>转化：得到 Physical Rel Dag 后，继续会转化为 ExecNode，通过名字可以看出，ExecNode 已经属于执行层的概念了，但是这个执行层是 Blink 的执行层，在 ExecNode 中，会进行大量的 CodeGen 的操作，还有非 Code 的 Operator 操作，最后，将 ExecNode 转化为 Transformation DAG。</p>
-<p>**生成可执行 Job Graph：**得到 Transformation DAG 后，最终会被转化成 Job Graph，完成 SQL 或者 Table API 的解析。</p>
-<h3 id="Blink-Planner-改进及优化"><a href="#Blink-Planner-改进及优化" class="headerlink" title="Blink Planner 改进及优化"></a>Blink Planner 改进及优化</h3><p>Blink Planner 功能方面改进主要包含如下几个方面：</p>
+          <h1 id="Flink-asyncIO"><a href="#Flink-asyncIO" class="headerlink" title="Flink-asyncIO"></a>Flink-asyncIO</h1><p> <img src="_v_images/20201207210251979_867932479.png"></p>
+<p>阿里贡献给flink的，优点就不说了嘛，官网上都有，就是写库不会阻塞性能更好</p>
+<p>然后来看一下， Flink 中异步io主要分为两种</p>
+<p>　　一种是有序Ordered</p>
+<p>　　一种是无序UNordered</p>
+<p>主要区别是往下游output的顺序（注意这里顺序不是写库的顺序既然都异步了写库的顺序自然是无法保证的），有序的会按接收的顺序继续往下游output发送，无序就是谁先处理完谁就先往下游发送</p>
+<p>两张图了解这两种模式的实现</p>
+<p> <img src="_v_images/20201207210251873_2096107056.png"></p>
+<p>有序：record数据会通过异步线程写库，Emitter是一个守护进程，会不停的拉取queue头部的数据，如果头部的数据异步写库完成，Emitter将头数据往下游发送，如果头元素还没有异步写库完成，柱塞 <img src="_v_images/20201207210251766_1309898873.png">     </p>
+<p>无序：record数据会通过异步线程写库，这里有两个queue,一开始放在uncompleteedQueue，当哪个record异步写库成功后就直接放到completedQueue中，Emitter是一个守护进程，completedQueue只要有数据，会不停的拉取queue数据往下游发送 </p>
+<p>可以看到原理还是很简单的，两句话就总结完了，就是利用queue和java的异步线程，现在来看下源码</p>
+<p>这里AsyncIO在Flink中被设计成operator中的一种，自然去OneInputStreamOperator的实现类中去找</p>
+<p>于是来看一下AsyncWaitOperator.java</p>
+<p>　　<img src="_v_images/20201207210251559_1488153726.png"></p>
+<p>看到它的open方法（open方法会在taskmanager启动job的时候全部统一调用，可以翻一下以前的文章）</p>
+<p>这里启动了一个守护线程Emitter,来看下线程具体做了什么</p>
+<p> <img src="_v_images/20201207210251351_312304785.png"></p>
+<p> 1处拉取数据，2处就是常规的将拉取到的数据往下游emit，Emitter拉取数据，这里先不讲因为分为有序的和无序的</p>
+<p> 这里已经知道了这个Emitter的作用是循环的拉取数据往下游发送</p>
+<p> 回到AsyncWaitOperator.java在它的open方法初始化了Emitter,那它是如何处理接收到的数据的呢，看它的ProcessElement（）方法</p>
+<p> <img src="_v_images/20201207210251144_1378849400.png"></p>
+<pre><code>![](_v_images/20201207210250637_60325951.png)</code></pre>
+<p> <img src="_v_images/20201207210250031_255901575.png"></p>
+<p> 其实主要就是三个个方法</p>
+<p>先是！！！将record封装成了一个包装类StreamRecordQueueEntry，主要是这个包装类的构造方法中,创建了一个CompleteableFuture(这个的complete方法其实会等到用户代码执行的时候用户自己决定什么时候完成）</p>
+<p>1处主要就是讲元素加入到了对应的queue,这里也分为两种有序和无序的</p>
+<p> <img src="_v_images/20201207210249826_218236941.png"></p>
+<p>这里也先不讲这两种模式加入数据的区别</p>
+<p>接着2处就是调用用户的代码了，来看看官网的异步io的例子</p>
+<p> <img src="_v_images/20201207210249221_1218191589.png"></p>
+<p> 给了一个Future作为参数，用户自己起了一个线程（这里思考一下就知道了为什么要新起一个异步线程去执行，因为如果不起线程的话，那processElement方法就柱塞了，无法异步了）去写库读库等，然后调用了这个参数的complete方法（也就是前面那个包装类中的CompleteableFuture）并且传入了一个结果</p>
+<p>看下complete方法源码</p>
+<p> <img src="_v_images/20201207210248614_1185315462.png"></p>
+<p> 这个resultFuture是每个record的包装类StreamRecordQueueEntry的其中一个属性是一个CompletableFuture</p>
+<p> 那现在就清楚了，用户代码在自己新起的线程中当自己的逻辑执行完以后会使这个异步线程结束，并输入一个结果</p>
+<p> 那这个干嘛用的呢</p>
+<p>最开始的图中看到有序和无序实现原理，有序用一个queue,无序用两个queue分别就对应了</p>
+<p>OrderedStreamElementQueue类中</p>
+<p> <img src="_v_images/20201207210248409_107213650.png"></p>
+<p> UnorderedStreamElementQueue类中</p>
+<p> <img src="_v_images/20201207210248304_1712699416.png"></p>
+<p>回到前面有两个地方没有细讲，一是两种模式的Emitter是如何拉取数据的，二是两种模式下数据是如何加入OrderedStreamElementQueue的</p>
+<p>有序模式：</p>
+<p>1.先来看一下有序模式的，Emitter的数据拉取，和数据的加入</p>
+<p>　　　　其tryPut（）方法</p>
+<p>　　　　  <img src="_v_images/20201207210248099_682570540.png"></p>
+<p> 　　　  <img src="_v_images/20201207210247594_534665308.png"></p>
+<p> 　　　　<em>onComplete**方法</em></p>
+<p>　　　　　　　<em><img src="_v_images/20201207210247288_2059500658.png"></em></p>
+<pre><code>   onCompleteHandler方法</code></pre>
+<p>　　　　  　<img src="_v_images/20201207210247082_286767362.png">　</p>
+<p>　　这里比较绕，先将接收的数据加入queue中，然后onComplete()中当上一个异步线程getFuture() 其实就是每个元素包装类里面的那个CompletableFuture,当他结束时（会在用户方法用户调用complete时结束）异步调用传入的对象的 accept方法，accept方法中调用了onCompleteHandler（）方法，onCompleteHandler方法中会判断queue是否为空，以及queue的头元素是否完成了用户的异步方法，当完成的时候，就会将headIsCompleted这个对象signalAll（）唤醒</p>
+<p>2.接着看有序模式Emitter的拉取数据</p>
+<p><img src="_v_images/20201207210246482_1132368562.png">  </p>
+<p> 这里有序方式拉取数据的逻辑很清晰，如果为空或者头元素没有完成用户的异步方法，headIsCompleted这个对象会wait住（上面可以知道，当加入元素的到queue且头元素完成异步方法的时候会signalAll（））然后将头数据返回，往下游发送</p>
+<p>这样就实现了有序发送，因为Emitter只拉取头元素且已经完成用户异步方法的头元素</p>
+<p>无序模式： </p>
+<p>　　这里和有序模式就大同小异了，只是变成了,接收数据后直接加入uncompletedQueue，当数据完成异步方法的时候就，放到completedQueue里面去并signalAll（），只要completedqueue里面有数据，Emitter就拉取往下发</p>
+<p>这样就实现了无序模式，也就是异步写入谁先处理完就直接放到完成队列里面去，然后往下发，不用管接收数据的顺序</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/doris/Doris/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/doris/Doris/" class="post-title-link" itemprop="url">Doris</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Doris"><a href="#Doris" class="headerlink" title="Doris"></a>Doris</h1><p>参考文献:</p>
+<p><a target="_blank" rel="noopener" href="https://blog.bcmeng.com/post/doris-bitmap.html">Apache Doris 基于 Bitmap的精确去重和用户行为分析</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-runtime/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-runtime/" class="post-title-link" itemprop="url">Flink runtime</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h2><p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424153039.svg" alt="The processes involved in executing a Flink dataflow"></p>
+<p>当 Flink 集群启动后，首先会启动一个 JobManger 和一个或多个的 TaskManager。由 Client 提交任务给 JobManager，JobManager 再调度任务到各个 TaskManager 去执行，然后 TaskManager 将心跳和统计信息汇报给 JobManager。TaskManager 之间以流的形式进行数据的传输。上述三者均为独立的 JVM 进程。</p>
 <ul>
-<li>  更完整的 SQL 语法支持：例如，IN，EXISTS，NOT EXISTS，子查询，完整的 Over 语句，Group Sets 等。而且已经跑通了所有的 TPCH，TPCDS 这两个测试集，性能还非常不错。</li>
-<li>  提供了更丰富，高效的算子。</li>
-<li>  提供了非常完善的 cost 模型，同时能够对接 Catalog 中的统计信息，使 cost 根据统计信息得到更优的执行计划。</li>
-<li>  支持 join reorder。</li>
-<li>  shuffle service：对 Batch 而言，Blink Planner 还支持 shuffle service，这对 Batch 作业的稳定性有非常大的帮助，如果遇到 Batch 作业失败，通过 shuffle service 能够很快的进行恢复。</li>
+<li><strong>Client</strong> 为提交 Job 的客户端，可以是运行在任何机器上（与 JobManager 环境连通即可）。提交 Job 后，Client 可以结束进程（Streaming的任务），也可以不结束并等待结果返回。</li>
+<li><strong>JobManager</strong> 主要负责调度 Job 并协调 Task 做 checkpoint，职责上很像 Storm 的 Nimbus。从 Client 处接收到 Job 和 JAR 包等资源后，会生成优化后的执行计划，并以 Task 的单元调度到各个 TaskManager 去执行。</li>
+<li><strong>TaskManager</strong> 在启动的时候就设置好了槽位数（Slot），每个 slot 能启动一个 Task，Task 为线程。从 JobManager 处接收需要部署的 Task，部署启动后，与自己的上游建立 Netty 连接，接收数据并处理。</li>
 </ul>
-<p>性能方面，主要包括以下部分：</p>
+<p>可以看到 Flink 的任务调度是多线程模型，并且不同Job/Task混合在一个 TaskManager 进程中。虽然这种方式可以有效提高 CPU 利用率，但是个人不太喜欢这种设计，因为不仅缺乏资源隔离机制，同时也不方便调试。类似 Storm 的进程模型，一个JVM 中只跑该 Job 的 Tasks 实际应用中更为合理。</p>
+<h2 id="Graph转换"><a href="#Graph转换" class="headerlink" title="Graph转换"></a>Graph转换</h2><p>看起来有点乱，怎么有这么多不一样的图。实际上，还有更多的图。Flink 中的执行图可以分成四层：StreamGraph -&gt; JobGraph -&gt; ExecutionGraph -&gt; 物理执行图。</p>
 <ul>
-<li><p>  分段优化。</p>
-</li>
-<li><p>  Sub-Plan Reuse。</p>
-</li>
-<li><p>  更丰富的优化 Rule：共一百多个 Rule ，并且绝大多数 Rule 是 Stream 和 Batch 共享的。</p>
-</li>
-<li><p>  更高效的数据结构 BinaryRow：能够节省序列化和反序列化的操作。</p>
-</li>
-<li><p>  mini-batch 支持（仅 Stream）：节省 state 的访问的操作。</p>
-</li>
-<li><p>  节省多余的 Shuffle 和 Sort（Batch 模式）：两个算子之间，如果已经按 A 做 Shuffle，紧接着他下的下游也是需要按 A Shuffle 的数据，那中间的这一层 Shuffle，就可以省略，这样就可以省很多网络的开销，Sort 的情况也是类似。Sort 和 Shuffle 如果在整个计算里面是占大头，对整个性能是有很大的提升的。</p>
-</li>
+<li><strong>StreamGraph：</strong>是根据用户通过 Stream API 编写的代码生成的最初的图。用来表示程序的拓扑结构。</li>
+<li><strong>JobGraph：</strong>StreamGraph经过优化后生成了 JobGraph，提交给 JobManager 的数据结构。主要的优化为，将多个符合条件的节点 chain 在一起作为一个节点，这样可以减少数据在节点之间流动所需要的序列化/反序列化/传输消耗。</li>
+<li><strong>ExecutionGraph：</strong>JobManager 根据 JobGraph 生成ExecutionGraph。ExecutionGraph是JobGraph的并行化版本，是调度层最核心的数据结构。</li>
+<li><strong>物理执行图：</strong>JobManager 根据 ExecutionGraph 对 Job 进行调度后，在各个TaskManager 上部署 Task 后形成的“图”，并不是一个具体的数据结构。</li>
 </ul>
-<h3 id="深入性能优化及实践"><a href="#深入性能优化及实践" class="headerlink" title="深入性能优化及实践"></a>深入性能优化及实践</h3><p>本节中，将使用具体的示例进行讲解，让你深入理解 Blink Planner 性能优化的设计。</p>
-<h4 id="分段优化"><a href="#分段优化" class="headerlink" title="分段优化"></a>分段优化</h4><p>示例 5</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">view</span> MyView <span class="keyword">as</span> <span class="keyword">select</span> word, <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">as</span> freq <span class="keyword">from</span> SourceTable <span class="keyword">group</span> <span class="keyword">by</span> word; <span class="keyword">insert</span> <span class="keyword">into</span> SinkTable1 <span class="keyword">select</span> \<span class="operator">*</span> <span class="keyword">from</span> MyView <span class="keyword">where</span> freq <span class="operator">&gt;</span><span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> SinkTable2 <span class="keyword">select</span> <span class="built_in">count</span>(word) <span class="keyword">as</span> freq2, freq <span class="keyword">from</span> MyView <span class="keyword">group</span> <span class="keyword">by</span> freq; </span><br></pre></td></tr></table></figure>
-<p>复制代码</p>
-<p>上面的这几个 SQL，转化为 RelNode DAG，大致图形如下：</p>
-<p><img src="vx_images/5754200881233">  </p>
-<p>图5 示例5 RelNode DAG</p>
-<p>如果是使用 Flink Planner，经过优化层后，会生成如下执行层的 DAG：</p>
-<p><img src="vx_images/5742768787093">  </p>
-<p>图6 示例 5 Flink Planner DAG</p>
-<p>可以看到，Flink Planner 只是简单的从 Sink 出发，反向的遍历到 Source，从而形成两个独立的执行链路，从上图也可以清楚的看到，Scan 和第一层 Aggregate 是有重复计算的。</p>
-<p>在 Blink Planner 中，经过优化层之后，会生成如下执行层的 DAG：</p>
-<p><img src="vx_images/5732658916907">  </p>
-<p>图7 示例 5 Blink Planner DAG</p>
-<p>Blink Planner 不是在每次调用 insert into 的时候就开始优化，而是先将所有的 insert into 操作缓存起来，等到执行前才进行优化，这样就可以看到完整的执行图，可以知道哪些部分是重复计算的。Blink Planner 通过寻找可以优化的最大公共子图，找到这些重复计算的部分。经过优化后，Blink Planner 会将最大公共子图的部分当做一个临时表，供其他部分直接使用。</p>
-<p>这样，上面的图可以分为三部分，最大公共子图部分（临时表），临时表与 Filter 和 SinkTable1 优化，临时表与第二个 Aggregate 和 SinkTable 2 优化。</p>
-<p>Blink Planner 其实是通过声明的 View 找到最大公共子图的，因此在开发过程中，如果需要复用某段逻辑，就将其定义为 View，这样就可以充分利用 Blink Planner 的分段优化功能，减少重复计算。</p>
-<p>当然，当前的优化也不是最完美的，因为提前对图进行了切割，可能会导致一些优化丢失，今后会持续地对这部分算法进行改进。</p>
-<p>总结一下，Blink Planner 的分段优化，其实解的是多 Sink 优化问题（DAG 优化），单 Sink 不是分段优化关心的问题，单 Sink 可以在所有节点上优化，不需要分段。</p>
-<h4 id="Sub-Plan-Reuse"><a href="#Sub-Plan-Reuse" class="headerlink" title="Sub-Plan Reuse"></a>Sub-Plan Reuse</h4><p>示例 6</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> SinkTabl</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> freq <span class="keyword">from</span> (<span class="keyword">select</span> word, <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">as</span> freq <span class="keyword">from</span> SourceTable <span class="keyword">group</span> <span class="keyword">by</span> word) t <span class="keyword">where</span> word <span class="keyword">like</span> <span class="string">&#x27;T%&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> <span class="built_in">count</span>(word) <span class="keyword">as</span> freq2 <span class="keyword">from</span> (<span class="keyword">select</span> word, <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">as</span> freq <span class="keyword">from</span> SourceTable <span class="keyword">group</span> <span class="keyword">by</span> word) t <span class="keyword">group</span> <span class="keyword">by</span> freq; </span><br></pre></td></tr></table></figure>
-<p>复制代码</p>
-<p>这个示例的 SQL 和分段优化的 SQL 其实是类似的，不同的是，没有将结果 Sink 到两个 Table 里面，而是将结果 Union 起来，Sink 到一个结果表里面。</p>
-<p>下面看一下转化为 RelNode 的 DAG 图：</p>
-<p><img src="vx_images/5722510102563">  </p>
-<p>图 8 示例 6 RelNode DAG</p>
-<p>从上图可以看出，Scan 和第一层的 Aggregate 也是有重复计算的，Blink Planner 其实也会将其找出来，变成下面的图：</p>
-<p><img src="vx_images/5711511556085">  </p>
-<p>图9 示例 6 Blink Planner DAG</p>
-<p>Sub-Plan 优化的启用，有两个相关的配置：</p>
+<p>例如上文中的2个并发度（Source为1个并发度）的 <code>SocketTextStreamWordCount</code> 四层执行图的演变过程如下图所示（点击查看大图）：</p>
+<p><a target="_blank" rel="noopener" href="http://img3.tbcdn.cn/5476e8b07b923/TB1tA_GJFXXXXapXFXXXXXXXXXX"><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424153212.png" alt="img"></a></p>
+<p>这里对一些名词进行简单的解释。</p>
 <ul>
-<li><p>  table.optimizer.reuse-sub-plan-enabled （默认开启）</p>
-</li>
-<li><p>  table.optimizer.reuse-source-enabled（默认开启）</p>
-</li>
-</ul>
-<p>这两个配置，默认都是开启的，用户可以根据自己的需求进行关闭。这里主要说明一下 table.optimizer.reuse-source-enabled 这个参数。在 Batch 模式下，join 操作可能会导致死锁，具体场景是在执行 hash-join 或者 nested-loop-join 时一定是先读 build 端，然后再读 probe 端，如果启用 reuse-source-enabled，当数据源是同一个 Source 的时候，Source 的数据会同时发送给 build 和 probe 端。这时候，build 端的数据将不会被消费，导致 join 操作无法完成，整个 join 就被卡住了。</p>
-<p>为了解决死锁问题，Blink Planner 会先将 probe 端的数据落盘，这样 build 端读数据的操作才会正常，等 build 端的数据全部读完之后，再从磁盘中拉取 probe 端的数据，从而解决死锁问题。但是，落盘会有额外的开销，会多一次写的操作；有时候，读两次 Source 的开销，可能比一次写的操作更快，这时候，可以关闭 reuse-source，性能会更好。当然，如果读两次 Source 的开销，远大于一次落盘的开销，可以保持 reuse-source 开启。需要说明的是，Stream 模式是不存在死锁问题的，因为 Stream 模式 join 不会有选边的问题。</p>
-<p>总结而言，sub-plan reuse 解的问题是优化结果的子图复用问题，它和分段优化类似，但他们是一个互补的过程。</p>
-<p>注：Hash Join：对于两张待 join 的表 t1, t2。选取其中的一张表按照 join 条件给的列建立hash 表。然后扫描另外一张表，一行一行去建好的 hash 表判断是否有对应相等的行来完成 join 操作，这个操作称之为 probe (探测)。前一张表叫做 build 表，后一张表的叫做 probe 表。</p>
-<h4 id="Agg-分类优化"><a href="#Agg-分类优化" class="headerlink" title="Agg 分类优化"></a>Agg 分类优化</h4><p>Blink 中的 Aggregate 操作是非常丰富的：</p>
+<li><p>StreamGraph：</p>
+<p>根据用户通过 Stream API 编写的代码生成的最初的图。</p>
 <ul>
-<li><p>  group agg，例如：select count(a) from t group by b</p>
-</li>
-<li><p>  over agg，例如：select count(a) over (partition by b order by c) from t</p>
-</li>
-<li><p>  window agg，例如：select count(a) from t group by tumble(ts, interval ‘10’ second), b</p>
-</li>
-<li><p>  table agg ，例如：tEnv.scan(‘t’).groupBy(‘a’).flatAggregate(flatAggFunc(‘b’ as (‘c’, ‘d’)))</p>
-</li>
+<li>StreamNode：用来代表 operator 的类，并具有所有相关的属性，如并发度、入边和出边等。</li>
+<li>StreamEdge：表示连接两个StreamNode的边。</li>
 </ul>
-<p>下面主要对 Group Agg 优化进行讲解，主要是两类优化。</p>
-<p>1. Local/Global Agg 优化</p>
-<p>Local/Global Agg 主要是为了减少网络 Shuffle。要运用 Local/Global 的优化，必要条件如下：</p>
+</li>
+<li><p>JobGraph：</p>
+<p>StreamGraph经过优化后生成了 JobGraph，提交给 JobManager 的数据结构。</p>
 <ul>
-<li><p>  Aggregate 的所有 Agg Function 都是 mergeable 的，每个 Aggregate 需要实现 merge 方法，例如 SUM，COUNT，AVG，这些都是可以分多阶段完成，最终将结果合并；但是求中位数，计算 95% 这种类似的问题，无法拆分为多阶段，因此，无法运用 Local/Global 的优化。</p>
-</li>
-<li><p>  table.optimizer.agg-phase-strategy 设置为 AUTO 或者 TWO_PHASE。</p>
-</li>
-<li><p>  Stream 模式下，mini-batch 开启 ；Batch 模式下 AUTO 会根据 cost 模型加上统计数据，选择是否进行 Local/Global 优化。</p>
-</li>
+<li>JobVertex：经过优化后符合条件的多个StreamNode可能会chain在一起生成一个JobVertex，即一个JobVertex包含一个或多个operator，JobVertex的输入是JobEdge，输出是IntermediateDataSet。</li>
+<li>IntermediateDataSet：表示JobVertex的输出，即经过operator处理产生的数据集。producer是JobVertex，consumer是JobEdge。</li>
+<li>JobEdge：代表了job graph中的一条数据传输通道。source 是 IntermediateDataSet，target 是 JobVertex。即数据通过JobEdge由IntermediateDataSet传递给目标JobVertex。</li>
 </ul>
-<p>示例 7</p>
-<p>select count(*) from t group by color</p>
-<p>复制代码</p>
-<p>没有优化的情况下，下面的这个 Aggregate 会产生 10 次的 Shuffle 操作。</p>
-<p><img src="vx_images/5702882869443">  </p>
-<p>图 10 示例 7 未做优化的 Count 操作</p>
-<p>使用 Local/Global 优化后，会转化为下面的操作，会在本地先进行聚合，然后再进行 Shuffle 操作，整个 Shuffle 的数据剩下 6 条。在 Stream 模式下，Blink 其实会以 mini-batch 的维度对结果进行预聚合，然后将结果发送给 Global Agg 进行汇总。</p>
-<p><img src="vx_images/5692318921039">  </p>
-<p>图 11 示例 7 经过 Local/Global 优化的 Count 操作</p>
-<p>2. Distinct Agg 优化</p>
-<p>Distinct Agg 进行优化，主要是对 SQL 语句进行改写，达到优化的目的。但 Batch 模式和 Stream 模式解决的问题是不同的：</p>
-<ul>
-<li><p>  Batch 模式下的 Distinct Agg，需要先做 Distinct，再做 Agg，逻辑上需要两步才能实现，直接实现 Distinct Agg 开销太大。</p>
 </li>
-<li><p>  Stream 模式下，主要是解决热点问题，因为 Stream 需要将所有的输入数据放在 State 里面，如果数据有热点，State 操作会很频繁，这将影响性能。</p>
+<li><p>ExecutionGraph：</p>
+<p>JobManager 根据 JobGraph 生成ExecutionGraph。ExecutionGraph是JobGraph的并行化版本，是调度层最核心的数据结构。</p>
+<ul>
+<li>ExecutionJobVertex：和JobGraph中的JobVertex一一对应。每一个ExecutionJobVertex都有和并发度一样多的 ExecutionVertex。</li>
+<li>ExecutionVertex：表示ExecutionJobVertex的其中一个并发子任务，输入是ExecutionEdge，输出是IntermediateResultPartition。</li>
+<li>IntermediateResult：和JobGraph中的IntermediateDataSet一一对应。一个IntermediateResult包含多个IntermediateResultPartition，其个数等于该operator的并发度。</li>
+<li>IntermediateResultPartition：表示ExecutionVertex的一个输出分区，producer是ExecutionVertex，consumer是若干个ExecutionEdge。</li>
+<li>ExecutionEdge：表示ExecutionVertex的输入，source是IntermediateResultPartition，target是ExecutionVertex。source和target都只能是一个。</li>
+<li>Execution：是执行一个 ExecutionVertex 的一次尝试。当发生故障或者数据需要重算的情况下 ExecutionVertex 可能会有多个 ExecutionAttemptID。一个 Execution 通过 ExecutionAttemptID 来唯一标识。JM和TM之间关于 task 的部署和 task status 的更新都是通过 ExecutionAttemptID 来确定消息接受者。</li>
+</ul>
+</li>
+<li><p>物理执行图：</p>
+<p>JobManager 根据 ExecutionGraph 对 Job 进行调度后，在各个TaskManager 上部署 Task 后形成的“图”，并不是一个具体的数据结构。</p>
+<ul>
+<li>Task：Execution被调度后在分配的 TaskManager 中启动对应的 Task。Task 包裹了具有用户执行逻辑的 operator。</li>
+<li>ResultPartition：代表由一个Task的生成的数据，和ExecutionGraph中的IntermediateResultPartition一一对应。</li>
+<li>ResultSubpartition：是ResultPartition的一个子分区。每个ResultPartition包含多个ResultSubpartition，其数目要由下游消费 Task 数和 DistributionPattern 来决定。</li>
+<li>InputGate：代表Task的输入封装，和JobGraph中JobEdge一一对应。每个InputGate消费了一个或多个的ResultPartition。</li>
+<li>InputChannel：每个InputGate会包含一个以上的InputChannel，和ExecutionGraph中的ExecutionEdge一一对应，也和ResultSubpartition一对一地相连，即一个InputChannel接收一个ResultSubpartition的输出。</li>
+</ul>
 </li>
 </ul>
-<p>Batch 模式</p>
-<p>第一层，求 distinct 的值和非 distinct agg function 的值，第二层求 distinct agg function 的值</p>
-<p>示例 8</p>
-<p>select color, count(distinct id), count(*) from t group by color </p>
-<p>复制代码</p>
-<p>手工改写成：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> color, <span class="built_in">count</span>(id), <span class="built_in">min</span>(cnt) <span class="keyword">from</span> (</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> color, id, <span class="built_in">count</span>(\<span class="operator">*</span>) <span class="keyword">filter</span> (<span class="keyword">where</span> $e<span class="operator">=</span><span class="number">2</span>) <span class="keyword">as</span> cnt <span class="keyword">from</span> (</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> color, id, <span class="number">1</span> <span class="keyword">as</span> $e <span class="keyword">from</span> t <span class="comment">--for distinct id</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> color, <span class="keyword">null</span> <span class="keyword">as</span> id, <span class="number">2</span> <span class="keyword">as</span> $e <span class="keyword">from</span> t <span class="comment">-- for count(\*)</span></span><br><span class="line"></span><br><span class="line">) <span class="keyword">group</span> <span class="keyword">by</span> color, id, $e</span><br><span class="line"></span><br><span class="line">) <span class="keyword">group</span> <span class="keyword">by</span> color </span><br></pre></td></tr></table></figure>
-<p>复制代码</p>
-<p>转化的逻辑过程，如下图所示：</p>
-<p><img src="vx_images/5681295595288">  </p>
-<p>图 12 示例 8 Batch 模式 Distinct 改写逻辑</p>
-<p>Stream 模式</p>
-<p>Stream 模式的启用有一些必要条件：</p>
-<ul>
-<li><p>  必须是支持的 agg function：avg/count/min/max/sum/first_value/concat_agg/single_value；</p>
-</li>
-<li><p>  table.optimizer.distinct-agg.split.enabled（默认关闭）</p>
-</li>
-</ul>
-<p>示例 9</p>
-<p>select color, count(distinct id), count(*) from t group by color </p>
-<p>复制代码</p>
-<p>手工改写成：</p>
-<p>select color, sum(dcnt), sum(cnt) from (</p>
-<p>select color, count(distinct id) as dcnt, count(*) as cnt from t</p>
-<p>group by color, mod(hash_code(id), 1024)</p>
-<p>) group by color</p>
-<p>复制代码</p>
-<p>改写前，逻辑图大概如下：</p>
-<p><img src="vx_images/5669686806196">  </p>
-<p>图 13 示例 9 Stream 模式未优化 Distinct</p>
-<p>改写后，逻辑图就会变为下面这样，热点数据被打散到多个中间节点上。</p>
-<p><img src="vx_images/5659004248673">  </p>
-<p>图14 示例 9 Stream 模式优化 Distinct</p>
-<p>需要注意的是，示例 5 的 SQL 中 mod(hash_code(id),1024)中的这个 1024 为打散的维度，这个值建议设置大一些，设置太小产生的效果可能不好。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文首先对新的 TableEnvironment 的整体设计进行了介绍，并且列举了各种模式下TableEnvironment 的选择，然后通过具体的示例，展示了各种模式下代码的写法，以及需要注意的事项。</p>
-<p>在新的 Catalog 和 DDL 部分，对 Catalog 的整体设计、DDL 的使用部分也都以实例进行拆分讲解。最后，对 Blink Planner 解析 SQL/Table API 的流程、Blink Planner 的改进以及优化的原理进行了讲解，希望对大家探索和使用 Flink SQL 有所帮助。</p>
-<h2 id="SQL解析工具"><a href="#SQL解析工具" class="headerlink" title="SQL解析工具"></a>SQL解析工具</h2><p>hive使用了antlr3实现了自己的HQL,<br>Flink使用Apache Calcite,<br>而Calcite的解析器是使用JavaCC实现的,<br>Spark2.x以后采用了antlr4实现自己的解析器,<br>Presto也是使用antlr4。</p>
-<h2 id="Window"><a href="#Window" class="headerlink" title="Window"></a>Window</h2><p>在Apache Flink中有2种类型的Window，一种是OverWindow，即传统数据库的标准开窗，每一个元素都对应一个窗口。一种是GroupWindow，目前在SQL中GroupWindow都是基于时间进行窗口划分的。</p>
-<h3 id="Over-Window"><a href="#Over-Window" class="headerlink" title="Over Window"></a>Over Window</h3><p>Apache Flink中对OVER Window的定义遵循标准SQL的定义语法。<br>按ROWS和RANGE分类是传统数据库的标准分类方法，在Apache Flink中还可以根据时间类型(ProcTime/EventTime)和窗口的有限和无限(Bounded/UnBounded)进行分类，共计8种类型。为了避免大家对过细分类造成困扰，我们按照确定当前行的不同方式将OVER Window分成两大类进行介绍，如下:</p>
-<ul>
-<li>  ROWS OVER Window - 每一行元素都视为新的计算行，即，每一行都是一个新的窗口。</li>
-<li>  RANGE OVER Window - 具有相同时间值的所有元素行视为同一计算行，即，具有相同时间值的所有行都是同一个窗口。</li>
-</ul>
-<h4 id="Bounded-ROWS-OVER-Window"><a href="#Bounded-ROWS-OVER-Window" class="headerlink" title="Bounded ROWS OVER Window"></a>Bounded ROWS OVER Window</h4><p>Bounded ROWS OVER Window 每一行元素都视为新的计算行，即，每一行都是一个新的窗口。</p>
-<h5 id="语义"><a href="#语义" class="headerlink" title="语义"></a>语义</h5><p>我们以3个元素(2 PRECEDING)的窗口为例，如下图:<br><img src="vx_images/5456982869145.png" alt="image" title="image"></p>
-<p>上图所示窗口 user 1 的 w5和w6， user 2的 窗口 w2 和 w3，虽然有元素都是同一时刻到达，但是他们仍然是在不同的窗口，这一点有别于RANGE OVER Window。</p>
-<h5 id="语法"><a href="#语法" class="headerlink" title="语法"></a>语法</h5><p>Bounded ROWS OVER Window 语法如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    agg1(col1) <span class="keyword">OVER</span>(</span><br><span class="line">     [<span class="keyword">PARTITION</span> <span class="keyword">BY</span> (value_expression1,..., value_expressionN)] </span><br><span class="line">     <span class="keyword">ORDER</span> <span class="keyword">BY</span> timeCol</span><br><span class="line">     <span class="keyword">ROWS</span> </span><br><span class="line">     <span class="keyword">BETWEEN</span> (UNBOUNDED <span class="operator">|</span> rowCount) PRECEDING <span class="keyword">AND</span> <span class="keyword">CURRENT</span> <span class="type">ROW</span>) <span class="keyword">AS</span> colName, </span><br><span class="line">... </span><br><span class="line"><span class="keyword">FROM</span> Tab1</span><br></pre></td></tr></table></figure>
-<ul>
-<li>  value_expression - 进行分区的字表达式；</li>
-<li>  timeCol - 用于元素排序的时间字段；</li>
-<li>  rowCount - 是定义根据当前行开始向前追溯几行元素。</li>
-</ul>
-<h5 id="SQL-示例"><a href="#SQL-示例" class="headerlink" title="SQL 示例"></a>SQL 示例</h5><p>利用<code>item_tab</code>测试数据，我们统计同类商品中当前和当前商品之前2个商品中的最高价格。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span>  </span><br><span class="line">    itemID,</span><br><span class="line">    itemType, </span><br><span class="line">    onSellTime, </span><br><span class="line">    price,  </span><br><span class="line">    <span class="built_in">MAX</span>(price) <span class="keyword">OVER</span> (</span><br><span class="line">        <span class="keyword">PARTITION</span> <span class="keyword">BY</span> itemType </span><br><span class="line">        <span class="keyword">ORDER</span> <span class="keyword">BY</span> onSellTime </span><br><span class="line">        <span class="keyword">ROWS</span> <span class="keyword">BETWEEN</span> <span class="number">2</span> preceding <span class="keyword">AND</span> <span class="keyword">CURRENT</span> <span class="type">ROW</span>) <span class="keyword">AS</span> maxPrice</span><br><span class="line">  <span class="keyword">FROM</span> item_tab</span><br></pre></td></tr></table></figure>
-<h4 id="Result"><a href="#Result" class="headerlink" title="Result"></a>Result</h4><table>
-<thead>
-<tr>
-<th>itemID</th>
-<th>itemType</th>
-<th>onSellTime</th>
-<th>price</th>
-<th>maxPrice</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>ITEM001</td>
-<td>Electronic</td>
-<td>2017-11-11 10:01:00</td>
-<td>20</td>
-<td>20</td>
-</tr>
-<tr>
-<td>ITEM002</td>
-<td>Electronic</td>
-<td>2017-11-11 10:02:00</td>
-<td>50</td>
-<td>50</td>
-</tr>
-<tr>
-<td>ITEM003</td>
-<td>Electronic</td>
-<td>2017-11-11 10:03:00</td>
-<td>30</td>
-<td>50</td>
-</tr>
-<tr>
-<td>ITEM004</td>
-<td>Electronic</td>
-<td>2017-11-11 10:03:00</td>
-<td>60</td>
-<td>60</td>
-</tr>
-<tr>
-<td>ITEM005</td>
-<td>Electronic</td>
-<td>2017-11-11 10:05:00</td>
-<td>40</td>
-<td>60</td>
-</tr>
-<tr>
-<td>ITEM006</td>
-<td>Electronic</td>
-<td>2017-11-11 10:06:00</td>
-<td>20</td>
-<td>60</td>
-</tr>
-<tr>
-<td>ITEM007</td>
-<td>Electronic</td>
-<td>2017-11-11 10:07:00</td>
-<td>70</td>
-<td>70</td>
-</tr>
-<tr>
-<td>ITEM008</td>
-<td>Clothes</td>
-<td>2017-11-11 10:08:00</td>
-<td>20</td>
-<td>20</td>
-</tr>
-</tbody></table>
-<h4 id="Bounded-RANGE-OVER-Window"><a href="#Bounded-RANGE-OVER-Window" class="headerlink" title="Bounded RANGE OVER Window"></a>Bounded RANGE OVER Window</h4><p>Bounded RANGE OVER Window 具有相同时间值的所有元素行视为同一计算行，即，具有相同时间值的所有行都是同一个窗口。</p>
-<h5 id="语义-1"><a href="#语义-1" class="headerlink" title="语义"></a>语义</h5><p>我们以3秒中数据(INTERVAL ‘2’ SECOND)的窗口为例，如下图：<br><img src="vx_images/5426718920741.png" alt="image" title="image"></p>
-<p>注意: 上图所示窗口 user 1 的 w6， user 2的 窗口 w3，元素都是同一时刻到达,他们是在同一个窗口，这一点有别于ROWS OVER Window。</p>
-<h5 id="语法-1"><a href="#语法-1" class="headerlink" title="语法"></a>语法</h5><p>Bounded RANGE OVER Window的语法如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    agg1(col1) <span class="keyword">OVER</span>(</span><br><span class="line">     [<span class="keyword">PARTITION</span> <span class="keyword">BY</span> (value_expression1,..., value_expressionN)] </span><br><span class="line">     <span class="keyword">ORDER</span> <span class="keyword">BY</span> timeCol</span><br><span class="line">     <span class="keyword">RANGE</span> </span><br><span class="line">     <span class="keyword">BETWEEN</span> (UNBOUNDED <span class="operator">|</span> timeInterval) PRECEDING <span class="keyword">AND</span> <span class="keyword">CURRENT</span> <span class="type">ROW</span>) <span class="keyword">AS</span> colName, </span><br><span class="line">... </span><br><span class="line"><span class="keyword">FROM</span> Tab1</span><br></pre></td></tr></table></figure>
-<ul>
-<li>  value_expression - 进行分区的字表达式；</li>
-<li>  timeCol - 用于元素排序的时间字段；</li>
-<li>  timeInterval - 是定义根据当前行开始向前追溯指定时间的元素行；</li>
-</ul>
-<h5 id="SQL-示例-1"><a href="#SQL-示例-1" class="headerlink" title="SQL 示例"></a>SQL 示例</h5><p>我们统计同类商品中当前和当前商品之前2分钟商品中的最高价格。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span>  </span><br><span class="line">    itemID,</span><br><span class="line">    itemType, </span><br><span class="line">    onSellTime, </span><br><span class="line">    price,  </span><br><span class="line">    <span class="built_in">MAX</span>(price) <span class="keyword">OVER</span> (</span><br><span class="line">        <span class="keyword">PARTITION</span> <span class="keyword">BY</span> itemType </span><br><span class="line">        <span class="keyword">ORDER</span> <span class="keyword">BY</span> rowtime </span><br><span class="line">        <span class="keyword">RANGE</span> <span class="keyword">BETWEEN</span> <span class="type">INTERVAL</span> <span class="string">&#x27;2&#x27;</span> <span class="keyword">MINUTE</span> preceding <span class="keyword">AND</span> <span class="keyword">CURRENT</span> <span class="type">ROW</span>) <span class="keyword">AS</span> maxPrice</span><br><span class="line">  <span class="keyword">FROM</span> item_tab</span><br></pre></td></tr></table></figure>
-<h5 id="Result（Bounded-RANGE-OVER-Window）"><a href="#Result（Bounded-RANGE-OVER-Window）" class="headerlink" title="Result（Bounded RANGE OVER Window）"></a>Result（Bounded RANGE OVER Window）</h5><table>
-<thead>
-<tr>
-<th>itemID</th>
-<th>itemType</th>
-<th>onSellTime</th>
-<th>price</th>
-<th>maxPrice</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>ITEM001</td>
-<td>Electronic</td>
-<td>2017-11-11 10:01:00</td>
-<td>20</td>
-<td>20</td>
-</tr>
-<tr>
-<td>ITEM002</td>
-<td>Electronic</td>
-<td>2017-11-11 10:02:00</td>
-<td>50</td>
-<td>50</td>
-</tr>
-<tr>
-<td>ITEM003</td>
-<td>Electronic</td>
-<td><strong><em>2017-11-11 10:03:00</em></strong></td>
-<td>30</td>
-<td>60</td>
-</tr>
-<tr>
-<td>ITEM004</td>
-<td>Electronic</td>
-<td><strong><em>2017-11-11 10:03:00</em></strong></td>
-<td>60</td>
-<td>60</td>
-</tr>
-<tr>
-<td>ITEM005</td>
-<td>Electronic</td>
-<td>2017-11-11 10:05:00</td>
-<td>40</td>
-<td>60</td>
-</tr>
-<tr>
-<td>ITEM006</td>
-<td>Electronic</td>
-<td>2017-11-11 10:06:00</td>
-<td>20</td>
-<td>40</td>
-</tr>
-<tr>
-<td>ITEM007</td>
-<td>Electronic</td>
-<td>2017-11-11 10:07:00</td>
-<td>70</td>
-<td>70</td>
-</tr>
-<tr>
-<td>ITEM008</td>
-<td>Clothes</td>
-<td>2017-11-11 10:08:00</td>
-<td>20</td>
-<td>20</td>
-</tr>
-</tbody></table>
-<h4 id="特别说明"><a href="#特别说明" class="headerlink" title="特别说明"></a>特别说明</h4><p>OverWindow最重要是要理解每一行数据都确定一个窗口，同时目前在Apache Flink中只支持按时间字段排序。并且OverWindow开窗与GroupBy方式数据分组最大的不同在于，GroupBy数据分组统计时候，在<code>SELECT</code>中除了GROUP BY的key，不能直接选择其他非key的字段，但是OverWindow没有这个限制，<code>SELECT</code>可以选择任何字段。比如一张表table(a,b,c,d)4个字段，如果按d分组求c的最大值，两种写完如下:</p>
-<ul>
-<li>  GROUP BY - <code>SELECT d, MAX(c) FROM table GROUP BY d</code></li>
-<li>OVER Window = <code>SELECT a, b, c, d, MAX(c) OVER(PARTITION BY d, ORDER BY ProcTime())</code><br>  如上 OVER Window 虽然PARTITION BY d,但SELECT 中仍然可以选择 a,b,c字段。但在GROUPBY中，SELECT 只能选择 d 字段。</li>
-</ul>
-<h3 id="Group-Window"><a href="#Group-Window" class="headerlink" title="Group Window"></a>Group Window</h3><p>根据窗口数据划分的不同，目前Apache Flink有如下3种Bounded Winodw:</p>
-<ul>
-<li>  Tumble - 滚动窗口，窗口数据有固定的大小，窗口数据无叠加；</li>
-<li>  Hop - 滑动窗口，窗口数据有固定大小，并且有固定的窗口重建频率，窗口数据有叠加；</li>
-<li>  Session - 会话窗口，窗口数据没有固定的大小，根据窗口数据活跃程度划分窗口，窗口数据无叠加。</li>
-</ul>
-<p><strong>说明：</strong> Aapche Flink 还支持UnBounded的 Group Window，也就是全局Window，流上所有数据都在一个窗口里面，语义非常简单，这里不做详细介绍了。</p>
-<h4 id="Tumble"><a href="#Tumble" class="headerlink" title="Tumble"></a>Tumble</h4><h5 id="语义-2"><a href="#语义-2" class="headerlink" title="语义"></a>语义</h5><p>Tumble 滚动窗口有固定size，窗口数据不重叠,具体语义如下：<br><img src="vx_images/5385895594990.png" alt="image" title="image"></p>
-<h5 id="语法-2"><a href="#语法-2" class="headerlink" title="语法"></a>语法</h5><p>Tumble 滚动窗口对应的语法如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    [gk],</span><br><span class="line">    [TUMBLE_START(timeCol, size)], </span><br><span class="line">    [TUMBLE_END(timeCol, size)], </span><br><span class="line">    agg1(col1), </span><br><span class="line">    ... </span><br><span class="line">    aggn(colN)</span><br><span class="line"><span class="keyword">FROM</span> Tab1</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> [gk], TUMBLE(timeCol, size)</span><br></pre></td></tr></table></figure>
-<ul>
-<li>  [gk] - 决定了流是Keyed还是/Non-Keyed;</li>
-<li>  TUMBLE_START - 窗口开始时间;</li>
-<li>  TUMBLE_END - 窗口结束时间;</li>
-<li>  timeCol - 是流表中表示时间字段；</li>
-<li>  size - 表示窗口的大小，如 秒，分钟，小时，天。</li>
-</ul>
-<h5 id="SQL-示例-2"><a href="#SQL-示例-2" class="headerlink" title="SQL 示例"></a>SQL 示例</h5><p>利用<code>pageAccess_tab</code>测试数据，我们需要按不同地域统计每2分钟的淘宝首页的访问量(PV)。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span>  </span><br><span class="line">    region,</span><br><span class="line">    TUMBLE_START(rowtime, <span class="type">INTERVAL</span> <span class="string">&#x27;2&#x27;</span> <span class="keyword">MINUTE</span>) <span class="keyword">AS</span> winStart,  </span><br><span class="line">    TUMBLE_END(rowtime, <span class="type">INTERVAL</span> <span class="string">&#x27;2&#x27;</span> <span class="keyword">MINUTE</span>) <span class="keyword">AS</span> winEnd,  </span><br><span class="line">    <span class="built_in">COUNT</span>(region) <span class="keyword">AS</span> pv</span><br><span class="line"><span class="keyword">FROM</span> pageAccess_tab </span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> region, TUMBLE(rowtime, <span class="type">INTERVAL</span> <span class="string">&#x27;2&#x27;</span> <span class="keyword">MINUTE</span>)</span><br></pre></td></tr></table></figure>
-<h5 id="Result-1"><a href="#Result-1" class="headerlink" title="Result"></a>Result</h5><table>
-<thead>
-<tr>
-<th>region</th>
-<th>winStart</th>
-<th>winEnd</th>
-<th>pv</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>BeiJing</td>
-<td>2017-11-11 02:00:00.0</td>
-<td>2017-11-11 02:02:00.0</td>
-<td>1</td>
-</tr>
-<tr>
-<td>BeiJing</td>
-<td>2017-11-11 02:10:00.0</td>
-<td>2017-11-11 02:12:00.0</td>
-<td>2</td>
-</tr>
-<tr>
-<td>ShangHai</td>
-<td>2017-11-11 02:00:00.0</td>
-<td>2017-11-11 02:02:00.0</td>
-<td>1</td>
-</tr>
-<tr>
-<td>ShangHai</td>
-<td>2017-11-11 04:10:00.0</td>
-<td>2017-11-11 04:12:00.0</td>
-<td>1</td>
-</tr>
-</tbody></table>
-<h4 id="Hop"><a href="#Hop" class="headerlink" title="Hop"></a>Hop</h4><p>Hop 滑动窗口和滚动窗口类似，窗口有固定的size，与滚动窗口不同的是滑动窗口可以通过slide参数控制滑动窗口的新建频率。因此当slide值小于窗口size的值的时候多个滑动窗口会重叠。</p>
-<h5 id="语义-3"><a href="#语义-3" class="headerlink" title="语义"></a>语义</h5><p>Hop 滑动窗口语义如下所示：<br><img src="vx_images/5354486805898.png" alt="image" title="image"></p>
-<h5 id="语法-3"><a href="#语法-3" class="headerlink" title="语法"></a>语法</h5><p>Hop 滑动窗口对应语法如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    [gk], </span><br><span class="line">    [HOP_START(timeCol, slide, size)] ,  </span><br><span class="line">    [HOP_END(timeCol, slide, size)],</span><br><span class="line">    agg1(col1), </span><br><span class="line">    ... </span><br><span class="line">    aggN(colN) </span><br><span class="line"><span class="keyword">FROM</span> Tab1</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> [gk], HOP(timeCol, slide, size)</span><br></pre></td></tr></table></figure>
-<ul>
-<li>  [gk] 决定了流是Keyed还是/Non-Keyed;</li>
-<li>  HOP_START - 窗口开始时间;</li>
-<li>  HOP_END - 窗口结束时间;</li>
-<li>  timeCol - 是流表中表示时间字段；</li>
-<li>  slide - 是滑动步伐的大小；</li>
-<li>  size - 是窗口的大小，如 秒，分钟，小时，天；</li>
-</ul>
-<h5 id="SQL-示例-3"><a href="#SQL-示例-3" class="headerlink" title="SQL 示例"></a>SQL 示例</h5><p>利用<code>pageAccessCount_tab</code>测试数据，我们需要每5分钟统计近10分钟的页面访问量(PV).</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span>  </span><br><span class="line">  HOP_START(rowtime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">MINUTE</span>) <span class="keyword">AS</span> winStart,  </span><br><span class="line">  HOP_END(rowtime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">MINUTE</span>) <span class="keyword">AS</span> winEnd,  </span><br><span class="line">  <span class="built_in">SUM</span>(accessCount) <span class="keyword">AS</span> accessCount  </span><br><span class="line"><span class="keyword">FROM</span> pageAccessCount_tab </span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> HOP(rowtime, <span class="type">INTERVAL</span> <span class="string">&#x27;5&#x27;</span> <span class="keyword">MINUTE</span>, <span class="type">INTERVAL</span> <span class="string">&#x27;10&#x27;</span> <span class="keyword">MINUTE</span>)</span><br></pre></td></tr></table></figure>
-<h5 id="Result-2"><a href="#Result-2" class="headerlink" title="Result"></a>Result</h5><table>
-<thead>
-<tr>
-<th>winStart</th>
-<th>winEnd</th>
-<th>accessCount</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>2017-11-11 01:55:00.0</td>
-<td>2017-11-11 02:05:00.0</td>
-<td>186</td>
-</tr>
-<tr>
-<td>2017-11-11 02:00:00.0</td>
-<td>2017-11-11 02:10:00.0</td>
-<td>396</td>
-</tr>
-<tr>
-<td>2017-11-11 02:05:00.0</td>
-<td>2017-11-11 02:15:00.0</td>
-<td>243</td>
-</tr>
-<tr>
-<td>2017-11-11 02:10:00.0</td>
-<td>2017-11-11 02:20:00.0</td>
-<td>33</td>
-</tr>
-<tr>
-<td>2017-11-11 04:05:00.0</td>
-<td>2017-11-11 04:15:00.0</td>
-<td>129</td>
-</tr>
-<tr>
-<td>2017-11-11 04:10:00.0</td>
-<td>2017-11-11 04:20:00.0</td>
-<td>129</td>
-</tr>
-</tbody></table>
-<h4 id="Session"><a href="#Session" class="headerlink" title="Session"></a>Session</h4><p>Seeeion 会话窗口 是没有固定大小的窗口，通过session的活跃度分组元素。不同于滚动窗口和滑动窗口，会话窗口不重叠,也没有固定的起止时间。一个会话窗口在一段时间内没有接收到元素时，即当出现非活跃间隙时关闭。一个会话窗口 分配器通过配置session gap来指定非活跃周期的时长.</p>
-<h5 id="语义-4"><a href="#语义-4" class="headerlink" title="语义"></a>语义</h5><p>Session 会话窗口语义如下所示：</p>
-<p><img src="vx_images/5324204248375.png" alt="image" title="image"></p>
-<h5 id="语法-4"><a href="#语法-4" class="headerlink" title="语法"></a>语法</h5><p>Seeeion 会话窗口对应语法如下：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> </span><br><span class="line">    [gk], </span><br><span class="line">    SESSION_START(timeCol, gap) <span class="keyword">AS</span> winStart,  </span><br><span class="line">    SESSION_END(timeCol, gap) <span class="keyword">AS</span> winEnd,</span><br><span class="line">    agg1(col1),</span><br><span class="line">     ... </span><br><span class="line">    aggn(colN)</span><br><span class="line"><span class="keyword">FROM</span> Tab1</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> [gk], SESSION(timeCol, gap)</span><br></pre></td></tr></table></figure>
-<ul>
-<li>  [gk] 决定了流是Keyed还是/Non-Keyed;</li>
-<li>  SESSION_START - 窗口开始时间；</li>
-<li>  SESSION_END - 窗口结束时间；</li>
-<li>  timeCol - 是流表中表示时间字段；</li>
-<li>  gap - 是窗口数据非活跃周期的时长；</li>
-</ul>
-<h5 id="SQL-示例-4"><a href="#SQL-示例-4" class="headerlink" title="SQL 示例"></a>SQL 示例</h5><p>利用<code>pageAccessSession_tab</code>测试数据，我们按地域统计连续的两个访问用户之间的访问时间间隔不超过3分钟的的页面访问量(PV).</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span>  </span><br><span class="line">    region, </span><br><span class="line">    SESSION_START(rowtime, <span class="type">INTERVAL</span> <span class="string">&#x27;3&#x27;</span> <span class="keyword">MINUTE</span>) <span class="keyword">AS</span> winStart,  </span><br><span class="line">    SESSION_END(rowtime, <span class="type">INTERVAL</span> <span class="string">&#x27;3&#x27;</span> <span class="keyword">MINUTE</span>) <span class="keyword">AS</span> winEnd, </span><br><span class="line">    <span class="built_in">COUNT</span>(region) <span class="keyword">AS</span> pv  </span><br><span class="line"><span class="keyword">FROM</span> pageAccessSession_tab</span><br><span class="line"><span class="keyword">GROUP</span> <span class="keyword">BY</span> region, SESSION(rowtime, <span class="type">INTERVAL</span> <span class="string">&#x27;3&#x27;</span> <span class="keyword">MINUTE</span>)</span><br></pre></td></tr></table></figure>
-<h5 id="Result-3"><a href="#Result-3" class="headerlink" title="Result"></a>Result</h5><table>
-<thead>
-<tr>
-<th>region</th>
-<th>winStart</th>
-<th>winEnd</th>
-<th>pv</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>BeiJing</td>
-<td>2017-11-11 02:10:00.0</td>
-<td>2017-11-11 02:13:00.0</td>
-<td>1</td>
-</tr>
-<tr>
-<td>ShangHai</td>
-<td>2017-11-11 02:01:00.0</td>
-<td>2017-11-11 02:08:00.0</td>
-<td>4</td>
-</tr>
-<tr>
-<td>ShangHai</td>
-<td>2017-11-11 02:10:00.0</td>
-<td>2017-11-11 02:14:00.0</td>
-<td>2</td>
-</tr>
-<tr>
-<td>ShangHai</td>
-<td>2017-11-11 04:16:00.0</td>
-<td>2017-11-11 04:19:00.0</td>
-<td>1</td>
-</tr>
-</tbody></table>
-<h2 id="UDX"><a href="#UDX" class="headerlink" title="UDX"></a>UDX</h2><p>Apache Flink 除了提供了大部分ANSI-SQL的核心算子，也为用户提供了自己编写业务代码的机会，那就是User-Defined Function,目前支持如下三种 User-Defined Function：</p>
-<ul>
-<li>  UDF - User-Defined Scalar Function</li>
-<li>  UDTF - User-Defined Table Function</li>
-<li>  UDAF - User-Defined Aggregate Funciton</li>
-</ul>
-<p>UDX都是用户自定义的函数，那么Apache Flink框架为啥将自定义的函数分成三类呢？是根据什么划分的呢？Apache Flink对自定义函数进行分类的依据是根据函数语义的不同，函数的输入和输出不同来分类的，具体如下：</p>
-<table>
-<thead>
-<tr>
-<th>UDX</th>
-<th>INPUT</th>
-<th>OUTPUT</th>
-<th>INPUT:OUTPUT</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>UDF</td>
-<td>单行中的N(N&gt;=0)列</td>
-<td>单行中的1列</td>
-<td>1:1</td>
-</tr>
-<tr>
-<td>UDTF</td>
-<td>单行中的N(N&gt;=0)列</td>
-<td>M(M&gt;=0)行</td>
-<td>1:N(N&gt;=0)</td>
-</tr>
-<tr>
-<td>UDAF</td>
-<td>M(M&gt;=0)行中的每行的N(N&gt;=0)列</td>
-<td>单行中的1列</td>
-<td>M：1(M&gt;=0)</td>
-</tr>
-</tbody></table>
-<h3 id="UDF"><a href="#UDF" class="headerlink" title="UDF"></a>UDF</h3><ul>
-<li>定义<br>  用户想自己编写一个字符串联接的UDF，我们只需要实现<code>ScalarFunction#eval()</code>方法即可，简单实现如下：</li>
-</ul>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">object</span> <span class="title">MyConnect</span> <span class="keyword">extends</span> <span class="title">ScalarFunction</span> </span>&#123;</span><br><span class="line">  <span class="meta">@varargs</span></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">eval</span></span>(args: <span class="type">String</span>*): <span class="type">String</span> = &#123;</span><br><span class="line">    <span class="keyword">val</span> sb = <span class="keyword">new</span> <span class="type">StringBuilder</span></span><br><span class="line">    <span class="keyword">var</span> i = <span class="number">0</span></span><br><span class="line">    <span class="keyword">while</span> (i &lt; args.length) &#123;</span><br><span class="line">      <span class="keyword">if</span> (args(i) == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span></span><br><span class="line">      &#125;</span><br><span class="line">      sb.append(args(i))</span><br><span class="line">      i += <span class="number">1</span></span><br><span class="line">    &#125;</span><br><span class="line">    sb.toString</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ul>
-<li>  使用</li>
-</ul>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> fun = <span class="type">MyConnect</span></span><br><span class="line">tEnv.registerFunction(<span class="string">&quot;myConnect&quot;</span>, fun)</span><br><span class="line"><span class="keyword">val</span> sql = <span class="string">&quot;SELECT myConnect(a, b) as str FROM tab&quot;</span></span><br></pre></td></tr></table></figure>
-<h3 id="UDTF"><a href="#UDTF" class="headerlink" title="UDTF"></a>UDTF</h3><ul>
-<li>定义<br>  用户想自己编写一个字符串切分的UDTF，我们只需要实现<code>TableFunction#eval()</code>方法即可，简单实现如下：</li>
-</ul>
-<p>ScalarFunction#eval()`</p>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MySplit</span> <span class="keyword">extends</span> <span class="title">TableFunction</span>[<span class="type">String</span>] </span>&#123;</span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">eval</span></span>(str: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">if</span> (str.contains(<span class="string">&quot;#&quot;</span>))&#123;</span><br><span class="line">      str.split(<span class="string">&quot;#&quot;</span>).foreach(collect)</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">eval</span></span>(str: <span class="type">String</span>, prefix: <span class="type">String</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">if</span> (str.contains(<span class="string">&quot;#&quot;</span>)) &#123;</span><br><span class="line">      str.split(<span class="string">&quot;#&quot;</span>).foreach(s =&gt; collect(prefix + s))</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ul>
-<li>  使用</li>
-</ul>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> fun = <span class="keyword">new</span> <span class="type">MySplit</span>()</span><br><span class="line">tEnv.registerFunction(<span class="string">&quot;mySplit&quot;</span>, fun)</span><br><span class="line"><span class="keyword">val</span> sql = <span class="string">&quot;SELECT c, s FROM MyTable, LATERAL TABLE(mySplit(c)) AS T(s)&quot;</span></span><br></pre></td></tr></table></figure>
-<h3 id="UDAF"><a href="#UDAF" class="headerlink" title="UDAF"></a>UDAF</h3><ul>
-<li>定义<br>  UDAF 要实现的接口比较多，我们以一个简单的CountAGG为例，做简单实现如下：</li>
-</ul>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CountAccumulator</span> <span class="keyword">extends</span> <span class="title">JTuple1</span>[<span class="type">Long</span>] </span>&#123;</span><br><span class="line">  f0 = <span class="number">0</span>L </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MyCount</span></span></span><br><span class="line"><span class="class">  <span class="keyword">extends</span> <span class="title">AggregateFunction</span>[<span class="type">JLong</span>, <span class="type">CountAccumulator</span>] </span>&#123;</span><br><span class="line"></span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">accumulate</span></span>(acc: <span class="type">CountAccumulator</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    acc.f0 += <span class="number">1</span>L</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  </span><br><span class="line">  </span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">retract</span></span>(acc: <span class="type">CountAccumulator</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    acc.f0 -= <span class="number">1</span>L</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">accumulate</span></span>(acc: <span class="type">CountAccumulator</span>, value: <span class="type">Any</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">if</span> (value != <span class="literal">null</span>) &#123;</span><br><span class="line">      acc.f0 += <span class="number">1</span>L</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">retract</span></span>(acc: <span class="type">CountAccumulator</span>, value: <span class="type">Any</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">if</span> (value != <span class="literal">null</span>) &#123;</span><br><span class="line">      acc.f0 -= <span class="number">1</span>L</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">getValue</span></span>(acc: <span class="type">CountAccumulator</span>): <span class="type">JLong</span> = &#123;</span><br><span class="line">    acc.f0</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">merge</span></span>(acc: <span class="type">CountAccumulator</span>, its: <span class="type">JIterable</span>[<span class="type">CountAccumulator</span>]): <span class="type">Unit</span> = &#123;</span><br><span class="line">    <span class="keyword">val</span> iter = its.iterator()</span><br><span class="line">    <span class="keyword">while</span> (iter.hasNext) &#123;</span><br><span class="line">      acc.f0 += iter.next().f0</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">createAccumulator</span></span>(): <span class="type">CountAccumulator</span> = &#123;</span><br><span class="line">    <span class="keyword">new</span> <span class="type">CountAccumulator</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">def</span> <span class="title">resetAccumulator</span></span>(acc: <span class="type">CountAccumulator</span>): <span class="type">Unit</span> = &#123;</span><br><span class="line">    acc.f0 = <span class="number">0</span>L</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">getAccumulatorType</span></span>: <span class="type">TypeInformation</span>[<span class="type">CountAccumulator</span>] = &#123;</span><br><span class="line">    <span class="keyword">new</span> <span class="type">TupleTypeInfo</span>(classOf[<span class="type">CountAccumulator</span>], <span class="type">BasicTypeInfo</span>.<span class="type">LONG_TYPE_INFO</span>)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">override</span> <span class="function"><span class="keyword">def</span> <span class="title">getResultType</span></span>: <span class="type">TypeInformation</span>[<span class="type">JLong</span>] =</span><br><span class="line">    <span class="type">BasicTypeInfo</span>.<span class="type">LONG_TYPE_INFO</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ul>
-<li>  使用</li>
-</ul>
-<figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> fun = <span class="keyword">new</span> <span class="type">MyCount</span>()</span><br><span class="line">tEnv.registerFunction(<span class="string">&quot;myCount&quot;</span>, fun)</span><br><span class="line"><span class="keyword">val</span> sql = <span class="string">&quot;SELECT myCount(c) FROM MyTable GROUP BY  a&quot;</span></span><br></pre></td></tr></table></figure>
-<p>上面我们介绍了Apache Flink SQL核心算子的语法及语义，这部分将选取Bounded EventTime Tumble Window为例为大家编写一个完整的包括Source和Sink定义的Apache Flink SQL Job。假设有一张淘宝页面访问表(PageAccess_tab)，有地域，用户ID和访问时间。我们需要按不同地域统计每2分钟的淘宝首页的访问量(PV). 具体数据如下：</p>
-<table>
-<thead>
-<tr>
-<th>region</th>
-<th>userId</th>
-<th>accessTime</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>ShangHai</td>
-<td>U0010</td>
-<td>2017-11-11 10:01:00</td>
-</tr>
-<tr>
-<td>BeiJing</td>
-<td>U1001</td>
-<td>2017-11-11 10:01:00</td>
-</tr>
-<tr>
-<td>BeiJing</td>
-<td>U2032</td>
-<td>2017-11-11 10:10:00</td>
-</tr>
-<tr>
-<td>BeiJing</td>
-<td>U1100</td>
-<td>2017-11-11 10:11:00</td>
-</tr>
-<tr>
-<td>ShangHai</td>
-<td>U0011</td>
-<td>2017-11-11 12:10:00</td>
-</tr>
-</tbody></table>
-<p>大家都知道，在 Flink 中，通过 Table API 和 SQL 实现的流处理逻辑，最终会翻译为基于 DataStreamAPI 实现的 DataStream 作业，返回这个作业输出的 DataStream (writeToSink 本质上也是先得到 DataStream 作业，再为其输出 DataStream 加上一个DataStreamSink) 。</p>
-<p>从一段 SQL 到 DataStream 作业，其过程简单描述如下：</p>
+<p><a target="_blank" rel="noopener" href="http://img3.tbcdn.cn/5476e8b07b923/TB1qmtpJVXXXXagXXXXXXXXXXXX"><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424153246.png" alt="img"></a></p>
+<p>首先我们看到，JobGraph 之上除了 StreamGraph 还有 OptimizedPlan。OptimizedPlan 是由 Batch API 转换而来的。StreamGraph 是由 Stream API 转换而来的。为什么 API 不直接转换成 JobGraph？因为，Batch 和 Stream 的图结构和优化方法有很大的区别，比如 Batch 有很多执行前的预分析用来优化图的执行，而这种优化并不普适于 Stream，所以通过 OptimizedPlan 来做 Batch 的优化会更方便和清晰，也不会影响 Stream。JobGraph 的责任就是统一 Batch 和 Stream 的图，用来描述清楚一个拓扑图的结构，并且做了 chaining 的优化，chaining 是普适于 Batch 和 Stream 的，所以在这一层做掉。ExecutionGraph 的责任是方便调度和各个 tasks 状态的监控和跟踪，所以 ExecutionGraph 是并行化的 JobGraph。而“物理执行图”就是最终分布式在各个机器上运行着的tasks了。所以可以看到，这种解耦方式极大地方便了我们在各个层所做的工作，各个层之间是相互隔离的。</p>
+<p>后续的文章，将会详细介绍 Flink 是如何生成这些执行图的。由于我目前关注 Flink 的流处理功能，所以主要有以下内容：</p>
 <ol>
-<li><p> 在 TableEnvironment，即“表环境”，将数据源注册为动态表。例如，通过表环境的接口`registerDataStream`, 作为源的DataStream，即数据流, 在表环境注册为动态表</p>
-</li>
-<li><p> 通过表环境的接口 `sqlQuery`，将 SQL 构造为 Table 对象</p>
-</li>
-<li><p> 通过toAppendStream/toRetractedStream接口，即翻译接口，将 Table 对象表达的作业逻辑，翻译为 DataStream 作业。</p>
-</li>
+<li><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2016/05/04/flink-internal-how-to-build-streamgraph/">如何生成 StreamGraph</a></li>
+<li><a target="_blank" rel="noopener" href="http://wuchong.me/blog/2016/05/10/flink-internals-how-to-build-jobgraph/">如何生成 JobGraph</a></li>
+<li>如何生成 ExecutionGraph</li>
+<li>如何进行调度（如何生成物理执行图）</li>
 </ol>
-<p><img src="vx_images/4467647168580" alt="图片"></p>
-<p>在调用翻译接口，将 Table 对象翻译为 DataStream 作业时，通过翻译接口传入的 TTL 配置，递归传递到各个计算节点的翻译、构造逻辑里，使得翻译出来的 DataStream 算子的内部状态按照该 TTL 配置及时清理。</p>
+<h2 id="资源共享链与资源共享组"><a href="#资源共享链与资源共享组" class="headerlink" title="资源共享链与资源共享组"></a>资源共享链与资源共享组</h2><p>当我们编写完一个Flink程序，从Client开始执行——&gt;JobManager——&gt;TaskManager——&gt;Slot启动并执行Task的过程中，会对我们提交的执行计划进行优化，其中有两个比较重要的优化过程是：任务链与处理槽共享组，前者是对执行效率的优化，后者是对内存资源的优化。</p>
+<h3 id="Graph转换-1"><a href="#Graph转换-1" class="headerlink" title="Graph转换"></a>Graph转换</h3><p>在<code>StreamGraph</code>转换为JobGraph过程中，关键在于将多个 <code>StreamNode</code> 优化为一个 <code>JobVertex</code>，对应的 StreamEdge 则转化为 <code>JobEdge</code>，并且 <code>JobVertex</code> 和 <code>JobEdge</code> 之间通过 <code>IntermediateDataSet</code> （中间数据集）形成一个生产者和消费者的连接关系。每个<code>JobVertex</code>就是<code>JobManger</code>的一个任务调度单位（任务Task）。</p>
+<p>为了避免在这个过程中将关联性很强的几个<code>StreamNode</code>（算子）放到不同<code>JobVertex</code>（<code>Task</code>）中，从而导致因为<code>Task</code>执行产生的效率问题（数据交换（网络传输）、线程上下文切换），Flink会在<code>StreamGraph</code>转换为<code>JobGraph</code>过程中将可以优化的算子合并为一个算子链（也就是形成一个Task）。这样就可以把这条链上的算子放到一个线程中去执行，这样就提高了任务执行效率。</p>
+<h2 id="作业链Task-chain"><a href="#作业链Task-chain" class="headerlink" title="作业链Task-chain"></a>作业链Task-chain</h2><p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210423124550.png" alt="img"></p>
+<ul>
+<li><p>Chain：Flink会尽可能地将多个operator链接（chain）在一起形成一个task pipline。每个task pipline在一个线程中执行</p>
+</li>
+<li><p>优点：<em>它能减少线程之间的切换，减少消息的序列化/反序列化，减少数据在缓冲区的交换，减少了延迟的同时提高整体的吞吐量。</em></p>
+<p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424152810.png" alt="img"></p>
+</li>
+</ul>
+<p>StreamGraph转换为JobGraph过程中，实际上是逐条审查每一个StreamEdge和该SteamEdge两头连接的两个StreamNode的特性，来决定该StreamEdge两头的StreamNode是不是可以合并在一起形成算子链。这个判断过程flink给出了明确的规则，我们看一下<code>StreamingJobGraphGenerator</code>中的<code>isChainable()</code>方法：</p>
+<p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210423124551.png" alt="img"></p>
+<p>该方法返回true时两个端点才可以合并到一起，根据源码我们可以得出形成作业链的规则如下：</p>
+<ol>
+<li>上下游的并行度一致（槽一致）</li>
+<li>该节点必须要有上游节点跟下游节点；</li>
+<li>下游StreamNode的输入StreamEdge只能有一个）</li>
+<li>上下游节点都在同一个 slot group 中（下面会解释 slot group）</li>
+<li>下游节点的 chain 策略为 ALWAYS（可以与上下游链接，map、flatmap、filter等默认是ALWAYS）</li>
+<li>上游节点的 chain 策略为 ALWAYS 或 HEAD（只能与下游链接，不能与上游链接，Source默认是HEAD）</li>
+<li>上下游算子之间没有数据shuffle (数据分区方式是 forward)</li>
+<li>用户没有禁用 chain</li>
+</ol>
+<p>二、开启/禁用全局作业链</p>
+<p>用户能够通过禁用全局作业链的操作来关闭整个Flink的作业链，但是这个操作会影响到这个作业的执行情况，除非我们非常清楚作业的执行过程，否则不建议这么做：<code>StreamExecutionEnvironment.disableOperatorChaining()</code>。全局作业链关闭之后，如果想创建对应Operator的作业链，可以使用startNewChain()方法：<code>someStream.filter(...).map(...).startNewChain().map(...)</code>。注意该方法只对当前操作符及之后的操作符有效，所以上述代码只对两个map进行链条绑定。</p>
+<p>三、禁用局部作业链</p>
+<p>如果我们只想对某个算子执行禁用作业链，只需调用<code>disableChaining()</code>方法：<code>someSteam.map().disableChaining().filter()</code>，该方法只会禁用当前算子的链条（上述代码中就是map），对其他算子操作不产生影响。</p>
+<h2 id="处理槽共享组-出于某中目的将多个Task放到同一个slot中执行"><a href="#处理槽共享组-出于某中目的将多个Task放到同一个slot中执行" class="headerlink" title="处理槽共享组(出于某中目的将多个Task放到同一个slot中执行)"></a>处理槽共享组(出于某中目的将多个Task放到同一个slot中执行)</h2><p>一、Task Slot</p>
+<p>TaskManager 是一个 JVM 进程，并会以独立的线程来执行一个task。为了控制一个 TaskManager 能接受多少个 task，Flink 提出了 <em>Task Slot</em> 的概念，通过 <em>Task Slot</em> 来定义Flink 中的计算资源。solt 对TaskManager内存进行平均分配，每个solt内存都相同，加起来的和等于TaskManager可用内存，但是仅仅对内存做了隔离，并没有对cpu进行隔离。将资源 slot 化意味着来自不同job的task不会为了内存而竞争，而是每个task都拥有一定数量的内存储备。</p>
+<p>通过调整 task slot 的数量，用户可以定义task之间是如何相互隔离的。每个 TaskManager 有一个slot，也就意味着每个task运行在独立的 JVM 中。每个 TaskManager 有多个slot的话，也就是说多个task运行在同一个JVM中。而在同一个JVM进程中的task，可以共享TCP连接（基于多路复用）和心跳消息，可以减少数据的网络传输。也能共享一些数据结构，一定程度上减少了每个task的消耗。</p>
+<p>二、共享槽</p>
+<p>一个TaskManager中至少有一个插槽slot，每个插槽均分内存并且之间是内存隔离的，但是共享CPU。算子根据计算复杂度可以分为资源密集型与非资源密集型算子（可以认为有的算子计算时内存需求大，有些算子内存需求小）。现在有这么个情况：某个Job下的Tasks中既有资源密集型Task（A），又有非资源密集型Task（B），他们被分到不同的slot上，这就会产生一个问题，有的slot内存使用率大，有的slot内存使用率小，这样就很不公平，内存没有得到充分的利用。所以我们可以采用一个方案：将A、B放到同一个slot当中。</p>
+<p>默认情况下，Flink 允许subtasks共享slot，条件是它们都来自同一个Job的不同task的subtask。结果可能一个slot持有该job的整个pipeline。允许槽共享，会有以下两个方面的好处：</p>
+<ul>
+<li>flink计算一个job所需slot数量时，只需要确定所其最大并行度（前提，保持默认SlotSharingGroup），而不用计算每一个任务的并行度的总和；</li>
+<li>能更好的利用资源，如果没有solt共享，那些资源需求不大的map子任务将和资源需求更大的window占用相同的资源。</li>
+</ul>
+<p><img src="https://gitee.com/averyzhang/pic-go/raw/master/img/20210424152912.png" alt="img"></p>
+<p>Flink相同资源组里的多个Task可以共享一个Slot资源槽。具体共享机制又分两种：</p>
+<p><strong>1、CoLocationGroup:</strong> 强制将 subtasks 放到同一个 slot 中，是一种硬约束</p>
+<ul>
+<li>保证把JobVertices的第n个运行实例和其他相同组内的JobVertices第n个实例运作在相同的slot中（所有的并行度相同的subTasks运行在同一个slot ）；</li>
+<li>主要用于迭代流(训练机器学习模型) ，用来保证迭代头与迭代尾的第i个subtask能被调度到同一个TaskManager上。</li>
+</ul>
+<p><strong>2、SlotSharingGroup:</strong> 允许不同的JobVertices的部署在相同的Slot中，但这是一种宽约束，只是尽量做到不能完全保证。</p>
+<ul>
+<li>SlotSharingGroup是Flink中用来实现slot共享的类，它尽可能地让subTasks共享一个slot；</li>
+<li>保证同一个group的并行度相同的sub-tasks 共享同一个slots ；</li>
+<li>算子的默认group为default（即默认一个job下的subtask都可以共享一个slot）</li>
+<li>为了防止不合理的共享，用户可以强制指定operator的共享组，比如： <code>someStream.filter(...).slotSharingGroup(&quot;group1&quot;)；</code>就强制指定了filter的slot共享组为group1；</li>
+<li>要想确定一个未做SlotSharingGroup设置的算子的group是什么，可以根据上游算子的 group 和自身是否设置 group共同确定；</li>
+<li>适当设置可以减少每个slot运行的线程数，从而整体上减少机?的负载。</li>
+</ul>
 <p>【参考文献】</p>
 <ol>
-<li><p><a target="_blank" rel="noopener" href="http://www.10tiao.com/html/157/201707/2653162664/1.html">在数据流中使用SQL查询：Apache Flink中的动态表的持续查询</a></p>
-</li>
-<li><p><a target="_blank" rel="noopener" href="https://jiamaoxiang.top/2020/05/25/Flink-Table-API-SQL%E7%BC%96%E7%A8%8B%E6%8C%87%E5%8D%97/">Flink Table API &amp; SQL编程指南</a></p>
-</li>
+<li><a target="_blank" rel="noopener" href="https://www.infoq.cn/article/RWTM9o0SHHV3Xr8o8giT">Apache Flink进阶一: Runtime核心机制剖析</a></li>
 </ol>
 
       
@@ -848,7 +586,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-connector-hippo/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-data-skew/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -862,7 +600,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Flink/Flink-connector-hippo/" class="post-title-link" itemprop="url">Flink connector hippo</a>
+            <a href="/bigdata/Spark/Spark-data-skew/" class="post-title-link" itemprop="url">Spark data skew</a>
         </h2>
 
         <div class="post-meta">
@@ -879,7 +617,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:40" itemprop="dateModified" datetime="2021-06-01T20:52:40+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -902,322 +640,8 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Flink-connector-hippo"><a href="#Flink-connector-hippo" class="headerlink" title="Flink-connector-hippo"></a>Flink-connector-hippo</h1><h2 id="broker分拆"><a href="#broker分拆" class="headerlink" title="broker分拆"></a>broker分拆</h2><p>获取子任务的index</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> taskId = <span class="keyword">this</span>.getRuntimeContext().getIndexOfThisSubtask();</span><br></pre></td></tr></table></figure>
-<h2 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h2><p>实现CheckpointedFunction</p>
-<p>在ListState中保存每个broker的偏移量 </p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ListState&lt;Tuple2&lt;String, String&gt;&gt; offsetState;</span><br></pre></td></tr></table></figure>
-
-<h2 id="watermark生成"><a href="#watermark生成" class="headerlink" title="watermark生成"></a>watermark生成</h2><h2 id="hippo-pullConsumer"><a href="#hippo-pullConsumer" class="headerlink" title="hippo pullConsumer"></a>hippo pullConsumer</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ConsumerConfig config =</span><br><span class="line">                <span class="keyword">new</span> ConsumerConfig(masterAddress, consumerGroup);</span><br><span class="line"><span class="keyword">if</span> (!isRestored &amp;&amp; bootstrapFromMax) &#123;</span><br><span class="line">    config.setConsumeFromMax(<span class="keyword">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">messagePullConsumer = <span class="keyword">new</span> PullMessageConsumer(config);</span><br></pre></td></tr></table></figure>
-<h2 id="子任务的checkpointLock"><a href="#子任务的checkpointLock" class="headerlink" title="子任务的checkpointLock"></a>子任务的checkpointLock</h2><p>往下游放入消息必须加锁</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SourceContext&lt;<span class="keyword">byte</span>[]&gt;.getCheckpointLock()</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark%E8%B5%84%E6%BA%90%E8%AF%84%E4%BC%B0/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Spark/Spark%E8%B5%84%E6%BA%90%E8%AF%84%E4%BC%B0/" class="post-title-link" itemprop="url">Spark资源评估</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Spark资源评估"><a href="#Spark资源评估" class="headerlink" title="Spark资源评估"></a>Spark资源评估</h1><table>
-<thead>
-<tr>
-<th>机器机型</th>
-<th>内存</th>
-<th>硬盘</th>
-<th>核数</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>M10</td>
-<td>128G</td>
-<td>3.6T</td>
-<td>48</td>
-</tr>
-<tr>
-<td>BX1</td>
-<td>16G×16 256G</td>
-<td>4T×12=48T</td>
-<td>80</td>
-</tr>
-<tr>
-<td>CG3</td>
-<td>256G</td>
-<td>3.6T</td>
-<td>96</td>
-</tr>
-</tbody></table>
-<h2 id="Spark-On-Yarn-内存计算"><a href="#Spark-On-Yarn-内存计算" class="headerlink" title="Spark On Yarn 内存计算"></a>Spark On Yarn 内存计算</h2><p>在介绍了，spark任务在yarn运行时需要的Continer数量，以及内存大小之后，我们再来看spark on yarn的时候整体任务在yarn中占用资源大小。</p>
-<p>Core： yarn中Core指的是Continer数量，所以Core = ContinerNum</p>
-<p>而内存的计算则较为复杂了，设单个Continer向集群申请的资源经我们上面公式算出来的需要申请的内存大小为：excutorTotalMemory ，则该Continer在yarn集群上占用的最终资源为continerMemory。<br>minContiner = yarn.scheduler.minimum-allocation-mb（continer分配资源的最小值，目前是128）<br>Increment = yarn.scheduler.increment-allocation-mb（yarn分配资源的增量，也叫规整化参数，默认值为1024 mb）<br>resultMemory的计算方式如下所示：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">If（totalMemory&lt;=minContiner）&#123;</span><br><span class="line">	continerMemory = minContiner</span><br><span class="line">&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">	continerMemory = minContiner + Math.ceil（(excutorTotalMemory - minContiner)/increment） * increment</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p><strong>总结</strong></p>
-<p>例如某个spark任务的提交参数为，driverMemory=2G，executorMemory=2G，executorNum = 1<br>minContiner=512m<br>Increment =1024m<br>则该任务<br>executorContinerMemory计算过程如下</p>
-<pre><code>申请资源数：executor = Max(executorMemory*0.1，384M)+executorMemory=2432M
-ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
-<p>driverContinerMemory计算过程同上：2.5G<br>最终该任务在yarn消耗资源为5G<br>可以看出来，spark任务最终消耗资源并非为初始化资源数。</p>
-<p>需要join 75张表，每张表的主键分布不同：</p>
-<ul>
-<li>直接join会造成数据倾斜，某个节点撑爆</li>
-<li>所有的表都shuffle，会造成shuffle数据量太多，撑爆硬盘</li>
-</ul>
-<p>申请的资源:</p>
-<p><img src="_v_images/20201012172033562_1858655038.png"></p>
-<p>策略一:</p>
-<ul>
-<li>join后的表，每隔join20次则repartition一次</li>
-<li>待join的子表，partition个数超过30，或行数超过1.5亿，则repartition一次</li>
-</ul>
-<p><img src="_v_images/20201012170200410_989497495.png"></p>
-<p>宽表数据量:<br><img src="_v_images/20201012190000429_1118094404.png"></p>
-<p><img src="_v_images/20201012204407377_1330736778.png"></p>
-<h2 id="问题点"><a href="#问题点" class="headerlink" title="问题点"></a>问题点</h2><ol>
-<li>dag排布的规则是什么？</li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-task_split_block/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Spark/Spark-task_split_block/" class="post-title-link" itemprop="url">Spark task split block</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Spark-task-split-block"><a href="#Spark-task-split-block" class="headerlink" title="Spark-task_split_block"></a>Spark-task_split_block</h1><p>梳理一下Spark中关于并发度涉及的几个概念File，Block，Split，Task，Partition，RDD以及节点数、Executor数、core数目的关系。</p>
-<p><img src="_v_images/20201015163856847_762442646.jpg"></p>
-<ol>
-<li>用户设置了numSplit，那么goalSize=totalSize/numSplit</li>
-<li>minSize=max(1,minSplitSize)</li>
-<li>splitSize=max(minSplitSize, min(goalSize,blockSize))</li>
-<li>task个数=totalSize除以splitSize</li>
-</ol>
-<p>输入可能以多个文件的形式存储在HDFS上，每个File都包含了很多块，称为<strong>Block</strong>。<br>当Spark读取这些文件作为输入时，会根据具体数据格式对应的InputFormat进行解析，一般是将若干个Block合并成一个输入分片，称为<strong>InputSplit</strong>，注意InputSplit不能跨越文件。<br>随后将为这些输入分片生成具体的<strong>Task</strong>。InputSplit与Task是<strong>一一对应</strong>的关系。<br>随后这些具体的Task每个都会被分配到集群上的某个节点的某个<strong>Executor</strong>去执行。</p>
-<ul>
-<li>每个节点可以起一个或多个Executor。</li>
-<li>每个Executor由若干<strong>core</strong>组成，每个Executor的每个core<strong>一次只能执行一个</strong>Task。</li>
-<li>每个Task执行的结果就是生成了目标<strong>RDD</strong>的一个<strong>partiton</strong>。</li>
-</ul>
-<p><strong>注意:</strong> 这里的core是虚拟的core而不是机器的物理CPU核，可以理解为就是Executor的一个工作线程。</p>
-<p>而 Task被执行的并发度 = Executor数目 * 每个Executor核数。</p>
-<p>至于partition的数目：</p>
-<ul>
-<li>对于数据读入阶段，例如sc.textFile，输入文件被划分为多少InputSplit就会需要多少初始Task。</li>
-<li>在Map阶段partition数目保持不变。</li>
-<li>在Reduce阶段，RDD的聚合会触发shuffle操作，聚合后的RDD的partition数目跟具体操作有关，例如repartition操作会聚合成指定分区数，还有一些算子是可配置的。</li>
-</ul>
-<h3 id="1，Application"><a href="#1，Application" class="headerlink" title="1，Application"></a>1，Application</h3><p>application（应用）其实就是用spark-submit提交的程序。比方说spark examples中的计算pi的SparkPi。一个application通常包含三部分：从数据源（比方说HDFS）取数据形成RDD，通过RDD的transformation和action进行计算，将结果输出到console或者外部存储（比方说collect收集输出到console）。</p>
-<h3 id="2，Driver"><a href="#2，Driver" class="headerlink" title="2，Driver"></a>2，Driver</h3><p> Spark中的driver感觉其实和yarn中Application Master的功能相类似。主要完成任务的调度以及和executor和cluster manager进行协调。有client和cluster联众模式。client模式driver在任务提交的机器上运行，而cluster模式会随机选择机器中的一台机器启动driver。从spark官网截图的一张图可以大致了解driver的功能。</p>
-<p><img src="_v_images/20201015163856640_926148743.png"></p>
-<h3 id="3，Job"><a href="#3，Job" class="headerlink" title="3，Job"></a>3，Job</h3><p> Spark中的Job和MR中Job不一样不一样。MR中Job主要是Map或者Reduce Job。而Spark的Job其实很好区别，一个action算子就算一个Job，比方说count，first等。</p>
-<h3 id="4-Task"><a href="#4-Task" class="headerlink" title="4, Task"></a>4, Task</h3><p>Task是Spark中最新的执行单元。RDD一般是带有partitions的，每个partition的在一个executor上的执行可以任务是一个Task。 </p>
-<h3 id="5-Stage"><a href="#5-Stage" class="headerlink" title="5, Stage"></a>5, Stage</h3><p>Stage概念是spark中独有的。一般而言一个Job会切换成一定数量的stage。各个stage之间按照顺序执行。至于stage是怎么切分的，首选得知道spark论文中提到的narrow dependency(窄依赖)和wide dependency（ 宽依赖）的概念。其实很好区分，看一下父RDD中的数据是否进入不同的子RDD，如果只进入到一个子RDD则是窄依赖，否则就是宽依赖。宽依赖和窄依赖的边界就是stage的划分点</p>
-<p><img src="_v_images/20201015163856436_1360238478.png"></p>
-<p><img src="_v_images/20201015163856129_654594465.png"></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-streaming-runtime/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/Spark/Spark-streaming-runtime/" class="post-title-link" itemprop="url">Spark streaming runtime</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Spark-streaming-runtime"><a href="#Spark-streaming-runtime" class="headerlink" title="Spark-streaming-runtime"></a>Spark-streaming-runtime</h1><p><img src="_v_images/20210113163649916_346932316.jpg"></p>
-<p> <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/159041276">https://zhuanlan.zhihu.com/p/159041276</a></p>
-<p><strong>spark vs storm</strong></p>
-<p><img src="_v_images/20210113163812387_1035142961.png"></p>
+          <h1 id="Spark-data-skew"><a href="#Spark-data-skew" class="headerlink" title="Spark-data-skew"></a>Spark-data-skew</h1><h2 id="触发shuffle的算子"><a href="#触发shuffle的算子" class="headerlink" title="触发shuffle的算子"></a>触发shuffle的算子</h2><p>数据倾斜只会发生在shuffle过程中。这里给大家罗列一些常用的并且可能会触发shuffle操作的算子：distinct、groupByKey、reduceByKey、aggregateByKey、join、cogroup、repartition等</p>
+<p>[Spark性能优化指南——高级篇](<a target="_blank" rel="noopener" href="https://tech.meituan.com/2016/05/12/spark-tuning-pro.html">https://tech.meituan.com/2016/05/12/spark-tuning-pro.html</a></p>
 
       
     </div>
@@ -1268,7 +692,7 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1406,7 +830,7 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-data-skew/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-streaming-runtime/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1420,7 +844,7 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Spark/Spark-data-skew/" class="post-title-link" itemprop="url">Spark data skew</a>
+            <a href="/bigdata/Spark/Spark-streaming-runtime/" class="post-title-link" itemprop="url">Spark streaming runtime</a>
         </h2>
 
         <div class="post-meta">
@@ -1437,7 +861,7 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:40" itemprop="dateModified" datetime="2021-06-01T20:52:40+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1460,8 +884,10 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Spark-data-skew"><a href="#Spark-data-skew" class="headerlink" title="Spark-data-skew"></a>Spark-data-skew</h1><h2 id="触发shuffle的算子"><a href="#触发shuffle的算子" class="headerlink" title="触发shuffle的算子"></a>触发shuffle的算子</h2><p>数据倾斜只会发生在shuffle过程中。这里给大家罗列一些常用的并且可能会触发shuffle操作的算子：distinct、groupByKey、reduceByKey、aggregateByKey、join、cogroup、repartition等</p>
-<p>[Spark性能优化指南——高级篇](<a target="_blank" rel="noopener" href="https://tech.meituan.com/2016/05/12/spark-tuning-pro.html">https://tech.meituan.com/2016/05/12/spark-tuning-pro.html</a></p>
+          <h1 id="Spark-streaming-runtime"><a href="#Spark-streaming-runtime" class="headerlink" title="Spark-streaming-runtime"></a>Spark-streaming-runtime</h1><p><img src="_v_images/20210113163649916_346932316.jpg"></p>
+<p> <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/159041276">https://zhuanlan.zhihu.com/p/159041276</a></p>
+<p><strong>spark vs storm</strong></p>
+<p><img src="_v_images/20210113163812387_1035142961.png"></p>
 
       
     </div>
@@ -1481,7 +907,7 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-SQL/">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-data-skew/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -1495,7 +921,7 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/bigdata/Spark/Spark-SQL/" class="post-title-link" itemprop="url">Spark SQL</a>
+            <a href="/bigdata/Flink/Flink-data-skew/" class="post-title-link" itemprop="url">Flink数据倾斜</a>
         </h2>
 
         <div class="post-meta">
@@ -1512,7 +938,7 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1535,296 +961,323 @@ ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Spark-SQL"><a href="#Spark-SQL" class="headerlink" title="Spark-SQL"></a>Spark-SQL</h1><h2 id="join"><a href="#join" class="headerlink" title="join"></a>join</h2><p>Spark 中支持多种连接类型：</p>
-<ul>
-<li>Inner Join : 内连接；</li>
-<li>Full Outer Join : 全外连接；</li>
-<li>Left Outer Join : 左外连接；</li>
-<li>Right Outer Join : 右外连接；</li>
-<li>Left Semi Join : 左半连接；</li>
-<li>Left Anti Join : 左反连接；</li>
-<li>Natural Join : 自然连接；</li>
-<li>Cross (or Cartesian) Join : 交叉 (或笛卡尔) 连接</li>
-</ul>
-<p><img src="vx_images/289801248595.png" alt="SQL JOINS"></p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">emp 员工表</span><br><span class="line"> <span class="operator">|</span><span class="comment">-- ENAME: 员工姓名</span></span><br><span class="line"> <span class="operator">|</span><span class="comment">-- DEPTNO: 部门编号</span></span><br><span class="line"> <span class="operator">|</span><span class="comment">-- EMPNO: 员工编号</span></span><br><span class="line"> <span class="operator">|</span><span class="comment">-- HIREDATE: 入职时间</span></span><br><span class="line"> <span class="operator">|</span><span class="comment">-- JOB: 职务</span></span><br><span class="line"> <span class="operator">|</span><span class="comment">-- MGR: 上级编号</span></span><br><span class="line"> <span class="operator">|</span><span class="comment">-- SAL: 薪资</span></span><br><span class="line"> <span class="operator">|</span><span class="comment">-- COMM: 奖金  </span></span><br><span class="line"></span><br><span class="line">dept 部门表</span><br><span class="line"> <span class="operator">|</span><span class="comment">-- DEPTNO: 部门编号</span></span><br><span class="line"> <span class="operator">|</span><span class="comment">-- DNAME:  部门名称</span></span><br><span class="line"> <span class="operator">|</span><span class="comment">-- LOC:    部门所在城市</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- LEFT SEMI JOIN</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> emp <span class="keyword">LEFT</span> SEMI <span class="keyword">JOIN</span> dept <span class="keyword">ON</span> emp.deptno <span class="operator">=</span> dept.deptno</span><br><span class="line"><span class="comment">-- 等价于如下的 IN 语句</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> emp <span class="keyword">WHERE</span> deptno <span class="keyword">IN</span> (<span class="keyword">SELECT</span> deptno <span class="keyword">FROM</span> dept)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- LEFT ANTI JOIN</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> emp <span class="keyword">LEFT</span> ANTI <span class="keyword">JOIN</span> dept <span class="keyword">ON</span> emp.deptno <span class="operator">=</span> dept.deptno</span><br><span class="line"><span class="comment">-- 等价于如下的 IN 语句</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> emp <span class="keyword">WHERE</span> deptno <span class="keyword">NOT</span> <span class="keyword">IN</span> (<span class="keyword">SELECT</span> deptno <span class="keyword">FROM</span> dept)</span><br><span class="line"></span><br><span class="line"><span class="comment">--CROSS JOIN</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> emp <span class="keyword">CROSS</span> <span class="keyword">JOIN</span> dept <span class="keyword">ON</span> emp.deptno <span class="operator">=</span> dept.deptno</span><br><span class="line"></span><br><span class="line"><span class="comment">--自然连接是在两张表中寻找那些数据类型和列名都相同的字段，然后自动地将他们连接起来，并返回所有符合条件的结果。</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> emp <span class="keyword">NATURAL</span> <span class="keyword">JOIN</span> dept</span><br><span class="line"></span><br><span class="line"><span class="comment">--程序自动推断出使用两张表都存在的 dept 列进行连接</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> emp <span class="keyword">JOIN</span> dept <span class="keyword">ON</span> emp.deptno <span class="operator">=</span> dept.deptno</span><br></pre></td></tr></table></figure>
-<h3 id="内部实现"><a href="#内部实现" class="headerlink" title="内部实现"></a>内部实现</h3><p>broadcast join –&gt; hash join  –&gt; sort-merge join</p>
-<p>在对大表与大表之间进行连接操作时，通常都会触发 <code>Shuffle Join</code>，两表的所有分区节点会进行 <code>All-to-All</code> 的通讯，这种查询通常比较昂贵，会对网络 IO 会造成比较大的负担。</p>
-<p><img src="vx_images/4246497595210.png" alt="https://github.com/heibaiying"></p>
-<p>而对于大表和小表的连接操作，Spark 会在一定程度上进行优化，如果小表的数据量小于 Worker Node 的内存空间，Spark 会考虑将小表的数据广播到每一个 Worker Node，在每个工作节点内部执行连接计算，这可以降低网络的 IO，但会加大每个 Worker Node 的 CPU 负担。</p>
-<p><img src="vx_images/4195188806118"></p>
-<p>是否采用广播方式进行 <code>Join</code> 取决于程序内部对小表的判断，如果想明确使用广播方式进行 <code>Join</code>，则可以在 DataFrame API 中使用 <code>broadcast</code> 方法指定需要广播的小表：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">empDF.join(broadcast(deptDF), joinExpression).show()</span><br></pre></td></tr></table></figure>
+          <h1 id="Flink-data-skew"><a href="#Flink-data-skew" class="headerlink" title="Flink-data-skew"></a>Flink-data-skew</h1><p>【参考文献】</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/nazeniwaresakini/article/details/104220120">用两阶段聚合法解决keyBy算子倾斜</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/a1240466196/article/details/109012584">Flink调优: 数据倾斜优化</a></li>
+</ol>
 
-<h2 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h2><table>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark-task_split_block/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Spark/Spark-task_split_block/" class="post-title-link" itemprop="url">Spark task split block</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 20:52:40" itemprop="dateModified" datetime="2021-06-01T20:52:40+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Spark-task-split-block"><a href="#Spark-task-split-block" class="headerlink" title="Spark-task_split_block"></a>Spark-task_split_block</h1><p>梳理一下Spark中关于并发度涉及的几个概念File，Block，Split，Task，Partition，RDD以及节点数、Executor数、core数目的关系。</p>
+<p><img src="_v_images/20201015163856847_762442646.jpg"></p>
+<ol>
+<li>用户设置了numSplit，那么goalSize=totalSize/numSplit</li>
+<li>minSize=max(1,minSplitSize)</li>
+<li>splitSize=max(minSplitSize, min(goalSize,blockSize))</li>
+<li>task个数=totalSize除以splitSize</li>
+</ol>
+<p>输入可能以多个文件的形式存储在HDFS上，每个File都包含了很多块，称为<strong>Block</strong>。<br>当Spark读取这些文件作为输入时，会根据具体数据格式对应的InputFormat进行解析，一般是将若干个Block合并成一个输入分片，称为<strong>InputSplit</strong>，注意InputSplit不能跨越文件。<br>随后将为这些输入分片生成具体的<strong>Task</strong>。InputSplit与Task是<strong>一一对应</strong>的关系。<br>随后这些具体的Task每个都会被分配到集群上的某个节点的某个<strong>Executor</strong>去执行。</p>
+<ul>
+<li>每个节点可以起一个或多个Executor。</li>
+<li>每个Executor由若干<strong>core</strong>组成，每个Executor的每个core<strong>一次只能执行一个</strong>Task。</li>
+<li>每个Task执行的结果就是生成了目标<strong>RDD</strong>的一个<strong>partiton</strong>。</li>
+</ul>
+<p><strong>注意:</strong> 这里的core是虚拟的core而不是机器的物理CPU核，可以理解为就是Executor的一个工作线程。</p>
+<p>而 Task被执行的并发度 = Executor数目 * 每个Executor核数。</p>
+<p>至于partition的数目：</p>
+<ul>
+<li>对于数据读入阶段，例如sc.textFile，输入文件被划分为多少InputSplit就会需要多少初始Task。</li>
+<li>在Map阶段partition数目保持不变。</li>
+<li>在Reduce阶段，RDD的聚合会触发shuffle操作，聚合后的RDD的partition数目跟具体操作有关，例如repartition操作会聚合成指定分区数，还有一些算子是可配置的。</li>
+</ul>
+<h3 id="1，Application"><a href="#1，Application" class="headerlink" title="1，Application"></a>1，Application</h3><p>application（应用）其实就是用spark-submit提交的程序。比方说spark examples中的计算pi的SparkPi。一个application通常包含三部分：从数据源（比方说HDFS）取数据形成RDD，通过RDD的transformation和action进行计算，将结果输出到console或者外部存储（比方说collect收集输出到console）。</p>
+<h3 id="2，Driver"><a href="#2，Driver" class="headerlink" title="2，Driver"></a>2，Driver</h3><p> Spark中的driver感觉其实和yarn中Application Master的功能相类似。主要完成任务的调度以及和executor和cluster manager进行协调。有client和cluster联众模式。client模式driver在任务提交的机器上运行，而cluster模式会随机选择机器中的一台机器启动driver。从spark官网截图的一张图可以大致了解driver的功能。</p>
+<p><img src="_v_images/20201015163856640_926148743.png"></p>
+<h3 id="3，Job"><a href="#3，Job" class="headerlink" title="3，Job"></a>3，Job</h3><p> Spark中的Job和MR中Job不一样不一样。MR中Job主要是Map或者Reduce Job。而Spark的Job其实很好区别，一个action算子就算一个Job，比方说count，first等。</p>
+<h3 id="4-Task"><a href="#4-Task" class="headerlink" title="4, Task"></a>4, Task</h3><p>Task是Spark中最新的执行单元。RDD一般是带有partitions的，每个partition的在一个executor上的执行可以任务是一个Task。 </p>
+<h3 id="5-Stage"><a href="#5-Stage" class="headerlink" title="5, Stage"></a>5, Stage</h3><p>Stage概念是spark中独有的。一般而言一个Job会切换成一定数量的stage。各个stage之间按照顺序执行。至于stage是怎么切分的，首选得知道spark论文中提到的narrow dependency(窄依赖)和wide dependency（ 宽依赖）的概念。其实很好区分，看一下父RDD中的数据是否进入不同的子RDD，如果只进入到一个子RDD则是窄依赖，否则就是宽依赖。宽依赖和窄依赖的边界就是stage的划分点</p>
+<p><img src="_v_images/20201015163856436_1360238478.png"></p>
+<p><img src="_v_images/20201015163856129_654594465.png"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Flink/Flink-connector-hippo/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Flink/Flink-connector-hippo/" class="post-title-link" itemprop="url">Flink connector hippo</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Flink-connector-hippo"><a href="#Flink-connector-hippo" class="headerlink" title="Flink-connector-hippo"></a>Flink-connector-hippo</h1><h2 id="broker分拆"><a href="#broker分拆" class="headerlink" title="broker分拆"></a>broker分拆</h2><p>获取子任务的index</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> taskId = <span class="keyword">this</span>.getRuntimeContext().getIndexOfThisSubtask();</span><br></pre></td></tr></table></figure>
+<h2 id="checkpoint"><a href="#checkpoint" class="headerlink" title="checkpoint"></a>checkpoint</h2><p>实现CheckpointedFunction</p>
+<p>在ListState中保存每个broker的偏移量 </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ListState&lt;Tuple2&lt;String, String&gt;&gt; offsetState;</span><br></pre></td></tr></table></figure>
+
+<h2 id="watermark生成"><a href="#watermark生成" class="headerlink" title="watermark生成"></a>watermark生成</h2><h2 id="hippo-pullConsumer"><a href="#hippo-pullConsumer" class="headerlink" title="hippo pullConsumer"></a>hippo pullConsumer</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ConsumerConfig config =</span><br><span class="line">                <span class="keyword">new</span> ConsumerConfig(masterAddress, consumerGroup);</span><br><span class="line"><span class="keyword">if</span> (!isRestored &amp;&amp; bootstrapFromMax) &#123;</span><br><span class="line">    config.setConsumeFromMax(<span class="keyword">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">messagePullConsumer = <span class="keyword">new</span> PullMessageConsumer(config);</span><br></pre></td></tr></table></figure>
+<h2 id="子任务的checkpointLock"><a href="#子任务的checkpointLock" class="headerlink" title="子任务的checkpointLock"></a>子任务的checkpointLock</h2><p>往下游放入消息必须加锁</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SourceContext&lt;<span class="keyword">byte</span>[]&gt;.getCheckpointLock()</span><br></pre></td></tr></table></figure>
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/Spark/Spark%E8%B5%84%E6%BA%90%E8%AF%84%E4%BC%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="aaronzhang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Guadazi">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/bigdata/Spark/Spark%E8%B5%84%E6%BA%90%E8%AF%84%E4%BC%B0/" class="post-title-link" itemprop="url">Spark资源评估</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Spark资源评估"><a href="#Spark资源评估" class="headerlink" title="Spark资源评估"></a>Spark资源评估</h1><table>
 <thead>
 <tr>
-<th align="left"><strong>优化规则</strong></th>
-<th align="left"><strong>规则名称</strong></th>
-<th align="left"><strong>简介</strong></th>
+<th>机器机型</th>
+<th>内存</th>
+<th>硬盘</th>
+<th>核数</th>
 </tr>
 </thead>
 <tbody><tr>
-<td align="left">列裁剪</td>
-<td align="left">column_prune</td>
-<td align="left">对于上层算子不需要的列，不在下层算子输出该列，减少计算</td>
+<td>M10</td>
+<td>128G</td>
+<td>3.6T</td>
+<td>48</td>
 </tr>
 <tr>
-<td align="left">子查询去关联</td>
-<td align="left">decorrelate</td>
-<td align="left">尝试对相关子查询进行改写，将其转换为普通 join 或 aggregation 计算</td>
+<td>BX1</td>
+<td>16G×16 256G</td>
+<td>4T×12=48T</td>
+<td>80</td>
 </tr>
 <tr>
-<td align="left">聚合消除</td>
-<td align="left">aggregation_eliminate</td>
-<td align="left">尝试消除执行计划中的某些不必要的聚合算子</td>
-</tr>
-<tr>
-<td align="left">投影消除</td>
-<td align="left">projection_eliminate</td>
-<td align="left">消除执行计划中不必要的投影算子</td>
-</tr>
-<tr>
-<td align="left">最大最小消除</td>
-<td align="left">max_min_eliminate</td>
-<td align="left">改写聚合中的 max/min 计算，转化为 <code>order by</code> + <code>limit 1</code></td>
-</tr>
-<tr>
-<td align="left">谓词下推</td>
-<td align="left">predicate_push_down</td>
-<td align="left">尝试将执行计划中过滤条件下推到离数据源更近的算子上</td>
-</tr>
-<tr>
-<td align="left">外连接消除</td>
-<td align="left">outer_join_eliminate</td>
-<td align="left">尝试消除执行计划中不必要的 left join 或者 right join</td>
-</tr>
-<tr>
-<td align="left">分区裁剪</td>
-<td align="left">partition_processor</td>
-<td align="left">将分区表查询改成为用 union all，并裁剪掉不满足过滤条件的分区</td>
-</tr>
-<tr>
-<td align="left">聚合下推</td>
-<td align="left">aggregation_push_down</td>
-<td align="left">尝试将执行计划中的聚合算子下推到更底层的计算节点</td>
-</tr>
-<tr>
-<td align="left">TopN 下推</td>
-<td align="left">topn_push_down</td>
-<td align="left">尝试将执行计划中的 TopN 算子下推到离数据源更近的算子上</td>
-</tr>
-<tr>
-<td align="left">Join 重排序</td>
-<td align="left">join_reorder</td>
-<td align="left">对多表 join 确定连接顺序</td>
+<td>CG3</td>
+<td>256G</td>
+<td>3.6T</td>
+<td>96</td>
 </tr>
 </tbody></table>
-<h2 id="逻辑优化"><a href="#逻辑优化" class="headerlink" title="逻辑优化"></a>逻辑优化</h2><h3 id="子查询相关的优化"><a href="#子查询相关的优化" class="headerlink" title="子查询相关的优化"></a>子查询相关的优化</h3><p>关联子查询去关联</p>
-<h3 id="列裁剪"><a href="#列裁剪" class="headerlink" title="列裁剪"></a>列裁剪</h3><h3 id="关联子查询去关联"><a href="#关联子查询去关联" class="headerlink" title="关联子查询去关联"></a>关联子查询去关联</h3><h3 id="Max-Min-消除"><a href="#Max-Min-消除" class="headerlink" title="Max/Min 消除"></a>Max/Min 消除</h3><h3 id="谓词下推"><a href="#谓词下推" class="headerlink" title="谓词下推"></a>谓词下推</h3><h3 id="分区裁剪"><a href="#分区裁剪" class="headerlink" title="分区裁剪"></a>分区裁剪</h3><h3 id="TopN-和-Limit-下推"><a href="#TopN-和-Limit-下推" class="headerlink" title="TopN 和 Limit 下推"></a>TopN 和 Limit 下推</h3><h3 id="Join-Reorder"><a href="#Join-Reorder" class="headerlink" title="Join Reorder"></a>Join Reorder</h3><h2 id="物理优化"><a href="#物理优化" class="headerlink" title="物理优化"></a>物理优化</h2><h3 id="选择最优的索引进行表的访问"><a href="#选择最优的索引进行表的访问" class="headerlink" title="选择最优的索引进行表的访问"></a>选择最优的索引进行表的访问</h3><h3 id="收集统计信息来获得表的数据分布情况"><a href="#收集统计信息来获得表的数据分布情况" class="headerlink" title="收集统计信息来获得表的数据分布情况"></a>收集统计信息来获得表的数据分布情况</h3><h3 id="在错误索引的解决方案中会介绍当发现-TiDB-索引选错时，你应该使用那些手段来让它使用正确的索引"><a href="#在错误索引的解决方案中会介绍当发现-TiDB-索引选错时，你应该使用那些手段来让它使用正确的索引" class="headerlink" title="在错误索引的解决方案中会介绍当发现 TiDB 索引选错时，你应该使用那些手段来让它使用正确的索引"></a>在错误索引的解决方案中会介绍当发现 TiDB 索引选错时，你应该使用那些手段来让它使用正确的索引</h3><h3 id="在-Distinct-优化中会介绍在物理优化中会做的一个有关-DISTINCT-关键字的优化，在这一小节中会介绍它的优缺点以及如何使用它。"><a href="#在-Distinct-优化中会介绍在物理优化中会做的一个有关-DISTINCT-关键字的优化，在这一小节中会介绍它的优缺点以及如何使用它。" class="headerlink" title="在 Distinct 优化中会介绍在物理优化中会做的一个有关 DISTINCT 关键字的优化，在这一小节中会介绍它的优缺点以及如何使用它。"></a>在 Distinct 优化中会介绍在物理优化中会做的一个有关 DISTINCT 关键字的优化，在这一小节中会介绍它的优缺点以及如何使用它。</h3><h2 id="参考文献"><a href="#参考文献" class="headerlink" title="[参考文献]"></a>[参考文献]</h2><ol>
-<li><a target="_blank" rel="noopener" href="https://www.infoq.cn/article/an-article-mastering-sql-on-hadoop-core-technology">The Business Intelligence for Hadoop Benchmark</a></li>
-</ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/storm/Storm-runtime/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/storm/Storm-runtime/" class="post-title-link" itemprop="url">Storm runtime</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Storm-runtime"><a href="#Storm-runtime" class="headerlink" title="Storm-runtime"></a>Storm-runtime</h1><p><img src="_v_images/20210116161223695_155417172.jpg"></p>
-<p>master-slave结构:</p>
+<h2 id="Spark-On-Yarn-内存计算"><a href="#Spark-On-Yarn-内存计算" class="headerlink" title="Spark On Yarn 内存计算"></a>Spark On Yarn 内存计算</h2><p>在介绍了，spark任务在yarn运行时需要的Continer数量，以及内存大小之后，我们再来看spark on yarn的时候整体任务在yarn中占用资源大小。</p>
+<p>Core： yarn中Core指的是Continer数量，所以Core = ContinerNum</p>
+<p>而内存的计算则较为复杂了，设单个Continer向集群申请的资源经我们上面公式算出来的需要申请的内存大小为：excutorTotalMemory ，则该Continer在yarn集群上占用的最终资源为continerMemory。<br>minContiner = yarn.scheduler.minimum-allocation-mb（continer分配资源的最小值，目前是128）<br>Increment = yarn.scheduler.increment-allocation-mb（yarn分配资源的增量，也叫规整化参数，默认值为1024 mb）<br>resultMemory的计算方式如下所示：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">If（totalMemory&lt;=minContiner）&#123;</span><br><span class="line">	continerMemory = minContiner</span><br><span class="line">&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">	continerMemory = minContiner + Math.ceil（(excutorTotalMemory - minContiner)/increment） * increment</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><strong>总结</strong></p>
+<p>例如某个spark任务的提交参数为，driverMemory=2G，executorMemory=2G，executorNum = 1<br>minContiner=512m<br>Increment =1024m<br>则该任务<br>executorContinerMemory计算过程如下</p>
+<pre><code>申请资源数：executor = Max(executorMemory*0.1，384M)+executorMemory=2432M
+ContinerMymory = 512+Math.ceil（(2432-512)/1024.0）*1024 = 2.5G</code></pre>
+<p>driverContinerMemory计算过程同上：2.5G<br>最终该任务在yarn消耗资源为5G<br>可以看出来，spark任务最终消耗资源并非为初始化资源数。</p>
+<p>需要join 75张表，每张表的主键分布不同：</p>
 <ul>
-<li>Nimbus是主节点，负责分发用户代码，指派Supervisor上的worker进程，运行topology的(Spout/Bolt)Task</li>
-<li>Supervisor是从节点，守护进程. 负责启动和终止worker进程. 通过Storm的配置文件中的 supervisor.slots.ports配置项，可以指定在一个Supervisor上最大允许多少个Slot，每个Slot通过端口号来唯一标识，一个端口号 对应一个Worker进程（如果该Worker进程被启动）。</li>
+<li>直接join会造成数据倾斜，某个节点撑爆</li>
+<li>所有的表都shuffle，会造成shuffle数据量太多，撑爆硬盘</li>
 </ul>
-<p><img src="_v_images/20210116162304428_695142382.jpg"></p>
-<p>运行流程</p>
-<p>1）户端提交拓扑到nimbus。</p>
-<p>2） Nimbus针对该拓扑建立本地的目录根据topology的配置计算task，分配task，在zookeeper上建立assignments节点存储 task和supervisor机器节点中woker的对应关系；</p>
-<p>在zookeeper上创建taskbeats节点来监控task的心跳；启动topology。</p>
-<p>3） Supervisor去zookeeper上获取分配的tasks，启动多个woker进行，每个woker生成task，一个task一个线程；根据topology 信息初始化建立task之间的连接;Task和Task之间是通过zeroMQ管理的；后整个拓扑运行起来。</p>
-<h2 id="内核-队列"><a href="#内核-队列" class="headerlink" title="内核-队列"></a>内核-队列</h2><p>在Storm中大量使用Disrupt Queue来解耦Storm内部的消息处理过程。分析这些Queue的分布，是分析Storm运行时态的基础。</p>
-<p><img src="_v_images/20210116174558832_184704273.png"></p>
-<p>在Storm的worker中，最小的执行单元是executor,一个executor只会有一个component。目前一个component只会有一个task。而一个executor会有两个Disruptor Queue, 一个用于接受数据的receive Disrupor Queue和一个用于发送send Disrupor Queue。然后在worker中有一个全局的send Disrupor Queue。分析完队列的分布，在分析topology的运行时状况。</p>
-<p>当一个Topology提交到Storm集群后，task被分配到各个wrker中开始执行后，task是怎么执行的。Storm的Task分为两类，一类是消息的源头Spout,它负责在源头产生消息；然后就是Bolt，它是执行单元。但是这两者各自的工作逻辑如下。</p>
-<p>我们来分析Spout在运行时的工作状况。Spout的nextTuple用于发送数据，接口注释上说明它不能阻塞，因为它与active， deactive，ack, fail在一个处理线程里面被处理。但是nextTuple被阻塞会有什么副作用列？当nextTuple被阻塞，应用代码中另起线程调用SpoutCollector会有什么后果？下图是SpoutExecutor的执行逻辑。</p>
-<p><img src="_v_images/20210116174558730_1417384061.png"></p>
-<p>在SpoutExecutor处理循环里面，第一步做的事情是从receive Disrupor Queue里面消费里面的消息。这里面的就是SpoutExecutor所收到的消息。处理逻辑如下图所示</p>
-<p><img src="_v_images/20210116174558627_554147077.png"></p>
-<p>然后SpoutExecutor会将overflow中的数据再次发送。overflow是用于接受SpoutCollector.emit()无发及时发送的数据的，具体SpoutCollector发送数据的逻辑见下文分析。但是这里在发送overflow的数据时，与SpoutCollector.emit()有个区别，就是数据还是无法被正常发送时，数据会丢弃，也就是不会被再次写入overflow中。当overflow中没有数据，以及pending中的数据量小于TOPOLOGY_MAX_SPOUT_PENDING时，判断topology的状态。当topology不是deactive状态时，如果topology有触发active命令，会调用spout的active接口，然后调用spout的nextTuple接口。否则调用deactive接口。所以这里当Spout的nextTuple被阻塞时，spout没办法处理acker回报的消息，回报的消息会阻塞在executor的receive DisruptorQueue中，当receive DisruptorQueue塞满后，是会阻塞在对应的网络处理模块中，storm中经典的是zeroMQ,老版本的zeroMQ是没有设置水位，这样会大量堆积到内存中，因为zeroMQ是C++的，占用的是堆外内存，JVM无法管理，最坏就是把机器的内存耗光。如果这个是另起线程调用SpoutCollector的emit，当emit数据速度过快，会导致overflow中堆积数据，导致worker内存消耗。</p>
-<p>上面讲到SpoutCollector在emit数据会写入overflow,那什么情况下会写入overflow。SpoutCollector.emit是否真的就把数据发送到了网络。下面是SpoutCollector的处理逻辑。</p>
-<p><img src="_v_images/20210116174558522_1112615304.png"></p>
-<p>Spout当调用SpoutCollect.emit()发送时，首先的逻辑是根据根据消息的STREAM ID,和对应的values,得到目的端task id。当topology开启acker机制时，会生成一个随机的rootId，否则使用一个默认值作为rootId。然后为消息生成一个随机的messageId，由rootId和messageId组成对应的tuple Id。这里tuple Id是有rootId为key,messageId为value的一个HashMap。这里采用HashMap的作用会在下面Spout的ack机制是做说明。在将生成的tuple Id和用会的values组成一个tuple。并判断overflower是否有数据，让overflow中有数据时，数据会直接放入overflow中，而不会放入executor  的send Disraptor Queue中。当overflow为空时，会将tuple放入send Disraptor Queue中。当捕获Disraptor Queue的InsufficientCapacityException时，数据就放入了overflow中。然后处理ack。当开启了ack机制，会在pending中加入对应的tuple数据，然后项acker发送ack init消息。</p>
-<p>根据上面的发送过程，数据emit只是被写入了executor的send Disraptor Queue。而数据在Spout端的丢失多是数据在overflow中被SpoutExecutor在次处理时，send Disraptor Queue满导致。</p>
-<p>关于pending，首先它是一个RotatingMap。它通过定时旋转，以达到定时器的目的。在SpoutExecutor的RotatingMap中有两个桶，然后executor有个定时线程，会按照用户设定的message timeout second，定期向executor的receive DisruptorQueue写入SYSTEM_TICK_STREAM_ID消息，然后SpoutExecutor处理SYSTEM_TICK_STREAM_ID消息时就旋转RotatingMap，当被清除的桶中有数据时，被清除的桶中的数据会调用fail接口，通知业务逻辑fail。这就是当超时间设置比业务逻辑短时，导致数据重复的原因。还有一种是acker消息丢失，导致数据重复。由于RotatingMap的底层是HashMap，中间没有锁，overflow是个LinkedList，所以SpoutCollector和SpoutExecutor不能在两个线程中并发 处理。</p>
-<p>BoltExecutor的处理逻辑非常简单，就是消费receive Disrupor Queue中数据，然后调用bolt的excue。但是这里也是单线程处理的，阻塞或者处理速度不匹配，就会导致数据在Disrupor Queue或者网络模块中堆积，其中使用zeroMQ的副作用最大。</p>
-<p>BoltCollector的emit与SpoutCollector的emit处理相比，首先是少了overflow承接无法发送的数据，会直接丢弃。其次是没有pending和acker消息的发送。</p>
-<p>接下来分析一下Storm的Acker机制。Storm的Ack机制在Storm刚刚开源时被大书特书，处理原理也确实非常的精彩。由于这里ID都是随机数，所以这里不会在讨论随机数的唯一问题。</p>
-<p><img src="_v_images/20210116174558419_714266215.png"></p>
-<p>如上图所示，spout发送t1给bolt a, bolt a 在t1的基础上生成t2,t3,t4给bolt b，bolt b ack所收到的数据。下面来追踪整个id变化的过程。</p>
-<p>Spout 发送t1， message id为&lt;r_1, m_1&gt;,发送ack</p>
-<p>Acker收到ack init, map中缓存&lt;r_1,m_1&gt;</p>
-<p>Bolt a 收到t1, messageId为&lt;r_1,m_1&gt;,生成t2，t3, t4</p>
-<p>Bolt a 发送t2, anchor t1, t2,messageId为&lt;r_1,m_2&gt;, 更新t1的ackVal为m_2</p>
-<p>Bolt a 发送t3, anchor t1, t3,messageId为&lt;r_1,m_3&gt;, 更新t1的ackVal为m_2^m_3</p>
-<p>Bolt a 发送t4, anchor t1, t4,messageId为&lt;r_1,m_4&gt;, 更新t1的ackVal为m_2^m_3^m_4</p>
-<p>Bolt a ack t1, 向acker发送ack消息&lt;r_1, m_1^ m_2^m_3^m_4&gt;</p>
-<p>Acker 收到bolt a的ack消息，更新缓存为&lt;r_1, m_1^ m_1^ m_2^m_3^m_4&gt;即&lt;r_1,  m_2^m_3^m_4&gt;</p>
-<p>Bolt b ack t2, 向acker发送ack消息&lt;r_1, m_2&gt;</p>
-<p>Acker 收到bolt b的ack消息，更新缓存为&lt;r_1, m_2^ m_2^m_3^m_4&gt;即&lt;r_1, m_3^m_4&gt;</p>
-<p>Bolt b ack t3, 向acker发送ack消息&lt;r_1, m_3&gt;</p>
-<p>Acker 收到bolt b的ack消息，更新缓存为&lt;r_1, m_3^m_3^m_4&gt;即&lt;r_1, m_4&gt;</p>
-<p>Bolt b ack t4, 向acker发送ack消息&lt;r_1, m_4&gt;</p>
-<p>Acker 收到bolt b的ack消息，更新缓存为&lt;r_1, m_4^m_4&gt;即&lt;r_1, 0&gt;</p>
-<p>messageId确认完毕，向Spout发送ack消息。当消息没有被ack,会一直在spout的pending队列中，知道被ack或者超时。</p>
-<p>它基本上使用两个long值就跟踪了一个消息在整个流中的处理过程。</p>
-<p>【参考文献】</p>
-<hr>
-<ol>
-<li><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/PRDSu-qOxb17qjdfpO1IYA">Apache storm内核原理</a></li>
+<p>申请的资源:</p>
+<p><img src="_v_images/20201012172033562_1858655038.png"></p>
+<p>策略一:</p>
+<ul>
+<li>join后的表，每隔join20次则repartition一次</li>
+<li>待join的子表，partition个数超过30，或行数超过1.5亿，则repartition一次</li>
+</ul>
+<p><img src="_v_images/20201012170200410_989497495.png"></p>
+<p>宽表数据量:<br><img src="_v_images/20201012190000429_1118094404.png"></p>
+<p><img src="_v_images/20201012204407377_1330736778.png"></p>
+<h2 id="问题点"><a href="#问题点" class="headerlink" title="问题点"></a>问题点</h2><ol>
+<li>dag排布的规则是什么？</li>
 </ol>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://example.com/bigdata/iceberg/%E6%95%B0%E6%8D%AE%E6%B9%96/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="aaronzhang">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Guadazi">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/bigdata/iceberg/%E6%95%B0%E6%8D%AE%E6%B9%96/" class="post-title-link" itemprop="url">数据湖</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-01-15 19:47:00" itemprop="dateCreated datePublished" datetime="2021-01-15T19:47:00+08:00">2021-01-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 19:57:43" itemprop="dateModified" datetime="2021-06-01T19:57:43+08:00">2021-06-01</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/bigdata/" itemprop="url" rel="index"><span itemprop="name">bigdata</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="数据湖"><a href="#数据湖" class="headerlink" title="数据湖"></a>数据湖</h1><p><img src="vx_images/4964231239501" alt="图片"></p>
-<h2 id="数据仓库-VS-数据湖"><a href="#数据仓库-VS-数据湖" class="headerlink" title="数据仓库 VS 数据湖"></a>数据仓库 VS 数据湖</h2><p>相较而言，数据湖是较新的技术，拥有不断演变的架构。数据湖存储任何形式（包括结构化和非结构化）和任何格式（包括文本、音频、视频和图像）的原始数据。根据定义，<code>数据湖不会接受数据治理</code>，但专家们一致认为<code>良好的数据管理对预防数据湖转变为数据沼泽不可或缺</code>。数据湖在数据读取期间创建模式。与数据仓库相比，数据湖缺乏结构性，而且更灵活，并且提供了更高的敏捷性。值得一提的是，数据湖非常适合使用机器学习和深度学习来执行各种任务，比如数据挖掘和数据分析，以及提取非结构化数据等。<br><img src="vx_images/3593617797024" alt="图片"></p>
-<p><img src="vx_images/5612546586116.png"></p>
 
       
     </div>
