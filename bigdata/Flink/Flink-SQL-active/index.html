@@ -28,7 +28,7 @@
 <meta property="og:description" content="Flink-SQL-active维表同步脚本: 123456789101112131415insertinto    dim_result_lct_activy_config    select        Fact_id,        LAST_VALUE(Fact_name),        FROM_UNIXTIME(UNIX_TIMESTAMP(LAST_VALUE(Fact_star">
 <meta property="og:locale">
 <meta property="article:published_time" content="2019-08-10T06:58:00.000Z">
-<meta property="article:modified_time" content="2021-06-01T12:52:39.866Z">
+<meta property="article:modified_time" content="2021-07-10T08:13:50.351Z">
 <meta property="article:author" content="aaronzhang">
 <meta property="article:tag" content="Flink">
 <meta name="twitter:card" content="summary">
@@ -219,7 +219,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
+                <time title="Modified: 2021-07-10 16:13:50" itemprop="dateModified" datetime="2021-07-10T16:13:50+08:00">2021-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -258,6 +258,10 @@
 <p>如若不带 group by 直接：<br>INSERT INTO  mysql_sink SELECT  f1,  f2 FROM kafka_src<br>主键冲突写入 mysql 是会出错的，怎么可以用 Upsert 的方式直接覆盖呢？</p>
 </blockquote>
 <p>不带 group by时无法推导出query的 unique key，没法做按照unique key的更新，<br>只需要将 query的 key （你这里是group by 后的字段）和db中主键保持一致即可</p>
+<h2 id="TopN"><a href="#TopN" class="headerlink" title="TopN"></a>TopN</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> [column_list]</span><br><span class="line"><span class="keyword">FROM</span> (</span><br><span class="line">   <span class="keyword">SELECT</span> [column_list],</span><br><span class="line">     <span class="built_in">ROW_NUMBER</span>() <span class="keyword">OVER</span> ([<span class="keyword">PARTITION</span> <span class="keyword">BY</span> col1[, col2...]]</span><br><span class="line">       <span class="keyword">ORDER</span> <span class="keyword">BY</span> col1 [<span class="keyword">asc</span><span class="operator">|</span><span class="keyword">desc</span>][, col2 [<span class="keyword">asc</span><span class="operator">|</span><span class="keyword">desc</span>]...]) <span class="keyword">AS</span> rownum</span><br><span class="line">   <span class="keyword">FROM</span> table_name)</span><br><span class="line"><span class="keyword">WHERE</span> rownum <span class="operator">&lt;=</span> N [<span class="keyword">AND</span> conditions]</span><br></pre></td></tr></table></figure>
+
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">EXPLAIN PLAN FOR SELECT * FROM (</span><br><span class="line">  SELECT *,</span><br><span class="line">    row_number() OVER(PARTITION BY merchandiseId ORDER BY totalQuantity DESC) AS rownum</span><br><span class="line">  FROM (</span><br><span class="line">    SELECT merchandiseId, sum(quantity) AS totalQuantity</span><br><span class="line">    FROM rtdw_dwd.kafka_order_done_log</span><br><span class="line">    GROUP BY merchandiseId</span><br><span class="line">  )</span><br><span class="line">) WHERE rownum &lt;&#x3D; 10</span><br><span class="line"></span><br><span class="line">&#x3D;&#x3D; Abstract Syntax Tree &#x3D;&#x3D;</span><br><span class="line">LogicalProject(merchandiseId&#x3D;[$0], totalQuantity&#x3D;[$1], rownum&#x3D;[$2])</span><br><span class="line">+- LogicalFilter(condition&#x3D;[&lt;&#x3D;($2, 10)])</span><br><span class="line">   +- LogicalProject(merchandiseId&#x3D;[$0], totalQuantity&#x3D;[$1], rownum&#x3D;[ROW_NUMBER() OVER (PARTITION BY $0 ORDER BY $1 DESC NULLS LAST)])</span><br><span class="line">      +- ...</span><br><span class="line"></span><br><span class="line">&#x3D;&#x3D; Optimized Logical Plan &#x3D;&#x3D;</span><br><span class="line">Rank(strategy&#x3D;[RetractStrategy], rankType&#x3D;[ROW_NUMBER], rankRange&#x3D;[rankStart&#x3D;1, rankEnd&#x3D;10], partitionBy&#x3D;[merchandiseId], orderBy&#x3D;[totalQuantity DESC], select&#x3D;[merchandiseId, totalQuantity, w0$o0])</span><br><span class="line">+- Exchange(distribution&#x3D;[hash[merchandiseId]])</span><br><span class="line">   +- ...</span><br><span class="line"></span><br><span class="line">&#x3D;&#x3D; Physical Execution Plan &#x3D;&#x3D;</span><br><span class="line">Stage 1 : Data Source</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    Stage 2 : Operator</span><br><span class="line">        ...</span><br><span class="line"></span><br><span class="line">        Stage 4 : Operator</span><br><span class="line">            ...</span><br><span class="line"></span><br><span class="line">            Stage 6 : Operator</span><br><span class="line">                content : Rank(strategy&#x3D;[RetractStrategy], rankType&#x3D;[ROW_NUMBER], rankRange&#x3D;[rankStart&#x3D;1, rankEnd&#x3D;10], partitionBy&#x3D;[merchandiseId], orderBy&#x3D;[totalQuantity DESC], select&#x3D;[merchandiseId, totalQuantity, w0$o0])</span><br><span class="line">                ship_strategy : HASH</span><br></pre></td></tr></table></figure>
 
     </div>
 
@@ -276,12 +280,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/Java/metric/00_docker%E6%9E%84%E5%BB%BAJava%E6%B5%8B%E8%AF%95%E7%8E%AF%E5%A2%83/" rel="prev" title="Docker构建Java调试环境">
-      <i class="fa fa-chevron-left"></i> Docker构建Java调试环境
+    <a href="/bigdata/Flink/Flink-checkpoint-savepoint-2pc/" rel="prev" title="Flink-checkpoint与高可用">
+      <i class="fa fa-chevron-left"></i> Flink-checkpoint与高可用
     </a></div>
       <div class="post-nav-item">
-    <a href="/bigdata/Flink/Flink-time/" rel="next" title="Flink:时间">
-      Flink:时间 <i class="fa fa-chevron-right"></i>
+    <a href="/bigdata/Impala/01.Impala/" rel="next" title="Impala基础与痛点">
+      Impala基础与痛点 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -341,7 +345,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink-SQL-active"><span class="nav-number">1.</span> <span class="nav-text">Flink-SQL-active</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Flink-SQL-active"><span class="nav-number">1.</span> <span class="nav-text">Flink-SQL-active</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#TopN"><span class="nav-number">1.1.</span> <span class="nav-text">TopN</span></a></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -355,20 +359,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">242</span>
+          <span class="site-state-item-count">252</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">128</span>
+        <span class="site-state-item-count">127</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>

@@ -45,7 +45,7 @@
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/5324204248375.png">
 <meta property="og:image" content="http://example.com/bigdata/Flink/Flink-SQL-inside/vx_images/4467647168580">
 <meta property="article:published_time" content="2021-01-15T11:47:00.000Z">
-<meta property="article:modified_time" content="2021-06-01T12:52:39.864Z">
+<meta property="article:modified_time" content="2021-07-10T08:13:50.347Z">
 <meta property="article:author" content="aaronzhang">
 <meta property="article:tag" content="Flink">
 <meta property="article:tag" content="SQL">
@@ -238,7 +238,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-06-01 20:52:39" itemprop="dateModified" datetime="2021-06-01T20:52:39+08:00">2021-06-01</time>
+                <time title="Modified: 2021-07-10 16:13:50" itemprop="dateModified" datetime="2021-07-10T16:13:50+08:00">2021-07-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -302,7 +302,8 @@
 <h3 id="深入性能优化及实践"><a href="#深入性能优化及实践" class="headerlink" title="深入性能优化及实践"></a>深入性能优化及实践</h3><p>本节中，将使用具体的示例进行讲解，让你深入理解 Blink Planner 性能优化的设计。</p>
 <h4 id="分段优化"><a href="#分段优化" class="headerlink" title="分段优化"></a>分段优化</h4><p>示例 5</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">create</span> <span class="keyword">view</span> MyView <span class="keyword">as</span> <span class="keyword">select</span> word, <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">as</span> freq <span class="keyword">from</span> SourceTable <span class="keyword">group</span> <span class="keyword">by</span> word; <span class="keyword">insert</span> <span class="keyword">into</span> SinkTable1 <span class="keyword">select</span> \<span class="operator">*</span> <span class="keyword">from</span> MyView <span class="keyword">where</span> freq <span class="operator">&gt;</span><span class="number">10</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> SinkTable2 <span class="keyword">select</span> <span class="built_in">count</span>(word) <span class="keyword">as</span> freq2, freq <span class="keyword">from</span> MyView <span class="keyword">group</span> <span class="keyword">by</span> freq; </span><br></pre></td></tr></table></figure>
-<p>复制代码</p>
+
+
 <p>上面的这几个 SQL，转化为 RelNode DAG，大致图形如下：</p>
 <p><img src="vx_images/5754200881233">  </p>
 <p>图5 示例5 RelNode DAG</p>
@@ -320,7 +321,8 @@
 <p>总结一下，Blink Planner 的分段优化，其实解的是多 Sink 优化问题（DAG 优化），单 Sink 不是分段优化关心的问题，单 Sink 可以在所有节点上优化，不需要分段。</p>
 <h4 id="Sub-Plan-Reuse"><a href="#Sub-Plan-Reuse" class="headerlink" title="Sub-Plan Reuse"></a>Sub-Plan Reuse</h4><p>示例 6</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> SinkTabl</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> freq <span class="keyword">from</span> (<span class="keyword">select</span> word, <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">as</span> freq <span class="keyword">from</span> SourceTable <span class="keyword">group</span> <span class="keyword">by</span> word) t <span class="keyword">where</span> word <span class="keyword">like</span> <span class="string">&#x27;T%&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> <span class="built_in">count</span>(word) <span class="keyword">as</span> freq2 <span class="keyword">from</span> (<span class="keyword">select</span> word, <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">as</span> freq <span class="keyword">from</span> SourceTable <span class="keyword">group</span> <span class="keyword">by</span> word) t <span class="keyword">group</span> <span class="keyword">by</span> freq; </span><br></pre></td></tr></table></figure>
-<p>复制代码</p>
+
+
 <p>这个示例的 SQL 和分段优化的 SQL 其实是类似的，不同的是，没有将结果 Sink 到两个 Table 里面，而是将结果 Union 起来，Sink 到一个结果表里面。</p>
 <p>下面看一下转化为 RelNode 的 DAG 图：</p>
 <p><img src="vx_images/5722510102563">  </p>
@@ -363,7 +365,6 @@
 </ul>
 <p>示例 7</p>
 <p>select count(*) from t group by color</p>
-<p>复制代码</p>
 <p>没有优化的情况下，下面的这个 Aggregate 会产生 10 次的 Shuffle 操作。</p>
 <p><img src="vx_images/5702882869443">  </p>
 <p>图 10 示例 7 未做优化的 Count 操作</p>
@@ -382,10 +383,10 @@
 <p>第一层，求 distinct 的值和非 distinct agg function 的值，第二层求 distinct agg function 的值</p>
 <p>示例 8</p>
 <p>select color, count(distinct id), count(*) from t group by color </p>
-<p>复制代码</p>
 <p>手工改写成：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> color, <span class="built_in">count</span>(id), <span class="built_in">min</span>(cnt) <span class="keyword">from</span> (</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> color, id, <span class="built_in">count</span>(\<span class="operator">*</span>) <span class="keyword">filter</span> (<span class="keyword">where</span> $e<span class="operator">=</span><span class="number">2</span>) <span class="keyword">as</span> cnt <span class="keyword">from</span> (</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> color, id, <span class="number">1</span> <span class="keyword">as</span> $e <span class="keyword">from</span> t <span class="comment">--for distinct id</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> color, <span class="keyword">null</span> <span class="keyword">as</span> id, <span class="number">2</span> <span class="keyword">as</span> $e <span class="keyword">from</span> t <span class="comment">-- for count(\*)</span></span><br><span class="line"></span><br><span class="line">) <span class="keyword">group</span> <span class="keyword">by</span> color, id, $e</span><br><span class="line"></span><br><span class="line">) <span class="keyword">group</span> <span class="keyword">by</span> color </span><br></pre></td></tr></table></figure>
-<p>复制代码</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> color, <span class="built_in">count</span>(id), <span class="built_in">min</span>(cnt) <span class="keyword">from</span> (</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> color, id, <span class="built_in">count</span>(<span class="operator">*</span>) <span class="keyword">filter</span> (<span class="keyword">where</span> $e<span class="operator">=</span><span class="number">2</span>) <span class="keyword">as</span> cnt <span class="keyword">from</span> (</span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> color, id, <span class="number">1</span> <span class="keyword">as</span> $e <span class="keyword">from</span> t <span class="comment">--for distinct id</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">union</span> <span class="keyword">all</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">select</span> color, <span class="keyword">null</span> <span class="keyword">as</span> id, <span class="number">2</span> <span class="keyword">as</span> $e <span class="keyword">from</span> t <span class="comment">-- for count(\*)</span></span><br><span class="line"></span><br><span class="line">) <span class="keyword">group</span> <span class="keyword">by</span> color, id, $e</span><br><span class="line"></span><br><span class="line">) <span class="keyword">group</span> <span class="keyword">by</span> color </span><br></pre></td></tr></table></figure>
+
+
 <p>转化的逻辑过程，如下图所示：</p>
 <p><img src="vx_images/5681295595288">  </p>
 <p>图 12 示例 8 Batch 模式 Distinct 改写逻辑</p>
@@ -399,13 +400,11 @@
 </ul>
 <p>示例 9</p>
 <p>select color, count(distinct id), count(*) from t group by color </p>
-<p>复制代码</p>
 <p>手工改写成：</p>
 <p>select color, sum(dcnt), sum(cnt) from (</p>
 <p>select color, count(distinct id) as dcnt, count(*) as cnt from t</p>
 <p>group by color, mod(hash_code(id), 1024)</p>
 <p>) group by color</p>
-<p>复制代码</p>
 <p>改写前，逻辑图大概如下：</p>
 <p><img src="vx_images/5669686806196">  </p>
 <p>图 13 示例 9 Stream 模式未优化 Distinct</p>
@@ -876,8 +875,8 @@
       <i class="fa fa-chevron-left"></i> Flink-state-ttl
     </a></div>
       <div class="post-nav-item">
-    <a href="/bigdata/Flink/Flink-SQL-Join-temporal-table/" rel="next" title="Flink-temporal-table-join">
-      Flink-temporal-table-join <i class="fa fa-chevron-right"></i>
+    <a href="/bigdata/Spark/Spark-task_split_block/" rel="next" title="Spark task split block">
+      Spark task split block <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -951,20 +950,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">242</span>
+          <span class="site-state-item-count">252</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">128</span>
+        <span class="site-state-item-count">127</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
